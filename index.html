@@ -7,8 +7,6 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f3ee;min-height:100vh}
-
-/* LOGIN SUCURSAL */
 #pantalla-sucursal{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
 .suc-card{background:#fff;border-radius:16px;border:1px solid #e5e3dc;padding:2.5rem 2rem;width:100%;max-width:480px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.08)}
 .suc-card img{max-width:200px;margin:0 auto 1.5rem;display:block}
@@ -25,8 +23,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .suc-confirm{width:100%;padding:12px;border-radius:10px;border:none;background:#185FA5;color:#fff;font-size:15px;font-weight:500;cursor:pointer;font-family:inherit;display:none;margin-top:8px}
 .suc-confirm:hover{background:#0C447C}
 .suc-confirm.show{display:block}
-
-/* SISTEMA */
 #sistema{display:none;padding:1rem}
 .topbar{display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap}
 .topbar h1{font-size:18px;font-weight:500;color:#1a1a1a;display:flex;align-items:center;gap:8px}
@@ -38,7 +34,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .sync-ok{background:#dcfce7;color:#166534}
 .sync-err{background:#fee2e2;color:#991b1b}
 .sync-load{background:#fef3c7;color:#92400e}
-
 .app{display:grid;grid-template-columns:1fr 390px;gap:16px}
 .panel{background:#fff;border:1px solid #e5e3dc;border-radius:12px;padding:1.25rem;margin-bottom:16px}
 .panel:last-child{margin-bottom:0}
@@ -47,7 +42,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 label{display:block;font-size:13px;color:#555;margin-bottom:3px}
 input,select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;font-size:13px;font-family:inherit}
 input:focus,select:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px rgba(24,95,165,.1)}
-input:disabled,select:disabled{background:#f5f5f5;color:#aaa}
 .btn{padding:8px 16px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#1a1a1a;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
 .btn:hover{background:#f4f3ee}
 .btn:disabled{opacity:.5;cursor:not-allowed}
@@ -80,7 +74,7 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
 .alrt{padding:8px 12px;border-radius:8px;font-size:13px;margin-top:8px}
 .als{background:#dcfce7;color:#166534}.ali{background:#dbeafe;color:#1e40af}.ale{background:#fee2e2;color:#991b1b}
 .stock-info{font-size:11px;color:#888;margin-top:3px}
-.stock-ok{color:#166534}.stock-low{color:#d97706}.stock-zero{color:#c00}
+.stock-ok{color:#166534}.stock-low{color:#d97706}
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;align-items:center;justify-content:center}
 .overlay.show{display:flex}
 .modal{background:#fff;border-radius:12px;padding:1.5rem;width:90%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
@@ -100,7 +94,6 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
 </head>
 <body>
 
-<!-- SUCURSAL -->
 <div id="pantalla-sucursal">
   <div class="suc-card">
     <img id="logo-inicio" src="" alt="Solmedix"/>
@@ -124,7 +117,6 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
   </div>
 </div>
 
-<!-- SISTEMA -->
 <div id="sistema">
   <div class="topbar">
     <h1>
@@ -154,19 +146,14 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
           <div class="ac-list" id="aclist"></div>
         </div>
       </div>
-
       <div class="sep"></div>
       <div class="ptitle" style="font-size:11px;margin-bottom:8px">Agregar medicamento</div>
-
-      <!-- Paso 1: Medicamento -->
       <div class="fr">
         <label>Medicamento</label>
         <select id="msel" onchange="onMedChange()">
           <option value="">Cargando medicamentos...</option>
         </select>
       </div>
-
-      <!-- Paso 2: Lote (aparece al seleccionar medicamento) -->
       <div id="lote-row" style="display:none" class="fr">
         <label>Lote disponible</label>
         <select id="lsel" onchange="onLoteChange()">
@@ -174,42 +161,31 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
         </select>
         <div id="stock-info" class="stock-info"></div>
       </div>
-
-      <!-- Custom nombre -->
       <div id="crow" style="display:none" class="fr">
         <label>Nombre del medicamento</label>
         <input type="text" id="cnom" placeholder="Nombre completo del medicamento"/>
       </div>
-
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 80px;gap:8px;margin-bottom:8px">
         <div><label>Precio ($)</label><input type="number" id="pre" placeholder="0.00"/></div>
         <div><label>Cantidad</label><input type="number" id="qty" value="1" min="1" oninput="validarCantidad()"/></div>
         <div><label>Forma de pago</label>
           <select id="pag">
-            <option>Tarjeta MP</option>
-            <option>Transferencia</option>
-            <option>Efectivo</option>
+            <option>Tarjeta MP</option><option>Transferencia</option><option>Efectivo</option>
           </select>
         </div>
         <div style="display:flex;align-items:flex-end">
-          <button class="btn btnp" style="width:100%;padding:8px 6px;font-size:12px" onclick="addItem()">+ Agregar</button>
+          <button class="btn btnp" style="width:100%;padding:8px 4px;font-size:11px" onclick="addItem()">+ Agregar</button>
         </div>
       </div>
-
       <div id="eitem" class="es" style="padding:.8rem 0;font-size:12px">Agrega medicamentos a la venta</div>
       <table class="it" id="itab" style="display:none">
         <thead><tr>
-          <th style="width:35%">Medicamento</th>
-          <th style="width:14%">Lote</th>
-          <th style="width:8%">Cant</th>
-          <th style="width:13%">P.U.</th>
-          <th style="width:13%">Total</th>
-          <th style="width:10%">Pago</th>
-          <th style="width:7%"></th>
+          <th style="width:34%">Medicamento</th><th style="width:14%">Lote</th>
+          <th style="width:8%">Cant</th><th style="width:13%">P.U.</th>
+          <th style="width:13%">Total</th><th style="width:10%">Pago</th><th style="width:8%"></th>
         </tr></thead>
         <tbody id="ibody"></tbody>
       </table>
-
       <div id="trow" style="display:none;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid #eee;margin-top:6px">
         <span style="font-size:13px;color:#777">Total venta</span>
         <span style="font-size:20px;font-weight:500" id="tdis">$0.00</span>
@@ -241,7 +217,6 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
     </div>
   </div>
 
-  <!-- TICKET -->
   <div>
     <div class="panel">
       <div class="ptitle">Ticket 80mm</div>
@@ -264,7 +239,6 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
   </div>
 </div>
 
-<!-- Modal nuevo cliente -->
 <div class="overlay" id="overlay" onclick="cerrarModal(event)">
   <div class="modal">
     <h2>Registrar nuevo cliente</h2>
@@ -283,28 +257,60 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
 <script>
 var API_URL = 'https://script.google.com/macros/s/AKfycbyCRC2nLoBybekYy0THrABObIGAZ4oPiM1Y0NwT1N0gQNBwU77nsCziB3p9n2RrRvyZ/exec';
 var LOGO = 'data:image/png;base64,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';
-
 var SUCURSALES = {
   MTY: { nombre:'Monterrey', dir:'Av. Paseo de los Leones 1629', dir2:'Las Cumbres 1er Sector, Mty. N.L.', cp:'C.P. 64610', whatsapp:'WhatsApp: 55 1660 9658', chipClass:'chip-mty', chipLabel:'Sucursal Monterrey' },
   SLP: { nombre:'San Luis Potosi', dir:'Sexta 335, Garita de Jalisco', dir2:'78294 San Luis, S.L.P.', cp:'', whatsapp:'WhatsApp: 444 443 3070', chipClass:'chip-slp', chipLabel:'Sucursal San Luis P.' }
 };
+var E = { rfc:'SSM180928AQ7', web:'www.solmedixfarmacia.com' };
+var sucursal=null, sucSelected=null;
+var items=[], ventas=[], clientes=[], medicamentos=[], lotes=[];
+var vActual=null, acIdx=-1;
+var pendientes=0, cargados=0;
 
-var E = { nom:'SOLMEDIX SOLUCIONES MEDICAS', rfc:'SSM180928AQ7', web:'www.solmedixfarmacia.com' };
-
-var sucursal = null, sucSelected = null;
-var items = [], ventas = [], clientes = [], medicamentos = [], lotes = [];
-var vActual = null, acIdx = -1;
-
-// Inyectar logo en pantalla inicio
 document.getElementById('logo-inicio').src = LOGO;
+
+/* JSONP — resuelve CORS con Apps Script */
+function jsonp(url, callback) {
+  var cbName = 'cb_' + Math.random().toString(36).slice(2);
+  window[cbName] = function(data) {
+    delete window[cbName];
+    document.getElementById('sc_' + cbName) && document.getElementById('sc_' + cbName).remove();
+    callback(null, data);
+  };
+  var script = document.createElement('script');
+  script.id = 'sc_' + cbName;
+  script.onerror = function() {
+    delete window[cbName];
+    script.remove();
+    callback(new Error('Error de red'));
+  };
+  script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + cbName;
+  document.head.appendChild(script);
+}
+
+function apiGet(accion, callback) {
+  jsonp(API_URL + '?accion=' + accion, callback);
+}
+
+function apiPost(data, callback) {
+  fetch(API_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(data)
+  }).then(function() {
+    callback(null, { ok: true });
+  }).catch(function(err) {
+    callback(err);
+  });
+}
 
 /* SUCURSAL */
 function selSuc(clave) {
   sucSelected = clave;
-  document.getElementById('btn-mty').classList.toggle('selected', clave === 'MTY');
-  document.getElementById('btn-slp').classList.toggle('selected', clave === 'SLP');
-  var w = document.getElementById('suc-warning');
-  w.classList.add('show');
+  document.getElementById('btn-mty').classList.toggle('selected', clave==='MTY');
+  document.getElementById('btn-slp').classList.toggle('selected', clave==='SLP');
+  document.getElementById('suc-warning').classList.add('show');
   document.getElementById('suc-warning-nombre').textContent = SUCURSALES[clave].nombre;
   var c = document.getElementById('suc-confirm');
   c.textContent = 'Confirmar - Sucursal ' + SUCURSALES[clave].nombre;
@@ -323,69 +329,73 @@ function confirmarSuc() {
 }
 
 /* INICIAR */
-async function iniciar() {
+function iniciar() {
   var n = new Date();
   document.getElementById('fec').value = n.toISOString().split('T')[0];
   document.getElementById('hor').value = pad(n.getHours()) + ':' + pad(n.getMinutes());
-  setSyncStatus('load', 'Conectando...');
-  try {
-    var res = await Promise.all([apiGet('clientes'), apiGet('ventas'), apiGet('medicamentos'), apiGet('lotes')]);
-    clientes     = res[0].clientes     || [];
-    ventas       = (res[1].ventas      || []).reverse();
-    medicamentos = res[2].medicamentos || [];
-    lotes        = res[3].lotes        || [];
+  setSyncStatus('load','Conectando...');
+  pendientes = 4; cargados = 0;
+
+  apiGet('clientes', function(err, data) {
+    if (!err && data) clientes = data.clientes || [];
+    onCargado();
+  });
+  apiGet('ventas', function(err, data) {
+    if (!err && data) ventas = (data.ventas || []).reverse();
+    onCargado();
+  });
+  apiGet('medicamentos', function(err, data) {
+    if (!err && data) medicamentos = data.medicamentos || [];
+    onCargado();
+  });
+  apiGet('lotes', function(err, data) {
+    if (!err && data) lotes = data.lotes || [];
+    onCargado();
+  });
+}
+
+function onCargado() {
+  cargados++;
+  if (cargados < pendientes) return;
+  if (medicamentos.length > 0) {
     cargarSelectMeds();
     renderHist();
     renderListaClientes();
-    setSyncStatus('ok', 'Conectado a Google Sheets');
-  } catch(e) {
-    setSyncStatus('err', 'Sin conexion - modo offline');
-    cargarSelectMedsOffline();
+    setSyncStatus('ok','Conectado a Google Sheets');
+  } else {
+    setSyncStatus('err','Error de conexion');
+    document.getElementById('msel').innerHTML = '<option value="">Sin conexion - usa Otro</option><option value="__c__">+ Otro medicamento...</option>';
     document.getElementById('lista').innerHTML = '<div class="es">Sin conexion al servidor</div>';
   }
 }
 
 function pad(n) { return String(n).padStart(2,'0'); }
-function setSyncStatus(t, m) {
+function setSyncStatus(t,m) {
   var el = document.getElementById('sync-status');
-  el.className = 'sync sync-' + (t==='ok'?'ok':t==='err'?'err':'load');
+  el.className = 'sync sync-'+(t==='ok'?'ok':t==='err'?'err':'load');
   el.textContent = m;
 }
 
-/* API */
-async function apiGet(accion) {
-  var r = await fetch(API_URL + '?accion=' + accion);
-  return r.json();
-}
-async function apiPost(data) {
-  var r = await fetch(API_URL, { method:'POST', body: JSON.stringify(data) });
-  return r.json();
-}
-
-/* SELECTOR DE MEDICAMENTOS */
+/* SELECTOR MEDICAMENTOS */
 function cargarSelectMeds() {
-  var sel = document.getElementById('msel');
-  // Agrupar por categoria
   var cats = {};
-  medicamentos.forEach(function(m) {
-    var cat = m.categoria || 'Otros';
-    if (!cats[cat]) cats[cat] = [];
-    cats[cat].push(m);
-  });
+  for (var i=0;i<medicamentos.length;i++) {
+    var cat = medicamentos[i].categoria || 'Otros';
+    if (!cats[cat]) cats[cat]=[];
+    cats[cat].push(medicamentos[i]);
+  }
   var html = '<option value="">Seleccionar medicamento...</option>';
-  Object.keys(cats).sort().forEach(function(cat) {
-    html += '<optgroup label="' + cat + '">';
-    cats[cat].forEach(function(m) {
-      html += '<option value="' + m.id + '">' + m.nombre + '</option>';
-    });
+  var keys = Object.keys(cats).sort();
+  for (var k=0;k<keys.length;k++) {
+    html += '<optgroup label="'+keys[k]+'">';
+    for (var j=0;j<cats[keys[k]].length;j++) {
+      var m = cats[keys[k]][j];
+      html += '<option value="'+m.id+'">'+m.nombre+'</option>';
+    }
     html += '</optgroup>';
-  });
+  }
   html += '<option value="__c__">+ Otro medicamento...</option>';
-  sel.innerHTML = html;
-}
-
-function cargarSelectMedsOffline() {
-  document.getElementById('msel').innerHTML = '<option value="">Sin conexion - usa "Otro"</option><option value="__c__">+ Otro medicamento...</option>';
+  document.getElementById('msel').innerHTML = html;
 }
 
 function onMedChange() {
@@ -395,43 +405,23 @@ function onMedChange() {
   document.getElementById('lsel').innerHTML = '<option value="">Seleccionar lote...</option>';
   document.getElementById('stock-info').textContent = '';
   document.getElementById('pre').value = '';
-
-  if (medId === '__c__') {
-    crow.style.display = 'block';
-    loteRow.style.display = 'none';
-    return;
-  }
+  if (medId === '__c__') { crow.style.display='block'; loteRow.style.display='none'; return; }
   crow.style.display = 'none';
-
-  if (!medId) {
-    loteRow.style.display = 'none';
-    return;
+  if (!medId) { loteRow.style.display='none'; return; }
+  for (var i=0;i<medicamentos.length;i++) {
+    if (String(medicamentos[i].id)===String(medId)) { document.getElementById('pre').value=medicamentos[i].precio; break; }
   }
-
-  // Buscar medicamento seleccionado
-  var med = null;
-  for (var i = 0; i < medicamentos.length; i++) {
-    if (String(medicamentos[i].id) === String(medId)) { med = medicamentos[i]; break; }
+  var lotesDisp = [];
+  for (var j=0;j<lotes.length;j++) {
+    if (String(lotes[j].med_id)===String(medId) && Number(lotes[j].existencias)>0) lotesDisp.push(lotes[j]);
   }
-  if (med) document.getElementById('pre').value = med.precio;
-
-  // Filtrar lotes con existencias > 0
-  var lotesDisp = lotes.filter(function(l) {
-    return String(l.med_id) === String(medId) && Number(l.existencias) > 0;
-  });
-
-  if (lotesDisp.length === 0) {
-    loteRow.style.display = 'none';
-    // Si no hay lotes pero hay medicamento, permitir vender sin lote
-    return;
-  }
-
+  if (!lotesDisp.length) { loteRow.style.display='none'; return; }
   var html = '<option value="">Seleccionar lote...</option>';
-  lotesDisp.forEach(function(l) {
-    var stock = Number(l.existencias);
-    var stockTxt = stock <= 2 ? ' - STOCK BAJO: ' + stock + ' pzas' : ' - ' + stock + ' pzas';
-    html += '<option value="' + l.id + '">' + l.lote + stockTxt + '</option>';
-  });
+  for (var l=0;l<lotesDisp.length;l++) {
+    var stock = Number(lotesDisp[l].existencias);
+    var txt = stock<=2 ? ' - STOCK BAJO: '+stock+' pzas' : ' - '+stock+' pzas';
+    html += '<option value="'+lotesDisp[l].id+'">'+lotesDisp[l].lote+txt+'</option>';
+  }
   document.getElementById('lsel').innerHTML = html;
   loteRow.style.display = 'block';
 }
@@ -439,470 +429,318 @@ function onMedChange() {
 function onLoteChange() {
   var loteId = document.getElementById('lsel').value;
   var infoEl = document.getElementById('stock-info');
-  if (!loteId) { infoEl.textContent = ''; return; }
-  var lote = null;
-  for (var i = 0; i < lotes.length; i++) {
-    if (String(lotes[i].id) === String(loteId)) { lote = lotes[i]; break; }
+  if (!loteId) { infoEl.textContent=''; return; }
+  for (var i=0;i<lotes.length;i++) {
+    if (String(lotes[i].id)===String(loteId)) {
+      var stock = Number(lotes[i].existencias);
+      infoEl.className = 'stock-info '+(stock>5?'stock-ok':'stock-low');
+      infoEl.textContent = 'Existencias disponibles: '+stock+' pzas';
+      document.getElementById('qty').max = stock;
+      validarCantidad();
+      return;
+    }
   }
-  if (!lote) return;
-  var stock = Number(lote.existencias);
-  var cls = stock > 5 ? 'stock-ok' : stock > 0 ? 'stock-low' : 'stock-zero';
-  infoEl.className = 'stock-info ' + cls;
-  infoEl.textContent = 'Existencias disponibles: ' + stock + ' pzas';
-  // Validar cantidad
-  document.getElementById('qty').max = stock;
-  validarCantidad();
 }
 
 function validarCantidad() {
   var loteId = document.getElementById('lsel').value;
   if (!loteId) return;
-  var lote = null;
-  for (var i = 0; i < lotes.length; i++) {
-    if (String(lotes[i].id) === String(loteId)) { lote = lotes[i]; break; }
-  }
-  if (!lote) return;
-  var qty = parseInt(document.getElementById('qty').value) || 1;
-  var stock = Number(lote.existencias);
-  if (qty > stock) {
-    document.getElementById('qty').value = stock;
-    alrt('Cantidad ajustada al maximo disponible: ' + stock + ' pzas', 'i');
+  for (var i=0;i<lotes.length;i++) {
+    if (String(lotes[i].id)===String(loteId)) {
+      var qty = parseInt(document.getElementById('qty').value)||1;
+      var stock = Number(lotes[i].existencias);
+      if (qty>stock) { document.getElementById('qty').value=stock; alrt('Cantidad ajustada al maximo: '+stock+' pzas','i'); }
+      return;
+    }
   }
 }
 
 /* AGREGAR ITEM */
 function addItem() {
-  var medId  = document.getElementById('msel').value;
-  var loteId = document.getElementById('lsel').value;
-  var qty    = parseInt(document.getElementById('qty').value) || 1;
-  var precio = parseFloat(document.getElementById('pre').value) || 0;
-  var pago   = document.getElementById('pag').value;
-
-  var nombre = '';
-  var loteNum = '';
-
-  if (medId === '__c__') {
-    nombre = document.getElementById('cnom').value.trim();
-    if (!nombre) { alrt('Ingresa el nombre del medicamento', 'i'); return; }
+  var medId=document.getElementById('msel').value;
+  var loteId=document.getElementById('lsel').value;
+  var qty=parseInt(document.getElementById('qty').value)||1;
+  var precio=parseFloat(document.getElementById('pre').value)||0;
+  var pago=document.getElementById('pag').value;
+  var nombre='', loteNum='';
+  if (medId==='__c__') {
+    nombre=document.getElementById('cnom').value.trim();
+    if (!nombre) { alrt('Ingresa el nombre del medicamento','i'); return; }
   } else if (medId) {
-    for (var i = 0; i < medicamentos.length; i++) {
-      if (String(medicamentos[i].id) === String(medId)) { nombre = medicamentos[i].nombre; break; }
-    }
-    if (loteId) {
-      for (var j = 0; j < lotes.length; j++) {
-        if (String(lotes[j].id) === String(loteId)) { loteNum = lotes[j].lote; break; }
-      }
-    }
-  } else {
-    alrt('Selecciona un medicamento', 'i'); return;
-  }
-
-  if (!precio) { alrt('Ingresa el precio unitario', 'i'); return; }
-
-  items.push({ nombre:nombre, loteId:loteId, loteNum:loteNum, qty:qty, precio:precio, pago:pago, total:qty*precio });
+    for (var i=0;i<medicamentos.length;i++) { if (String(medicamentos[i].id)===String(medId)) { nombre=medicamentos[i].nombre; break; } }
+    if (loteId) { for (var j=0;j<lotes.length;j++) { if (String(lotes[j].id)===String(loteId)) { loteNum=lotes[j].lote; break; } } }
+  } else { alrt('Selecciona un medicamento','i'); return; }
+  if (!precio) { alrt('Ingresa el precio unitario','i'); return; }
+  items.push({nombre:nombre,loteId:loteId,loteNum:loteNum,qty:qty,precio:precio,pago:pago,total:qty*precio});
   renderItems();
-
-  // Reset
-  document.getElementById('msel').value = '';
-  document.getElementById('pre').value = '';
-  document.getElementById('qty').value = '1';
+  document.getElementById('msel').value='';
+  document.getElementById('pre').value='';
+  document.getElementById('qty').value='1';
   document.getElementById('qty').removeAttribute('max');
-  document.getElementById('lote-row').style.display = 'none';
-  document.getElementById('crow').style.display = 'none';
-  document.getElementById('cnom').value = '';
-  document.getElementById('lsel').innerHTML = '<option value="">Seleccionar lote...</option>';
-  document.getElementById('stock-info').textContent = '';
+  document.getElementById('lote-row').style.display='none';
+  document.getElementById('crow').style.display='none';
+  document.getElementById('cnom').value='';
+  document.getElementById('lsel').innerHTML='<option value="">Seleccionar lote...</option>';
+  document.getElementById('stock-info').textContent='';
 }
 
 function renderItems() {
-  var t = document.getElementById('itab');
-  var e = document.getElementById('eitem');
-  var tr = document.getElementById('trow');
-  if (!items.length) { t.style.display='none'; e.style.display='block'; tr.style.display='none'; return; }
-  t.style.display='table'; e.style.display='none'; tr.style.display='flex';
-  var html = '';
-  for (var i = 0; i < items.length; i++) {
-    var it = items[i];
-    var badgeClass = it.pago==='Tarjeta MP'?'bmp':it.pago==='Transferencia'?'btr':'bef';
-    var badgeTxt   = it.pago==='Tarjeta MP'?'MP':it.pago==='Transferencia'?'TR':'EF';
-    html += '<tr>';
-    html += '<td title="' + it.nombre + '">' + it.nombre + '</td>';
-    html += '<td>' + (it.loteNum ? '<span class="lote-badge">' + it.loteNum + '</span>' : '—') + '</td>';
-    html += '<td>' + it.qty + '</td>';
-    html += '<td>$' + it.precio.toLocaleString('es-MX',{minimumFractionDigits:2}) + '</td>';
-    html += '<td>$' + it.total.toLocaleString('es-MX',{minimumFractionDigits:2}) + '</td>';
-    html += '<td><span class="badge ' + badgeClass + '">' + badgeTxt + '</span></td>';
-    html += '<td><button class="btn btns btnd" onclick="del(' + i + ')">x</button></td>';
-    html += '</tr>';
+  var t=document.getElementById('itab'),e=document.getElementById('eitem'),tr=document.getElementById('trow');
+  if (!items.length){t.style.display='none';e.style.display='block';tr.style.display='none';return;}
+  t.style.display='table';e.style.display='none';tr.style.display='flex';
+  var html='';
+  for (var i=0;i<items.length;i++) {
+    var it=items[i];
+    var bc=it.pago==='Tarjeta MP'?'bmp':it.pago==='Transferencia'?'btr':'bef';
+    var bt=it.pago==='Tarjeta MP'?'MP':it.pago==='Transferencia'?'TR':'EF';
+    html+='<tr><td title="'+it.nombre+'">'+it.nombre+'</td>';
+    html+='<td>'+(it.loteNum?'<span class="lote-badge">'+it.loteNum+'</span>':'—')+'</td>';
+    html+='<td>'+it.qty+'</td>';
+    html+='<td>$'+it.precio.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    html+='<td>$'+it.total.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    html+='<td><span class="badge '+bc+'">'+bt+'</span></td>';
+    html+='<td><button class="btn btns btnd" onclick="del('+i+')">x</button></td></tr>';
   }
-  document.getElementById('ibody').innerHTML = html;
-  var total = 0;
-  for (var k = 0; k < items.length; k++) total += items[k].total;
-  document.getElementById('tdis').textContent = '$' + total.toLocaleString('es-MX',{minimumFractionDigits:2});
+  document.getElementById('ibody').innerHTML=html;
+  var total=0; for (var k=0;k<items.length;k++) total+=items[k].total;
+  document.getElementById('tdis').textContent='$'+total.toLocaleString('es-MX',{minimumFractionDigits:2});
 }
-
-function del(i) { items.splice(i,1); renderItems(); }
+function del(i){items.splice(i,1);renderItems();}
 
 /* GUARDAR VENTA */
-function genClave(fecha, cliente, folio) {
-  var d   = fecha.replace(/-/g,'').slice(2);
-  var ini = cliente.trim().toUpperCase().replace(/\s+/g,'').slice(0,3);
-  while (ini.length < 3) ini += 'X';
-  var rnd = Math.random().toString(36).slice(2,5).toUpperCase();
-  return 'SMX-' + (sucursal||'XX') + '-' + d + '-' + ini + '-' + String(folio).padStart(4,'0') + '-' + rnd;
+function genClave(fecha,cliente,folio) {
+  var d=fecha.replace(/-/g,'').slice(2);
+  var ini=cliente.trim().toUpperCase().replace(/\s+/g,'').slice(0,3);
+  while(ini.length<3)ini+='X';
+  var rnd=Math.random().toString(36).slice(2,5).toUpperCase();
+  return 'SMX-'+(sucursal||'XX')+'-'+d+'-'+ini+'-'+String(folio).padStart(4,'0')+'-'+rnd;
 }
 
-async function guardar() {
-  var fecha   = document.getElementById('fec').value;
-  var hora    = document.getElementById('hor').value;
-  var cliente = document.getElementById('cli').value.trim();
-  if (!fecha || !cliente || !items.length) { alrt('Completa fecha, cliente y al menos un medicamento', 'i'); return; }
+function guardar() {
+  var fecha=document.getElementById('fec').value;
+  var hora=document.getElementById('hor').value;
+  var cliente=document.getElementById('cli').value.trim();
+  if (!fecha||!cliente||!items.length){alrt('Completa fecha, cliente y al menos un medicamento','i');return;}
+  var btn=document.getElementById('btn-guardar');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
+  var folio=ventas.length+1;
+  var total=0; for(var k=0;k<items.length;k++) total+=items[k].total;
+  var v={id:folio,fecha:fecha,hora:hora,cliente:cliente,sucursal:sucursal,items:items.slice(),total:total,clave:genClave(fecha,cliente,folio)};
 
-  var btn = document.getElementById('btn-guardar');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Guardando...';
-
-  var folio = ventas.length + 1;
-  var total = 0;
-  for (var k = 0; k < items.length; k++) total += items[k].total;
-
-  var v = { id:folio, fecha:fecha, hora:hora, cliente:cliente, sucursal:sucursal, items:items.slice(), total:total, clave:genClave(fecha,cliente,folio) };
-
-  try {
-    var res = await apiPost({ accion:'guardar_venta', fecha:fecha, hora:hora, cliente:cliente, total:total, clave:v.clave, sucursal:sucursal, items:items });
-    if (res.ok) {
-      v.id = res.folio;
-      // Descontar lotes del inventario local
-      for (var i = 0; i < items.length; i++) {
+  apiPost({accion:'guardar_venta',fecha:fecha,hora:hora,cliente:cliente,total:total,clave:v.clave,sucursal:sucursal,items:items}, function(err) {
+    if (!err) {
+      for (var i=0;i<items.length;i++) {
         if (items[i].loteId) {
-          for (var j = 0; j < lotes.length; j++) {
-            if (String(lotes[j].id) === String(items[i].loteId)) {
-              lotes[j].existencias = Number(lotes[j].existencias) - items[i].qty;
-              break;
-            }
+          for (var j=0;j<lotes.length;j++) {
+            if (String(lotes[j].id)===String(items[i].loteId)) { lotes[j].existencias=Number(lotes[j].existencias)-items[i].qty; break; }
           }
         }
       }
-      setSyncStatus('ok', 'Guardado en Google Sheets');
+      setSyncStatus('ok','Guardado en Google Sheets');
+    } else {
+      setSyncStatus('err','Guardado solo localmente');
     }
-  } catch(e) {
-    setSyncStatus('err', 'Guardado solo localmente');
-  }
+  });
 
-  if (!clientes.some(function(c){ return (c.nombre||c).toLowerCase()===cliente.toLowerCase(); })) {
-    clientes.push({ nombre:cliente });
-    renderListaClientes();
-  }
-
-  ventas.unshift(v);
-  vActual = v;
-  renderHist();
-  renderTicket(v);
-  limpiar();
-  alrt('Venta guardada. Ticket generado.', 's');
-  btn.disabled = false;
-  btn.textContent = 'Guardar y generar ticket';
+  var found=false;
+  for (var c=0;c<clientes.length;c++) { if ((clientes[c].nombre||clientes[c]).toLowerCase()===cliente.toLowerCase()){found=true;break;} }
+  if (!found) { clientes.push({nombre:cliente}); renderListaClientes(); }
+  ventas.unshift(v); vActual=v;
+  renderHist(); renderTicket(v); limpiar();
+  alrt('Venta guardada. Ticket generado.','s');
+  btn.disabled=false; btn.textContent='Guardar y generar ticket';
 }
 
-function limpiar() {
-  items = []; renderItems();
-  document.getElementById('cli').value = '';
-}
+function limpiar(){items=[];renderItems();document.getElementById('cli').value='';}
 
 /* TICKET */
-function ff(f) {
-  if (!f) return '';
-  var p = String(f).split('T')[0].split('-');
-  return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : f;
-}
+function ff(f){if(!f)return'';var p=String(f).split('T')[0].split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:f;}
 
 function renderTicket(v) {
-  var suc = SUCURSALES[v.sucursal||sucursal||'MTY'];
-  var W = 32;
-  var sep = '';
-  for (var i = 0; i < W; i++) sep += '-';
-
-  function c(s) {
-    var sp = Math.max(0, W - s.length);
-    var pad = '';
-    for (var i = 0; i < Math.floor(sp/2); i++) pad += ' ';
-    return pad + s;
-  }
-  function lr(a, b) {
-    var gap = Math.max(1, W - a.length - b.length);
-    var g = '';
-    for (var i = 0; i < gap; i++) g += ' ';
-    return a + g + b;
-  }
-
-  var wrap = document.getElementById('tw');
-  var tp = document.createElement('div');
-  tp.className = 'tp';
-
-  var img = document.createElement('img');
-  img.src = LOGO; img.alt = 'Solmedix';
-  img.style.cssText = 'display:block;margin:0 auto 5px;max-width:180px';
+  var suc=SUCURSALES[v.sucursal||sucursal||'MTY'];
+  var W=32,sep=''; for(var i=0;i<W;i++)sep+='-';
+  function c(s){var sp=Math.max(0,W-s.length),pad='';for(var i=0;i<Math.floor(sp/2);i++)pad+=' ';return pad+s;}
+  function lr(a,b){var g=Math.max(1,W-a.length-b.length),gap='';for(var i=0;i<g;i++)gap+=' ';return a+gap+b;}
+  var wrap=document.getElementById('tw');
+  var tp=document.createElement('div'); tp.className='tp';
+  var img=document.createElement('img'); img.src=LOGO; img.alt='Solmedix';
+  img.style.cssText='display:block;margin:0 auto 5px;max-width:180px';
   tp.appendChild(img);
-
-  var txt = '';
-  txt += c(E.rfc) + '\n';
-  txt += c(suc.dir) + '\n';
-  txt += c(suc.dir2) + '\n';
-  if (suc.cp) txt += c(suc.cp) + '\n';
-  txt += c(suc.whatsapp) + '\n';
-  txt += c(E.web) + '\n';
-  txt += sep + '\n';
-  txt += 'Folio: #' + String(v.id).padStart(4,'0') + '   ' + ff(v.fecha) + ' ' + (v.hora||'') + '\n';
-  txt += 'Cliente: ' + v.cliente + '\n';
-  txt += sep + '\n';
-  txt += lr('MEDICAMENTO', 'TOTAL') + '\n';
-  txt += '  Cant. x P.Unit.\n';
-  txt += sep + '\n';
-  for (var i = 0; i < v.items.length; i++) {
-    var it = v.items[i];
-    var nom = it.nombre.length > W-2 ? it.nombre.slice(0,W-4)+'...' : it.nombre;
-    txt += nom + '\n';
-    if (it.loteNum) txt += '  Lote: ' + it.loteNum + '\n';
-    txt += lr('  ' + it.qty + ' x $' + it.precio.toLocaleString('es-MX',{minimumFractionDigits:2}), '$' + it.total.toLocaleString('es-MX',{minimumFractionDigits:2})) + '\n';
-    txt += '  Pago: ' + it.pago + '\n';
+  var txt='';
+  txt+=c(E.rfc)+'\n'+c(suc.dir)+'\n'+c(suc.dir2)+'\n';
+  if(suc.cp)txt+=c(suc.cp)+'\n';
+  txt+=c(suc.whatsapp)+'\n'+c(E.web)+'\n'+sep+'\n';
+  txt+='Folio: #'+String(v.id).padStart(4,'0')+'   '+ff(v.fecha)+' '+(v.hora||'')+'\n';
+  txt+='Cliente: '+v.cliente+'\n'+sep+'\n';
+  txt+=lr('MEDICAMENTO','TOTAL')+'\n  Cant. x P.Unit.\n'+sep+'\n';
+  for(var i=0;i<v.items.length;i++){
+    var it=v.items[i];
+    var nom=it.nombre.length>W-2?it.nombre.slice(0,W-4)+'...':it.nombre;
+    txt+=nom+'\n';
+    if(it.loteNum)txt+='  Lote: '+it.loteNum+'\n';
+    txt+=lr('  '+it.qty+' x $'+it.precio.toLocaleString('es-MX',{minimumFractionDigits:2}),'$'+it.total.toLocaleString('es-MX',{minimumFractionDigits:2}))+'\n';
+    txt+='  Pago: '+it.pago+'\n';
   }
-  txt += sep + '\n';
-  txt += lr('TOTAL:', '$' + v.total.toLocaleString('es-MX',{minimumFractionDigits:2})) + '\n';
-  txt += sep + '\n';
-  txt += c('CLAVE PARA FACTURACION:') + '\n';
-  txt += c(v.clave) + '\n';
-  txt += sep + '\n';
-  txt += c('Para facturar ingresa tu clave en:') + '\n';
-  txt += c(E.web) + '\n';
-  txt += sep + '\n';
-  txt += c('Gracias por su preferencia!') + '\n';
-  txt += c('Solmedix - siempre contigo') + '\n';
-  txt += '\n';
-  txt += c('Para que se cumpliese lo dicho') + '\n';
-  txt += c('por el profeta Isaias, cuando') + '\n';
-  txt += c('dijo: El mismo tomo nuestras') + '\n';
-  txt += c('enfermedades, y llevo nuestras') + '\n';
-  txt += c('dolencias.') + '\n';
-  txt += sep + '\n';
-  txt += c('EN MEDICAMENTOS NO HAY') + '\n';
-  txt += c('DEVOLUCIONES') + '\n';
-
-  var pre = document.createElement('pre');
-  pre.textContent = txt;
-  tp.appendChild(pre);
-
-  var bold = document.createElement('b');
-  bold.style.cssText = 'display:block;text-align:center;font-family:Courier New,monospace;font-size:9.5px;line-height:1.8;color:#000';
-  bold.textContent = 'Mateo 8:17';
-  tp.appendChild(bold);
-
-  wrap.innerHTML = '';
-  wrap.appendChild(tp);
-  document.getElementById('bimp').style.display = 'inline-block';
-  document.getElementById('bcla').style.display = 'inline-block';
-  document.getElementById('infoc').style.display = 'block';
-  document.getElementById('ctxt').textContent = v.clave;
+  txt+=sep+'\n'+lr('TOTAL:','$'+v.total.toLocaleString('es-MX',{minimumFractionDigits:2}))+'\n'+sep+'\n';
+  txt+=c('CLAVE PARA FACTURACION:')+'\n'+c(v.clave)+'\n'+sep+'\n';
+  txt+=c('Para facturar ingresa tu clave en:')+'\n'+c(E.web)+'\n'+sep+'\n';
+  txt+=c('Gracias por su preferencia!')+'\n'+c('Solmedix - siempre contigo')+'\n\n';
+  txt+=c('Para que se cumpliese lo dicho')+'\n'+c('por el profeta Isaias, cuando')+'\n';
+  txt+=c('dijo: El mismo tomo nuestras')+'\n'+c('enfermedades, y llevo nuestras')+'\n';
+  txt+=c('dolencias.')+'\n'+sep+'\n';
+  txt+=c('EN MEDICAMENTOS NO HAY')+'\n'+c('DEVOLUCIONES')+'\n';
+  var pre=document.createElement('pre'); pre.textContent=txt; tp.appendChild(pre);
+  var bold=document.createElement('b');
+  bold.style.cssText='display:block;text-align:center;font-family:Courier New,monospace;font-size:9.5px;line-height:1.8;color:#000';
+  bold.textContent='Mateo 8:17'; tp.appendChild(bold);
+  wrap.innerHTML=''; wrap.appendChild(tp);
+  document.getElementById('bimp').style.display='inline-block';
+  document.getElementById('bcla').style.display='inline-block';
+  document.getElementById('infoc').style.display='block';
+  document.getElementById('ctxt').textContent=v.clave;
 }
 
-function imprimir() {
-  if (!vActual) return;
-  var pre = document.querySelector('.tp pre');
-  var txt = pre ? pre.textContent : '';
-  var safe = txt.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  var w = window.open('','_blank','width=400,height=750');
-  w.document.write('<!DOCTYPE html><html><head><title>Ticket #' + String(vActual.id).padStart(4,'0') + '</title><style>@page{size:80mm auto;margin:3mm 4mm}body{font-family:Courier New,monospace;font-size:10pt;color:#000;margin:0;padding:0;width:72mm}img{display:block;margin:0 auto 5px;max-width:200px}pre{white-space:pre-wrap;font-family:inherit;font-size:inherit;margin:0;line-height:1.5}.ref{text-align:center;font-weight:bold;font-size:10pt;margin:2px 0}</style></head><body><img src="' + LOGO + '" alt="Solmedix"/><pre>' + safe + '</pre><div class="ref">Mateo 8:17</div></body></html>');
-  w.document.close();
-  setTimeout(function(){ w.focus(); w.print(); }, 600);
+function imprimir(){
+  if(!vActual)return;
+  var pre=document.querySelector('.tp pre');
+  var txt=pre?pre.textContent:'';
+  var safe=txt.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  var w=window.open('','_blank','width=400,height=750');
+  w.document.write('<!DOCTYPE html><html><head><title>Ticket #'+String(vActual.id).padStart(4,'0')+'</title><style>@page{size:80mm auto;margin:3mm 4mm}body{font-family:Courier New,monospace;font-size:10pt;color:#000;margin:0;padding:0;width:72mm}img{display:block;margin:0 auto 5px;max-width:200px}pre{white-space:pre-wrap;font-family:inherit;font-size:inherit;margin:0;line-height:1.5}.ref{text-align:center;font-weight:bold;font-size:10pt;margin:2px 0}</style></head><body><img src="'+LOGO+'" alt="Solmedix"/><pre>'+safe+'</pre><div class="ref">Mateo 8:17</div></body></html>');
+  w.document.close(); setTimeout(function(){w.focus();w.print();},600);
 }
 
-function copiar() {
-  if (!vActual) return;
-  navigator.clipboard.writeText(vActual.clave)
-    .then(function(){ alrt('Clave copiada: ' + vActual.clave, 's'); })
-    .catch(function(){ alrt('Clave: ' + vActual.clave, 'i'); });
+function copiar(){
+  if(!vActual)return;
+  navigator.clipboard.writeText(vActual.clave).then(function(){alrt('Clave copiada: '+vActual.clave,'s');}).catch(function(){alrt('Clave: '+vActual.clave,'i');});
 }
 
 /* HISTORIAL */
-function renderHist() {
-  var cont = document.getElementById('lista');
-  if (!ventas.length) { cont.innerHTML='<div class="es">Sin ventas registradas</div>'; return; }
-  var html = '';
-  for (var i = 0; i < Math.min(ventas.length,25); i++) {
-    var v = ventas[i];
-    html += '<div class="sc" onclick="ver(\'' + v.id + '\')">';
-    html += '<div style="flex:1;min-width:0">';
-    html += '<div style="font-weight:500;font-size:13px">' + v.cliente + '</div>';
-    html += '<div class="sm">' + ff(v.fecha) + ' ' + (v.hora||'') + ' · ' + v.items.length + ' prod.' + (v.sucursal?' · '+v.sucursal:'') + '</div>';
-    html += '<span class="ck">' + v.clave + '</span></div>';
-    html += '<div style="text-align:right;min-width:80px">';
-    html += '<div style="font-weight:600;font-size:13px;color:#185FA5">$' + Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2}) + '</div>';
-    html += '<button class="btn btnw" onclick="event.stopPropagation();ver(\'' + v.id + '\');imprimir()">Reimprimir</button>';
-    html += '</div></div>';
+function renderHist(){
+  var cont=document.getElementById('lista');
+  if(!ventas.length){cont.innerHTML='<div class="es">Sin ventas registradas</div>';return;}
+  var html='';
+  for(var i=0;i<Math.min(ventas.length,25);i++){
+    var v=ventas[i];
+    html+='<div class="sc" onclick="ver(\''+v.id+'\')">';
+    html+='<div style="flex:1;min-width:0"><div style="font-weight:500;font-size:13px">'+v.cliente+'</div>';
+    html+='<div class="sm">'+ff(v.fecha)+' '+(v.hora||'')+' · '+v.items.length+' prod.'+(v.sucursal?' · '+v.sucursal:'')+'</div>';
+    html+='<span class="ck">'+v.clave+'</span></div>';
+    html+='<div style="text-align:right;min-width:80px">';
+    html+='<div style="font-weight:600;font-size:13px;color:#185FA5">$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
+    html+='<button class="btn btnw" onclick="event.stopPropagation();ver(\''+v.id+'\');imprimir()">Reimprimir</button>';
+    html+='</div></div>';
   }
-  cont.innerHTML = html;
+  cont.innerHTML=html;
 }
 
-function ver(id) {
-  var v = null;
-  for (var i = 0; i < ventas.length; i++) {
-    if (String(ventas[i].id) === String(id)) { v = ventas[i]; break; }
-  }
-  if (v) { vActual=v; renderTicket(v); window.scrollTo({top:0,behavior:'smooth'}); }
+function ver(id){
+  for(var i=0;i<ventas.length;i++){if(String(ventas[i].id)===String(id)){vActual=ventas[i];renderTicket(ventas[i]);window.scrollTo({top:0,behavior:'smooth'});return;}}
 }
 
-function buscar() {
-  var q = document.getElementById('bq').value.trim().toLowerCase();
-  var cont = document.getElementById('bres');
-  if (q.length < 2) { cont.innerHTML='<div class="es">Ingresa al menos 2 caracteres</div>'; return; }
-  var html = '';
-  var found = false;
-  for (var i = 0; i < ventas.length; i++) {
-    var v = ventas[i];
-    if (v.cliente.toLowerCase().indexOf(q)>=0 || v.clave.toLowerCase().indexOf(q)>=0 || String(v.id).indexOf(q)>=0) {
-      found = true;
-      html += '<div class="sc" onclick="ver(\'' + v.id + '\')">';
-      html += '<div style="flex:1;min-width:0"><div style="font-weight:500">' + v.cliente + '</div>';
-      html += '<div class="sm">' + ff(v.fecha) + ' · Folio #' + String(v.id).padStart(4,'0') + '</div>';
-      html += '<span class="ck">' + v.clave + '</span></div>';
-      html += '<div style="text-align:right">';
-      html += '<div style="font-weight:600;color:#185FA5">$' + Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2}) + '</div>';
-      html += '<button class="btn btnw" onclick="event.stopPropagation();ver(\'' + v.id + '\');imprimir()">Reimprimir</button>';
-      html += '</div></div>';
+function buscar(){
+  var q=document.getElementById('bq').value.trim().toLowerCase();
+  var cont=document.getElementById('bres');
+  if(q.length<2){cont.innerHTML='<div class="es">Ingresa al menos 2 caracteres</div>';return;}
+  var html='',found=false;
+  for(var i=0;i<ventas.length;i++){
+    var v=ventas[i];
+    if(v.cliente.toLowerCase().indexOf(q)>=0||v.clave.toLowerCase().indexOf(q)>=0||String(v.id).indexOf(q)>=0){
+      found=true;
+      html+='<div class="sc" onclick="ver(\''+v.id+'\')">';
+      html+='<div style="flex:1;min-width:0"><div style="font-weight:500">'+v.cliente+'</div>';
+      html+='<div class="sm">'+ff(v.fecha)+' · Folio #'+String(v.id).padStart(4,'0')+'</div>';
+      html+='<span class="ck">'+v.clave+'</span></div>';
+      html+='<div style="text-align:right"><div style="font-weight:600;color:#185FA5">$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
+      html+='<button class="btn btnw" onclick="event.stopPropagation();ver(\''+v.id+'\');imprimir()">Reimprimir</button></div></div>';
     }
   }
-  cont.innerHTML = found ? html : '<div class="es">Sin resultados</div>';
+  cont.innerHTML=found?html:'<div class="es">Sin resultados</div>';
 }
 
 /* CLIENTES */
-function acFilter() {
-  var q = document.getElementById('cli').value.trim().toLowerCase();
-  var lst = document.getElementById('aclist');
-  var matches = [];
-  for (var i = 0; i < clientes.length; i++) {
-    var c = typeof clientes[i]==='string' ? {nombre:clientes[i]} : clientes[i];
-    if (q.length===0 || c.nombre.toLowerCase().indexOf(q)>=0) matches.push(c);
-    if (matches.length >= 8) break;
+function acFilter(){
+  var q=document.getElementById('cli').value.trim().toLowerCase();
+  var lst=document.getElementById('aclist');
+  var matches=[],count=0;
+  for(var i=0;i<clientes.length&&count<8;i++){
+    var c=typeof clientes[i]==='string'?{nombre:clientes[i]}:clientes[i];
+    if(q.length===0||c.nombre.toLowerCase().indexOf(q)>=0){matches.push(c);count++;}
   }
-  if (!matches.length) { lst.style.display='none'; return; }
-  var html = '';
-  for (var j = 0; j < matches.length; j++) {
-    var m = matches[j];
-    html += '<div class="ac-item" onmousedown="acPick(\'' + m.nombre.replace(/'/g,"\\'") + '\')">';
-    html += '<span>' + m.nombre + '</span>';
-    if (m.telefono) html += '<small>' + m.telefono + '</small>';
-    html += '</div>';
+  if(!matches.length){lst.style.display='none';return;}
+  var html='';
+  for(var j=0;j<matches.length;j++){
+    var m=matches[j];
+    html+='<div class="ac-item" onmousedown="acPick(\''+m.nombre.replace(/'/g,"\\'")+'\')"><span>'+m.nombre+'</span>'+(m.telefono?'<small>'+m.telefono+'</small>':'')+'</div>';
   }
-  lst.innerHTML = html;
-  lst.style.display = 'block';
-  acIdx = -1;
+  lst.innerHTML=html; lst.style.display='block'; acIdx=-1;
 }
-
-function acPick(val) {
-  document.getElementById('cli').value = val;
-  document.getElementById('aclist').style.display = 'none';
+function acPick(val){document.getElementById('cli').value=val;document.getElementById('aclist').style.display='none';}
+function acKey(e){
+  var lst=document.getElementById('aclist'),rows=lst.querySelectorAll('.ac-item');
+  if(!rows.length)return;
+  if(e.key==='ArrowDown')acIdx=Math.min(acIdx+1,rows.length-1);
+  else if(e.key==='ArrowUp')acIdx=Math.max(acIdx-1,0);
+  else if(e.key==='Enter'&&acIdx>=0){acPick(rows[acIdx].querySelector('span').textContent.trim());e.preventDefault();return;}
+  else if(e.key==='Escape'){lst.style.display='none';return;}
+  for(var i=0;i<rows.length;i++)rows[i].classList.toggle('sel',i===acIdx);
 }
+document.addEventListener('click',function(e){if(!e.target.closest('.ac-wrap'))document.getElementById('aclist').style.display='none';});
 
-function acKey(e) {
-  var lst = document.getElementById('aclist');
-  var rows = lst.querySelectorAll('.ac-item');
-  if (!rows.length) return;
-  if (e.key==='ArrowDown') acIdx = Math.min(acIdx+1, rows.length-1);
-  else if (e.key==='ArrowUp') acIdx = Math.max(acIdx-1, 0);
-  else if (e.key==='Enter' && acIdx>=0) { acPick(rows[acIdx].querySelector('span').textContent.trim()); e.preventDefault(); return; }
-  else if (e.key==='Escape') { lst.style.display='none'; return; }
-  for (var i=0;i<rows.length;i++) rows[i].classList.toggle('sel', i===acIdx);
-}
-
-document.addEventListener('click', function(e) {
-  if (!e.target.closest('.ac-wrap')) document.getElementById('aclist').style.display='none';
-});
-
-function renderListaClientes() {
-  var cont = document.getElementById('lista-clientes');
-  if (!clientes.length) { cont.innerHTML='<div class="es">No hay clientes registrados</div>'; return; }
-  var html = '';
-  for (var i = 0; i < clientes.length; i++) {
-    var c = typeof clientes[i]==='string' ? {nombre:clientes[i]} : clientes[i];
-    html += '<div class="sc" style="cursor:default">';
-    html += '<div style="flex:1;min-width:0"><div style="font-weight:500;font-size:13px">' + c.nombre + '</div>';
-    if (c.telefono) html += '<div class="sm">' + c.telefono + '</div>';
-    if (c.rfc) html += '<div class="sm">RFC: ' + c.rfc + '</div>';
-    html += '</div>';
-    if (c.correo) html += '<div style="font-size:11px;color:#777">' + c.correo + '</div>';
-    html += '</div>';
+function renderListaClientes(){
+  var cont=document.getElementById('lista-clientes');
+  if(!clientes.length){cont.innerHTML='<div class="es">No hay clientes registrados</div>';return;}
+  var html='';
+  for(var i=0;i<clientes.length;i++){
+    var c=typeof clientes[i]==='string'?{nombre:clientes[i]}:clientes[i];
+    html+='<div class="sc" style="cursor:default"><div style="flex:1;min-width:0"><div style="font-weight:500;font-size:13px">'+c.nombre+'</div>';
+    if(c.telefono)html+='<div class="sm">'+c.telefono+'</div>';
+    if(c.rfc)html+='<div class="sm">RFC: '+c.rfc+'</div>';
+    html+='</div>'+(c.correo?'<div style="font-size:11px;color:#777">'+c.correo+'</div>':'')+'</div>';
   }
-  cont.innerHTML = html;
+  cont.innerHTML=html;
 }
-
-function filtrarClientes() {
-  var q = document.getElementById('bqc').value.trim().toLowerCase();
-  var cont = document.getElementById('lista-clientes');
-  var html = '';
-  var found = false;
-  for (var i = 0; i < clientes.length; i++) {
-    var c = typeof clientes[i]==='string' ? {nombre:clientes[i]} : clientes[i];
-    if (q.length < 2 || c.nombre.toLowerCase().indexOf(q)>=0) {
-      found = true;
-      html += '<div class="sc" style="cursor:pointer" onmousedown="acPick(\'' + c.nombre.replace(/'/g,"\\'") + '\');tab(\'h\')">';
-      html += '<div><div style="font-weight:500">' + c.nombre + '</div>';
-      if (c.telefono) html += '<div class="sm">' + c.telefono + '</div>';
-      html += '</div></div>';
+function filtrarClientes(){
+  var q=document.getElementById('bqc').value.trim().toLowerCase();
+  var cont=document.getElementById('lista-clientes');
+  var html='',found=false;
+  for(var i=0;i<clientes.length;i++){
+    var c=typeof clientes[i]==='string'?{nombre:clientes[i]}:clientes[i];
+    if(q.length<2||c.nombre.toLowerCase().indexOf(q)>=0){
+      found=true;
+      html+='<div class="sc" style="cursor:pointer" onmousedown="acPick(\''+c.nombre.replace(/'/g,"\\'")+'\');tab(\'h\')"><div><div style="font-weight:500">'+c.nombre+'</div>'+(c.telefono?'<div class="sm">'+c.telefono+'</div>':'')+'</div></div>';
     }
   }
-  cont.innerHTML = found ? html : '<div class="es">Sin resultados</div>';
+  cont.innerHTML=found?html:'<div class="es">Sin resultados</div>';
 }
 
-/* MODAL CLIENTE */
-function abrirModalCliente() { document.getElementById('overlay').classList.add('show'); document.getElementById('m-nombre').focus(); }
-function cerrarModalBtn() {
-  document.getElementById('overlay').classList.remove('show');
-  ['m-nombre','m-tel','m-rfc','m-correo'].forEach(function(id){ document.getElementById(id).value=''; });
-  document.getElementById('modal-alrt').style.display='none';
-}
-function cerrarModal(e) { if(e.target===document.getElementById('overlay')) cerrarModalBtn(); }
+/* MODAL */
+function abrirModalCliente(){document.getElementById('overlay').classList.add('show');document.getElementById('m-nombre').focus();}
+function cerrarModalBtn(){document.getElementById('overlay').classList.remove('show');['m-nombre','m-tel','m-rfc','m-correo'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('modal-alrt').style.display='none';}
+function cerrarModal(e){if(e.target===document.getElementById('overlay'))cerrarModalBtn();}
 
-async function guardarCliente() {
-  var nombre = document.getElementById('m-nombre').value.trim();
-  if (!nombre) { malrt('El nombre es obligatorio','e'); return; }
-  var btn = document.getElementById('btn-gc');
+function guardarCliente(){
+  var nombre=document.getElementById('m-nombre').value.trim();
+  if(!nombre){malrt('El nombre es obligatorio','e');return;}
+  var btn=document.getElementById('btn-gc');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
-  try {
-    var res = await apiPost({ accion:'guardar_cliente', nombre:nombre, telefono:document.getElementById('m-tel').value.trim(), rfc:document.getElementById('m-rfc').value.trim().toUpperCase(), correo:document.getElementById('m-correo').value.trim() });
-    if (res.ok) {
-      clientes.push({ id:res.id, nombre:nombre, telefono:document.getElementById('m-tel').value.trim() });
-      renderListaClientes();
-      document.getElementById('cli').value = nombre;
-      cerrarModalBtn();
-      alrt('Cliente registrado correctamente','s');
-    } else { malrt(res.msg||'Error al guardar','e'); }
-  } catch(e) {
-    clientes.push({ nombre:nombre });
-    document.getElementById('cli').value = nombre;
+  apiPost({accion:'guardar_cliente',nombre:nombre,telefono:document.getElementById('m-tel').value.trim(),rfc:document.getElementById('m-rfc').value.trim().toUpperCase(),correo:document.getElementById('m-correo').value.trim()},function(err){
+    clientes.push({nombre:nombre,telefono:document.getElementById('m-tel').value.trim()});
+    renderListaClientes();
+    document.getElementById('cli').value=nombre;
     cerrarModalBtn();
-    alrt('Cliente guardado localmente','i');
-  }
-  btn.disabled=false; btn.textContent='Guardar cliente';
+    alrt('Cliente registrado correctamente','s');
+    btn.disabled=false; btn.textContent='Guardar cliente';
+  });
 }
 
 /* TABS / ALERTAS */
-function tab(t) {
-  ['h','b','c'].forEach(function(x){
-    document.getElementById('v'+x).style.display = t===x?'block':'none';
-    document.getElementById('t'+x).className = 'tab'+(t===x?' on':'');
-  });
-  if(t==='c') renderListaClientes();
+function tab(t){
+  ['h','b','c'].forEach(function(x){document.getElementById('v'+x).style.display=t===x?'block':'none';document.getElementById('t'+x).className='tab'+(t===x?' on':'');});
+  if(t==='c')renderListaClientes();
 }
-function alrt(msg, tipo) {
-  var el = document.getElementById('alrt');
-  el.className = 'alrt '+(tipo==='s'?'als':tipo==='e'?'ale':'ali');
-  el.textContent = msg; el.style.display='block';
-  setTimeout(function(){ el.style.display='none'; }, 4500);
-}
-function malrt(msg, tipo) {
-  var el = document.getElementById('modal-alrt');
-  el.className = 'alrt '+(tipo==='s'?'als':tipo==='e'?'ale':'ali');
-  el.textContent = msg; el.style.display='block';
-}
+function alrt(msg,tipo){var el=document.getElementById('alrt');el.className='alrt '+(tipo==='s'?'als':tipo==='e'?'ale':'ali');el.textContent=msg;el.style.display='block';setTimeout(function(){el.style.display='none';},4500);}
+function malrt(msg,tipo){var el=document.getElementById('modal-alrt');el.className='alrt '+(tipo==='s'?'als':tipo==='e'?'ale':'ali');el.textContent=msg;el.style.display='block';}
 </script>
 </body>
 </html>
