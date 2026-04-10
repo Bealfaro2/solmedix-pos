@@ -202,6 +202,7 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
         <button class="tab on" id="th" onclick="tab('h')">Historial</button>
         <button class="tab" id="tb" onclick="tab('b')">Buscar</button>
         <button class="tab" id="tc" onclick="tab('c')">Clientes</button>
+        <button class="tab" id="tp" onclick="tab('p')">Precios</button>
       </div>
       <div id="vh"><div id="lista" class="es">Cargando ventas...</div></div>
       <div id="vb" style="display:none">
@@ -213,6 +214,12 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
       <div id="vc" style="display:none">
         <div class="fr"><input type="text" id="bqc" placeholder="Buscar cliente..." oninput="filtrarClientes()"/></div>
         <div id="lista-clientes" class="es">Cargando clientes...</div>
+      </div>
+      <div id="vp" style="display:none">
+        <div class="fr">
+          <input type="text" id="bqp" placeholder="Buscar medicamento..." oninput="buscarPrecio()" autocomplete="off"/>
+        </div>
+        <div id="lista-precios" class="es">Escribe para buscar un medicamento</div>
       </div>
     </div>
   </div>
@@ -736,8 +743,42 @@ function guardarCliente(){
 
 /* TABS / ALERTAS */
 function tab(t){
-  ['h','b','c'].forEach(function(x){document.getElementById('v'+x).style.display=t===x?'block':'none';document.getElementById('t'+x).className='tab'+(t===x?' on':'');});
+  ['h','b','c','p'].forEach(function(x){document.getElementById('v'+x).style.display=t===x?'block':'none';document.getElementById('t'+x).className='tab'+(t===x?' on':'');});
   if(t==='c')renderListaClientes();
+  if(t==='p')buscarPrecio();
+}
+
+function buscarPrecio(){
+  var q=document.getElementById('bqp').value.trim().toLowerCase();
+  var cont=document.getElementById('lista-precios');
+  if(!medicamentos.length){cont.innerHTML='<div class="es">Cargando...</div>';return;}
+  var src=q.length<2?medicamentos:medicamentos.filter(function(m){return m.nombre.toLowerCase().indexOf(q)>=0||m.categoria.toLowerCase().indexOf(q)>=0;});
+  if(!src.length){cont.innerHTML='<div class="es">Sin resultados</div>';return;}
+  var html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">';
+  html+='<thead><tr style="border-bottom:2px solid #eee">';
+  html+='<th style="text-align:left;padding:7px 8px;color:#555;font-weight:600">Medicamento</th>';
+  html+='<th style="text-align:left;padding:7px 8px;color:#555;font-weight:600">Categoria</th>';
+  html+='<th style="text-align:right;padding:7px 8px;color:#555;font-weight:600">Precio</th>';
+  html+='<th style="text-align:right;padding:7px 8px;color:#555;font-weight:600">Existencias</th>';
+  html+='</tr></thead><tbody>';
+  for(var i=0;i<src.length;i++){
+    var m=src[i];
+    var exTotal=0;
+    for(var j=0;j<lotes.length;j++){
+      if(String(lotes[j].med_id)===String(m.id))exTotal+=Number(lotes[j].existencias);
+    }
+    var exColor=exTotal>5?'#166534':exTotal>0?'#d97706':'#c00';
+    var exTxt=exTotal>0?exTotal+' pzas':'Sin stock';
+    var bg=i%2===0?'#fff':'#fafaf8';
+    html+='<tr style="background:'+bg+';border-bottom:1px solid #f5f5f5">';
+    html+='<td style="padding:7px 8px;font-weight:500">'+m.nombre+'</td>';
+    html+='<td style="padding:7px 8px;color:#777;font-size:12px">'+m.categoria+'</td>';
+    html+='<td style="padding:7px 8px;text-align:right;font-weight:600;color:#185FA5">$'+Number(m.precio).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    html+='<td style="padding:7px 8px;text-align:right;font-weight:600;color:'+exColor+'">'+exTxt+'</td>';
+    html+='</tr>';
+  }
+  html+='</tbody></table></div>';
+  cont.innerHTML=html;
 }
 function alrt(msg,tipo){var el=document.getElementById('alrt');el.className='alrt '+(tipo==='s'?'als':tipo==='e'?'ale':'ali');el.textContent=msg;el.style.display='block';setTimeout(function(){el.style.display='none';},4500);}
 function malrt(msg,tipo){var el=document.getElementById('modal-alrt');el.className='alrt '+(tipo==='s'?'als':tipo==='e'?'ale':'ali');el.textContent=msg;el.style.display='block';}
