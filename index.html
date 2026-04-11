@@ -151,7 +151,7 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
       <div class="ptitle" style="font-size:11px;margin-bottom:8px">Agregar medicamento</div>
       <div class="fr">
         <label>Escanear codigo de barras</label>
-        <input type="text" id="barcode" placeholder="Escanea o escribe el codigo..." autocomplete="off" oninput="onBarcodeInput()" style="font-family:monospace"/>
+        <input type="text" id="barcode" placeholder="Escanea o escribe el codigo..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();onBarcodeInput();}" style="font-family:monospace"/>
       </div>
       <div class="fr">
         <label>o seleccionar por nombre</label>
@@ -519,6 +519,12 @@ function addItem() {
     // Verificar si hay lotes disponibles y si se seleccionó uno
     var lotesDisp=lotes.filter(function(l){return String(l.med_id)===String(medId)&&Number(l.existencias)>0;});
     if (lotesDisp.length>0 && !loteId) { alrt('Debes seleccionar el lote del medicamento','e'); return; }
+    // Verificar stock disponible del lote seleccionado
+    if (loteId) {
+      var loteSelec=null;
+      for(var k=0;k<lotes.length;k++){if(String(lotes[k].id)===String(loteId)){loteSelec=lotes[k];break;}}
+      if(loteSelec && Number(loteSelec.existencias)<=0){alrt('Este lote ya no tiene existencias disponibles','e');return;}
+    }
     if (loteId) { for (var j=0;j<lotes.length;j++) { if (String(lotes[j].id)===String(loteId)) { loteNum=lotes[j].lote; break; } } }
   } else { alrt('Selecciona un medicamento','i'); return; }
   if (!precio) { alrt('Ingresa el precio unitario','i'); return; }
@@ -601,6 +607,8 @@ function guardar() {
         }
       }
       setSyncStatus('ok','Guardado en Google Sheets');
+      // Reload lotes to reflect real inventory
+      apiGet('lotes', function(e,d){ if(!e&&d){ lotes=d.lotes||[]; } });
     } else {
       setSyncStatus('err','Guardado solo localmente');
     }
@@ -609,7 +617,7 @@ function guardar() {
   var found=false;
   for (var c=0;c<clientes.length;c++) { if ((clientes[c].nombre||clientes[c]).toLowerCase()===cliente.toLowerCase()){found=true;break;} }
   if (!found) { clientes.push({nombre:cliente}); renderListaClientes(); }
-  ventas.unshift(v); vActual=v;
+  ventas.unshift(v);
   renderHist(); mostrarClave(v); limpiar();
   alrt('Venta guardada. Ticket generado.','s');
   btn.disabled=false; btn.textContent='Guardar y generar ticket';
@@ -618,9 +626,9 @@ function guardar() {
 function limpiar(){items=[];renderItems();document.getElementById('cli').value='';document.getElementById('barcode').value='';}
 
 function mostrarClave(v) {
+  vActual = v;
   document.getElementById('infoc').style.display = 'block';
   document.getElementById('ctxt').textContent = v.clave;
-  vActual = v;
 }
 
 /* TICKET */
@@ -672,11 +680,37 @@ function renderTicket(v) {
 
 function imprimir(){
   if(!vActual)return;
-  var pre=document.querySelector('.tp pre');
-  var txt=pre?pre.textContent:'';
+  var v=vActual;
+  var suc=SUCURSALES[v.sucursal||sucursal||'MTY'];
+  var W=32; var sep=''; for(var i=0;i<W;i++)sep+='-';
+  function c(s){var sp=Math.max(0,W-s.length),pad='';for(var i=0;i<Math.floor(sp/2);i++)pad+=' ';return pad+s;}
+  function lr(a,b){var g=Math.max(1,W-a.length-b.length),gap='';for(var i=0;i<g;i++)gap+=' ';return a+gap+b;}
+  var txt='';
+  txt+=c(E.rfc)+'\n'+c(suc.dir)+'\n'+c(suc.dir2)+'\n';
+  if(suc.cp)txt+=c(suc.cp)+'\n';
+  txt+=c(suc.whatsapp)+'\n'+c(E.web)+'\n'+sep+'\n';
+  txt+='Folio: #'+String(v.id).padStart(4,'0')+'   '+ff(v.fecha)+' '+(v.hora||'')+'\n';
+  txt+='Cliente: '+v.cliente+'\n'+sep+'\n';
+  txt+=lr('MEDICAMENTO','TOTAL')+'\n  Cant. x P.Unit.\n'+sep+'\n';
+  for(var i=0;i<v.items.length;i++){
+    var it=v.items[i];
+    var nom=it.nombre.length>W-2?it.nombre.slice(0,W-4)+'...':it.nombre;
+    txt+=nom+'\n';
+    if(it.loteNum)txt+='  Lote: '+it.loteNum+'\n';
+    txt+=lr('  '+it.qty+' x $'+it.precio.toLocaleString('es-MX',{minimumFractionDigits:2}),'$'+it.total.toLocaleString('es-MX',{minimumFractionDigits:2}))+'\n';
+    txt+='  Pago: '+it.pago+'\n';
+  }
+  txt+=sep+'\n'+lr('TOTAL:','$'+v.total.toLocaleString('es-MX',{minimumFractionDigits:2}))+'\n'+sep+'\n';
+  txt+=c('CLAVE PARA FACTURACION:')+'\n'+c(v.clave)+'\n'+sep+'\n';
+  txt+=c('Para facturar ingresa tu clave en:')+'\n'+c(E.web)+'\n'+sep+'\n';
+  txt+=c('Gracias por su preferencia!')+'\n'+c('Solmedix - siempre contigo')+'\n\n';
+  txt+=c('Para que se cumpliese lo dicho')+'\n'+c('por el profeta Isaias, cuando')+'\n';
+  txt+=c('dijo: El mismo tomo nuestras')+'\n'+c('enfermedades, y llevo nuestras')+'\n';
+  txt+=c('dolencias.')+'\n'+sep+'\n';
+  txt+=c('EN MEDICAMENTOS NO HAY')+'\n'+c('DEVOLUCIONES')+'\n';
   var safe=txt.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   var w=window.open('','_blank','width=400,height=750');
-  w.document.write('<!DOCTYPE html><html><head><title>Ticket #'+String(vActual.id).padStart(4,'0')+'</title><style>@page{size:80mm auto;margin:3mm 4mm}body{font-family:Courier New,monospace;font-size:10pt;color:#000;margin:0;padding:0;width:72mm}img{display:block;margin:0 auto 5px;max-width:200px}pre{white-space:pre-wrap;font-family:inherit;font-size:inherit;margin:0;line-height:1.5}.ref{text-align:center;font-weight:bold;font-size:10pt;margin:2px 0}</style></head><body><img src="'+LOGO_BN+'" alt="Solmedix"/><pre>'+safe+'</pre><div class="ref">Mateo 8:17</div></body></html>');
+  w.document.write('<!DOCTYPE html><html><head><title>Ticket #'+String(v.id).padStart(4,'0')+'</title><style>@page{size:80mm auto;margin:3mm 4mm}body{font-family:Courier New,monospace;font-size:10pt;color:#000;margin:0;padding:0;width:72mm}img{display:block;margin:0 auto 5px;max-width:200px}pre{white-space:pre-wrap;font-family:inherit;font-size:inherit;margin:0;line-height:1.5}.ref{text-align:center;font-weight:bold;font-size:10pt;margin:2px 0}</style></head><body><img src="'+LOGO_BN+'" alt="Solmedix"/><pre>'+safe+'</pre><div class="ref">Mateo 8:17</div></body></html>');
   w.document.close(); setTimeout(function(){w.focus();w.print();},600);
 }
 
