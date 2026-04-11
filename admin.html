@@ -479,13 +479,13 @@ function apiPost(data, callback) {
 /* CARGAR DATOS */
 function cargarTodo() {
   setSyncStatus('load','Cargando datos...');
-  var pendientes=4, cargados=0;
+  var pendientes=5, cargados=0;
   function onDone(){ cargados++; if(cargados>=pendientes){ renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); setSyncStatus('ok','Conectado'); inicializarFechas(); inicializarFechasCompras(); } }
   apiGet('clientes',     function(e,d){ if(!e&&d) clientes=d.clientes||[]; onDone(); });
   apiGet('ventas',       function(e,d){ if(!e&&d) ventas=(d.ventas||[]).reverse(); onDone(); });
   apiGet('medicamentos', function(e,d){ if(!e&&d) medicamentos=d.medicamentos||[]; onDone(); });
   apiGet('lotes',        function(e,d){ if(!e&&d) lotes=d.lotes||[]; onDone(); });
-  apiGet('compras',      function(e,d){ if(!e&&d) compras=d.compras||[]; });
+  apiGet('compras',      function(e,d){ if(!e&&d) compras=d.compras||[]; onDone(); });
 }
 
 function setSyncStatus(t,m){ var el=document.getElementById('sync-status'); el.className='sync sync-'+(t==='ok'?'ok':t==='err'?'err':'load'); el.textContent=m; }
