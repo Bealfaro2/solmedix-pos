@@ -461,14 +461,23 @@ function onMedChange() {
   }
   var lotesDisp = [];
   for (var j=0;j<lotes.length;j++) {
-    if (String(lotes[j].med_id)===String(medId) && Number(lotes[j].existencias)>0) lotesDisp.push(lotes[j]);
+    if (String(lotes[j].med_id)===String(medId)) {
+      // Calculate real available = server stock minus already in cart
+      var enCarrito=0;
+      for(var ci=0;ci<items.length;ci++){
+        if(String(items[ci].loteId)===String(lotes[j].id)) enCarrito+=items[ci].qty;
+      }
+      var stockReal = Number(lotes[j].existencias) - enCarrito;
+      if(stockReal > 0) lotesDisp.push({lote:lotes[j], stockReal:stockReal});
+    }
   }
   if (!lotesDisp.length) { loteRow.style.display='none'; return; }
   var html = '<option value="">Seleccionar lote...</option>';
   for (var l=0;l<lotesDisp.length;l++) {
-    var stock = Number(lotesDisp[l].existencias);
+    var stock = lotesDisp[l].stockReal;
+    var lote = lotesDisp[l].lote;
     var txt = stock<=2 ? ' - STOCK BAJO: '+stock+' pzas' : ' - '+stock+' pzas';
-    html += '<option value="'+lotesDisp[l].id+'">'+lotesDisp[l].lote+txt+'</option>';
+    html += '<option value="'+lote.id+'">'+lote.lote+txt+'</option>';
   }
   document.getElementById('lsel').innerHTML = html;
   loteRow.style.display = 'block';
