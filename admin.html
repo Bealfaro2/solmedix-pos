@@ -109,6 +109,7 @@ input:focus,select:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px 
     <button class="nav-tab"    id="nt-ventas"    onclick="navTab('ventas')">Ventas</button>
     <button class="nav-tab"    id="nt-lotes"     onclick="navTab('lotes')">Inventario</button>
     <button class="nav-tab"    id="nt-inv"       onclick="navTab('inv')">Reporte Inventario</button>
+    <button class="nav-tab"    id="nt-entrada"   onclick="navTab('entrada')">Entrada Inventario</button>
   </div>
 
   <!-- REPORTE -->
@@ -238,6 +239,60 @@ input:focus,select:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px 
           <tbody id="inv-body"></tbody>
           <tfoot id="inv-foot"></tfoot>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENTRADA DE INVENTARIO -->
+  <div id="sec-entrada" style="display:none">
+    <div class="panel">
+      <div class="ptitle">Entrada de inventario por XML (CFDI)</div>
+      <p style="font-size:13px;color:#555;margin-bottom:16px;line-height:1.6">
+        Sube el archivo XML de la factura de tu proveedor. El sistema leerá automaticamente
+        el proveedor, medicamentos, cantidades y costos. Tu solo necesitas agregar el numero de lote de cada producto.
+      </p>
+
+      <!-- Upload zone -->
+      <div id="xml-upload-zone" style="border:2px dashed #ddd;border-radius:10px;padding:2rem;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px"
+        onclick="document.getElementById('xml-file-input').click()"
+        ondragover="event.preventDefault();this.style.borderColor='#185FA5';this.style.background='#f0f6ff'"
+        ondragleave="this.style.borderColor='#ddd';this.style.background=''"
+        ondrop="onXmlDrop(event)">
+        <div style="font-size:32px;margin-bottom:8px">📄</div>
+        <div style="font-size:14px;font-weight:500;color:#555">Arrastra el XML aqui o haz clic para seleccionar</div>
+        <div style="font-size:12px;color:#aaa;margin-top:4px">Solo archivos .xml del SAT (CFDI 4.0)</div>
+        <input type="file" id="xml-file-input" accept=".xml" style="display:none" onchange="onXmlFile(event)"/>
+      </div>
+
+      <!-- Parsed result -->
+      <div id="xml-result" style="display:none">
+        <!-- Header factura -->
+        <div id="xml-header" style="background:#f9f8f5;border-radius:10px;padding:12px 14px;margin-bottom:16px;border:1px solid #ede9e0"></div>
+
+        <!-- Tabla de conceptos con campo de lote -->
+        <div style="font-size:13px;font-weight:600;color:#555;margin-bottom:8px">Medicamentos en la factura</div>
+        <div style="overflow-x:auto;margin-bottom:16px">
+          <table class="tbl" id="xml-conceptos-tabla">
+            <thead><tr>
+              <th>Descripcion</th>
+              <th style="width:80px;text-align:center">Cant.</th>
+              <th style="width:100px;text-align:right">Costo unit.</th>
+              <th style="width:160px">Num. de lote *</th>
+              <th style="width:140px">Medicamento en sistema</th>
+            </tr></thead>
+            <tbody id="xml-conceptos-body"></tbody>
+          </table>
+        </div>
+
+        <div style="background:#fef3c7;border-radius:8px;padding:10px 12px;font-size:12px;color:#92400e;margin-bottom:16px">
+          ⚠️ Verifica que cada medicamento este correctamente vinculado al catalogo. El numero de lote es obligatorio para afectar el inventario.
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn" onclick="limpiarXml()">Cancelar</button>
+          <button class="btn btnp" id="btn-aplicar-entrada" onclick="aplicarEntrada()">Aplicar entrada al inventario</button>
+        </div>
+        <div id="entrada-alrt" style="display:none;margin-top:10px"></div>
       </div>
     </div>
   </div>
@@ -388,7 +443,7 @@ function setSyncStatus(t,m){ var el=document.getElementById('sync-status'); el.c
 
 /* NAV */
 function navTab(t) {
-  ['reporte','meds','clientes','ventas','lotes','inv'].forEach(function(x){
+  ['reporte','meds','clientes','ventas','lotes','inv','entrada'].forEach(function(x){
     document.getElementById('sec-'+x).style.display=t===x?'block':'none';
     document.getElementById('nt-'+x).className='nav-tab'+(t===x?' on':'');
   });
@@ -558,6 +613,239 @@ function exportarInventarioPDF(){
   w.document.close();
   setTimeout(function(){w.print();},600);
 }
+
+/* ═══════════════════════════════════════════════
+   ENTRADA DE INVENTARIO POR XML
+═══════════════════════════════════════════════ */
+var xmlConceptos = [];
+var xmlFacturaInfo = {};
+
+function onXmlDrop(e) {
+  e.preventDefault();
+  var file = e.dataTransfer.files[0];
+  if (file) procesarXML(file);
+  document.getElementById('xml-upload-zone').style.borderColor = '#ddd';
+  document.getElementById('xml-upload-zone').style.background = '';
+}
+
+function onXmlFile(e) {
+  var file = e.target.files[0];
+  if (file) procesarXML(file);
+  e.target.value = '';
+}
+
+function procesarXML(file) {
+  if (!file.name.endsWith('.xml')) {
+    alert('Solo se aceptan archivos .xml');
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var parser = new DOMParser();
+      var doc = parser.parseFromString(e.target.result, 'text/xml');
+      var ns = 'http://www.sat.gob.mx/cfd/4';
+
+      // Extraer datos del comprobante
+      var comp = doc.getElementsByTagNameNS(ns, 'Comprobante')[0] ||
+                 doc.getElementsByTagName('cfdi:Comprobante')[0] ||
+                 doc.documentElement;
+
+      var folio   = (comp.getAttribute('Serie')||'') + (comp.getAttribute('Folio')||'');
+      var fecha   = comp.getAttribute('Fecha')||'';
+      var total   = comp.getAttribute('Total')||'';
+
+      // Emisor
+      var emisor = doc.getElementsByTagNameNS(ns,'Emisor')[0] ||
+                   doc.getElementsByTagName('cfdi:Emisor')[0];
+      var proveedor = emisor ? (emisor.getAttribute('Nombre')||'') : '';
+      var rfcProv   = emisor ? (emisor.getAttribute('Rfc')||'')    : '';
+
+      // UUID
+      var tfd = doc.getElementsByTagNameNS('http://www.sat.gob.mx/TimbreFiscalDigital','TimbreFiscalDigital')[0] ||
+                doc.getElementsByTagName('tfd:TimbreFiscalDigital')[0];
+      var uuid = tfd ? (tfd.getAttribute('UUID')||'') : '';
+
+      xmlFacturaInfo = { folio:folio, fecha:fecha, total:total, proveedor:proveedor, rfcProv:rfcProv, uuid:uuid };
+
+      // Conceptos
+      var conceptos = doc.getElementsByTagNameNS(ns,'Concepto');
+      if (!conceptos.length) conceptos = doc.getElementsByTagName('cfdi:Concepto');
+
+      xmlConceptos = [];
+      for (var i = 0; i < conceptos.length; i++) {
+        var c = conceptos[i];
+        xmlConceptos.push({
+          descripcion:   c.getAttribute('Descripcion') || '',
+          cantidad:      parseFloat(c.getAttribute('Cantidad')) || 0,
+          valorUnitario: parseFloat(c.getAttribute('ValorUnitario')) || 0,
+          importe:       parseFloat(c.getAttribute('Importe')) || 0,
+          noIdentificacion: c.getAttribute('NoIdentificacion') || '',
+          lote:          '',
+          medId:         ''
+        });
+      }
+
+      if (!xmlConceptos.length) {
+        alert('No se encontraron conceptos en el XML');
+        return;
+      }
+
+      renderXmlResult();
+    } catch(err) {
+      alert('Error al leer el XML: ' + err.message);
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function renderXmlResult() {
+  // Header
+  var h = xmlFacturaInfo;
+  var fechaF = h.fecha ? h.fecha.split('T')[0].split('-').reverse().join('/') : '';
+  document.getElementById('xml-header').innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">' +
+    '<div><div style="font-size:11px;color:#888">Proveedor</div><div style="font-weight:600;font-size:13px">'+h.proveedor+'</div><div style="font-size:11px;color:#888">RFC: '+h.rfcProv+'</div></div>' +
+    '<div><div style="font-size:11px;color:#888">Folio / Fecha</div><div style="font-weight:600;font-size:13px">'+h.folio+'</div><div style="font-size:11px;color:#888">'+fechaF+'</div></div>' +
+    '<div><div style="font-size:11px;color:#888">Total factura</div><div style="font-weight:600;font-size:15px;color:#185FA5">$'+parseFloat(h.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>' +
+    '<div style="font-size:10px;color:#aaa">UUID: '+h.uuid.slice(0,18)+'...</div></div>' +
+    '</div>';
+
+  // Tabla conceptos
+  var html = '';
+  for (var i = 0; i < xmlConceptos.length; i++) {
+    var c = xmlConceptos[i];
+    // Try to auto-match with medicamentos catalog
+    var medId = autoMatch(c.descripcion);
+    xmlConceptos[i].medId = medId;
+
+    // Build medicamento select
+    var opts = '<option value="">-- Sin vincular --</option>';
+    for (var j = 0; j < medicamentos.length; j++) {
+      var m = medicamentos[j];
+      opts += '<option value="'+m.id+'"'+(m.id===medId?' selected':'')+'>'+m.nombre+'</option>';
+    }
+
+    html += '<tr id="concepto-row-'+i+'">';
+    html += '<td style="font-size:12px">'+c.descripcion+'</td>';
+    html += '<td style="text-align:center;font-weight:600">'+c.cantidad+'</td>';
+    html += '<td style="text-align:right">$'+c.valorUnitario.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    html += '<td><input type="text" id="lote-'+i+'" placeholder="Num. lote" style="font-family:monospace;font-size:12px" oninput="xmlConceptos['+i+'].lote=this.value"/></td>';
+    html += '<td><select id="med-'+i+'" style="font-size:11px" onchange="xmlConceptos['+i+'].medId=this.value">'+opts+'</select></td>';
+    html += '</tr>';
+  }
+  document.getElementById('xml-conceptos-body').innerHTML = html;
+  document.getElementById('xml-result').style.display = 'block';
+  document.getElementById('xml-upload-zone').style.display = 'none';
+}
+
+function autoMatch(descripcion) {
+  // Try to find matching medicamento by name similarity
+  var desc = descripcion.toLowerCase();
+  var bestId = '';
+  var bestScore = 0;
+  for (var i = 0; i < medicamentos.length; i++) {
+    var nom = medicamentos[i].nombre.toLowerCase();
+    // Check if key words match
+    var words = nom.split(' ');
+    var matches = 0;
+    for (var j = 0; j < words.length; j++) {
+      if (words[j].length > 3 && desc.indexOf(words[j]) >= 0) matches++;
+    }
+    var score = matches / words.length;
+    if (score > bestScore && score > 0.3) {
+      bestScore = score;
+      bestId = medicamentos[i].id;
+    }
+  }
+  return bestId;
+}
+
+function limpiarXml() {
+  xmlConceptos = [];
+  xmlFacturaInfo = {};
+  document.getElementById('xml-result').style.display = 'none';
+  document.getElementById('xml-upload-zone').style.display = 'block';
+  document.getElementById('entrada-alrt').style.display = 'none';
+}
+
+function aplicarEntrada() {
+  // Validate
+  var sinLote = xmlConceptos.filter(function(c){ return c.medId && !c.lote; });
+  if (sinLote.length > 0) {
+    entradaAlrt('Hay '+sinLote.length+' medicamento(s) vinculados sin numero de lote. Agrega el lote o desvincularlos.','e');
+    return;
+  }
+
+  var aAplicar = xmlConceptos.filter(function(c){ return c.medId && c.lote; });
+  if (!aAplicar.length) {
+    entradaAlrt('No hay medicamentos vinculados con lote para aplicar.','e');
+    return;
+  }
+
+  var btn = document.getElementById('btn-aplicar-entrada');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Aplicando...';
+
+  var procesados = 0;
+  var errores = 0;
+
+  function procesarSiguiente(idx) {
+    if (idx >= aAplicar.length) {
+      // Done
+      btn.disabled = false;
+      btn.textContent = 'Aplicar entrada al inventario';
+      if (errores === 0) {
+        entradaAlrt('Entrada aplicada correctamente. '+procesados+' lotes agregados/actualizados.','s');
+        // Refresh lotes
+        apiGet('lotes', function(e,d){ if(!e&&d){ lotes=d.lotes||[]; renderLotesAdmin(); renderInventario(); } });
+        setTimeout(limpiarXml, 3000);
+      } else {
+        entradaAlrt('Se aplicaron '+procesados+' lotes. '+errores+' errores.','e');
+      }
+      return;
+    }
+
+    var c = aAplicar[idx];
+    // Find existing lote or create new one
+    var loteExistente = null;
+    for (var i = 0; i < lotes.length; i++) {
+      if (String(lotes[i].med_id) === String(c.medId) && lotes[i].lote === c.lote) {
+        loteExistente = lotes[i];
+        break;
+      }
+    }
+
+    if (loteExistente) {
+      // Update existing lot - add quantity
+      var nuevaExist = Number(loteExistente.existencias) + c.cantidad;
+      apiPost({ accion:'editar_lote', id:loteExistente.id, existencias:nuevaExist, costo:c.valorUnitario }, function(err) {
+        if (!err) procesados++; else errores++;
+        procesarSiguiente(idx + 1);
+      });
+    } else {
+      // Create new lot
+      var medNombre = '';
+      for (var i = 0; i < medicamentos.length; i++) {
+        if (String(medicamentos[i].id) === String(c.medId)) { medNombre = medicamentos[i].nombre; break; }
+      }
+      apiPost({ accion:'agregar_lote', med_id:c.medId, medicamento:medNombre, lote:c.lote, existencias:c.cantidad, costo:c.valorUnitario }, function(err) {
+        if (!err) procesados++; else errores++;
+        procesarSiguiente(idx + 1);
+      });
+    }
+  }
+
+  procesarSiguiente(0);
+}
+
+function entradaAlrt(msg, tipo) {
+  var el = document.getElementById('entrada-alrt');
+  el.className = 'alrt '+(tipo==='s'?'als':tipo==='e'?'ale':'ali');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
 </script>
 </body>
 </html>
