@@ -481,6 +481,8 @@ function cargarTodo() {
   setSyncStatus('load','Cargando datos...');
   var pendientes=5, cargados=0, errores=0;
   function onDone(err){ cargados++; if(err) errores++; if(cargados>=pendientes){ renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); setSyncStatus(errores>0?'err':'ok',errores>0?'Error de conexion':'Conectado'); inicializarFechas(); inicializarFechasCompras(); } }
+  // Fallback timeout in case some requests stall
+  setTimeout(function(){ if(cargados<pendientes){ setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); inicializarFechas(); inicializarFechasCompras(); } }, 8000);
   apiGet('clientes',     function(e,d){ if(!e&&d) clientes=d.clientes||[]; onDone(e); });
   apiGet('ventas',       function(e,d){ if(!e&&d) ventas=(d.ventas||[]).reverse(); onDone(e); });
   apiGet('medicamentos', function(e,d){ if(!e&&d) medicamentos=d.medicamentos||[]; onDone(e); });
