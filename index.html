@@ -39,7 +39,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .panel:last-child{margin-bottom:0}
 .ptitle{font-size:11px;font-weight:600;color:#888;margin-bottom:12px;text-transform:uppercase;letter-spacing:.07em}
 .fr{margin-bottom:10px}
-label{display:block;font-size:13px;color:#555;margin-bottom:3px}
+label{display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:4px}
 input,select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;font-size:13px;font-family:inherit}
 input:focus,select:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px rgba(24,95,165,.1)}
 .btn{padding:8px 16px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#1a1a1a;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
@@ -554,7 +554,7 @@ function renderItems() {
     var bt=it.pago==='Tarjeta MP'?'MP':it.pago==='Transferencia'?'TR':'EF';
     html+='<tr><td title="'+it.nombre+'">'+it.nombre+'</td>';
     html+='<td>'+(it.loteNum?'<span class="lote-badge">'+it.loteNum+'</span>':'—')+'</td>';
-    html+='<td>'+it.qty+'</td>';
+    html+='<td><input type="number" value="'+it.qty+'" min="1" style="width:45px;padding:2px 4px;border:1px solid #ddd;border-radius:4px;font-size:12px;text-align:center" onchange="cambiarQty('+i+',this.value)"/></td>';
     html+='<td>$'+it.precio.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
     html+='<td>$'+it.total.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
     html+='<td><select onchange="cambiarPago('+i+',this.value)" style="font-size:11px;padding:3px 4px;border-radius:6px;border:1px solid #ddd">';
@@ -569,6 +569,23 @@ function renderItems() {
 }
 function del(i){items.splice(i,1);renderItems();}
 function cambiarPago(i,val){items[i].pago=val;}
+function cambiarQty(i,val){
+  var qty=parseInt(val)||1;
+  if(qty<1)qty=1;
+  // Check stock
+  if(items[i].loteId){
+    for(var j=0;j<lotes.length;j++){
+      if(String(lotes[j].id)===String(items[i].loteId)){
+        var stock=Number(lotes[j].existencias);
+        if(qty>stock){qty=stock;alrt('Maximo disponible: '+stock+' pzas','i');}
+        break;
+      }
+    }
+  }
+  items[i].qty=qty;
+  items[i].total=qty*items[i].precio;
+  renderItems();
+}
 
 /* GUARDAR VENTA */
 function genClave(fecha,cliente,folio) {
@@ -608,7 +625,7 @@ function guardar() {
       }
       setSyncStatus('ok','Guardado en Google Sheets');
       // Reload lotes to reflect real inventory
-      apiGet('lotes', function(e,d){ if(!e&&d){ lotes=d.lotes||[]; } });
+      apiGet('lotes', function(e,d){ if(!e&&d){ lotes=d.lotes||[]; onMedChange(); } });
     } else {
       setSyncStatus('err','Guardado solo localmente');
     }
