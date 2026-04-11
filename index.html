@@ -623,17 +623,20 @@ function guardar() {
   var hora=document.getElementById('hor').value;
   var cliente=document.getElementById('cli').value.trim();
   if (!fecha||!cliente||!items.length){alrt('Completa fecha, cliente y al menos un medicamento','i');return;}
-  // Validate stock for all items before saving
+  // Validate stock: recalculate original stock = local stock + already in cart
+  var stockUsado={};
   for(var si=0;si<items.length;si++){
-    if(items[si].loteId){
-      for(var sj=0;sj<lotes.length;sj++){
-        if(String(lotes[sj].id)===String(items[si].loteId)){
-          if(Number(lotes[sj].existencias)<items[si].qty){
-            alrt('Stock insuficiente para '+items[si].nombre+'. Disponible: '+lotes[sj].existencias+' pzas','e');
-            return;
-          }
-          break;
+    if(items[si].loteId) stockUsado[items[si].loteId]=(stockUsado[items[si].loteId]||0)+items[si].qty;
+  }
+  for(var loteKey in stockUsado){
+    for(var sj=0;sj<lotes.length;sj++){
+      if(String(lotes[sj].id)===String(loteKey)){
+        var stockOrig=Number(lotes[sj].existencias)+stockUsado[loteKey];
+        if(stockUsado[loteKey]>stockOrig){
+          alrt('Stock insuficiente. Disponible: '+stockOrig+' pzas','e');
+          return;
         }
+        break;
       }
     }
   }
