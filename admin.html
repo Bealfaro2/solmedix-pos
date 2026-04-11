@@ -482,12 +482,12 @@ function cargarTodo() {
   var pendientes=5, cargados=0, errores=0;
   function onDone(err){ cargados++; if(err) errores++; if(cargados>=pendientes){ renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); setSyncStatus(errores>0?'err':'ok',errores>0?'Error de conexion':'Conectado'); inicializarFechas(); inicializarFechasCompras(); } }
   // Fallback timeout in case some requests stall
-  setTimeout(function(){ if(cargados<pendientes){ setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); inicializarFechas(); inicializarFechasCompras(); } }, 8000);
+  setTimeout(function(){ if(cargados<pendientes){ setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); inicializarFechas(); inicializarFechasCompras(); } }, 5000);
   apiGet('clientes',     function(e,d){ if(!e&&d) clientes=d.clientes||[]; onDone(e); });
   apiGet('ventas',       function(e,d){ if(!e&&d) ventas=(d.ventas||[]).reverse(); onDone(e); });
   apiGet('medicamentos', function(e,d){ if(!e&&d) medicamentos=d.medicamentos||[]; onDone(e); });
   apiGet('lotes',        function(e,d){ if(!e&&d) lotes=d.lotes||[]; onDone(e); });
-  apiGet('compras',      function(e,d){ if(!e&&d) compras=d.compras||[]; onDone(e); });
+  apiGet('compras',      function(e,d){ compras=(d&&d.compras)||[]; onDone(null); }); // always succeed
 }
 
 function setSyncStatus(t,m){ var el=document.getElementById('sync-status'); el.className='sync sync-'+(t==='ok'?'ok':t==='err'?'err':'load'); el.textContent=m; }
