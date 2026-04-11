@@ -39,7 +39,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .panel:last-child{margin-bottom:0}
 .ptitle{font-size:11px;font-weight:600;color:#888;margin-bottom:12px;text-transform:uppercase;letter-spacing:.07em}
 .fr{margin-bottom:10px}
-label{display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:4px}
+label{display:block;font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:5px}
 input,select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;font-size:13px;font-family:inherit}
 input:focus,select:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px rgba(24,95,165,.1)}
 .btn{padding:8px 16px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#1a1a1a;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
@@ -530,6 +530,16 @@ function addItem() {
   if (!precio) { alrt('Ingresa el precio unitario','i'); return; }
   if (!pago) { alrt('Selecciona la forma de pago','i'); return; }
   items.push({nombre:nombre,loteId:loteId,loteNum:loteNum,qty:qty,precio:precio,pago:pago,total:qty*precio});
+  // Temporarily reduce local stock to prevent double-selling
+  if(loteId){
+    for(var lk=0;lk<lotes.length;lk++){
+      if(String(lotes[lk].id)===String(loteId)){
+        lotes[lk].existencias=Number(lotes[lk].existencias)-qty;
+        if(lotes[lk].existencias<0)lotes[lk].existencias=0;
+        break;
+      }
+    }
+  }
   renderItems();
   document.getElementById('msel').value='';
   document.getElementById('pre').value='';
@@ -567,7 +577,19 @@ function renderItems() {
   var total=0; for (var k=0;k<items.length;k++) total+=items[k].total;
   document.getElementById('tdis').textContent='$'+total.toLocaleString('es-MX',{minimumFractionDigits:2});
 }
-function del(i){items.splice(i,1);renderItems();}
+function del(i){
+  var it=items[i];
+  // Restore local stock
+  if(it.loteId){
+    for(var lk=0;lk<lotes.length;lk++){
+      if(String(lotes[lk].id)===String(it.loteId)){
+        lotes[lk].existencias=Number(lotes[lk].existencias)+it.qty;
+        break;
+      }
+    }
+  }
+  items.splice(i,1);renderItems();
+}
 function cambiarPago(i,val){items[i].pago=val;}
 function cambiarQty(i,val){
   var qty=parseInt(val)||1;
@@ -601,6 +623,20 @@ function guardar() {
   var hora=document.getElementById('hor').value;
   var cliente=document.getElementById('cli').value.trim();
   if (!fecha||!cliente||!items.length){alrt('Completa fecha, cliente y al menos un medicamento','i');return;}
+  // Validate stock for all items before saving
+  for(var si=0;si<items.length;si++){
+    if(items[si].loteId){
+      for(var sj=0;sj<lotes.length;sj++){
+        if(String(lotes[sj].id)===String(items[si].loteId)){
+          if(Number(lotes[sj].existencias)<items[si].qty){
+            alrt('Stock insuficiente para '+items[si].nombre+'. Disponible: '+lotes[sj].existencias+' pzas','e');
+            return;
+          }
+          break;
+        }
+      }
+    }
+  }
   var btn=document.getElementById('btn-guardar');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
   var folio=ventas.length+1;
@@ -609,11 +645,11 @@ function guardar() {
 
   apiPost({accion:'guardar_venta',fecha:fecha,hora:hora,cliente:cliente,total:total,clave:v.clave,sucursal:sucursal,items:items}, function(err) {
     if (!err) {
-      // Descontar lotes localmente
+      // Lotes already deducted locally when items were added
       for (var i=0;i<items.length;i++) {
         if (items[i].loteId) {
           for (var j=0;j<lotes.length;j++) {
-            if (String(lotes[j].id)===String(items[i].loteId)) { lotes[j].existencias=Number(lotes[j].existencias)-items[i].qty; break; }
+            if (String(lotes[j].id)===String(items[i].loteId)) { break; }
           }
           // Descontar en Google Sheets via JSONP
           (function(lid, qty){
@@ -624,8 +660,10 @@ function guardar() {
         }
       }
       setSyncStatus('ok','Guardado en Google Sheets');
-      // Reload lotes to reflect real inventory
-      apiGet('lotes', function(e,d){ if(!e&&d){ lotes=d.lotes||[]; onMedChange(); } });
+      // Reload lotes after short delay to get server state
+      setTimeout(function(){
+        apiGet('lotes', function(e,d){ if(!e&&d){ lotes=d.lotes||[]; } });
+      }, 2000);
     } else {
       setSyncStatus('err','Guardado solo localmente');
     }
