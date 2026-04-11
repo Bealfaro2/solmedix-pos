@@ -628,7 +628,7 @@ function imprimir(){
   var txt=pre?pre.textContent:'';
   var safe=txt.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   var w=window.open('','_blank','width=400,height=750');
-  w.document.write('<!DOCTYPE html><html><head><title>Ticket #'+String(vActual.id).padStart(4,'0')+'</title><style>@page{size:80mm auto;margin:3mm 4mm}body{font-family:Courier New,monospace;font-size:10pt;color:#000;margin:0;padding:0;width:72mm}img{display:block;margin:0 auto 5px;max-width:200px}pre{white-space:pre-wrap;font-family:inherit;font-size:inherit;margin:0;line-height:1.5}.ref{text-align:center;font-weight:bold;font-size:10pt;margin:2px 0}</style></head><body><img src="'+LOGO+'" alt="Solmedix"/><pre>'+safe+'</pre><div class="ref">Mateo 8:17</div></body></html>');
+  w.document.write('<!DOCTYPE html><html><head><title>Ticket #'+String(vActual.id).padStart(4,'0')+'</title><style>@page{size:80mm auto;margin:3mm 4mm}body{font-family:Courier New,monospace;font-size:10pt;color:#000;margin:0;padding:0;width:72mm}img{display:block;margin:0 auto 5px;max-width:200px}pre{white-space:pre-wrap;font-family:inherit;font-size:inherit;margin:0;line-height:1.5}.ref{text-align:center;font-weight:bold;font-size:10pt;margin:2px 0}</style></head><body><img src="'+LOGO_BN+'" alt="Solmedix"/><pre>'+safe+'</pre><div class="ref">Mateo 8:17</div></body></html>');
   w.document.close(); setTimeout(function(){w.focus();w.print();},600);
 }
 
