@@ -813,7 +813,14 @@ function renderHist(){
 }
 
 function ver(id){
-  for(var i=0;i<ventas.length;i++){if(String(ventas[i].id)===String(id)){vActual=ventas[i];renderTicket(ventas[i]);window.scrollTo({top:0,behavior:'smooth'});return;}}
+  for(var i=0;i<ventas.length;i++){
+    if(String(ventas[i].id)===String(id)){
+      vActual=ventas[i];
+      mostrarClave(ventas[i]);
+      window.scrollTo({top:0,behavior:'smooth'});
+      return;
+    }
+  }
 }
 
 function buscar(){
