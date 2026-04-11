@@ -110,6 +110,7 @@ input:focus,select:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px 
     <button class="nav-tab"    id="nt-lotes"     onclick="navTab('lotes')">Inventario</button>
     <button class="nav-tab"    id="nt-inv"       onclick="navTab('inv')">Reporte Inventario</button>
     <button class="nav-tab"    id="nt-entrada"   onclick="navTab('entrada')">Entrada Inventario</button>
+    <button class="nav-tab"    id="nt-compras"   onclick="navTab('compras')">Reporte Compras</button>
   </div>
 
   <!-- REPORTE -->
@@ -297,6 +298,53 @@ input:focus,select:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px 
     </div>
   </div>
 
+  <!-- REPORTE DE COMPRAS -->
+  <div id="sec-compras" style="display:none">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="ptitle" style="margin:0">Reporte de compras</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btns btno" onclick="exportarComprasCSV()">Exportar CSV</button>
+          <button class="btn btns btno" onclick="exportarComprasPDF()">Exportar PDF</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:flex-end;margin-bottom:12px">
+        <div><label>Fecha inicio</label><input type="date" id="c-desde"/></div>
+        <div><label>Fecha fin</label><input type="date" id="c-hasta"/></div>
+        <div><label>Proveedor</label>
+          <select id="c-prov">
+            <option value="">Todos los proveedores</option>
+          </select>
+        </div>
+        <div><button class="btn btnp" onclick="filtrarCompras()">Filtrar</button></div>
+      </div>
+      <div id="compras-stats" style="margin-bottom:12px"></div>
+      <div style="overflow-x:auto">
+        <table class="tbl">
+          <thead><tr>
+            <th>Fecha</th><th>Proveedor</th><th>Folio</th>
+            <th>Medicamento</th><th>Lote</th>
+            <th style="text-align:right">Cant.</th>
+            <th style="text-align:right">Costo unit.</th>
+            <th style="text-align:right">Importe</th>
+          </tr></thead>
+          <tbody id="compras-body"></tbody>
+          <tfoot id="compras-foot"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <div class="ptitle">Trazabilidad por lote</div>
+      <p style="font-size:13px;color:#555;margin-bottom:12px">Busca un numero de lote para ver de que proveedor se compro y a que clientes se vendio.</p>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:flex-end;margin-bottom:12px">
+        <div><label>Numero de lote</label><input type="text" id="traz-lote" placeholder="Ej: M2600711" style="font-family:monospace"/></div>
+        <div><button class="btn btnp" onclick="buscarTrazabilidad()">Buscar</button></div>
+      </div>
+      <div id="traz-result"></div>
+    </div>
+  </div>
+
 </div>
 
 <!-- Modal medicamento -->
@@ -378,7 +426,7 @@ input:focus,select:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px 
 <script>
 var API_URL = 'https://script.google.com/macros/s/AKfycbyCRC2nLoBybekYy0THrABObIGAZ4oPiM1Y0NwT1N0gQNBwU77nsCziB3p9n2RrRvyZ/exec';
 var PWD_HASH = btoa('Suzuki18&');
-var ventas=[], clientes=[], medicamentos=[], lotes=[];
+var ventas=[], clientes=[], medicamentos=[], lotes=[], compras=[];
 var ventaABorrar=null;
 
 /* LOGIN */
@@ -432,24 +480,31 @@ function apiPost(data, callback) {
 function cargarTodo() {
   setSyncStatus('load','Cargando datos...');
   var pendientes=4, cargados=0;
-  function onDone(){ cargados++; if(cargados>=pendientes){ renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); setSyncStatus('ok','Datos cargados'); inicializarFechas(); } }
+  function onDone(){ cargados++; if(cargados>=pendientes){ renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); setSyncStatus('ok','Conectado'); inicializarFechas(); inicializarFechasCompras(); } }
   apiGet('clientes',     function(e,d){ if(!e&&d) clientes=d.clientes||[]; onDone(); });
   apiGet('ventas',       function(e,d){ if(!e&&d) ventas=(d.ventas||[]).reverse(); onDone(); });
   apiGet('medicamentos', function(e,d){ if(!e&&d) medicamentos=d.medicamentos||[]; onDone(); });
   apiGet('lotes',        function(e,d){ if(!e&&d) lotes=d.lotes||[]; onDone(); });
+  apiGet('compras',      function(e,d){ if(!e&&d) compras=d.compras||[]; });
 }
 
 function setSyncStatus(t,m){ var el=document.getElementById('sync-status'); el.className='sync sync-'+(t==='ok'?'ok':t==='err'?'err':'load'); el.textContent=m; }
 
 /* NAV */
 function navTab(t) {
-  ['reporte','meds','clientes','ventas','lotes','inv','entrada'].forEach(function(x){
+  ['reporte','meds','clientes','ventas','lotes','inv','entrada','compras'].forEach(function(x){
     document.getElementById('sec-'+x).style.display=t===x?'block':'none';
     document.getElementById('nt-'+x).className='nav-tab'+(t===x?' on':'');
   });
 }
 
 /* REPORTE */
+function inicializarFechasCompras(){
+  var hoy=new Date(), inicio=new Date(hoy.getFullYear(),hoy.getMonth(),1);
+  document.getElementById('c-hasta').value=hoy.toISOString().split('T')[0];
+  document.getElementById('c-desde').value=inicio.toISOString().split('T')[0];
+}
+
 function inicializarFechas(){
   var hoy=new Date(), inicio=new Date(hoy.getFullYear(),hoy.getMonth(),1);
   document.getElementById('r-hasta').value=hoy.toISOString().split('T')[0];
@@ -816,19 +871,24 @@ function aplicarEntrada() {
       }
     }
 
+    var medNombre = '';
+    for (var ii = 0; ii < medicamentos.length; ii++) {
+      if (String(medicamentos[ii].id) === String(c.medId)) { medNombre = medicamentos[ii].nombre; break; }
+    }
+
+    // Register compra
+    apiPost({ accion:'registrar_compra', fecha:xmlFacturaInfo.fecha, proveedor:xmlFacturaInfo.proveedor,
+      rfc_proveedor:xmlFacturaInfo.rfcProv, folio:xmlFacturaInfo.folio, uuid:xmlFacturaInfo.uuid,
+      med_id:c.medId, medicamento:medNombre, lote:c.lote, cantidad:c.cantidad,
+      costo_unitario:c.valorUnitario, importe:c.cantidad*c.valorUnitario }, function(){});
+
     if (loteExistente) {
-      // Update existing lot - add quantity
       var nuevaExist = Number(loteExistente.existencias) + c.cantidad;
       apiPost({ accion:'editar_lote', id:loteExistente.id, existencias:nuevaExist, costo:c.valorUnitario }, function(err) {
         if (!err) procesados++; else errores++;
         procesarSiguiente(idx + 1);
       });
     } else {
-      // Create new lot
-      var medNombre = '';
-      for (var i = 0; i < medicamentos.length; i++) {
-        if (String(medicamentos[i].id) === String(c.medId)) { medNombre = medicamentos[i].nombre; break; }
-      }
       apiPost({ accion:'agregar_lote', med_id:c.medId, medicamento:medNombre, lote:c.lote, existencias:c.cantidad, costo:c.valorUnitario }, function(err) {
         if (!err) procesados++; else errores++;
         procesarSiguiente(idx + 1);
@@ -844,6 +904,162 @@ function entradaAlrt(msg, tipo) {
   el.className = 'alrt '+(tipo==='s'?'als':tipo==='e'?'ale':'ali');
   el.textContent = msg;
   el.style.display = 'block';
+}
+
+
+/* ═══════════════════════════════════════════════
+   REPORTE DE COMPRAS Y TRAZABILIDAD
+═══════════════════════════════════════════════ */
+function renderCompras(lista) {
+  var src = lista || compras;
+  // Populate proveedor filter
+  var provs = {};
+  for (var i=0;i<compras.length;i++) provs[compras[i].proveedor] = true;
+  var sel = document.getElementById('c-prov');
+  var curVal = sel.value;
+  sel.innerHTML = '<option value="">Todos los proveedores</option>';
+  Object.keys(provs).sort().forEach(function(p){ sel.innerHTML += '<option value="'+p+'"'+(p===curVal?' selected':'')+'>'+p+'</option>'; });
+
+  if (!src.length) {
+    document.getElementById('compras-body').innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px">Sin compras registradas</td></tr>';
+    document.getElementById('compras-stats').innerHTML = '';
+    document.getElementById('compras-foot').innerHTML = '';
+    return;
+  }
+
+  var totalImporte=0, totalPiezas=0;
+  var html='';
+  for (var i=0;i<src.length;i++) {
+    var c=src[i];
+    var fecha=c.fecha?String(c.fecha).split('T')[0].split('-').reverse().join('/'):'';
+    var imp=Number(c.importe)||0;
+    var cant=Number(c.cantidad)||0;
+    totalImporte+=imp; totalPiezas+=cant;
+    var bg=i%2===0?'#fff':'#fafaf8';
+    html+='<tr style="background:'+bg+'"><td>'+fecha+'</td><td style="font-weight:500">'+c.proveedor+'</td>';
+    html+='<td style="font-family:monospace;font-size:11px">'+c.folio+'</td>';
+    html+='<td>'+c.medicamento+'</td>';
+    html+='<td style="font-family:monospace;font-size:11px">'+c.lote+'</td>';
+    html+='<td style="text-align:right">'+cant+'</td>';
+    html+='<td style="text-align:right">$'+Number(c.costo_unitario).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    html+='<td style="text-align:right;font-weight:600">$'+imp.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
+  }
+  document.getElementById('compras-body').innerHTML = html;
+  document.getElementById('compras-foot').innerHTML = '<tr style="background:#f0ede6;font-weight:600"><td colspan="5">TOTALES</td><td style="text-align:right">'+totalPiezas+' pzas</td><td></td><td style="text-align:right">$'+totalImporte.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
+
+  // Stats
+  var provCount = {};
+  for (var i=0;i<src.length;i++) { provCount[src[i].proveedor] = (provCount[src[i].proveedor]||0) + Number(src[i].importe); }
+  var statsHtml = '<div class="reporte-header">';
+  statsHtml += '<div class="stat-card"><div class="stat-label">Registros</div><div class="stat-value">'+src.length+'</div></div>';
+  statsHtml += '<div class="stat-card"><div class="stat-label">Total compras</div><div class="stat-value">$'+totalImporte.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div></div>';
+  statsHtml += '<div class="stat-card"><div class="stat-label">Total piezas</div><div class="stat-value">'+totalPiezas+'</div></div>';
+  statsHtml += '</div>';
+  document.getElementById('compras-stats').innerHTML = statsHtml;
+  window._comprasData = src;
+}
+
+function filtrarCompras() {
+  var desde = document.getElementById('c-desde').value;
+  var hasta = document.getElementById('c-hasta').value;
+  var prov  = document.getElementById('c-prov').value;
+  var src = compras.filter(function(c) {
+    var fecha = String(c.fecha).split('T')[0];
+    var ok = true;
+    if (desde && fecha < desde) ok = false;
+    if (hasta && fecha > hasta) ok = false;
+    if (prov && c.proveedor !== prov) ok = false;
+    return ok;
+  });
+  renderCompras(src);
+}
+
+function buscarTrazabilidad() {
+  var loteQuery = document.getElementById('traz-lote').value.trim().toUpperCase();
+  var cont = document.getElementById('traz-result');
+  if (!loteQuery) { cont.innerHTML = '<div class="es">Ingresa un numero de lote</div>'; return; }
+
+  // Buscar en compras
+  var comprasLote = compras.filter(function(c){ return String(c.lote).toUpperCase() === loteQuery; });
+  // Buscar en ventas (ventas_detalle via items)
+  var ventasLote = [];
+  for (var i=0;i<ventas.length;i++) {
+    var v = ventas[i];
+    for (var j=0;j<(v.items||[]).length;j++) {
+      if (String(v.items[j].loteNum||'').toUpperCase() === loteQuery) {
+        ventasLote.push({ venta:v, item:v.items[j] });
+      }
+    }
+  }
+
+  if (!comprasLote.length && !ventasLote.length) {
+    cont.innerHTML = '<div class="es">No se encontro informacion para el lote <strong>'+loteQuery+'</strong></div>';
+    return;
+  }
+
+  var html = '';
+
+  if (comprasLote.length) {
+    html += '<div style="margin-bottom:16px"><div style="font-weight:600;font-size:13px;color:#185FA5;margin-bottom:8px">Compra — Proveedor</div>';
+    html += '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Fecha</th><th>Proveedor</th><th>Folio</th><th>Medicamento</th><th style="text-align:right">Cant.</th><th style="text-align:right">Costo unit.</th></tr></thead><tbody>';
+    for (var i=0;i<comprasLote.length;i++) {
+      var c=comprasLote[i];
+      var fecha=String(c.fecha).split('T')[0].split('-').reverse().join('/');
+      html+='<tr><td>'+fecha+'</td><td><strong>'+c.proveedor+'</strong></td><td style="font-family:monospace">'+c.folio+'</td><td>'+c.medicamento+'</td><td style="text-align:right">'+c.cantidad+'</td><td style="text-align:right">$'+Number(c.costo_unitario).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
+    }
+    html += '</tbody></table></div></div>';
+  }
+
+  if (ventasLote.length) {
+    html += '<div><div style="font-weight:600;font-size:13px;color:#166534;margin-bottom:8px">Ventas — Clientes</div>';
+    html += '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Medicamento</th><th style="text-align:right">Cant.</th><th style="text-align:right">Precio venta</th></tr></thead><tbody>';
+    for (var i=0;i<ventasLote.length;i++) {
+      var v=ventasLote[i].venta, it=ventasLote[i].item;
+      var fecha=String(v.fecha).split('T')[0].split('-').reverse().join('/');
+      html+='<tr><td>#'+String(v.id).padStart(4,'0')+'</td><td>'+fecha+'</td><td><strong>'+v.cliente+'</strong></td><td>'+it.nombre+'</td><td style="text-align:right">'+it.qty+'</td><td style="text-align:right">$'+Number(it.precio).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
+    }
+    html += '</tbody></table></div></div>';
+  } else if (comprasLote.length) {
+    html += '<div style="background:#f9f8f5;border-radius:8px;padding:10px 12px;font-size:13px;color:#888">Este lote aun no tiene ventas registradas.</div>';
+  }
+
+  cont.innerHTML = html;
+}
+
+function exportarComprasCSV() {
+  var src = window._comprasData || compras;
+  if (!src.length) { alert('No hay datos para exportar'); return; }
+  var q = function(s){ return String(s||'').split(',').join(' '); };
+  var lines = ['Fecha,Proveedor,RFC,Folio,UUID,Medicamento,Lote,Cantidad,Costo unitario,Importe'];
+  for (var i=0;i<src.length;i++) {
+    var c=src[i];
+    var fecha=String(c.fecha).split('T')[0];
+    lines.push([fecha,q(c.proveedor),q(c.rfc_proveedor),q(c.folio),q(c.uuid),q(c.medicamento),q(c.lote),c.cantidad,c.costo_unitario,c.importe].join(','));
+  }
+  var blob = new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Solmedix_Compras_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+}
+
+function exportarComprasPDF() {
+  var src = window._comprasData || compras;
+  if (!src.length) { alert('No hay datos para exportar'); return; }
+  var totalImporte=0;
+  var filas = src.map(function(c,i){
+    var fecha=String(c.fecha).split('T')[0].split('-').reverse().join('/');
+    var imp=Number(c.importe)||0; totalImporte+=imp;
+    var bg=i%2===0?'#fff':'#f9f9f9';
+    return '<tr style="background:'+bg+'"><td>'+fecha+'</td><td>'+c.proveedor+'</td><td style="font-family:monospace">'+c.folio+'</td><td>'+c.medicamento+'</td><td style="font-family:monospace">'+c.lote+'</td><td style="text-align:right">'+c.cantidad+'</td><td style="text-align:right">$'+Number(c.costo_unitario).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td><td style="text-align:right;font-weight:bold">$'+imp.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
+  }).join('');
+  var w = window.open('','_blank','width=1000,height=700');
+  w.document.write('<!DOCTYPE html><html><head><title>Compras Solmedix</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;font-size:10px}h1{font-size:15px;margin-bottom:4px}h2{font-size:11px;color:#555;margin-bottom:10px}table{width:100%;border-collapse:collapse}th{background:#185FA5;color:#fff;padding:5px 7px;text-align:left;font-size:9px}td{padding:4px 7px;border-bottom:1px solid #eee;font-size:9px}tfoot td{background:#f0ede6;font-weight:bold;border-top:2px solid #185FA5}@media print{button{display:none}}</style></head><body>');
+  w.document.write('<h1>Solmedix — Reporte de Compras</h1><h2>'+src.length+' registros | Total: $'+totalImporte.toLocaleString('es-MX',{minimumFractionDigits:2})+'</h2>');
+  w.document.write('<table><thead><tr><th>Fecha</th><th>Proveedor</th><th>Folio</th><th>Medicamento</th><th>Lote</th><th style="text-align:right">Cant.</th><th style="text-align:right">Costo unit.</th><th style="text-align:right">Importe</th></tr></thead><tbody>'+filas+'</tbody><tfoot><tr><td colspan="7">TOTAL</td><td style="text-align:right">$'+totalImporte.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr></tfoot></table>');
+  w.document.write('</body></html>');
+  w.document.close();
+  setTimeout(function(){ w.print(); }, 600);
 }
 
 </script>
