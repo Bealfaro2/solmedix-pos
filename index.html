@@ -170,6 +170,7 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
         <div><label>Cantidad</label><input type="number" id="qty" value="1" min="1" oninput="validarCantidad()"/></div>
         <div><label>Forma de pago</label>
           <select id="pag">
+            <option value="">-- Seleccionar --</option>
             <option>Tarjeta MP</option><option>Transferencia</option><option>Efectivo</option>
           </select>
         </div>
@@ -481,6 +482,7 @@ function addItem() {
     if (loteId) { for (var j=0;j<lotes.length;j++) { if (String(lotes[j].id)===String(loteId)) { loteNum=lotes[j].lote; break; } } }
   } else { alrt('Selecciona un medicamento','i'); return; }
   if (!precio) { alrt('Ingresa el precio unitario','i'); return; }
+  if (!pago) { alrt('Selecciona la forma de pago','i'); return; }
   items.push({nombre:nombre,loteId:loteId,loteNum:loteNum,qty:qty,precio:precio,pago:pago,total:qty*precio});
   renderItems();
   document.getElementById('msel').value='';
@@ -492,6 +494,7 @@ function addItem() {
   document.getElementById('cnom').value='';
   document.getElementById('lsel').innerHTML='<option value="">Seleccionar lote...</option>';
   document.getElementById('stock-info').textContent='';
+  document.getElementById('pag').value='';
 }
 
 function renderItems() {
