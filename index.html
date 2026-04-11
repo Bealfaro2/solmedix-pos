@@ -150,7 +150,11 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
       <div class="sep"></div>
       <div class="ptitle" style="font-size:11px;margin-bottom:8px">Agregar medicamento</div>
       <div class="fr">
-        <label>Medicamento</label>
+        <label>Escanear codigo de barras</label>
+        <input type="text" id="barcode" placeholder="Escanea o escribe el codigo..." autocomplete="off" oninput="onBarcodeInput()" style="font-family:monospace"/>
+      </div>
+      <div class="fr">
+        <label>o seleccionar por nombre</label>
         <select id="msel" onchange="onMedChange()">
           <option value="">Cargando medicamentos...</option>
         </select>
@@ -182,9 +186,9 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
       <div id="eitem" class="es" style="padding:.8rem 0;font-size:12px">Agrega medicamentos a la venta</div>
       <table class="it" id="itab" style="display:none">
         <thead><tr>
-          <th style="width:34%">Medicamento</th><th style="width:14%">Lote</th>
-          <th style="width:8%">Cant</th><th style="width:13%">P.U.</th>
-          <th style="width:13%">Total</th><th style="width:10%">Pago</th><th style="width:8%"></th>
+          <th style="width:30%">Medicamento</th><th style="width:13%">Lote</th>
+          <th style="width:7%">Cant</th><th style="width:12%">P.U.</th>
+          <th style="width:12%">Total</th><th style="width:18%">Pago</th><th style="width:8%"></th>
         </tr></thead>
         <tbody id="ibody"></tbody>
       </table>
@@ -228,19 +232,20 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
 
   <div>
     <div class="panel">
-      <div class="ptitle">Ticket 80mm</div>
-      <div class="tw" id="tw">
-        <div class="es" style="width:100%">Guarda una venta para<br>ver el ticket aqui</div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
-        <button class="btn btns" id="bimp" style="display:none" onclick="imprimir()">Imprimir</button>
-        <button class="btn btns" id="bcla" style="display:none" onclick="copiar()">Copiar clave</button>
+      <div style="text-align:center;padding:1rem 0">
+        <img id="logo-panel" src="" alt="Solmedix" style="max-width:220px;display:block;margin:0 auto 1rem"/>
+        <div style="font-size:12px;color:#888;margin-bottom:4px">RFC: SSM180928AQ7</div>
+        <div style="font-size:11px;color:#aaa">www.solmedixfarmacia.com</div>
       </div>
       <div id="infoc" style="display:none">
         <div class="clave-box">
           <strong>Clave para facturacion</strong>
           <span class="cv" id="ctxt"></span>
           <small>El cliente ingresa esta clave en<br>www.solmedixfarmacia.com para su CFDI.</small>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end">
+          <button class="btn btns" id="bimp" onclick="imprimir()">Imprimir ticket</button>
+          <button class="btn btns" id="bcla" onclick="copiar()">Copiar clave</button>
         </div>
       </div>
     </div>
@@ -278,6 +283,7 @@ var vActual=null, acIdx=-1;
 var pendientes=0, cargados=0;
 
 document.getElementById('logo-inicio').src = LOGO;
+document.getElementById('logo-panel').src = LOGO;
 
 /* JSONP — resuelve CORS con Apps Script */
 function jsonp(url, callback) {
@@ -387,6 +393,38 @@ function setSyncStatus(t,m) {
 }
 
 /* SELECTOR MEDICAMENTOS */
+function onBarcodeInput() {
+  var code = document.getElementById('barcode').value.trim();
+  if (!code) return;
+  // Search by barcode in medicamentos
+  for (var i=0;i<medicamentos.length;i++) {
+    if (String(medicamentos[i].codigo_barras||'') === code) {
+      // Found - select it
+      document.getElementById('msel').value = medicamentos[i].id;
+      onMedChange();
+      document.getElementById('barcode').value = '';
+      // Focus on qty
+      setTimeout(function(){ document.getElementById('qty').focus(); document.getElementById('qty').select(); }, 100);
+      return;
+    }
+  }
+  // If Enter was pressed (code ends with no partial match) show alert
+  if (code.length >= 6) {
+    // Try partial match
+    var found = false;
+    for (var i=0;i<medicamentos.length;i++) {
+      if (String(medicamentos[i].codigo_barras||'').indexOf(code) >= 0) {
+        document.getElementById('msel').value = medicamentos[i].id;
+        onMedChange();
+        document.getElementById('barcode').value = '';
+        found = true;
+        break;
+      }
+    }
+    if (!found) alrt('Codigo no encontrado: ' + code + '. Verifica el catalogo.','e');
+  }
+}
+
 function cargarSelectMeds() {
   var cats = {};
   for (var i=0;i<medicamentos.length;i++) {
@@ -513,7 +551,10 @@ function renderItems() {
     html+='<td>'+it.qty+'</td>';
     html+='<td>$'+it.precio.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
     html+='<td>$'+it.total.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
-    html+='<td><span class="badge '+bc+'">'+bt+'</span></td>';
+    html+='<td><select onchange="cambiarPago('+i+',this.value)" style="font-size:11px;padding:3px 4px;border-radius:6px;border:1px solid #ddd">';
+    var pagoOpts=['Tarjeta MP','Transferencia','Efectivo'];
+    for(var p=0;p<pagoOpts.length;p++) html+='<option'+(it.pago===pagoOpts[p]?' selected':'')+'>'+pagoOpts[p]+'</option>';
+    html+='</select></td>';
     html+='<td><button class="btn btns btnd" onclick="del('+i+')">x</button></td></tr>';
   }
   document.getElementById('ibody').innerHTML=html;
@@ -521,6 +562,7 @@ function renderItems() {
   document.getElementById('tdis').textContent='$'+total.toLocaleString('es-MX',{minimumFractionDigits:2});
 }
 function del(i){items.splice(i,1);renderItems();}
+function cambiarPago(i,val){items[i].pago=val;}
 
 /* GUARDAR VENTA */
 function genClave(fecha,cliente,folio) {
@@ -568,12 +610,18 @@ function guardar() {
   for (var c=0;c<clientes.length;c++) { if ((clientes[c].nombre||clientes[c]).toLowerCase()===cliente.toLowerCase()){found=true;break;} }
   if (!found) { clientes.push({nombre:cliente}); renderListaClientes(); }
   ventas.unshift(v); vActual=v;
-  renderHist(); renderTicket(v); limpiar();
+  renderHist(); mostrarClave(v); limpiar();
   alrt('Venta guardada. Ticket generado.','s');
   btn.disabled=false; btn.textContent='Guardar y generar ticket';
 }
 
-function limpiar(){items=[];renderItems();document.getElementById('cli').value='';}
+function limpiar(){items=[];renderItems();document.getElementById('cli').value='';document.getElementById('barcode').value='';}
+
+function mostrarClave(v) {
+  document.getElementById('infoc').style.display = 'block';
+  document.getElementById('ctxt').textContent = v.clave;
+  vActual = v;
+}
 
 /* TICKET */
 function ff(f){if(!f)return'';var p=String(f).split('T')[0].split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:f;}
