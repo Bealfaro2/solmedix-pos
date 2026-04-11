@@ -496,6 +496,9 @@ function navTab(t) {
     document.getElementById('sec-'+x).style.display=t===x?'block':'none';
     document.getElementById('nt-'+x).className='nav-tab'+(t===x?' on':'');
   });
+  if(t==='c') renderClientesAdmin();
+  if(t==='inv') renderInventario();
+  if(t==='compras') renderCompras();
 }
 
 /* REPORTE */
