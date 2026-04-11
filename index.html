@@ -545,8 +545,12 @@ function guardar() {
           for (var j=0;j<lotes.length;j++) {
             if (String(lotes[j].id)===String(items[i].loteId)) { lotes[j].existencias=Number(lotes[j].existencias)-items[i].qty; break; }
           }
-          // Descontar en Google Sheets
-          apiPost({accion:'descontar_lote', lote_id:items[i].loteId, cantidad:items[i].qty}, function(err2){});
+          // Descontar en Google Sheets via JSONP
+          (function(lid, qty){
+            jsonp(API_URL+'?accion=descontar_lote&lote_id='+lid+'&cantidad='+qty, function(err2, res){
+              if(!err2 && res && res.ok) console.log('Lote descontado:', lid, 'nueva existencia:', res.nuevaExistencia);
+            });
+          })(items[i].loteId, items[i].qty);
         }
       }
       setSyncStatus('ok','Guardado en Google Sheets');
