@@ -529,17 +529,24 @@ function addItem() {
   } else { alrt('Selecciona un medicamento','i'); return; }
   if (!precio) { alrt('Ingresa el precio unitario','i'); return; }
   if (!pago) { alrt('Selecciona la forma de pago','i'); return; }
-  items.push({nombre:nombre,loteId:loteId,loteNum:loteNum,qty:qty,precio:precio,pago:pago,total:qty*precio});
-  // Temporarily reduce local stock to prevent double-selling
+  // Check stock before adding - consider what's already in cart
   if(loteId){
+    var yaEnCarrito=0;
+    for(var ci=0;ci<items.length;ci++){
+      if(String(items[ci].loteId)===String(loteId)) yaEnCarrito+=items[ci].qty;
+    }
     for(var lk=0;lk<lotes.length;lk++){
       if(String(lotes[lk].id)===String(loteId)){
-        lotes[lk].existencias=Number(lotes[lk].existencias)-qty;
-        if(lotes[lk].existencias<0)lotes[lk].existencias=0;
+        var stockDisp=Number(lotes[lk].existencias)-yaEnCarrito;
+        if(qty>stockDisp){
+          alrt('Stock insuficiente. Solo hay '+(stockDisp>0?stockDisp:0)+' pza(s) disponibles.','e');
+          return;
+        }
         break;
       }
     }
   }
+  items.push({nombre:nombre,loteId:loteId,loteNum:loteNum,qty:qty,precio:precio,pago:pago,total:qty*precio});
   renderItems();
   document.getElementById('msel').value='';
   document.getElementById('pre').value='';
