@@ -475,6 +475,9 @@ function addItem() {
     if (!nombre) { alrt('Ingresa el nombre del medicamento','i'); return; }
   } else if (medId) {
     for (var i=0;i<medicamentos.length;i++) { if (String(medicamentos[i].id)===String(medId)) { nombre=medicamentos[i].nombre; break; } }
+    // Verificar si hay lotes disponibles y si se seleccionó uno
+    var lotesDisp=lotes.filter(function(l){return String(l.med_id)===String(medId)&&Number(l.existencias)>0;});
+    if (lotesDisp.length>0 && !loteId) { alrt('Debes seleccionar el lote del medicamento','e'); return; }
     if (loteId) { for (var j=0;j<lotes.length;j++) { if (String(lotes[j].id)===String(loteId)) { loteNum=lotes[j].lote; break; } } }
   } else { alrt('Selecciona un medicamento','i'); return; }
   if (!precio) { alrt('Ingresa el precio unitario','i'); return; }
@@ -536,11 +539,14 @@ function guardar() {
 
   apiPost({accion:'guardar_venta',fecha:fecha,hora:hora,cliente:cliente,total:total,clave:v.clave,sucursal:sucursal,items:items}, function(err) {
     if (!err) {
+      // Descontar lotes localmente
       for (var i=0;i<items.length;i++) {
         if (items[i].loteId) {
           for (var j=0;j<lotes.length;j++) {
             if (String(lotes[j].id)===String(items[i].loteId)) { lotes[j].existencias=Number(lotes[j].existencias)-items[i].qty; break; }
           }
+          // Descontar en Google Sheets
+          apiPost({accion:'descontar_lote', lote_id:items[i].loteId, cantidad:items[i].qty}, function(err2){});
         }
       }
       setSyncStatus('ok','Guardado en Google Sheets');
