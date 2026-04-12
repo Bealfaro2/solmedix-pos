@@ -594,6 +594,21 @@ function renderItems() {
   var total=0; for (var k=0;k<items.length;k++) total+=items[k].total;
   document.getElementById('tdis').textContent='$'+total.toLocaleString('es-MX',{minimumFractionDigits:2});
 }
+function pedirCancelar(id) {
+  if(!confirm('Marcar esta venta como CANCELADA?\nLa venta quedara en el historial pero marcada como cancelada.')) return;
+  var btn = event.target;
+  btn.disabled = true;
+  btn.textContent = '...';
+  apiPost({accion:'cancelar_venta', id:id}, function(err) {
+    // Update local ventas
+    for(var i=0;i<ventas.length;i++){
+      if(String(ventas[i].id)===String(id)){ ventas[i].estado='cancelada'; break; }
+    }
+    renderHist();
+    alrt('Venta cancelada correctamente.','s');
+  });
+}
+
 function del(i){
   var it=items[i];
   // Restore local stock
@@ -798,19 +813,28 @@ function copiar(){
 function renderHist(){
   var cont=document.getElementById('lista');
   if(!ventas.length){cont.innerHTML='<div class="es">Sin ventas registradas</div>';return;}
-  var html='';
+  var rows='';
   for(var i=0;i<Math.min(ventas.length,25);i++){
     var v=ventas[i];
-    html+='<div class="sc" onclick="ver(\''+v.id+'\')">';
-    html+='<div style="flex:1;min-width:0"><div style="font-weight:500;font-size:13px">'+v.cliente+'</div>';
-    html+='<div class="sm">'+ff(v.fecha)+' '+(v.hora||'')+' · '+v.items.length+' prod.'+(v.sucursal?' · '+v.sucursal:'')+'</div>';
-    html+='<span class="ck">'+v.clave+'</span></div>';
-    html+='<div style="text-align:right;min-width:80px">';
-    html+='<div style="font-weight:600;font-size:13px;color:#185FA5">$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
-    html+='<button class="btn btnw" onclick="event.stopPropagation();ver(\''+v.id+'\');imprimir()">Reimprimir</button>';
-    html+='</div></div>';
+    var cancelada=(v.estado==='cancelada');
+    var bg=cancelada?'background:#fef2f2;border:1px solid #fecaca':'border:1px solid #ede9e0';
+    var td=cancelada?'text-decoration:line-through;color:#aaa':'';
+    var tc=cancelada?'#aaa':'#185FA5';
+    var vid=String(v.id);
+    rows+='<div class="sc" style="'+bg+'" onclick="ver('+vid+')">';
+    rows+='<div style="flex:1;min-width:0">';
+    rows+='<div style="font-weight:500;font-size:13px;'+td+'">'+v.cliente+'</div>';
+    rows+='<div class="sm">'+ff(v.fecha)+' '+(v.hora||'')+' &middot; '+v.items.length+' prod.'+(v.sucursal?' &middot; '+v.sucursal:'')+(cancelada?' &middot; <span style="color:#c00;font-weight:700">CANCELADA</span>':'')+'</div>';
+    rows+='<span class="ck">'+v.clave+'</span></div>';
+    rows+='<div style="text-align:right;min-width:100px">';
+    rows+='<div style="font-weight:600;font-size:13px;color:'+tc+'">$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
+    if(!cancelada){
+      rows+='<button class="btn btnw" style="display:block;margin-bottom:3px;width:100%" onclick="event.stopPropagation();ver('+vid+');imprimir()">Reimprimir</button>';
+      rows+='<button class="btn btnd" style="font-size:10px;padding:2px 6px;width:100%" onclick="event.stopPropagation();pedirCancelar('+vid+')">Cancelar venta</button>';
+    }
+    rows+='</div></div>';
   }
-  cont.innerHTML=html;
+  cont.innerHTML=rows;
 }
 
 function ver(id){
