@@ -18,7 +18,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .suc-btn.selected{border-color:#185FA5;background:#185FA5;color:#fff}
 .suc-btn .suc-ciudad{font-size:17px;font-weight:600;display:block;margin-bottom:4px}
 .suc-btn .suc-dir{font-size:11px;opacity:.7;display:block;line-height:1.4}
-.suc-warning{font-size:12px;color:#92400e;background:#fef3c7;border-radius:8px;padding:8px 12px;margin-top:12px;display:none;line-height:1.5}
+.suc-warning{font-size:12px;color:#991b1b;background:#fee2e2;border-radius:8px;padding:8px 12px;margin-top:12px;display:none;line-height:1.5}
 .suc-warning.show{display:block}
 .suc-confirm{width:100%;padding:12px;border-radius:10px;border:none;background:#185FA5;color:#fff;font-size:15px;font-weight:500;cursor:pointer;font-family:inherit;display:none;margin-top:8px}
 .suc-confirm:hover{background:#0C447C}
@@ -97,23 +97,34 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
 <div id="pantalla-sucursal">
   <div class="suc-card">
     <img id="logo-inicio" src="" alt="Solmedix"/>
-    <h2>En que sucursal estas trabajando?</h2>
-    <p>Esta seleccion aplica a todas las ventas de esta sesion.<br>Para cambiar de sucursal cierra y vuelve a abrir el sistema.</p>
+    <h2>Acceso al Sistema de Ventas</h2>
+    <p>Selecciona tu sucursal e ingresa tu contrasena para continuar.</p>
     <div class="suc-btns">
-      <button class="suc-btn" id="btn-mty" onclick="selSuc('MTY')">
-        <span class="suc-ciudad">Monterrey</span>
-        <span class="suc-dir">Paseo de los Leones 1629<br>Las Cumbres 1er Sector</span>
-      </button>
-      <button class="suc-btn" id="btn-slp" onclick="selSuc('SLP')">
-        <span class="suc-ciudad">San Luis P.</span>
-        <span class="suc-dir">Sexta 335<br>Garita de Jalisco</span>
-      </button>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="suc-btn" id="btn-mty" onclick="selSuc('MTY')" style="margin-bottom:0">
+          <span class="suc-ciudad">Monterrey</span>
+          <span class="suc-dir">Paseo de los Leones 1629<br>Las Cumbres 1er Sector</span>
+        </button>
+        <input type="password" id="pwd-mty" placeholder="Contrasena MTY"
+          style="display:none;text-align:center;letter-spacing:.1em;font-size:14px"
+          onkeydown="if(event.key==='Enter')confirmarSuc()"/>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="suc-btn" id="btn-slp" onclick="selSuc('SLP')" style="margin-bottom:0">
+          <span class="suc-ciudad">San Luis P.</span>
+          <span class="suc-dir">Sexta 335<br>Garita de Jalisco</span>
+        </button>
+        <input type="password" id="pwd-slp" placeholder="Contrasena SLP"
+          style="display:none;text-align:center;letter-spacing:.1em;font-size:14px"
+          onkeydown="if(event.key==='Enter')confirmarSuc()"/>
+      </div>
     </div>
-    <div class="suc-warning" id="suc-warning">
-      Una vez confirmado no podras cambiar la sucursal sin cerrar el sistema.
-      Asegurate de estar en <strong id="suc-warning-nombre"></strong>.
+    <div class="suc-warning show" id="suc-warning" style="display:none">
+      Contrasena incorrecta. Intenta de nuevo.
     </div>
-    <button class="suc-confirm" id="suc-confirm" onclick="confirmarSuc()">Confirmar y entrar al sistema</button>
+    <button class="suc-confirm" id="suc-confirm" onclick="confirmarSuc()" style="display:none">
+      Entrar al sistema
+    </button>
   </div>
 </div>
 
@@ -279,11 +290,14 @@ var SUCURSALES = {
 };
 var E = { rfc:'SSM180928AQ7', web:'www.solmedixfarmacia.com' };
 var sucursal=null, sucSelected=null;
+var configSistema={};
 var items=[], ventas=[], clientes=[], medicamentos=[], lotes=[];
 var vActual=null, acIdx=-1;
 var pendientes=0, cargados=0;
 
 document.getElementById('logo-inicio').src = LOGO;
+// Preload config
+apiGet('config', function(e,d){ if(!e&&d) configSistema=d.config||{}; });
 document.getElementById('logo-panel').src = LOGO;
 
 /* JSONP — resuelve CORS con Apps Script */
@@ -327,15 +341,40 @@ function selSuc(clave) {
   sucSelected = clave;
   document.getElementById('btn-mty').classList.toggle('selected', clave==='MTY');
   document.getElementById('btn-slp').classList.toggle('selected', clave==='SLP');
-  document.getElementById('suc-warning').classList.add('show');
-  document.getElementById('suc-warning-nombre').textContent = SUCURSALES[clave].nombre;
+  // Show password field for selected sucursal
+  document.getElementById('pwd-mty').style.display = clave==='MTY' ? 'block' : 'none';
+  document.getElementById('pwd-slp').style.display = clave==='SLP' ? 'block' : 'none';
+  document.getElementById('suc-warning').style.display = 'none';
+  document.getElementById('suc-warning').classList.remove('show');
   var c = document.getElementById('suc-confirm');
-  c.textContent = 'Confirmar - Sucursal ' + SUCURSALES[clave].nombre;
-  c.classList.add('show');
+  c.style.display = 'block';
+  c.textContent = 'Entrar como Sucursal ' + SUCURSALES[clave].nombre;
+  // Focus password field
+  setTimeout(function(){ document.getElementById(clave==='MTY'?'pwd-mty':'pwd-slp').focus(); }, 100);
 }
 
 function confirmarSuc() {
   if (!sucSelected) return;
+  var pwdField = sucSelected==='MTY' ? 'pwd-mty' : 'pwd-slp';
+  var pwd = document.getElementById(pwdField).value;
+  if (!pwd) { mostrarErrorLogin('Ingresa la contrasena'); return; }
+  // Validate against config
+  var configKey = sucSelected==='MTY' ? 'pwd_mty' : 'pwd_slp';
+  var pwdCorrecta = configSistema[configKey] || '';
+  if (!pwdCorrecta) {
+    // Config not loaded yet - load it first
+    apiGet('config', function(e,d){
+      if(!e&&d) configSistema=d.config||{};
+      confirmarSuc();
+    });
+    return;
+  }
+  if (pwd !== pwdCorrecta) {
+    mostrarErrorLogin('Contrasena incorrecta');
+    document.getElementById(pwdField).value='';
+    document.getElementById(pwdField).focus();
+    return;
+  }
   sucursal = sucSelected;
   var chip = document.getElementById('chip-suc');
   chip.className = 'chip-suc ' + SUCURSALES[sucursal].chipClass;
@@ -345,12 +384,21 @@ function confirmarSuc() {
   iniciar();
 }
 
+function mostrarErrorLogin(msg) {
+  var w = document.getElementById('suc-warning');
+  w.textContent = msg;
+  w.style.display = 'block';
+  w.classList.add('show');
+}
+
 /* INICIAR */
 function iniciar() {
   var n = new Date();
   document.getElementById('fec').value = n.toISOString().split('T')[0];
   document.getElementById('hor').value = pad(n.getHours()) + ':' + pad(n.getMinutes());
   setSyncStatus('load','Conectando...');
+  // Load config if not loaded
+  if(!configSistema.pwd_mty) apiGet('config', function(e,d){ if(!e&&d) configSistema=d.config||{}; });
   pendientes = 4; cargados = 0;
 
   apiGet('clientes', function(err, data) {
