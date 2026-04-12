@@ -114,6 +114,7 @@ input:focus,select:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px 
     <span id="chip-perfil" style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:4px;background:#f0f6ff;color:#185FA5"></span>
     <span id="sync-status" class="sync sync-load">Cargando...</span>
     <a href="index.html" class="btn-volver">Volver al sistema</a>
+    <button class="btn-volver" onclick="actualizarDatos()" style="border-color:#185FA5;color:#185FA5" title="Actualizar datos desde Google Sheets">↻ Actualizar</button>
     <button class="btn-cerrar" onclick="cerrarSesion()">Cerrar sesion</button>
   </div>
 
@@ -524,6 +525,17 @@ function aplicarPermisos() {
   var esSLP = perfilActual==='slp';
   // Hide/show tabs based on perfil
   // SLP no tiene acceso a ventas de otra sucursal (filtrado en render)
+}
+
+function actualizarDatos() {
+  setSyncStatus('load','Actualizando...');
+  var total=5, listo=0;
+  function done(){ listo++; if(listo>=total){ setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); if(document.getElementById('sec-compras').style.display==='block') renderCompras(); if(document.getElementById('sec-inv').style.display==='block') renderInventario(); } }
+  apiGet('clientes',     function(e,d){ clientes=(d&&d.clientes)||[]; done(); });
+  apiGet('ventas',       function(e,d){ ventas=((d&&d.ventas)||[]).reverse(); done(); });
+  apiGet('medicamentos', function(e,d){ medicamentos=(d&&d.medicamentos)||[]; done(); });
+  apiGet('lotes',        function(e,d){ lotes=(d&&d.lotes)||[]; done(); });
+  apiGet('compras',      function(e,d){ compras=(d&&d.compras)||[]; done(); });
 }
 
 function cerrarSesion() {
