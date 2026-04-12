@@ -82,10 +82,19 @@ input:focus,select:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px 
   <div class="login-card">
     <div style="font-size:32px;margin-bottom:12px">🔐</div>
     <h2>Administracion Solmedix</h2>
-    <p>Acceso restringido — solo personal autorizado</p>
+    <p>Selecciona tu perfil e ingresa tu contrasena</p>
     <div class="login-err" id="login-err">Contrasena incorrecta</div>
-    <input type="password" id="pwd" placeholder="Contrasena" onkeydown="if(event.key==='Enter')login()"/>
-    <button class="btn btnp" style="width:100%;margin-top:4px" onclick="login()">Entrar</button>
+    <div class="fr">
+      <label style="font-size:13px;font-weight:600;color:#555;margin-bottom:4px;display:block">Perfil de acceso</label>
+      <select id="login-perfil" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:10px">
+        <option value="">Seleccionar perfil...</option>
+        <option value="admin">Administrador</option>
+        <option value="mty">Monterrey</option>
+        <option value="slp">San Luis Potosi</option>
+      </select>
+    </div>
+    <input type="password" id="pwd" placeholder="Contrasena" onkeydown="if(event.key==='Enter')login()" style="text-align:center;letter-spacing:.1em"/>
+    <button class="btn btnp" style="width:100%;margin-top:8px" onclick="login()">Entrar</button>
   </div>
 </div>
 
@@ -111,6 +120,7 @@ input:focus,select:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px 
     <button class="nav-tab"    id="nt-inv"       onclick="navTab('inv')">Reporte Inventario</button>
     <button class="nav-tab"    id="nt-entrada"   onclick="navTab('entrada')">Entrada Inventario</button>
     <button class="nav-tab"    id="nt-compras"   onclick="navTab('compras')">Reporte Compras</button>
+    <button class="nav-tab"    id="nt-pwds"      onclick="navTab('pwds')" style="display:none">Contrasenas</button>
   </div>
 
   <!-- REPORTE -->
@@ -345,6 +355,32 @@ input:focus,select:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px 
     </div>
   </div>
 
+  <!-- CAMBIO DE CONTRASENAS (solo admin) -->
+  <div id="sec-pwds" style="display:none">
+    <div class="panel">
+      <div class="ptitle">Gestion de contrasenas</div>
+      <p style="font-size:13px;color:#555;margin-bottom:16px">Solo el Administrador puede cambiar las contrasenas del sistema.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+        <div class="panel" style="border:1px solid #e5e3dc">
+          <div class="ptitle">Administrador</div>
+          <div class="fr"><label>Nueva contrasena</label><input type="password" id="new-pwd-admin" placeholder="Nueva contrasena"/></div>
+          <button class="btn btnp btns" onclick="cambiarPwd('admin')">Guardar</button>
+        </div>
+        <div class="panel" style="border:1px solid #e5e3dc">
+          <div class="ptitle">Monterrey</div>
+          <div class="fr"><label>Nueva contrasena</label><input type="password" id="new-pwd-mty" placeholder="Nueva contrasena"/></div>
+          <button class="btn btnp btns" onclick="cambiarPwd('mty')">Guardar</button>
+        </div>
+        <div class="panel" style="border:1px solid #e5e3dc">
+          <div class="ptitle">San Luis Potosi</div>
+          <div class="fr"><label>Nueva contrasena</label><input type="password" id="new-pwd-slp" placeholder="Nueva contrasena"/></div>
+          <button class="btn btnp btns" onclick="cambiarPwd('slp')">Guardar</button>
+        </div>
+      </div>
+      <div id="pwd-alrt" style="display:none;margin-top:12px"></div>
+    </div>
+  </div>
+
 </div>
 
 <!-- Modal medicamento -->
@@ -427,27 +463,69 @@ input:focus,select:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px 
 var API_URL = 'https://script.google.com/macros/s/AKfycbyCRC2nLoBybekYy0THrABObIGAZ4oPiM1Y0NwT1N0gQNBwU77nsCziB3p9n2RrRvyZ/exec';
 var PWD_HASH = btoa('Suzuki18&');
 var ventas=[], clientes=[], medicamentos=[], lotes=[], compras=[];
+var perfilActual=''; // 'admin', 'mty', 'slp'
+var configSistema={};
 var ventaABorrar=null;
 
 /* LOGIN */
 function login() {
+  var perfil = document.getElementById('login-perfil').value;
   var pwd = document.getElementById('pwd').value;
-  if (btoa(pwd) === PWD_HASH) {
-    document.getElementById('pantalla-login').style.display='none';
-    document.getElementById('sistema').style.display='block';
-    cargarTodo();
-  } else {
-    var err = document.getElementById('login-err');
-    err.style.display='block';
-    document.getElementById('pwd').value='';
-    setTimeout(function(){ err.style.display='none'; }, 3000);
+  if (!perfil) { mostrarErrLogin('Selecciona un perfil'); return; }
+  if (!pwd) { mostrarErrLogin('Ingresa la contrasena'); return; }
+
+  // Load config first if needed
+  if (!configSistema.pwd_admin) {
+    apiGet('config', function(e,d){
+      if(!e&&d) configSistema=d.config||{};
+      login();
+    });
+    return;
   }
+
+  var pwdMap = { admin: configSistema.pwd_admin||'', mty: configSistema.pwd_mty||'', slp: configSistema.pwd_slp||'' };
+  if (!pwdMap[perfil] || pwd !== pwdMap[perfil]) {
+    mostrarErrLogin('Contrasena incorrecta');
+    document.getElementById('pwd').value='';
+    return;
+  }
+
+  perfilActual = perfil;
+  document.getElementById('pantalla-login').style.display='none';
+  document.getElementById('sistema').style.display='block';
+
+  // Set perfil chip
+  var chipTextos = { admin:'Administrador', mty:'Sucursal Monterrey', slp:'Sucursal San Luis P.' };
+  document.getElementById('sync-status').textContent = chipTextos[perfil];
+
+  // Show/hide features based on perfil
+  aplicarPermisos();
+  mostrarTabsSegunPerfil();
+  cargarTodo();
+}
+
+function mostrarErrLogin(msg) {
+  var err = document.getElementById('login-err');
+  err.textContent = msg;
+  err.style.display='block';
+  setTimeout(function(){ err.style.display='none'; }, 3000);
+}
+
+function aplicarPermisos() {
+  // Admin: ver todo
+  // MTY: ver solo MTY, puede borrar
+  // SLP: ver solo SLP, nivel limitado
+  var esSLP = perfilActual==='slp';
+  // Hide/show tabs based on perfil
+  // SLP no tiene acceso a ventas de otra sucursal (filtrado en render)
 }
 
 function cerrarSesion() {
+  perfilActual='';
   document.getElementById('sistema').style.display='none';
   document.getElementById('pantalla-login').style.display='flex';
   document.getElementById('pwd').value='';
+  document.getElementById('login-perfil').value='';
 }
 
 /* JSONP */
@@ -479,6 +557,8 @@ function apiPost(data, callback) {
 /* CARGAR DATOS */
 function cargarTodo() {
   setSyncStatus('load','Cargando...');
+  // Load config
+  apiGet('config', function(e,d){ if(!e&&d) configSistema=d.config||{}; });
   var total=5, listo=0;
   function check(){ listo++; if(listo>=total){ setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); inicializarFechas(); inicializarFechasCompras(); } }
   setTimeout(function(){ if(listo<total){ listo=total; setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); inicializarFechas(); inicializarFechasCompras(); }}, 6000);
@@ -493,7 +573,7 @@ function setSyncStatus(t,m){ var el=document.getElementById('sync-status'); el.c
 
 /* NAV */
 function navTab(t) {
-  ['reporte','meds','clientes','ventas','lotes','inv','entrada','compras'].forEach(function(x){
+  ['reporte','meds','clientes','ventas','lotes','inv','entrada','compras','pwds'].forEach(function(x){
     document.getElementById('sec-'+x).style.display=t===x?'block':'none';
     document.getElementById('nt-'+x).className='nav-tab'+(t===x?' on':'');
   });
@@ -524,7 +604,11 @@ function generarReporte(){
   if(!desde||!hasta){alert('Selecciona el rango de fechas');return;}
   var filtradas=ventas.filter(function(v){
     var f=String(v.fecha).split('T')[0]||v.fecha;
-    return f>=desde&&f<=hasta&&(!suc||v.sucursal===suc);
+    var sucOk=!suc||v.sucursal===suc;
+    // Restrict by profile
+    if(perfilActual==='mty') sucOk=sucOk&&(v.sucursal==='MTY'||!v.sucursal);
+    if(perfilActual==='slp') sucOk=sucOk&&v.sucursal==='SLP';
+    return f>=desde&&f<=hasta&&sucOk;
   });
   var resumen=document.getElementById('reporte-resumen'),vacio=document.getElementById('reporte-vacio');
   if(!filtradas.length){resumen.style.display='none';vacio.style.display='block';return;}
@@ -1066,6 +1150,28 @@ function exportarComprasPDF() {
   setTimeout(function(){ w.print(); }, 600);
 }
 
+
+function cambiarPwd(perfil) {
+  if(perfilActual!=='admin'){alert('Solo el administrador puede cambiar contrasenas');return;}
+  var campo = document.getElementById('new-pwd-'+perfil);
+  var nuevaPwd = campo.value.trim();
+  if(!nuevaPwd){alert('Ingresa la nueva contrasena');return;}
+  var clave = 'pwd_'+perfil;
+  apiPost({accion:'guardar_config', clave:clave, valor:nuevaPwd}, function(err){
+    configSistema[clave] = nuevaPwd;
+    campo.value='';
+    var alrt=document.getElementById('pwd-alrt');
+    alrt.className='alrt als'; alrt.textContent='Contrasena actualizada correctamente.';
+    alrt.style.display='block';
+    setTimeout(function(){alrt.style.display='none';},3000);
+  });
+}
+
+// Show contrasenas tab only for admin
+function mostrarTabsSegunPerfil(){
+  var pwdTab=document.getElementById('nt-pwds');
+  if(pwdTab) pwdTab.style.display=perfilActual==='admin'?'':'none';
+}
 </script>
 </body>
 </html>
