@@ -146,6 +146,7 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
     <span id="chip-suc" class="chip-suc"></span>
     <span id="sync-status" class="sync sync-load">Conectando...</span>
     <a href="admin.html" style="margin-left:auto;font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;color:#888;text-decoration:none;font-family:inherit" title="Acceso administrador">⚙ Admin</a>
+    <button onclick="actualizarDatos()" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #185FA5;background:#fff;color:#185FA5;cursor:pointer;font-family:inherit" title="Actualizar datos">↻ Actualizar</button>
   </div>
 
   <div class="app">
@@ -454,6 +455,16 @@ function setSyncStatus(t,m) {
 }
 
 /* SELECTOR MEDICAMENTOS */
+function actualizarDatos() {
+  setSyncStatus('load','Actualizando...');
+  var pending=4, done=0;
+  function check(){ done++; if(done>=pending){ cargarSelectMeds(); renderHist(); renderListaClientes(); setSyncStatus('ok','Conectado'); } }
+  apiGet('clientes',     function(e,d){ if(!e&&d) clientes=d.clientes||[]; check(); });
+  apiGet('ventas',       function(e,d){ if(!e&&d) ventas=(d.ventas||[]).reverse(); check(); });
+  apiGet('medicamentos', function(e,d){ if(!e&&d) medicamentos=d.medicamentos||[]; check(); });
+  apiGet('lotes',        function(e,d){ if(!e&&d) lotes=d.lotes||[]; check(); });
+}
+
 function onBarcodeInput() {
   var code = document.getElementById('barcode').value.trim();
   if (!code) return;
