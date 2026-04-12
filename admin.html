@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solmedix — Administración</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f3ee;min-height:100vh}
+#pantalla-login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
+.login-card{background:#fff;border-radius:16px;border:1px solid #e5e3dc;padding:2.5rem 2rem;width:100%;max-width:380px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+.login-card h2{font-size:18px;font-weight:500;margin-bottom:.4rem;color:#1a1a1a}
+.login-card p{font-size:13px;color:#888;margin-bottom:1.5rem}
+.login-card input{margin-bottom:12px;text-align:center;letter-spacing:.1em}
+.login-err{background:#fee2e2;color:#991b1b;border-radius:8px;padding:8px;font-size:13px;margin-bottom:10px;display:none}
+#sistema{display:none;padding:1rem}
+.topbar{display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap}
+.topbar h1{font-size:18px;font-weight:500;color:#1a1a1a;display:flex;align-items:center;gap:8px}
+.chip{font-size:12px;padding:3px 10px;border-radius:4px;font-weight:500}
+.chip-admin{background:#fef3c7;color:#92400e}
+.sync{font-size:11px;padding:3px 10px;border-radius:4px;font-weight:500}
+.sync-ok{background:#dcfce7;color:#166534}
+.sync-err{background:#fee2e2;color:#991b1b}
+.sync-load{background:#fef3c7;color:#92400e}
+.btn-cerrar{margin-left:auto;font-size:12px;padding:4px 12px;border-radius:6px;border:1px solid #e88;background:#fff;color:#c00;cursor:pointer;font-family:inherit}
+.btn-cerrar:hover{background:#fef0f0}
+.btn-volver{font-size:12px;padding:4px 12px;border-radius:6px;border:1px solid #ddd;background:#fff;color:#555;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block}
+.btn-volver:hover{background:#f4f3ee}
+.nav-tabs{display:flex;gap:4px;margin-bottom:1.25rem;flex-wrap:wrap;border-bottom:1px solid #e5e3dc;padding-bottom:8px}
+.nav-tab{padding:7px 16px;border-radius:8px 8px 0 0;font-size:13px;cursor:pointer;border:1px solid transparent;background:transparent;color:#777;font-family:inherit;font-weight:500}
+.nav-tab.on{background:#185FA5;color:#fff;border-color:#185FA5}
+.nav-tab:hover:not(.on){background:#f0ede6}
+.panel{background:#fff;border:1px solid #e5e3dc;border-radius:12px;padding:1.25rem;margin-bottom:16px}
+.ptitle{font-size:11px;font-weight:600;color:#888;margin-bottom:12px;text-transform:uppercase;letter-spacing:.07em}
+.fr{margin-bottom:10px}
+label{display:block;font-size:13px;color:#555;margin-bottom:3px}
+input,select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;font-size:13px;font-family:inherit}
+input:focus,select:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px rgba(24,95,165,.1)}
+.btn{padding:8px 16px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#1a1a1a;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn:hover{background:#f4f3ee}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btnp{background:#185FA5;color:#fff;border-color:#185FA5}.btnp:hover{background:#0C447C}
+.btns{padding:5px 12px;font-size:12px}
+.btnd{border-color:#e88;color:#c00}.btnd:hover{background:#fef0f0}
+.btng{border-color:#16a34a;color:#16a34a}.btng:hover{background:#dcfce7}
+.btno{border-color:#d97706;color:#d97706}.btno:hover{background:#fef3c7}
+.sep{height:1px;background:#f0ede6;margin:12px 0}
+.badge{display:inline-block;padding:1px 7px;border-radius:4px;font-size:11px;font-weight:600}
+.chip-mty{background:#dbeafe;color:#1e40af;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600}
+.chip-slp{background:#dcfce7;color:#166534;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600}
+.es{text-align:center;color:#aaa;font-size:13px;padding:1.5rem 0}
+.alrt{padding:8px 12px;border-radius:8px;font-size:13px;margin-top:8px}
+.als{background:#dcfce7;color:#166534}.ali{background:#dbeafe;color:#1e40af}.ale{background:#fee2e2;color:#991b1b}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid #ddd;border-top-color:#185FA5;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{padding:8px 10px;text-align:left;border-bottom:2px solid #eee;color:#555;font-weight:600;white-space:nowrap}
+.tbl td{padding:8px 10px;border-bottom:1px solid #f5f5f5;color:#1a1a1a;vertical-align:middle}
+.tbl tr:hover td{background:#fafaf8}
+.tbl tr:last-child td{border-bottom:none}
+.reporte-header{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:1rem}
+.stat-card{background:#f9f8f5;border-radius:10px;padding:12px 14px;border:1px solid #ede9e0}
+.stat-label{font-size:11px;color:#888;margin-bottom:4px;font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+.stat-value{font-size:20px;font-weight:600;color:#1a1a1a}
+.stat-sub{font-size:11px;color:#888;margin-top:2px}
+.med-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.med-card{background:#f9f8f5;border:1px solid #ede9e0;border-radius:10px;padding:12px}
+.med-nombre{font-weight:500;font-size:13px;margin-bottom:4px}
+.med-precio{font-size:15px;font-weight:600;color:#185FA5}
+.med-cat{font-size:11px;color:#888;margin-bottom:8px}
+.med-actions{display:flex;gap:6px;margin-top:8px}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center}
+.overlay.show{display:flex}
+.modal{background:#fff;border-radius:12px;padding:1.5rem;width:90%;max-width:460px;box-shadow:0 8px 32px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto}
+.modal h2{font-size:16px;font-weight:500;margin-bottom:1rem}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="pantalla-login">
+  <div class="login-card">
+    <div style="font-size:32px;margin-bottom:12px">🔐</div>
+    <h2>Administracion Solmedix</h2>
+    <p>Selecciona tu perfil e ingresa tu contrasena</p>
+    <div class="login-err" id="login-err">Contrasena incorrecta</div>
+    <div class="fr">
+      <label style="font-size:13px;font-weight:600;color:#555;margin-bottom:4px;display:block">Perfil de acceso</label>
+      <select id="login-perfil" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:10px">
+        <option value="">Seleccionar perfil...</option>
+        <option value="admin">Administrador</option>
+        <option value="mty">Monterrey</option>
+        <option value="slp">San Luis Potosi</option>
+      </select>
+    </div>
+    <div style="position:relative">
+      <input type="password" id="pwd" placeholder="Contrasena" onkeydown="if(event.key==='Enter')login()"
+        style="text-align:center;letter-spacing:.1em;padding-right:36px"/>
+      <button type="button" onclick="toggleOjo('pwd',this)"
+        style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:#888;padding:2px">👁</button>
+    </div>
+    <button class="btn btnp" style="width:100%;margin-top:8px" onclick="login()">Entrar</button>
+  </div>
+</div>
+
+<!-- SISTEMA -->
+<div id="sistema">
+  <div class="topbar">
+    <h1>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      Administracion Solmedix
+    </h1>
+    <span class="chip chip-admin">Modo Admin</span>
+    <span id="chip-perfil" style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:4px;background:#f0f6ff;color:#185FA5"></span>
+    <span id="sync-status" class="sync sync-load">Cargando...</span>
+    <a href="index.html" class="btn-volver">Volver al sistema</a>
+    <button class="btn-cerrar" onclick="cerrarSesion()">Cerrar sesion</button>
+  </div>
+
+  <div class="nav-tabs">
+    <button class="nav-tab on" id="nt-reporte"  onclick="navTab('reporte')">Reporte de ventas</button>
+    <button class="nav-tab"    id="nt-meds"      onclick="navTab('meds')">Medicamentos</button>
+    <button class="nav-tab"    id="nt-clientes"  onclick="navTab('clientes')">Clientes</button>
+    <button class="nav-tab"    id="nt-ventas"    onclick="navTab('ventas')">Ventas</button>
+    <button class="nav-tab"    id="nt-lotes"     onclick="navTab('lotes')">Inventario</button>
+    <button class="nav-tab"    id="nt-inv"       onclick="navTab('inv')">Reporte Inventario</button>
+    <button class="nav-tab"    id="nt-entrada"   onclick="navTab('entrada')">Entrada Inventario</button>
+    <button class="nav-tab"    id="nt-compras"   onclick="navTab('compras')">Reporte Compras</button>
+    <button class="nav-tab"    id="nt-pwds"      onclick="navTab('pwds')" style="display:none">Contrasenas</button>
+  </div>
+
+  <!-- REPORTE -->
+  <div id="sec-reporte">
+    <div class="panel">
+      <div class="ptitle">Filtros</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:flex-end">
+        <div><label>Fecha inicio</label><input type="date" id="r-desde"/></div>
+        <div><label>Fecha fin</label><input type="date" id="r-hasta"/></div>
+        <div id="suc-filter-div"><label>Sucursal</label>
+          <select id="r-suc">
+            <option value="">Todas</option>
+            <option value="MTY">Monterrey</option>
+            <option value="SLP">San Luis Potosi</option>
+          </select>
+        </div>
+        <div><button class="btn btnp" onclick="generarReporte()">Generar</button></div>
+      </div>
+    </div>
+    <div id="reporte-resumen" style="display:none">
+      <div class="reporte-header" id="reporte-stats"></div>
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="ptitle" style="margin:0">Detalle de ventas</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btns btno" onclick="exportarCSV()">Exportar CSV</button>
+            <button class="btn btns btno" onclick="exportarPDF()">Exportar PDF</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead><tr>
+              <th>Folio</th><th>Fecha</th><th>Cliente</th>
+              <th>Medicamentos</th><th>Total</th><th>Pago</th><th>Suc.</th>
+            </tr></thead>
+            <tbody id="reporte-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div id="reporte-vacio" class="es" style="display:none">Sin ventas en el periodo seleccionado</div>
+  </div>
+
+  <!-- MEDICAMENTOS -->
+  <div id="sec-meds" style="display:none">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="ptitle" style="margin:0">Catalogo de medicamentos</div>
+        <button class="btn btng btns" onclick="abrirModalMed(null)">+ Nuevo medicamento</button>
+      </div>
+      <div class="fr" style="margin-bottom:12px">
+        <input type="text" id="bq-med" placeholder="Buscar medicamento..." oninput="filtrarMeds()"/>
+      </div>
+      <div class="med-grid" id="med-grid"><div class="es">Cargando...</div></div>
+    </div>
+  </div>
+
+  <!-- CLIENTES -->
+  <div id="sec-clientes" style="display:none">
+    <div class="panel">
+      <div class="ptitle">Gestion de clientes</div>
+      <div class="fr" style="margin-bottom:12px">
+        <input type="text" id="bq-cli" placeholder="Buscar por nombre, telefono o RFC..." oninput="filtrarClientesAdmin()"/>
+      </div>
+      <div id="lista-cli-admin" class="es">Cargando clientes...</div>
+    </div>
+  </div>
+
+  <!-- VENTAS -->
+  <div id="sec-ventas" style="display:none">
+    <div class="panel">
+      <div class="ptitle">Gestion de ventas</div>
+      <div class="fr" style="margin-bottom:12px">
+        <input type="text" id="bq-venta" placeholder="Buscar por cliente, folio o clave..." oninput="filtrarVentasAdmin()"/>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="tbl">
+          <thead><tr>
+            <th>Folio</th><th>Fecha</th><th>Cliente</th><th>Total</th><th>Suc.</th><th>Clave</th><th></th>
+          </tr></thead>
+          <tbody id="ventas-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- INVENTARIO / LOTES -->
+  <div id="sec-lotes" style="display:none">
+    <div class="panel">
+      <div class="ptitle">Inventario por lote</div>
+      <div class="fr" style="margin-bottom:12px">
+        <input type="text" id="bq-lote" placeholder="Buscar medicamento o lote..." oninput="filtrarLotes()"/>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="tbl">
+          <thead><tr>
+            <th>Medicamento</th><th>Lote</th><th>Existencias</th><th>Costo unit.</th><th></th>
+          </tr></thead>
+          <tbody id="lotes-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORTE INVENTARIO -->
+  <div id="sec-inv" style="display:none">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="ptitle" style="margin:0">Reporte de inventario</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btns btno" onclick="exportarInventarioCSV()">Exportar CSV</button>
+          <button class="btn btns btno" onclick="exportarInventarioPDF()">Exportar PDF</button>
+        </div>
+      </div>
+      <div class="fr" style="margin-bottom:12px">
+        <input type="text" id="bq-inv" placeholder="Buscar medicamento o lote..." oninput="filtrarInventario()"/>
+      </div>
+      <div id="reporte-inv-stats" style="margin-bottom:12px"></div>
+      <div style="overflow-x:auto">
+        <table class="tbl">
+          <thead><tr>
+            <th>Medicamento</th><th>Categoria</th><th>Lote</th>
+            <th style="text-align:right">Existencias</th>
+            <th style="text-align:right">Costo unit.</th>
+            <th style="text-align:right">Valor total</th>
+          </tr></thead>
+          <tbody id="inv-body"></tbody>
+          <tfoot id="inv-foot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENTRADA DE INVENTARIO -->
+  <div id="sec-entrada" style="display:none">
+    <div class="panel">
+      <div class="ptitle">Entrada de inventario por XML (CFDI)</div>
+      <p style="font-size:13px;color:#555;margin-bottom:16px;line-height:1.6">
+        Sube el archivo XML de la factura de tu proveedor. El sistema leerá automaticamente
+        el proveedor, medicamentos, cantidades y costos. Tu solo necesitas agregar el numero de lote de cada producto.
+      </p>
+
+      <!-- Upload zone -->
+      <div id="xml-upload-zone" style="border:2px dashed #ddd;border-radius:10px;padding:2rem;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px"
+        onclick="document.getElementById('xml-file-input').click()"
+        ondragover="event.preventDefault();this.style.borderColor='#185FA5';this.style.background='#f0f6ff'"
+        ondragleave="this.style.borderColor='#ddd';this.style.background=''"
+        ondrop="onXmlDrop(event)">
+        <div style="font-size:32px;margin-bottom:8px">📄</div>
+        <div style="font-size:14px;font-weight:500;color:#555">Arrastra el XML aqui o haz clic para seleccionar</div>
+        <div style="font-size:12px;color:#aaa;margin-top:4px">Solo archivos .xml del SAT (CFDI 4.0)</div>
+        <input type="file" id="xml-file-input" accept=".xml" style="display:none" onchange="onXmlFile(event)"/>
+      </div>
+
+      <!-- Parsed result -->
+      <div id="xml-result" style="display:none">
+        <!-- Header factura -->
+        <div id="xml-header" style="background:#f9f8f5;border-radius:10px;padding:12px 14px;margin-bottom:16px;border:1px solid #ede9e0"></div>
+
+        <!-- Tabla de conceptos con campo de lote -->
+        <div style="font-size:13px;font-weight:600;color:#555;margin-bottom:8px">Medicamentos en la factura</div>
+        <div style="overflow-x:auto;margin-bottom:16px">
+          <table class="tbl" id="xml-conceptos-tabla">
+            <thead><tr>
+              <th>Descripcion</th>
+              <th style="width:80px;text-align:center">Cant.</th>
+              <th style="width:100px;text-align:right">Costo unit.</th>
+              <th style="width:160px">Num. de lote *</th>
+              <th style="width:140px">Medicamento en sistema</th>
+            </tr></thead>
+            <tbody id="xml-conceptos-body"></tbody>
+          </table>
+        </div>
+
+        <div style="background:#fef3c7;border-radius:8px;padding:10px 12px;font-size:12px;color:#92400e;margin-bottom:16px">
+          ⚠️ Verifica que cada medicamento este correctamente vinculado al catalogo. El numero de lote es obligatorio para afectar el inventario.
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn" onclick="limpiarXml()">Cancelar</button>
+          <button class="btn btnp" id="btn-aplicar-entrada" onclick="aplicarEntrada()">Aplicar entrada al inventario</button>
+        </div>
+        <div id="entrada-alrt" style="display:none;margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORTE DE COMPRAS -->
+  <div id="sec-compras" style="display:none">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="ptitle" style="margin:0">Reporte de compras</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btns btno" onclick="exportarComprasCSV()">Exportar CSV</button>
+          <button class="btn btns btno" onclick="exportarComprasPDF()">Exportar PDF</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:flex-end;margin-bottom:12px">
+        <div><label>Fecha inicio</label><input type="date" id="c-desde"/></div>
+        <div><label>Fecha fin</label><input type="date" id="c-hasta"/></div>
+        <div><label>Proveedor</label>
+          <select id="c-prov">
+            <option value="">Todos los proveedores</option>
+          </select>
+        </div>
+        <div><button class="btn btnp" onclick="filtrarCompras()">Filtrar</button></div>
+      </div>
+      <div id="compras-stats" style="margin-bottom:12px"></div>
+      <div style="overflow-x:auto">
+        <table class="tbl">
+          <thead><tr>
+            <th>Fecha</th><th>Proveedor</th><th>Folio</th>
+            <th>Medicamento</th><th>Lote</th>
+            <th style="text-align:right">Cant.</th>
+            <th style="text-align:right">Costo unit.</th>
+            <th style="text-align:right">Importe</th>
+          </tr></thead>
+          <tbody id="compras-body"></tbody>
+          <tfoot id="compras-foot"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <div class="ptitle">Trazabilidad por lote</div>
+      <p style="font-size:13px;color:#555;margin-bottom:12px">Busca un numero de lote para ver de que proveedor se compro y a que clientes se vendio.</p>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:flex-end;margin-bottom:12px">
+        <div><label>Numero de lote</label><input type="text" id="traz-lote" placeholder="Ej: M2600711" style="font-family:monospace"/></div>
+        <div><button class="btn btnp" onclick="buscarTrazabilidad()">Buscar</button></div>
+      </div>
+      <div id="traz-result"></div>
+    </div>
+  </div>
+
+  <!-- CAMBIO DE CONTRASENAS (solo admin) -->
+  <div id="sec-pwds" style="display:none">
+    <div class="panel">
+      <div class="ptitle">Gestion de contrasenas</div>
+      <p style="font-size:13px;color:#555;margin-bottom:16px">Solo el Administrador puede cambiar las contrasenas del sistema.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+        <div class="panel" style="border:1px solid #e5e3dc">
+          <div class="ptitle">Administrador</div>
+          <div class="fr"><label>Nueva contrasena</label><input type="password" id="new-pwd-admin" placeholder="Nueva contrasena"/></div>
+          <button class="btn btnp btns" onclick="cambiarPwd('admin')">Guardar</button>
+        </div>
+        <div class="panel" style="border:1px solid #e5e3dc">
+          <div class="ptitle">Monterrey</div>
+          <div class="fr"><label>Nueva contrasena</label><input type="password" id="new-pwd-mty" placeholder="Nueva contrasena"/></div>
+          <button class="btn btnp btns" onclick="cambiarPwd('mty')">Guardar</button>
+        </div>
+        <div class="panel" style="border:1px solid #e5e3dc">
+          <div class="ptitle">San Luis Potosi</div>
+          <div class="fr"><label>Nueva contrasena</label><input type="password" id="new-pwd-slp" placeholder="Nueva contrasena"/></div>
+          <button class="btn btnp btns" onclick="cambiarPwd('slp')">Guardar</button>
+        </div>
+      </div>
+      <div id="pwd-alrt" style="display:none;margin-top:12px"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal medicamento -->
+<div class="overlay" id="modal-med-overlay" onclick="cerrarModalMed(event)">
+  <div class="modal">
+    <h2 id="modal-med-titulo">Nuevo medicamento</h2>
+    <div class="fr"><label>Nombre completo *</label><input type="text" id="med-nombre" placeholder="Nombre del medicamento"/></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fr"><label>Precio de venta ($) *</label><input type="number" id="med-precio" placeholder="0.00"/></div>
+      <div class="fr"><label>Costo de compra ($)</label><input type="number" id="med-costo" placeholder="0.00"/></div>
+    </div>
+    <div class="fr"><label>Categoria</label>
+      <select id="med-cat">
+        <option>Oncologico</option><option>Inmunosupresor</option>
+        <option>Soporte</option><option>Alta especialidad</option>
+        <option>Anestesico</option><option>Otros</option>
+      </select>
+    </div>
+    <div class="fr"><label>Notas</label><input type="text" id="med-notas" placeholder="Observaciones opcionales"/></div>
+    <input type="hidden" id="med-editando-id"/>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button class="btn" onclick="cerrarModalMedBtn()">Cancelar</button>
+      <button class="btn btnp" id="btn-guardar-med" onclick="guardarMedicamento()">Guardar</button>
+    </div>
+    <div id="med-alrt" style="display:none;margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- Modal editar cliente -->
+<div class="overlay" id="modal-cli-overlay" onclick="cerrarModalCli(event)">
+  <div class="modal">
+    <h2>Editar cliente</h2>
+    <div class="fr"><label>Nombre completo *</label><input type="text" id="cli-nombre"/></div>
+    <div class="fr"><label>Telefono</label><input type="text" id="cli-tel"/></div>
+    <div class="fr"><label>RFC</label><input type="text" id="cli-rfc" style="text-transform:uppercase"/></div>
+    <div class="fr"><label>Correo</label><input type="email" id="cli-correo"/></div>
+    <input type="hidden" id="cli-editando-id"/>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button class="btn" onclick="cerrarModalCliBtn()">Cancelar</button>
+      <button class="btn btnp" id="btn-guardar-cli" onclick="guardarEdicionCliente()">Guardar cambios</button>
+    </div>
+    <div id="cli-alrt" style="display:none;margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- Modal editar lote -->
+<div class="overlay" id="modal-lote-overlay" onclick="cerrarModalLote(event)">
+  <div class="modal">
+    <h2>Editar existencias</h2>
+    <div id="lote-med-nombre" style="font-size:13px;color:#555;margin-bottom:12px"></div>
+    <div class="fr"><label>Numero de lote</label><input type="text" id="lote-numero" readonly style="background:#f5f5f5"/></div>
+    <div class="fr"><label>Existencias *</label><input type="number" id="lote-existencias" min="0"/></div>
+    <div class="fr"><label>Costo unitario ($)</label><input type="number" id="lote-costo" min="0" step="0.01"/></div>
+    <input type="hidden" id="lote-editando-id"/>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button class="btn" onclick="cerrarModalLoteBtn()">Cancelar</button>
+      <button class="btn btnp" id="btn-guardar-lote" onclick="guardarEdicionLote()">Guardar cambios</button>
+    </div>
+    <div id="lote-alrt" style="display:none;margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- Modal confirmar borrado venta -->
+<div class="overlay" id="modal-borrar-overlay" onclick="cerrarModalBorrar(event)">
+  <div class="modal" style="text-align:center">
+    <div style="font-size:40px;margin-bottom:12px">⚠️</div>
+    <h2 style="margin-bottom:8px">Borrar venta</h2>
+    <p style="font-size:13px;color:#555;margin-bottom:4px">Seguro que deseas eliminar la venta</p>
+    <p style="font-size:15px;font-weight:600;color:#c00;margin-bottom:16px" id="borrar-folio-txt"></p>
+    <p style="font-size:12px;color:#888;margin-bottom:16px">Esta accion no se puede deshacer.</p>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button class="btn" onclick="cerrarModalBorrarBtn()">Cancelar</button>
+      <button class="btn btnd" id="btn-confirmar-borrar" onclick="confirmarBorrado()">Si, borrar venta</button>
+    </div>
+    <div id="borrar-alrt" style="display:none;margin-top:8px"></div>
+  </div>
+</div>
+
+<script>
+var API_URL = 'https://script.google.com/macros/s/AKfycbyCRC2nLoBybekYy0THrABObIGAZ4oPiM1Y0NwT1N0gQNBwU77nsCziB3p9n2RrRvyZ/exec';
+var PWD_HASH = btoa('Suzuki18&');
+var ventas=[], clientes=[], medicamentos=[], lotes=[], compras=[];
+var perfilActual=''; // 'admin', 'mty', 'slp'
+var configSistema={};
+var ventaABorrar=null;
+
+/* LOGIN */
+function login() {
+  var perfil = document.getElementById('login-perfil').value;
+  var pwd = document.getElementById('pwd').value;
+  if (!perfil) { mostrarErrLogin('Selecciona un perfil'); return; }
+  if (!pwd) { mostrarErrLogin('Ingresa la contrasena'); return; }
+
+  // Load config first if needed
+  if (!configSistema.pwd_admin) {
+    apiGet('config', function(e,d){
+      if(!e&&d) configSistema=d.config||{};
+      login();
+    });
+    return;
+  }
+
+  var pwdMap = { admin: configSistema.pwd_admin||'', mty: configSistema.pwd_mty||'', slp: configSistema.pwd_slp||'' };
+  if (!pwdMap[perfil] || pwd !== pwdMap[perfil]) {
+    mostrarErrLogin('Contrasena incorrecta');
+    document.getElementById('pwd').value='';
+    return;
+  }
+
+  perfilActual = perfil;
+  document.getElementById('pantalla-login').style.display='none';
+  document.getElementById('sistema').style.display='block';
+
+  // Set perfil chip
+  var chipTextos = { admin:'Administrador', mty:'Sucursal Monterrey', slp:'Sucursal San Luis P.' };
+  document.getElementById('sync-status').textContent = chipTextos[perfil];
+
+  // Show/hide features based on perfil
+  aplicarPermisos();
+  mostrarTabsSegunPerfil();
+  cargarTodo();
+}
+
+function mostrarErrLogin(msg) {
+  var err = document.getElementById('login-err');
+  err.textContent = msg;
+  err.style.display='block';
+  setTimeout(function(){ err.style.display='none'; }, 3000);
+}
+
+function aplicarPermisos() {
+  // Admin: ver todo
+  // MTY: ver solo MTY, puede borrar
+  // SLP: ver solo SLP, nivel limitado
+  var esSLP = perfilActual==='slp';
+  // Hide/show tabs based on perfil
+  // SLP no tiene acceso a ventas de otra sucursal (filtrado en render)
+}
+
+function cerrarSesion() {
+  perfilActual='';
+  document.getElementById('sistema').style.display='none';
+  document.getElementById('pantalla-login').style.display='flex';
+  document.getElementById('pwd').value='';
+  document.getElementById('login-perfil').value='';
+}
+
+/* JSONP */
+function jsonp(url, callback) {
+  var cbName = 'cb_' + Math.random().toString(36).slice(2);
+  window[cbName] = function(data) {
+    delete window[cbName];
+    var sc = document.getElementById('sc_'+cbName);
+    if(sc) sc.remove();
+    callback(null, data);
+  };
+  var script = document.createElement('script');
+  script.id = 'sc_'+cbName;
+  script.onerror = function() { delete window[cbName]; script.remove(); callback(new Error('Error de red')); };
+  script.src = url + (url.indexOf('?')>=0?'&':'?') + 'callback='+cbName;
+  document.head.appendChild(script);
+}
+
+function apiGet(accion, callback) {
+  jsonp(API_URL+'?accion='+accion, callback);
+}
+
+function apiPost(data, callback) {
+  fetch(API_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(data) })
+    .then(function(){ callback(null, {ok:true}); })
+    .catch(function(err){ callback(err); });
+}
+
+/* CARGAR DATOS */
+function cargarTodo() {
+  setSyncStatus('load','Cargando...');
+  // Load config
+  apiGet('config', function(e,d){ if(!e&&d) configSistema=d.config||{}; });
+  var total=5, listo=0;
+  function check(){ listo++; if(listo>=total){ setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); inicializarFechas(); inicializarFechasCompras(); } }
+  setTimeout(function(){ if(listo < total){ listo=total; setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); inicializarFechas(); inicializarFechasCompras(); }}, 6000);
+  apiGet('clientes',     function(e,d){ clientes=(d&&d.clientes)||[]; check(); });
+  apiGet('ventas',       function(e,d){ ventas=((d&&d.ventas)||[]).reverse(); check(); });
+  apiGet('medicamentos', function(e,d){ medicamentos=(d&&d.medicamentos)||[]; check(); });
+  apiGet('lotes',        function(e,d){ lotes=(d&&d.lotes)||[]; check(); });
+  apiGet('compras',      function(e,d){ compras=(d&&d.compras)||[]; check(); });
+}
+
+function setSyncStatus(t,m){ var el=document.getElementById('sync-status'); el.className='sync sync-'+(t==='ok'?'ok':t==='err'?'err':'load'); el.textContent=m; }
+
+/* NAV */
+function navTab(t) {
+  ['reporte','meds','clientes','ventas','lotes','inv','entrada','compras','pwds'].forEach(function(x){
+    document.getElementById('sec-'+x).style.display=t===x?'block':'none';
+    var tabEl=document.getElementById('nt-'+x);
+    // Don't show pwds tab for non-admin
+    if(x==='pwds' && perfilActual!=='admin') return;
+    tabEl.className='nav-tab'+(t===x?' on':'');
+    tabEl.style.display='';
+  });
+  if(t==='c') renderClientesAdmin();
+  if(t==='inv') renderInventario();
+  if(t==='compras') renderCompras();
+}
+
+/* REPORTE */
+function inicializarFechasCompras(){
+  var hoy=new Date(), inicio=new Date(hoy.getFullYear(),hoy.getMonth(),1);
+  document.getElementById('c-hasta').value=hoy.toISOString().split('T')[0];
+  document.getElementById('c-desde').value=inicio.toISOString().split('T')[0];
+}
+
+function inicializarFechas(){
+  var hoy=new Date(), inicio=new Date(hoy.getFullYear(),hoy.getMonth(),1);
+  document.getElementById('r-hasta').value=hoy.toISOString().split('T')[0];
+  document.getElementById('r-desde').value=inicio.toISOString().split('T')[0];
+}
+
+function ff(f){ if(!f)return''; var p=String(f).split('T')[0].split('-'); return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:f; }
+
+function generarReporte(){
+  var desde=document.getElementById('r-desde').value;
+  var hasta=document.getElementById('r-hasta').value;
+  var suc=document.getElementById('r-suc').value;
+  if(perfilActual==='mty') suc='MTY';
+  if(perfilActual==='slp') suc='SLP';
+  if(!desde||!hasta){alert('Selecciona el rango de fechas');return;}
+  var filtradas=ventas.filter(function(v){
+    var f=String(v.fecha).split('T')[0]||v.fecha;
+    var sucOk=!suc||v.sucursal===suc;
+    // Restrict by profile
+    if(perfilActual==='mty') sucOk=sucOk&&(v.sucursal==='MTY'||!v.sucursal);
+    if(perfilActual==='slp') sucOk=sucOk&&v.sucursal==='SLP';
+    return f>=desde&&f<=hasta&&sucOk;
+  });
+  var resumen=document.getElementById('reporte-resumen'),vacio=document.getElementById('reporte-vacio');
+  if(!filtradas.length){resumen.style.display='none';vacio.style.display='block';return;}
+  vacio.style.display='none'; resumen.style.display='block';
+  var total=filtradas.reduce(function(s,v){return s+Number(v.total);},0);
+  var totalMTY=filtradas.filter(function(v){return v.sucursal==='MTY';}).reduce(function(s,v){return s+Number(v.total);},0);
+  var totalSLP=filtradas.filter(function(v){return v.sucursal==='SLP';}).reduce(function(s,v){return s+Number(v.total);},0);
+  var prom=total/filtradas.length;
+  var statsHtml='<div class="stat-card"><div class="stat-label">Total ventas</div><div class="stat-value">'+filtradas.length+'</div><div class="stat-sub">'+desde+' al '+hasta+'</div></div>';
+  statsHtml+='<div class="stat-card"><div class="stat-label">Ingresos totales</div><div class="stat-value">$'+total.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div></div>';
+  statsHtml+='<div class="stat-card"><div class="stat-label">Ticket promedio</div><div class="stat-value">$'+prom.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div></div>';
+  if(!suc){
+    statsHtml+='<div class="stat-card"><div class="stat-label">Monterrey</div><div class="stat-value">$'+totalMTY.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div><div class="stat-sub">'+filtradas.filter(function(v){return v.sucursal==='MTY';}).length+' ventas</div></div>';
+    statsHtml+='<div class="stat-card"><div class="stat-label">San Luis P.</div><div class="stat-value">$'+totalSLP.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div><div class="stat-sub">'+filtradas.filter(function(v){return v.sucursal==='SLP';}).length+' ventas</div></div>';
+  }
+  document.getElementById('reporte-stats').innerHTML=statsHtml;
+  var tbody='';
+  for(var i=0;i<filtradas.length;i++){
+    var v=filtradas[i];
+    var meds=(v.items||[]).map(function(it){return it.nombre;}).join(', ')||'—';
+    var pagos=[].concat.apply([],[(v.items||[]).map(function(it){return it.pago;})]).filter(function(x,i,a){return a.indexOf(x)===i;}).join(', ')||'—';
+    tbody+='<tr><td><strong>#'+String(v.id).padStart(4,'0')+'</strong></td><td>'+ff(v.fecha)+'</td><td>'+v.cliente+'</td>';
+    tbody+='<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+meds+'">'+meds+'</td>';
+    tbody+='<td><strong>$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</strong></td><td>'+pagos+'</td>';
+    tbody+='<td><span class="'+(v.sucursal==='MTY'?'chip-mty':'chip-slp')+'">'+(v.sucursal||'—')+'</span></td></tr>';
+  }
+  document.getElementById('reporte-body').innerHTML=tbody;
+  window._reporteData=filtradas;
+}
+
+function exportarCSV(){
+  var data=window._reporteData||[];
+  if(!data.length)return;
+  var q=function(s){return s===null||s===undefined?'':String(s).split(',').join(' ').split('"').join(' ');};
+  var lines=['Folio,Fecha,Cliente,Medicamentos,Total,Forma de pago,Sucursal,Clave'];
+  for(var i=0;i<data.length;i++){
+    var v=data[i];
+    var meds=(v.items||[]).map(function(it){return it.nombre;}).join(' | ');
+    var pagos=(v.items||[]).map(function(it){return it.pago;}).filter(function(x,i,a){return a.indexOf(x)===i;}).join(' | ');
+    lines.push(String(v.id).padStart(4,'0')+','+ff(v.fecha)+','+q(v.cliente)+','+q(meds)+','+v.total+','+q(pagos)+','+(v.sucursal||'')+','+q(v.clave));
+  }
+  var csv=lines.join('\n');
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='Solmedix_Reporte_'+document.getElementById('r-desde').value+'_'+document.getElementById('r-hasta').value+'.csv';
+  a.click();
+}
+
+/* EXPORTAR PDF VENTAS */
+function exportarPDF(){
+  var data=window._reporteData||[];
+  if(!data.length){alert('Genera el reporte primero');return;}
+  var desde=document.getElementById('r-desde').value;
+  var hasta=document.getElementById('r-hasta').value;
+  var suc=document.getElementById('r-suc').value||'Todas las sucursales';
+  var total=data.reduce(function(s,v){return s+Number(v.total);},0);
+  var filas=data.map(function(v,i){
+    var meds=(v.items||[]).map(function(it){return it.nombre;}).join(', ')||'—';
+    var bg=i%2===0?'#fff':'#f9f9f9';
+    return '<tr style="background:'+bg+'"><td>#'+String(v.id).padStart(4,'0')+'</td><td>'+ff(v.fecha)+'</td><td>'+v.cliente+'</td><td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+meds+'</td><td style="text-align:right">$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td><td>'+(v.sucursal||'—')+'</td></tr>';
+  }).join('');
+  var w=window.open('','_blank','width=1000,height=700');
+  w.document.write('<!DOCTYPE html><html><head><title>Reporte Ventas Solmedix</title><style>@page{size:A4 landscape;margin:15mm}body{font-family:Arial,sans-serif;font-size:10px;color:#000}h1{font-size:15px;margin-bottom:4px}h2{font-size:11px;font-weight:normal;color:#555;margin-bottom:10px}table{width:100%;border-collapse:collapse}th{background:#185FA5;color:#fff;padding:6px 8px;text-align:left;font-size:9px}td{padding:4px 7px;border-bottom:1px solid #eee;font-size:9px}tr:nth-child(even) td{background:#f9f9f9}.total-row{text-align:right;font-weight:bold;font-size:11px;margin-top:10px;padding:8px}@media print{button{display:none}}</style></head><body>');
+  w.document.write('<h1>Solmedix — Reporte de Ventas</h1>');
+  w.document.write('<h2>Periodo: '+desde+' al '+hasta+' | Sucursal: '+suc+' | '+data.length+' ventas</h2>');
+  w.document.write('<table><thead><tr><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Medicamentos</th><th style="text-align:right">Total</th><th>Suc.</th></tr></thead><tbody>'+filas+'</tbody></table>');
+  w.document.write('<div class="total-row">Total del periodo: $'+total.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>');
+  w.document.write('</body></html>');
+  w.document.close();
+  setTimeout(function(){w.print();},600);
+}
+
+/* REPORTE INVENTARIO */
+function renderInventario(lista){
+  var src=lista||lotes;
+  if(!src.length){document.getElementById('inv-body').innerHTML='<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px">Sin datos de inventario</td></tr>';return;}
+  var totalPiezas=0,totalValor=0;
+  var html='';
+  for(var i=0;i<src.length;i++){
+    var l=src[i];
+    var stock=Number(l.existencias),costo=Number(l.costo)||0,valor=stock*costo;
+    totalPiezas+=stock; totalValor+=valor;
+    var color=stock>5?'#166534':stock>0?'#d97706':'#c00';
+    var cat='';
+    for(var j=0;j<medicamentos.length;j++){if(String(medicamentos[j].id)===String(l.med_id)){cat=medicamentos[j].categoria||'';break;}}
+    var bg=i%2===0?'#fff':'#fafaf8';
+    html+='<tr style="background:'+bg+'"><td>'+l.medicamento+'</td>';
+    html+='<td style="color:#777;font-size:12px">'+cat+'</td>';
+    html+='<td style="font-family:monospace">'+l.lote+'</td>';
+    html+='<td style="text-align:right;font-weight:600;color:'+color+'">'+stock+'</td>';
+    html+='<td style="text-align:right">$'+costo.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    html+='<td style="text-align:right;font-weight:600">$'+valor.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
+  }
+  document.getElementById('inv-body').innerHTML=html;
+  document.getElementById('inv-foot').innerHTML='<tr style="background:#f0ede6;font-weight:600"><td colspan="3">TOTALES</td><td style="text-align:right">'+totalPiezas+' pzas</td><td></td><td style="text-align:right">$'+totalValor.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
+  document.getElementById('reporte-inv-stats').innerHTML='<div class="reporte-header"><div class="stat-card"><div class="stat-label">Lotes activos</div><div class="stat-value">'+src.length+'</div></div><div class="stat-card"><div class="stat-label">Total piezas</div><div class="stat-value">'+totalPiezas+'</div></div><div class="stat-card"><div class="stat-label">Valor inventario</div><div class="stat-value">$'+totalValor.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div><div class="stat-sub">a precio de costo</div></div></div>';
+  window._invData={src:src,totalPiezas:totalPiezas,totalValor:totalValor};
+}
+
+function filtrarInventario(){
+  var q=document.getElementById('bq-inv').value.trim().toLowerCase();
+  renderInventario(q.length<2?lotes:lotes.filter(function(l){return l.medicamento.toLowerCase().indexOf(q)>=0||l.lote.toLowerCase().indexOf(q)>=0;}));
+}
+
+function exportarInventarioCSV(){
+  if(!lotes.length){alert('No hay datos de inventario');return;}
+  var q=function(s){return s===null||s===undefined?'':String(s).split(',').join(' ').split('"').join(' ');};
+  var lines=['Medicamento,Categoria,Lote,Existencias,Costo unitario,Valor total'];
+  for(var i=0;i<lotes.length;i++){
+    var l=lotes[i];
+    var cat='';
+    for(var j=0;j<medicamentos.length;j++){if(String(medicamentos[j].id)===String(l.med_id)){cat=medicamentos[j].categoria||'';break;}}
+    var stock=Number(l.existencias),costo=Number(l.costo)||0;
+    lines.push(q(l.medicamento)+','+q(cat)+','+q(l.lote)+','+stock+','+costo+','+(stock*costo));
+  }
+  var csv=lines.join('\n');
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='Solmedix_Inventario_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+}
+
+function exportarInventarioPDF(){
+  if(!lotes.length){alert('No hay datos de inventario');return;}
+  var totalPiezas=0,totalValor=0;
+  var filas=lotes.map(function(l,i){
+    var cat='';
+    for(var j=0;j<medicamentos.length;j++){if(String(medicamentos[j].id)===String(l.med_id)){cat=medicamentos[j].categoria||'';break;}}
+    var stock=Number(l.existencias),costo=Number(l.costo)||0,valor=stock*costo;
+    totalPiezas+=stock; totalValor+=valor;
+    var color=stock>5?'green':stock>0?'darkorange':'red';
+    var bg=i%2===0?'#fff':'#f9f9f9';
+    return '<tr style="background:'+bg+'"><td>'+l.medicamento+'</td><td style="color:#777">'+cat+'</td><td style="font-family:monospace">'+l.lote+'</td><td style="text-align:right;color:'+color+';font-weight:bold">'+stock+'</td><td style="text-align:right">$'+costo.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td><td style="text-align:right;font-weight:bold">$'+valor.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
+  }).join('');
+  var fecha=new Date().toLocaleDateString('es-MX');
+  var w=window.open('','_blank','width=1000,height=700');
+  w.document.write('<!DOCTYPE html><html><head><title>Inventario Solmedix</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;font-size:10px;color:#000}h1{font-size:15px;margin-bottom:4px}h2{font-size:11px;font-weight:normal;color:#555;margin-bottom:10px}.resumen{display:flex;gap:16px;margin-bottom:12px}.res-card{background:#f5f5f5;padding:6px 12px;border-radius:4px;min-width:120px}.res-label{font-size:9px;color:#777}.res-value{font-size:13px;font-weight:bold}table{width:100%;border-collapse:collapse}th{background:#185FA5;color:#fff;padding:5px 7px;text-align:left;font-size:9px}td{padding:4px 7px;border-bottom:1px solid #eee;font-size:9px}tfoot td{background:#f0ede6;font-weight:bold;border-top:2px solid #185FA5}@media print{button{display:none}}</style></head><body>');
+  w.document.write('<h1>Solmedix — Reporte de Inventario</h1>');
+  w.document.write('<h2>Generado el '+fecha+' | '+lotes.length+' lotes activos</h2>');
+  w.document.write('<div class="resumen"><div class="res-card"><div class="res-label">Total piezas</div><div class="res-value">'+totalPiezas+'</div></div><div class="res-card"><div class="res-label">Valor inventario</div><div class="res-value">$'+totalValor.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div></div></div>');
+  w.document.write('<table><thead><tr><th>Medicamento</th><th>Categoria</th><th>Lote</th><th style="text-align:right">Existencias</th><th style="text-align:right">Costo unit.</th><th style="text-align:right">Valor total</th></tr></thead><tbody>'+filas+'</tbody><tfoot><tr><td colspan="3">TOTALES</td><td style="text-align:right">'+totalPiezas+' pzas</td><td></td><td style="text-align:right">$'+totalValor.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr></tfoot></table>');
+  w.document.write('</body></html>');
+  w.document.close();
+  setTimeout(function(){w.print();},600);
+}
+
+/* ═══════════════════════════════════════════════
+   ENTRADA DE INVENTARIO POR XML
+═══════════════════════════════════════════════ */
+var xmlConceptos = [];
+var xmlFacturaInfo = {};
+
+function onXmlDrop(e) {
+  e.preventDefault();
+  var file = e.dataTransfer.files[0];
+  if (file) procesarXML(file);
+  document.getElementById('xml-upload-zone').style.borderColor = '#ddd';
+  document.getElementById('xml-upload-zone').style.background = '';
+}
+
+function onXmlFile(e) {
+  var file = e.target.files[0];
+  if (file) procesarXML(file);
+  e.target.value = '';
+}
+
+function procesarXML(file) {
+  if (!file.name.endsWith('.xml')) {
+    alert('Solo se aceptan archivos .xml');
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var parser = new DOMParser();
+      var doc = parser.parseFromString(e.target.result, 'text/xml');
+      var ns = 'http://www.sat.gob.mx/cfd/4';
+
+      // Extraer datos del comprobante
+      var comp = doc.getElementsByTagNameNS(ns, 'Comprobante')[0] ||
+                 doc.getElementsByTagName('cfdi:Comprobante')[0] ||
+                 doc.documentElement;
+
+      var folio   = (comp.getAttribute('Serie')||'') + (comp.getAttribute('Folio')||'');
+      var fecha   = comp.getAttribute('Fecha')||'';
+      var total   = comp.getAttribute('Total')||'';
+
+      // Emisor
+      var emisor = doc.getElementsByTagNameNS(ns,'Emisor')[0] ||
+                   doc.getElementsByTagName('cfdi:Emisor')[0];
+      var proveedor = emisor ? (emisor.getAttribute('Nombre')||'') : '';
+      var rfcProv   = emisor ? (emisor.getAttribute('Rfc')||'')    : '';
+
+      // UUID
+      var tfd = doc.getElementsByTagNameNS('http://www.sat.gob.mx/TimbreFiscalDigital','TimbreFiscalDigital')[0] ||
+                doc.getElementsByTagName('tfd:TimbreFiscalDigital')[0];
+      var uuid = tfd ? (tfd.getAttribute('UUID')||'') : '';
+
+      xmlFacturaInfo = { folio:folio, fecha:fecha, total:total, proveedor:proveedor, rfcProv:rfcProv, uuid:uuid };
+
+      // Conceptos
+      var conceptos = doc.getElementsByTagNameNS(ns,'Concepto');
+      if (!conceptos.length) conceptos = doc.getElementsByTagName('cfdi:Concepto');
+
+      xmlConceptos = [];
+      for (var i = 0; i < conceptos.length; i++) {
+        var c = conceptos[i];
+        xmlConceptos.push({
+          descripcion:   c.getAttribute('Descripcion') || '',
+          cantidad:      parseFloat(c.getAttribute('Cantidad')) || 0,
+          valorUnitario: parseFloat(c.getAttribute('ValorUnitario')) || 0,
+          importe:       parseFloat(c.getAttribute('Importe')) || 0,
+          noIdentificacion: c.getAttribute('NoIdentificacion') || '',
+          lote:          '',
+          medId:         ''
+        });
+      }
+
+      if (!xmlConceptos.length) {
+        alert('No se encontraron conceptos en el XML');
+        return;
+      }
+
+      renderXmlResult();
+    } catch(err) {
+      alert('Error al leer el XML: ' + err.message);
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function renderXmlResult() {
+  // Header
+  var h = xmlFacturaInfo;
+  var fechaF = h.fecha ? h.fecha.split('T')[0].split('-').reverse().join('/') : '';
+  document.getElementById('xml-header').innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">' +
+    '<div><div style="font-size:11px;color:#888">Proveedor</div><div style="font-weight:600;font-size:13px">'+h.proveedor+'</div><div style="font-size:11px;color:#888">RFC: '+h.rfcProv+'</div></div>' +
+    '<div><div style="font-size:11px;color:#888">Folio / Fecha</div><div style="font-weight:600;font-size:13px">'+h.folio+'</div><div style="font-size:11px;color:#888">'+fechaF+'</div></div>' +
+    '<div><div style="font-size:11px;color:#888">Total factura</div><div style="font-weight:600;font-size:15px;color:#185FA5">$'+parseFloat(h.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>' +
+    '<div style="font-size:10px;color:#aaa">UUID: '+h.uuid.slice(0,18)+'...</div></div>' +
+    '</div>';
+
+  // Tabla conceptos
+  var html = '';
+  for (var i = 0; i < xmlConceptos.length; i++) {
+    var c = xmlConceptos[i];
+    // Try to auto-match with medicamentos catalog
+    var medId = autoMatch(c.descripcion);
+    xmlConceptos[i].medId = medId;
+
+    // Build medicamento select
+    var opts = '<option value="">-- Sin vincular --</option>';
+    for (var j = 0; j < medicamentos.length; j++) {
+      var m = medicamentos[j];
+      opts += '<option value="'+m.id+'"'+(m.id===medId?' selected':'')+'>'+m.nombre+'</option>';
+    }
+
+    html += '<tr id="concepto-row-'+i+'">';
+    html += '<td style="font-size:12px">'+c.descripcion+'</td>';
+    html += '<td style="text-align:center;font-weight:600">'+c.cantidad+'</td>';
+    html += '<td style="text-align:right">$'+c.valorUnitario.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    html += '<td><input type="text" id="lote-'+i+'" placeholder="Num. lote" style="font-family:monospace;font-size:12px" oninput="xmlConceptos['+i+'].lote=this.value"/></td>';
+    html += '<td><select id="med-'+i+'" style="font-size:11px" onchange="xmlConceptos['+i+'].medId=this.value">'+opts+'</select></td>';
+    html += '</tr>';
+  }
+  document.getElementById('xml-conceptos-body').innerHTML = html;
+  document.getElementById('xml-result').style.display = 'block';
+  document.getElementById('xml-upload-zone').style.display = 'none';
+}
+
+function autoMatch(descripcion) {
+  // Try to find matching medicamento by name similarity
+  var desc = descripcion.toLowerCase();
+  var bestId = '';
+  var bestScore = 0;
+  for (var i = 0; i < medicamentos.length; i++) {
+    var nom = medicamentos[i].nombre.toLowerCase();
+    // Check if key words match
+    var words = nom.split(' ');
+    var matches = 0;
+    for (var j = 0; j < words.length; j++) {
+      if (words[j].length > 3 && desc.indexOf(words[j]) >= 0) matches++;
+    }
+    var score = matches / words.length;
+    if (score > bestScore && score > 0.3) {
+      bestScore = score;
+      bestId = medicamentos[i].id;
+    }
+  }
+  return bestId;
+}
+
+function limpiarXml() {
+  xmlConceptos = [];
+  xmlFacturaInfo = {};
+  document.getElementById('xml-result').style.display = 'none';
+  document.getElementById('xml-upload-zone').style.display = 'block';
+  document.getElementById('entrada-alrt').style.display = 'none';
+}
+
+function aplicarEntrada() {
+  // Validate
+  var sinLote = xmlConceptos.filter(function(c){ return c.medId && !c.lote; });
+  if (sinLote.length > 0) {
+    entradaAlrt('Hay '+sinLote.length+' medicamento(s) vinculados sin numero de lote. Agrega el lote o desvincularlos.','e');
+    return;
+  }
+
+  var aAplicar = xmlConceptos.filter(function(c){ return c.medId && c.lote; });
+  if (!aAplicar.length) {
+    entradaAlrt('No hay medicamentos vinculados con lote para aplicar.','e');
+    return;
+  }
+
+  var btn = document.getElementById('btn-aplicar-entrada');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Aplicando...';
+
+  var procesados = 0;
+  var errores = 0;
+
+  function procesarSiguiente(idx) {
+    if (idx >= aAplicar.length) {
+      // Done
+      btn.disabled = false;
+      btn.textContent = 'Aplicar entrada al inventario';
+      if (errores === 0) {
+        entradaAlrt('Entrada aplicada correctamente. '+procesados+' lotes agregados/actualizados.','s');
+        // Refresh lotes
+        apiGet('lotes', function(e,d){ if(!e&&d){ lotes=d.lotes||[]; renderLotesAdmin(); renderInventario(); } });
+        setTimeout(limpiarXml, 3000);
+      } else {
+        entradaAlrt('Se aplicaron '+procesados+' lotes. '+errores+' errores.','e');
+      }
+      return;
+    }
+
+    var c = aAplicar[idx];
+    // Find existing lote or create new one
+    var loteExistente = null;
+    for (var i = 0; i < lotes.length; i++) {
+      if (String(lotes[i].med_id) === String(c.medId) && lotes[i].lote === c.lote) {
+        loteExistente = lotes[i];
+        break;
+      }
+    }
+
+    var medNombre = '';
+    for (var ii = 0; ii < medicamentos.length; ii++) {
+      if (String(medicamentos[ii].id) === String(c.medId)) { medNombre = medicamentos[ii].nombre; break; }
+    }
+
+    // Register compra
+    apiPost({ accion:'registrar_compra', fecha:xmlFacturaInfo.fecha, proveedor:xmlFacturaInfo.proveedor,
+      rfc_proveedor:xmlFacturaInfo.rfcProv, folio:xmlFacturaInfo.folio, uuid:xmlFacturaInfo.uuid,
+      med_id:c.medId, medicamento:medNombre, lote:c.lote, cantidad:c.cantidad,
+      costo_unitario:c.valorUnitario, importe:c.cantidad*c.valorUnitario }, function(){});
+
+    if (loteExistente) {
+      var nuevaExist = Number(loteExistente.existencias) + c.cantidad;
+      apiPost({ accion:'editar_lote', id:loteExistente.id, existencias:nuevaExist, costo:c.valorUnitario }, function(err) {
+        if (!err) procesados++; else errores++;
+        procesarSiguiente(idx + 1);
+      });
+    } else {
+      apiPost({ accion:'agregar_lote', med_id:c.medId, medicamento:medNombre, lote:c.lote, existencias:c.cantidad, costo:c.valorUnitario }, function(err) {
+        if (!err) procesados++; else errores++;
+        procesarSiguiente(idx + 1);
+      });
+    }
+  }
+
+  procesarSiguiente(0);
+}
+
+function entradaAlrt(msg, tipo) {
+  var el = document.getElementById('entrada-alrt');
+  el.className = 'alrt '+(tipo==='s'?'als':tipo==='e'?'ale':'ali');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+
+/* ═══════════════════════════════════════════════
+   REPORTE DE COMPRAS Y TRAZABILIDAD
+═══════════════════════════════════════════════ */
+function renderCompras(lista) {
+  var src = lista || compras;
+  // Populate proveedor filter
+  var provs = {};
+  for (var i=0;i<compras.length;i++) provs[compras[i].proveedor] = true;
+  var sel = document.getElementById('c-prov');
+  var curVal = sel.value;
+  sel.innerHTML = '<option value="">Todos los proveedores</option>';
+  Object.keys(provs).sort().forEach(function(p){ sel.innerHTML += '<option value="'+p+'"'+(p===curVal?' selected':'')+'>'+p+'</option>'; });
+
+  if (!src.length) {
+    document.getElementById('compras-body').innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px">Sin compras registradas</td></tr>';
+    document.getElementById('compras-stats').innerHTML = '';
+    document.getElementById('compras-foot').innerHTML = '';
+    return;
+  }
+
+  var totalImporte=0, totalPiezas=0;
+  var html='';
+  for (var i=0;i<src.length;i++) {
+    var c=src[i];
+    var fecha=c.fecha?String(c.fecha).split('T')[0].split('-').reverse().join('/'):'';
+    var imp=Number(c.importe)||0;
+    var cant=Number(c.cantidad)||0;
+    totalImporte+=imp; totalPiezas+=cant;
+    var bg=i%2===0?'#fff':'#fafaf8';
+    html+='<tr style="background:'+bg+'"><td>'+fecha+'</td><td style="font-weight:500">'+c.proveedor+'</td>';
+    html+='<td style="font-family:monospace;font-size:11px">'+c.folio+'</td>';
+    html+='<td>'+c.medicamento+'</td>';
+    html+='<td style="font-family:monospace;font-size:11px">'+c.lote+'</td>';
+    html+='<td style="text-align:right">'+cant+'</td>';
+    html+='<td style="text-align:right">$'+Number(c.costo_unitario).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    html+='<td style="text-align:right;font-weight:600">$'+imp.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
+  }
+  document.getElementById('compras-body').innerHTML = html;
+  document.getElementById('compras-foot').innerHTML = '<tr style="background:#f0ede6;font-weight:600"><td colspan="5">TOTALES</td><td style="text-align:right">'+totalPiezas+' pzas</td><td></td><td style="text-align:right">$'+totalImporte.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
+
+  // Stats
+  var provCount = {};
+  for (var i=0;i<src.length;i++) { provCount[src[i].proveedor] = (provCount[src[i].proveedor]||0) + Number(src[i].importe); }
+  var statsHtml = '<div class="reporte-header">';
+  statsHtml += '<div class="stat-card"><div class="stat-label">Registros</div><div class="stat-value">'+src.length+'</div></div>';
+  statsHtml += '<div class="stat-card"><div class="stat-label">Total compras</div><div class="stat-value">$'+totalImporte.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div></div>';
+  statsHtml += '<div class="stat-card"><div class="stat-label">Total piezas</div><div class="stat-value">'+totalPiezas+'</div></div>';
+  statsHtml += '</div>';
+  document.getElementById('compras-stats').innerHTML = statsHtml;
+  window._comprasData = src;
+}
+
+function filtrarCompras() {
+  var desde = document.getElementById('c-desde').value;
+  var hasta = document.getElementById('c-hasta').value;
+  var prov  = document.getElementById('c-prov').value;
+  var src = compras.filter(function(c) {
+    var fecha = String(c.fecha).split('T')[0];
+    var ok = true;
+    if (desde && fecha < desde) ok = false;
+    if (hasta && fecha > hasta) ok = false;
+    if (prov && c.proveedor !== prov) ok = false;
+    return ok;
+  });
+  renderCompras(src);
+}
+
+function buscarTrazabilidad() {
+  var loteQuery = document.getElementById('traz-lote').value.trim().toUpperCase();
+  var cont = document.getElementById('traz-result');
+  if (!loteQuery) { cont.innerHTML = '<div class="es">Ingresa un numero de lote</div>'; return; }
+
+  // Buscar en compras
+  var comprasLote = compras.filter(function(c){ return String(c.lote).toUpperCase() === loteQuery; });
+  // Buscar en ventas (ventas_detalle via items)
+  var ventasLote = [];
+  for (var i=0;i<ventas.length;i++) {
+    var v = ventas[i];
+    for (var j=0;j<(v.items||[]).length;j++) {
+      if (String(v.items[j].loteNum||'').toUpperCase() === loteQuery) {
+        ventasLote.push({ venta:v, item:v.items[j] });
+      }
+    }
+  }
+
+  if (!comprasLote.length && !ventasLote.length) {
+    cont.innerHTML = '<div class="es">No se encontro informacion para el lote <strong>'+loteQuery+'</strong></div>';
+    return;
+  }
+
+  var html = '';
+
+  if (comprasLote.length) {
+    html += '<div style="margin-bottom:16px"><div style="font-weight:600;font-size:13px;color:#185FA5;margin-bottom:8px">Compra — Proveedor</div>';
+    html += '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Fecha</th><th>Proveedor</th><th>Folio</th><th>Medicamento</th><th style="text-align:right">Cant.</th><th style="text-align:right">Costo unit.</th></tr></thead><tbody>';
+    for (var i=0;i<comprasLote.length;i++) {
+      var c=comprasLote[i];
+      var fecha=String(c.fecha).split('T')[0].split('-').reverse().join('/');
+      html+='<tr><td>'+fecha+'</td><td><strong>'+c.proveedor+'</strong></td><td style="font-family:monospace">'+c.folio+'</td><td>'+c.medicamento+'</td><td style="text-align:right">'+c.cantidad+'</td><td style="text-align:right">$'+Number(c.costo_unitario).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
+    }
+    html += '</tbody></table></div></div>';
+  }
+
+  if (ventasLote.length) {
+    html += '<div><div style="font-weight:600;font-size:13px;color:#166534;margin-bottom:8px">Ventas — Clientes</div>';
+    html += '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Medicamento</th><th style="text-align:right">Cant.</th><th style="text-align:right">Precio venta</th></tr></thead><tbody>';
+    for (var i=0;i<ventasLote.length;i++) {
+      var v=ventasLote[i].venta, it=ventasLote[i].item;
+      var fecha=String(v.fecha).split('T')[0].split('-').reverse().join('/');
+      html+='<tr><td>#'+String(v.id).padStart(4,'0')+'</td><td>'+fecha+'</td><td><strong>'+v.cliente+'</strong></td><td>'+it.nombre+'</td><td style="text-align:right">'+it.qty+'</td><td style="text-align:right">$'+Number(it.precio).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
+    }
+    html += '</tbody></table></div></div>';
+  } else if (comprasLote.length) {
+    html += '<div style="background:#f9f8f5;border-radius:8px;padding:10px 12px;font-size:13px;color:#888">Este lote aun no tiene ventas registradas.</div>';
+  }
+
+  cont.innerHTML = html;
+}
+
+function exportarComprasCSV() {
+  var src = window._comprasData || compras;
+  if (!src.length) { alert('No hay datos para exportar'); return; }
+  var q = function(s){ return String(s||'').split(',').join(' '); };
+  var lines = ['Fecha,Proveedor,RFC,Folio,UUID,Medicamento,Lote,Cantidad,Costo unitario,Importe'];
+  for (var i=0;i<src.length;i++) {
+    var c=src[i];
+    var fecha=String(c.fecha).split('T')[0];
+    lines.push([fecha,q(c.proveedor),q(c.rfc_proveedor),q(c.folio),q(c.uuid),q(c.medicamento),q(c.lote),c.cantidad,c.costo_unitario,c.importe].join(','));
+  }
+  var blob = new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Solmedix_Compras_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+}
+
+function exportarComprasPDF() {
+  var src = window._comprasData || compras;
+  if (!src.length) { alert('No hay datos para exportar'); return; }
+  var totalImporte=0;
+  var filas = src.map(function(c,i){
+    var fecha=String(c.fecha).split('T')[0].split('-').reverse().join('/');
+    var imp=Number(c.importe)||0; totalImporte+=imp;
+    var bg=i%2===0?'#fff':'#f9f9f9';
+    return '<tr style="background:'+bg+'"><td>'+fecha+'</td><td>'+c.proveedor+'</td><td style="font-family:monospace">'+c.folio+'</td><td>'+c.medicamento+'</td><td style="font-family:monospace">'+c.lote+'</td><td style="text-align:right">'+c.cantidad+'</td><td style="text-align:right">$'+Number(c.costo_unitario).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td><td style="text-align:right;font-weight:bold">$'+imp.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
+  }).join('');
+  var w = window.open('','_blank','width=1000,height=700');
+  w.document.write('<!DOCTYPE html><html><head><title>Compras Solmedix</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;font-size:10px}h1{font-size:15px;margin-bottom:4px}h2{font-size:11px;color:#555;margin-bottom:10px}table{width:100%;border-collapse:collapse}th{background:#185FA5;color:#fff;padding:5px 7px;text-align:left;font-size:9px}td{padding:4px 7px;border-bottom:1px solid #eee;font-size:9px}tfoot td{background:#f0ede6;font-weight:bold;border-top:2px solid #185FA5}@media print{button{display:none}}</style></head><body>');
+  w.document.write('<h1>Solmedix — Reporte de Compras</h1><h2>'+src.length+' registros | Total: $'+totalImporte.toLocaleString('es-MX',{minimumFractionDigits:2})+'</h2>');
+  w.document.write('<table><thead><tr><th>Fecha</th><th>Proveedor</th><th>Folio</th><th>Medicamento</th><th>Lote</th><th style="text-align:right">Cant.</th><th style="text-align:right">Costo unit.</th><th style="text-align:right">Importe</th></tr></thead><tbody>'+filas+'</tbody><tfoot><tr><td colspan="7">TOTAL</td><td style="text-align:right">$'+totalImporte.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr></tfoot></table>');
+  w.document.write('</body></html>');
+  w.document.close();
+  setTimeout(function(){ w.print(); }, 600);
+}
+
+
+function toggleOjo(inputId,btn){var inp=document.getElementById(inputId);if(inp.type==="password"){inp.type="text";btn.textContent="🙈";}else{inp.type="password";btn.textContent="👁";}}
+
+function cambiarPwd(perfil) {
+  if(perfilActual!=='admin'){alert('Solo el administrador puede cambiar contrasenas');return;}
+  var campo = document.getElementById('new-pwd-'+perfil);
+  var nuevaPwd = campo.value.trim();
+  if(!nuevaPwd){alert('Ingresa la nueva contrasena');return;}
+  var clave = 'pwd_'+perfil;
+  apiPost({accion:'guardar_config', clave:clave, valor:nuevaPwd}, function(err){
+    configSistema[clave] = nuevaPwd;
+    campo.value='';
+    var alrt=document.getElementById('pwd-alrt');
+    alrt.className='alrt als'; alrt.textContent='Contrasena actualizada correctamente.';
+    alrt.style.display='block';
+    setTimeout(function(){alrt.style.display='none';},3000);
+  });
+}
+
+// Show contrasenas tab only for admin
+function mostrarTabsSegunPerfil(){
+  // Set perfil chip
+  var chipTextos = { admin:'Administrador', mty:'Suc. Monterrey', slp:'Suc. San Luis Potosi' };
+  var chipEl = document.getElementById('chip-perfil');
+  if(chipEl) chipEl.textContent = chipTextos[perfilActual]||'';
+
+  // Passwords tab - only admin
+  var pwdTab=document.getElementById('nt-pwds');
+  if(pwdTab) pwdTab.style.display=perfilActual==='admin'?'':'none';
+
+  // Lock sucursal selector for MTY/SLP profiles
+  var rSuc = document.getElementById('r-suc');
+  var sucDiv = document.getElementById('suc-filter-div');
+  if(perfilActual==='mty'){
+    rSuc.value='MTY';
+    if(sucDiv) sucDiv.style.display='none';
+  } else if(perfilActual==='slp'){
+    rSuc.value='SLP';
+    if(sucDiv) sucDiv.style.display='none';
+  } else {
+    if(sucDiv) sucDiv.style.display='';
+  }
+}
+
+/* ═══════════════════════════════════════════
+   RENDER FUNCTIONS (medicamentos, clientes, ventas, lotes)
+═══════════════════════════════════════════ */
+function renderMeds(lista){
+  var src=lista||medicamentos;
+  var grid=document.getElementById('med-grid');
+  if(!src.length){grid.innerHTML='<div class="es">No hay medicamentos</div>';return;}
+  var html='';
+  for(var i=0;i<src.length;i++){
+    var m=src[i];
+    html+='<div class="med-card"><div class="med-cat">'+(m.categoria||'Sin categoria')+'</div>';
+    html+='<div class="med-nombre">'+m.nombre+'</div>';
+    html+='<div class="med-precio">$'+Number(m.precio).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
+    if(m.costo)html+='<div style="font-size:11px;color:#888;margin-top:2px">Costo: $'+Number(m.costo).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
+    if(m.notas)html+='<div style="font-size:11px;color:#888;margin-top:2px">'+m.notas+'</div>';
+    if(m.codigo_barras)html+='<div style="font-size:11px;color:#888;margin-top:2px;font-family:monospace">CB: '+m.codigo_barras+'</div>';
+    html+='<div class="med-actions"><button class="btn btns btno" onclick="editarMed(\''+m.id+'\')" >Editar</button></div></div>';
+  }
+  grid.innerHTML=html;
+}
+
+function filtrarMeds(){
+  var q=document.getElementById('bq-med').value.trim().toLowerCase();
+  renderMeds(q?medicamentos.filter(function(m){return m.nombre.toLowerCase().indexOf(q)>=0||(m.categoria||'').toLowerCase().indexOf(q)>=0;}):medicamentos);
+}
+
+function abrirModalMed(med){
+  document.getElementById('modal-med-titulo').textContent=med?'Editar medicamento':'Nuevo medicamento';
+  document.getElementById('med-nombre').value=med?med.nombre:'';
+  document.getElementById('med-precio').value=med?med.precio:'';
+  document.getElementById('med-costo').value=med?med.costo:'';
+  document.getElementById('med-cat').value=med?med.categoria:'Alta especialidad';
+  document.getElementById('med-notas').value=med?med.notas:'';
+  document.getElementById('med-editando-id').value=med?med.id:'';
+  document.getElementById('med-alrt').style.display='none';
+  document.getElementById('modal-med-overlay').classList.add('show');
+  document.getElementById('med-nombre').focus();
+}
+function cerrarModalMed(e){if(e.target===document.getElementById('modal-med-overlay'))cerrarModalMedBtn();}
+function cerrarModalMedBtn(){document.getElementById('modal-med-overlay').classList.remove('show');}
+
+function editarMed(id){
+  for(var i=0;i<medicamentos.length;i++){if(String(medicamentos[i].id)===String(id)){abrirModalMed(medicamentos[i]);return;}}
+}
+
+function guardarMedicamento(){
+  var nombre=document.getElementById('med-nombre').value.trim();
+  var precio=parseFloat(document.getElementById('med-precio').value)||0;
+  var costo=parseFloat(document.getElementById('med-costo').value)||0;
+  var categoria=document.getElementById('med-cat').value;
+  var notas=document.getElementById('med-notas').value.trim();
+  var editId=document.getElementById('med-editando-id').value;
+  if(!nombre||!precio){medAlrt('Nombre y precio son obligatorios','e');return;}
+  var btn=document.getElementById('btn-guardar-med');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
+  apiPost({accion:editId?'editar_medicamento':'guardar_medicamento',id:editId,nombre:nombre,precio:precio,costo:costo,categoria:categoria,notas:notas},function(err){
+    if(editId){for(var i=0;i<medicamentos.length;i++){if(String(medicamentos[i].id)===String(editId)){Object.assign(medicamentos[i],{nombre:nombre,precio:precio,costo:costo,categoria:categoria,notas:notas});break;}}}
+    else{medicamentos.push({id:'m'+Date.now(),nombre:nombre,precio:precio,costo:costo,categoria:categoria,notas:notas});}
+    renderMeds(); cerrarModalMedBtn();
+    btn.disabled=false; btn.textContent='Guardar';
+  });
+}
+function medAlrt(msg,tipo){var el=document.getElementById('med-alrt');el.className='alrt '+(tipo==='e'?'ale':'als');el.textContent=msg;el.style.display='block';}
+
+function renderClientesAdmin(lista){
+  var src=lista||clientes;
+  var cont=document.getElementById('lista-cli-admin');
+  if(!src.length){cont.innerHTML='<div class="es">No hay clientes</div>';return;}
+  var html='<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Nombre</th><th>Telefono</th><th>RFC</th><th>Correo</th><th></th></tr></thead><tbody>';
+  for(var i=0;i<src.length;i++){
+    var c=src[i];
+    html+='<tr><td><strong>'+c.nombre+'</strong></td><td>'+(c.telefono||'—')+'</td><td style="font-family:monospace">'+(c.rfc||'—')+'</td><td>'+(c.correo||'—')+'</td>';
+    html+='<td><button class="btn btns btno" onclick="abrirEditarCliente(\''+String(c.id)+'\')" >Editar</button></td></tr>';
+  }
+  html+='</tbody></table></div>';
+  cont.innerHTML=html;
+}
+
+function filtrarClientesAdmin(){
+  var q=document.getElementById('bq-cli').value.trim().toLowerCase();
+  renderClientesAdmin(q.length<2?clientes:clientes.filter(function(c){return c.nombre.toLowerCase().indexOf(q)>=0||(c.telefono||'').indexOf(q)>=0||(c.rfc||'').toLowerCase().indexOf(q)>=0;}));
+}
+
+function abrirEditarCliente(id){
+  var c=null;
+  for(var i=0;i<clientes.length;i++){if(String(clientes[i].id)===String(id)){c=clientes[i];break;}}
+  if(!c)return;
+  document.getElementById('cli-nombre').value=c.nombre||'';
+  document.getElementById('cli-tel').value=c.telefono||'';
+  document.getElementById('cli-rfc').value=c.rfc||'';
+  document.getElementById('cli-correo').value=c.correo||'';
+  document.getElementById('cli-editando-id').value=c.id||'';
+  document.getElementById('cli-alrt').style.display='none';
+  document.getElementById('modal-cli-overlay').classList.add('show');
+  document.getElementById('cli-nombre').focus();
+}
+function cerrarModalCli(e){if(e.target===document.getElementById('modal-cli-overlay'))cerrarModalCliBtn();}
+function cerrarModalCliBtn(){document.getElementById('modal-cli-overlay').classList.remove('show');}
+
+function guardarEdicionCliente(){
+  var nombre=document.getElementById('cli-nombre').value.trim();
+  var id=document.getElementById('cli-editando-id').value;
+  if(!nombre){cliAlrt('El nombre es obligatorio','e');return;}
+  var btn=document.getElementById('btn-guardar-cli');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
+  var datos={accion:'editar_cliente',id:id,nombre:nombre,telefono:document.getElementById('cli-tel').value.trim(),rfc:document.getElementById('cli-rfc').value.trim().toUpperCase(),correo:document.getElementById('cli-correo').value.trim()};
+  apiPost(datos,function(err){
+    for(var i=0;i<clientes.length;i++){if(String(clientes[i].id)===String(id)){Object.assign(clientes[i],{nombre:datos.nombre,telefono:datos.telefono,rfc:datos.rfc,correo:datos.correo});break;}}
+    renderClientesAdmin(); cerrarModalCliBtn();
+    btn.disabled=false; btn.textContent='Guardar cambios';
+  });
+}
+function cliAlrt(msg,tipo){var el=document.getElementById('cli-alrt');el.className='alrt '+(tipo==='e'?'ale':'als');el.textContent=msg;el.style.display='block';}
+
+function renderVentasAdmin(lista){
+  var src=lista||ventas;
+  if(!lista && perfilActual==='mty') src=src.filter(function(v){return v.sucursal==='MTY'||!v.sucursal;});
+  if(!lista && perfilActual==='slp') src=src.filter(function(v){return v.sucursal==='SLP';});
+  var tbody=document.getElementById('ventas-body');
+  if(!src.length){tbody.innerHTML='<tr><td colspan="7" class="es">Sin ventas</td></tr>';return;}
+  var html='';
+  for(var i=0;i<src.length;i++){
+    var v=src[i];
+    var cancelada=v.estado==='cancelada';
+    html+='<tr style="'+(cancelada?'background:#fef2f2;color:#aaa':'')+'"><td><strong>#'+String(v.id).padStart(4,'0')+'</strong></td><td>'+ff(v.fecha)+'</td><td>'+v.cliente+'</td>';
+    html+='<td><strong>$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</strong></td>';
+    html+='<td><span class="'+(v.sucursal==='MTY'?'chip-mty':'chip-slp')+'">'+(v.sucursal||'—')+'</span></td>';
+    html+='<td style="font-family:monospace;font-size:11px">'+v.clave+'</td>';
+    html+='<td>';
+    if(!cancelada) html+='<button class="btn btns btnd" onclick="pedirBorrarVenta(\''+v.id+'\')" >Borrar</button>';
+    else html+='<span style="font-size:11px;color:#c00;font-weight:600">CANCELADA</span>';
+    html+='</td></tr>';
+  }
+  tbody.innerHTML=html;
+}
+
+function filtrarVentasAdmin(){
+  var q=document.getElementById('bq-venta').value.trim().toLowerCase();
+  renderVentasAdmin(q.length<2?null:ventas.filter(function(v){return v.cliente.toLowerCase().indexOf(q)>=0||v.clave.toLowerCase().indexOf(q)>=0||String(v.id).indexOf(q)>=0;}));
+}
+
+function pedirBorrarVenta(id){
+  ventaABorrar=id;
+  document.getElementById('borrar-folio-txt').textContent='Folio #'+String(id).padStart(4,'0');
+  document.getElementById('borrar-alrt').style.display='none';
+  document.getElementById('modal-borrar-overlay').classList.add('show');
+}
+function cerrarModalBorrar(e){if(e.target===document.getElementById('modal-borrar-overlay'))cerrarModalBorrarBtn();}
+function cerrarModalBorrarBtn(){document.getElementById('modal-borrar-overlay').classList.remove('show');ventaABorrar=null;}
+
+function confirmarBorrado(){
+  if(!ventaABorrar)return;
+  var btn=document.getElementById('btn-confirmar-borrar');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Borrando...';
+  apiPost({accion:'borrar_venta',id:ventaABorrar},function(err){
+    ventas=ventas.filter(function(v){return String(v.id)!==String(ventaABorrar);});
+    renderVentasAdmin(); cerrarModalBorrarBtn();
+    btn.disabled=false; btn.textContent='Si, borrar venta';
+  });
+}
+
+function renderLotesAdmin(lista){
+  var src=lista||lotes;
+  var tbody=document.getElementById('lotes-body');
+  if(!src.length){tbody.innerHTML='<tr><td colspan="5" class="es">Sin lotes</td></tr>';return;}
+  var html='';
+  for(var i=0;i<src.length;i++){
+    var l=src[i];
+    var stock=Number(l.existencias);
+    var color=stock>5?'#166534':stock>0?'#d97706':'#c00';
+    html+='<tr><td>'+l.medicamento+'</td>';
+    html+='<td style="font-family:monospace">'+l.lote+'</td>';
+    html+='<td style="font-weight:600;color:'+color+'">'+stock+' pzas</td>';
+    html+='<td>$'+Number(l.costo).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    html+='<td><button class="btn btns btno" onclick="abrirEditarLote(\''+l.id+'\')" >Editar</button></td></tr>';
+  }
+  tbody.innerHTML=html;
+}
+
+function filtrarLotes(){
+  var q=document.getElementById('bq-lote').value.trim().toLowerCase();
+  renderLotesAdmin(q.length<2?lotes:lotes.filter(function(l){return l.medicamento.toLowerCase().indexOf(q)>=0||l.lote.toLowerCase().indexOf(q)>=0;}));
+}
+
+function abrirEditarLote(id){
+  var l=null;
+  for(var i=0;i<lotes.length;i++){if(String(lotes[i].id)===String(id)){l=lotes[i];break;}}
+  if(!l)return;
+  document.getElementById('lote-med-nombre').textContent=l.medicamento;
+  document.getElementById('lote-numero').value=l.lote;
+  document.getElementById('lote-existencias').value=l.existencias;
+  document.getElementById('lote-costo').value=l.costo;
+  document.getElementById('lote-editando-id').value=l.id;
+  document.getElementById('lote-alrt').style.display='none';
+  document.getElementById('modal-lote-overlay').classList.add('show');
+  document.getElementById('lote-existencias').focus();
+}
+function cerrarModalLote(e){if(e.target===document.getElementById('modal-lote-overlay'))cerrarModalLoteBtn();}
+function cerrarModalLoteBtn(){document.getElementById('modal-lote-overlay').classList.remove('show');}
+
+function guardarEdicionLote(){
+  var id=document.getElementById('lote-editando-id').value;
+  var existencias=parseInt(document.getElementById('lote-existencias').value)||0;
+  var costo=parseFloat(document.getElementById('lote-costo').value)||0;
+  var btn=document.getElementById('btn-guardar-lote');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
+  apiPost({accion:'editar_lote',id:id,existencias:existencias,costo:costo},function(err){
+    for(var i=0;i<lotes.length;i++){if(String(lotes[i].id)===String(id)){lotes[i].existencias=existencias;lotes[i].costo=costo;break;}}
+    renderLotesAdmin(); cerrarModalLoteBtn();
+    btn.disabled=false; btn.textContent='Guardar cambios';
+  });
+}
+function loteAlrt(msg,tipo){var el=document.getElementById('lote-alrt');el.className='alrt '+(tipo==='e'?'ale':'als');el.textContent=msg;el.style.display='block';}
+
+</script>
+</body>
+</html>
