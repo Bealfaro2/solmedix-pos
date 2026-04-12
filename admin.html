@@ -366,24 +366,58 @@ input:focus,select:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px 
   <div id="sec-pwds" style="display:none">
     <div class="panel">
       <div class="ptitle">Gestion de contrasenas</div>
-      <p style="font-size:13px;color:#555;margin-bottom:16px">Solo el Administrador puede cambiar las contrasenas del sistema.</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
-        <div class="panel" style="border:1px solid #e5e3dc">
-          <div class="ptitle">Administrador</div>
-          <div class="fr"><label>Nueva contrasena</label><input type="password" id="new-pwd-admin" placeholder="Nueva contrasena"/></div>
-          <button class="btn btnp btns" onclick="cambiarPwd('admin')">Guardar</button>
-        </div>
-        <div class="panel" style="border:1px solid #e5e3dc">
-          <div class="ptitle">Monterrey</div>
-          <div class="fr"><label>Nueva contrasena</label><input type="password" id="new-pwd-mty" placeholder="Nueva contrasena"/></div>
-          <button class="btn btnp btns" onclick="cambiarPwd('mty')">Guardar</button>
-        </div>
-        <div class="panel" style="border:1px solid #e5e3dc">
-          <div class="ptitle">San Luis Potosi</div>
-          <div class="fr"><label>Nueva contrasena</label><input type="password" id="new-pwd-slp" placeholder="Nueva contrasena"/></div>
-          <button class="btn btnp btns" onclick="cambiarPwd('slp')">Guardar</button>
+      <p style="font-size:13px;color:#555;margin-bottom:16px">Solo el Administrador puede cambiar las contrasenas del sistema. Cada perfil tiene contrasena independiente para Sistema de Ventas y Admin.</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px">
+        <div style="text-align:center;font-weight:600;font-size:13px;color:#185FA5;padding:6px;background:#f0f6ff;border-radius:6px">Sistema de Ventas</div>
+        <div style="text-align:center;font-weight:600;font-size:13px;color:#92400e;padding:6px;background:#fef3c7;border-radius:6px">Admin</div>
+      </div>
+
+      <!-- Administrador -->
+      <div style="margin-bottom:16px">
+        <div style="font-weight:600;font-size:12px;color:#555;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Administrador</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="panel" style="border:1px solid #dbeafe;margin:0">
+            <div class="fr"><label>Nueva contrasena Ventas</label><input type="password" id="new-pwd-admin-ventas" placeholder="Nueva contrasena"/></div>
+            <button class="btn btnp btns" onclick="cambiarPwd('admin_ventas')">Guardar</button>
+          </div>
+          <div class="panel" style="border:1px solid #fde68a;margin:0">
+            <div class="fr"><label>Nueva contrasena Admin</label><input type="password" id="new-pwd-admin" placeholder="Nueva contrasena"/></div>
+            <button class="btn btnp btns" onclick="cambiarPwd('admin')">Guardar</button>
+          </div>
         </div>
       </div>
+
+      <!-- Monterrey -->
+      <div style="margin-bottom:16px">
+        <div style="font-weight:600;font-size:12px;color:#555;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Monterrey</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="panel" style="border:1px solid #dbeafe;margin:0">
+            <div class="fr"><label>Nueva contrasena Ventas</label><input type="password" id="new-pwd-mty-ventas" placeholder="Nueva contrasena"/></div>
+            <button class="btn btnp btns" onclick="cambiarPwd('mty_ventas')">Guardar</button>
+          </div>
+          <div class="panel" style="border:1px solid #fde68a;margin:0">
+            <div class="fr"><label>Nueva contrasena Admin</label><input type="password" id="new-pwd-mty" placeholder="Nueva contrasena"/></div>
+            <button class="btn btnp btns" onclick="cambiarPwd('mty')">Guardar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- San Luis Potosi -->
+      <div style="margin-bottom:8px">
+        <div style="font-weight:600;font-size:12px;color:#555;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">San Luis Potosi</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="panel" style="border:1px solid #dbeafe;margin:0">
+            <div class="fr"><label>Nueva contrasena Ventas</label><input type="password" id="new-pwd-slp-ventas" placeholder="Nueva contrasena"/></div>
+            <button class="btn btnp btns" onclick="cambiarPwd('slp_ventas')">Guardar</button>
+          </div>
+          <div class="panel" style="border:1px solid #fde68a;margin:0">
+            <div class="fr"><label>Nueva contrasena Admin</label><input type="password" id="new-pwd-slp" placeholder="Nueva contrasena"/></div>
+            <button class="btn btnp btns" onclick="cambiarPwd('slp')">Guardar</button>
+          </div>
+        </div>
+      </div>
+
       <div id="pwd-alrt" style="display:none;margin-top:12px"></div>
     </div>
   </div>
@@ -1179,7 +1213,9 @@ function toggleOjo(inputId,btn){var inp=document.getElementById(inputId);if(inp.
 
 function cambiarPwd(perfil) {
   if(perfilActual!=='admin'){alert('Solo el administrador puede cambiar contrasenas');return;}
-  var campo = document.getElementById('new-pwd-'+perfil);
+  var fieldId = 'new-pwd-'+perfil.replace('_','-');
+  var campo = document.getElementById(fieldId);
+  if(!campo){alert('Campo no encontrado: '+fieldId);return;}
   var nuevaPwd = campo.value.trim();
   if(!nuevaPwd){alert('Ingresa la nueva contrasena');return;}
   var clave = 'pwd_'+perfil;
