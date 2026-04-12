@@ -105,18 +105,26 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
           <span class="suc-ciudad">Monterrey</span>
           <span class="suc-dir">Paseo de los Leones 1629<br>Las Cumbres 1er Sector</span>
         </button>
-        <input type="password" id="pwd-mty" placeholder="Contrasena MTY"
-          style="display:none;text-align:center;letter-spacing:.1em;font-size:14px"
-          onkeydown="if(event.key==='Enter')confirmarSuc()"/>
+        <div style="display:none;position:relative" id="wrap-pwd-mty">
+          <input type="password" id="pwd-mty" placeholder="Contrasena MTY"
+            style="text-align:center;letter-spacing:.1em;font-size:14px;padding-right:36px"
+            onkeydown="if(event.key==='Enter')confirmarSuc()"/>
+          <button type="button" onclick="toggleOjo('pwd-mty',this)"
+            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:#888;padding:2px">👁</button>
+        </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px">
         <button class="suc-btn" id="btn-slp" onclick="selSuc('SLP')" style="margin-bottom:0">
           <span class="suc-ciudad">San Luis P.</span>
           <span class="suc-dir">Sexta 335<br>Garita de Jalisco</span>
         </button>
-        <input type="password" id="pwd-slp" placeholder="Contrasena SLP"
-          style="display:none;text-align:center;letter-spacing:.1em;font-size:14px"
-          onkeydown="if(event.key==='Enter')confirmarSuc()"/>
+        <div style="display:none;position:relative" id="wrap-pwd-slp">
+          <input type="password" id="pwd-slp" placeholder="Contrasena SLP"
+            style="text-align:center;letter-spacing:.1em;font-size:14px;padding-right:36px"
+            onkeydown="if(event.key==='Enter')confirmarSuc()"/>
+          <button type="button" onclick="toggleOjo('pwd-slp',this)"
+            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:#888;padding:2px">👁</button>
+        </div>
       </div>
     </div>
     <div class="suc-warning show" id="suc-warning" style="display:none">
@@ -342,8 +350,8 @@ function selSuc(clave) {
   document.getElementById('btn-mty').classList.toggle('selected', clave==='MTY');
   document.getElementById('btn-slp').classList.toggle('selected', clave==='SLP');
   // Show password field for selected sucursal
-  document.getElementById('pwd-mty').style.display = clave==='MTY' ? 'block' : 'none';
-  document.getElementById('pwd-slp').style.display = clave==='SLP' ? 'block' : 'none';
+  document.getElementById('wrap-pwd-mty').style.display = clave==='MTY' ? 'block' : 'none';
+  document.getElementById('wrap-pwd-slp').style.display = clave==='SLP' ? 'block' : 'none';
   document.getElementById('suc-warning').style.display = 'none';
   document.getElementById('suc-warning').classList.remove('show');
   var c = document.getElementById('suc-confirm');
@@ -358,30 +366,34 @@ function confirmarSuc() {
   var pwdField = sucSelected==='MTY' ? 'pwd-mty' : 'pwd-slp';
   var pwd = document.getElementById(pwdField).value;
   if (!pwd) { mostrarErrorLogin('Ingresa la contrasena'); return; }
-  // Validate against config
-  var configKey = sucSelected==='MTY' ? 'pwd_mty' : 'pwd_slp';
-  var pwdCorrecta = configSistema[configKey] || '';
-  if (!pwdCorrecta) {
-    // Config not loaded yet - load it first
+
+  function validar(cfg) {
+    var configKey = sucSelected==='MTY' ? 'pwd_mty' : 'pwd_slp';
+    var pwdCorrecta = cfg[configKey] || '';
+    if (!pwdCorrecta) { mostrarErrorLogin('Error al cargar configuracion. Intenta de nuevo.'); return; }
+    if (pwd !== pwdCorrecta) {
+      mostrarErrorLogin('Contrasena incorrecta');
+      document.getElementById(pwdField).value='';
+      document.getElementById(pwdField).focus();
+      return;
+    }
+    sucursal = sucSelected;
+    var chip = document.getElementById('chip-suc');
+    chip.className = 'chip-suc ' + SUCURSALES[sucursal].chipClass;
+    chip.textContent = SUCURSALES[sucursal].chipLabel;
+    document.getElementById('pantalla-sucursal').style.display = 'none';
+    document.getElementById('sistema').style.display = 'block';
+    iniciar();
+  }
+
+  if (configSistema.pwd_mty) {
+    validar(configSistema);
+  } else {
     apiGet('config', function(e,d){
-      if(!e&&d) configSistema=d.config||{};
-      confirmarSuc();
+      if(!e&&d&&d.config){ configSistema=d.config; validar(d.config); }
+      else { mostrarErrorLogin('Sin conexion. Verifica tu internet.'); }
     });
-    return;
   }
-  if (pwd !== pwdCorrecta) {
-    mostrarErrorLogin('Contrasena incorrecta');
-    document.getElementById(pwdField).value='';
-    document.getElementById(pwdField).focus();
-    return;
-  }
-  sucursal = sucSelected;
-  var chip = document.getElementById('chip-suc');
-  chip.className = 'chip-suc ' + SUCURSALES[sucursal].chipClass;
-  chip.textContent = SUCURSALES[sucursal].chipLabel;
-  document.getElementById('pantalla-sucursal').style.display = 'none';
-  document.getElementById('sistema').style.display = 'block';
-  iniciar();
 }
 
 function mostrarErrorLogin(msg) {
@@ -759,6 +771,12 @@ function guardar() {
   renderHist(); mostrarClave(v); limpiar();
   alrt('Venta guardada. Ticket generado.','s');
   btn.disabled=false; btn.textContent='Guardar y generar ticket';
+}
+
+function toggleOjo(inputId, btn) {
+  var inp = document.getElementById(inputId);
+  if (inp.type==='password') { inp.type='text'; btn.textContent='🙈'; }
+  else { inp.type='password'; btn.textContent='👁'; }
 }
 
 function limpiar(){items=[];renderItems();document.getElementById('cli').value='';document.getElementById('barcode').value='';}
