@@ -369,7 +369,7 @@ function confirmarSuc() {
   if (!pwd) { mostrarErrorLogin('Ingresa la contrasena'); return; }
 
   function validar(cfg) {
-    var configKey = sucSelected==='MTY' ? 'pwd_mty' : 'pwd_slp';
+    var configKey = sucSelected==='MTY' ? 'pwd_mty_ventas' : 'pwd_slp_ventas';
     var pwdCorrecta = cfg[configKey] || '';
     if (!pwdCorrecta) { mostrarErrorLogin('Error al cargar configuracion. Intenta de nuevo.'); return; }
     if (pwd !== pwdCorrecta) {
