@@ -1222,7 +1222,7 @@ function renderMeds(lista){
     if(m.costo)html+='<div style="font-size:11px;color:#888;margin-top:2px">Costo: $'+Number(m.costo).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
     if(m.notas)html+='<div style="font-size:11px;color:#888;margin-top:2px">'+m.notas+'</div>';
     if(m.codigo_barras)html+='<div style="font-size:11px;color:#888;margin-top:2px;font-family:monospace">CB: '+m.codigo_barras+'</div>';
-    html+='<div class="med-actions"><button class="btn btns btno" onclick="editarMed(\''+m.id+'\')" >Editar</button></div></div>';
+    html+='<div class="med-actions"><button class="btn btns btno" data-mid="'+m.id+'" onclick="editarMed(this.getAttribute(\'data-mid\'))">Editar</button></div></div>';
   }
   grid.innerHTML=html;
 }
@@ -1278,7 +1278,7 @@ function renderClientesAdmin(lista){
   for(var i=0;i<src.length;i++){
     var c=src[i];
     html+='<tr><td><strong>'+c.nombre+'</strong></td><td>'+(c.telefono||'—')+'</td><td style="font-family:monospace">'+(c.rfc||'—')+'</td><td>'+(c.correo||'—')+'</td>';
-    html+='<td><button class="btn btns btno" onclick="abrirEditarCliente('+String(c.id)+')">Editar</button></td></tr>';
+    html+='<td><button class="btn btns btno" data-cid="'+String(c.id)+'" onclick="abrirEditarCliente(this.getAttribute(\'data-cid\'))">Editar</button></td></tr>';
   }
   html+='</tbody></table></div>';
   cont.innerHTML=html;
@@ -1335,7 +1335,7 @@ function renderVentasAdmin(lista){
     html+='<td><span class="'+(v.sucursal==='MTY'?'chip-mty':'chip-slp')+'">'+(v.sucursal||'—')+'</span></td>';
     html+='<td style="font-family:monospace;font-size:11px">'+v.clave+'</td>';
     html+='<td>';
-    if(!cancelada) html+='<button class="btn btns btnd" onclick="pedirBorrarVenta('+v.id+')">Borrar</button>';
+    if(!cancelada) html+='<button class="btn btns btnd" data-vid="'+v.id+'" onclick="pedirBorrarVenta(this.getAttribute(\'data-vid\'))">Borrar</button>';
     else html+='<span style="font-size:11px;color:#c00;font-weight:600">CANCELADA</span>';
     html+='</td></tr>';
   }
@@ -1380,7 +1380,7 @@ function renderLotesAdmin(lista){
     html+='<td style="font-family:monospace">'+l.lote+'</td>';
     html+='<td style="font-weight:600;color:'+color+'">'+stock+' pzas</td>';
     html+='<td>$'+Number(l.costo).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
-    html+='<td><button class="btn btns btno" onclick="abrirEditarLote('+l.id+')">Editar</button></td></tr>';
+    html+='<td><button class="btn btns btno" data-lid="'+l.id+'" onclick="abrirEditarLote(this.getAttribute(\'data-lid\'))">Editar</button></td></tr>';
   }
   tbody.innerHTML=html;
 }
