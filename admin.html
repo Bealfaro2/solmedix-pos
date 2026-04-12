@@ -93,7 +93,12 @@ input:focus,select:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px 
         <option value="slp">San Luis Potosi</option>
       </select>
     </div>
-    <input type="password" id="pwd" placeholder="Contrasena" onkeydown="if(event.key==='Enter')login()" style="text-align:center;letter-spacing:.1em"/>
+    <div style="position:relative">
+      <input type="password" id="pwd" placeholder="Contrasena" onkeydown="if(event.key==='Enter')login()"
+        style="text-align:center;letter-spacing:.1em;padding-right:36px"/>
+      <button type="button" onclick="toggleOjo('pwd',this)"
+        style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:#888;padding:2px">👁</button>
+    </div>
     <button class="btn btnp" style="width:100%;margin-top:8px" onclick="login()">Entrar</button>
   </div>
 </div>
@@ -1150,6 +1155,8 @@ function exportarComprasPDF() {
   setTimeout(function(){ w.print(); }, 600);
 }
 
+
+function toggleOjo(inputId,btn){var inp=document.getElementById(inputId);if(inp.type==="password"){inp.type="text";btn.textContent="🙈";}else{inp.type="password";btn.textContent="👁";}}
 
 function cambiarPwd(perfil) {
   if(perfilActual!=='admin'){alert('Solo el administrador puede cambiar contrasenas');return;}
