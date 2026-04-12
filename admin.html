@@ -135,7 +135,7 @@ input:focus,select:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px 
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:flex-end">
         <div><label>Fecha inicio</label><input type="date" id="r-desde"/></div>
         <div><label>Fecha fin</label><input type="date" id="r-hasta"/></div>
-        <div><label>Sucursal</label>
+        <div id="suc-filter-div"><label>Sucursal</label>
           <select id="r-suc">
             <option value="">Todas</option>
             <option value="MTY">Monterrey</option>
@@ -580,7 +580,11 @@ function setSyncStatus(t,m){ var el=document.getElementById('sync-status'); el.c
 function navTab(t) {
   ['reporte','meds','clientes','ventas','lotes','inv','entrada','compras','pwds'].forEach(function(x){
     document.getElementById('sec-'+x).style.display=t===x?'block':'none';
-    document.getElementById('nt-'+x).className='nav-tab'+(t===x?' on':'');
+    var tabEl=document.getElementById('nt-'+x);
+    // Don't show pwds tab for non-admin
+    if(x==='pwds' && perfilActual!=='admin') return;
+    tabEl.className='nav-tab'+(t===x?' on':'');
+    tabEl.style.display='';
   });
   if(t==='c') renderClientesAdmin();
   if(t==='inv') renderInventario();
@@ -1176,8 +1180,22 @@ function cambiarPwd(perfil) {
 
 // Show contrasenas tab only for admin
 function mostrarTabsSegunPerfil(){
+  // Passwords tab - only admin
   var pwdTab=document.getElementById('nt-pwds');
   if(pwdTab) pwdTab.style.display=perfilActual==='admin'?'':'none';
+
+  // Lock sucursal selector for MTY/SLP profiles
+  var rSuc = document.getElementById('r-suc');
+  var sucDiv = document.getElementById('suc-filter-div');
+  if(perfilActual==='mty'){
+    rSuc.value='MTY';
+    if(sucDiv) sucDiv.style.display='none';
+  } else if(perfilActual==='slp'){
+    rSuc.value='SLP';
+    if(sucDiv) sucDiv.style.display='none';
+  } else {
+    if(sucDiv) sucDiv.style.display='';
+  }
 }
 </script>
 </body>
