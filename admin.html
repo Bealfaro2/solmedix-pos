@@ -611,6 +611,8 @@ function generarReporte(){
   var desde=document.getElementById('r-desde').value;
   var hasta=document.getElementById('r-hasta').value;
   var suc=document.getElementById('r-suc').value;
+  if(perfilActual==='mty') suc='MTY';
+  if(perfilActual==='slp') suc='SLP';
   if(!desde||!hasta){alert('Selecciona el rango de fechas');return;}
   var filtradas=ventas.filter(function(v){
     var f=String(v.fecha).split('T')[0]||v.fecha;
