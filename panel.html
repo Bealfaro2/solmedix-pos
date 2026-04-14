@@ -1,123 +1,55 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Solmedix — Administración</title>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f3ee;min-height:100vh}
-  #pantalla-login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
-  .login-card{background:#fff;border-radius:16px;border:1px solid #e5e3dc;padding:2.5rem 2rem;width:100%;max-width:380px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.08)}
-  .login-card input{width:100%;padding:12px;margin-bottom:12px;border:1px solid #ddd;border-radius:8px;text-align:center;font-size:16px}
-  #pantalla-admin{display:none}
-  .nav-admin{background:#fff;border-bottom:1px solid #e5e3dc;padding:0 1.5rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-  .nav-tabs{display:flex;gap:1.5rem;height:100%}
-  .nav-tab{height:100%;display:flex;align-items:center;padding:0 .5rem;font-size:14px;font-weight:500;color:#666;cursor:pointer;border-bottom:2px solid transparent}
-  .nav-tab.active{color:#185FA5;border-bottom-color:#185FA5}
-  .container{max-width:1100px;margin:2rem auto;padding:0 1rem}
-  .card{background:#fff;border-radius:12px;border:1px solid #e5e3dc;padding:1.5rem;margin-bottom:1.5rem}
-  table{width:100%;border-collapse:collapse}
-  th, td{text-align:left;padding:12px;border-bottom:1px solid #eee;font-size:14px}
-  .btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-weight:500;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
-  .btn-primary{background:#185FA5;color:#fff}
-  .btn-outline{background:#fff;border:1px solid #ddd;color:#666}
-  .sat-section{background:#f0f7ff;border:1px solid #cce3f5;border-radius:10px;padding:1.2rem;margin-top:1.5rem}
-</style>
+    <meta charset="UTF-8">
+    <title>Solmedix — Diagnóstico</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f4f3ee; }
+        .box { background: white; padding: 30px; border-radius: 15px; display: inline-block; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        input { padding: 10px; margin: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        button { padding: 10px 20px; background: #185FA5; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        #log { margin-top: 20px; color: #666; font-size: 12px; }
+    </style>
 </head>
 <body>
 
-<div id="pantalla-login">
-  <div class="login-card">
-    <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" style="max-width:180px;margin-bottom:1.5rem">
-    <input type="password" id="login-pwd" placeholder="Contraseña de acceso">
-    <button class="btn btn-primary" style="width:100%" id="btn-login" onclick="intentarLogin()">Acceder al Panel</button>
-    <p id="login-err" style="color:#c00;font-size:13px;margin-top:12px;display:none">Error de conexión o contraseña</p>
-  </div>
-</div>
-
-<div id="pantalla-admin">
-  <nav class="nav-admin">
-    <div style="display:flex;align-items:center;gap:1.5rem;height:100%">
-      <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" height="30">
-      <div class="nav-tabs">
-        <div class="nav-tab active">Productos</div>
-      </div>
+    <div class="box">
+        <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" width="150">
+        <h2>Control de Acceso</h2>
+        <p>Si ves esto, el archivo HTML cargó correctamente.</p>
+        <input type="password" id="pass" placeholder="Contraseña">
+        <button onclick="testConexion()">Probar Conexión</button>
+        <div id="log">Esperando acción...</div>
     </div>
-    <div style="display:flex;align-items:center;gap:1rem">
-      <span id="user-label" style="font-size:13px;color:#666;font-weight:bold"></span>
-      <button class="btn btn-outline" onclick="location.reload()">Salir</button>
-    </div>
-  </nav>
 
-  <div class="container">
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
-        <h3>Catálogo de Medicamentos</h3>
-      </div>
-      <div id="tabla-medicamentos">Cargando datos desde Google Sheets...</div>
-    </div>
-  </div>
-</div>
+    <script>
+        var url = 'https://script.google.com/macros/s/AKfycbyCRC2nLoBybekYy0THrABObIGAZ4oPiM1Y0NwT1N0gQNBwU77nsCziB3p9n2RrRvyZ/exec';
 
-<script>
-  // TU URL DE GOOGLE APPS SCRIPT
-  var url_api = 'https://script.google.com/macros/s/AKfycbyCRC2nLoBybekYy0THrABObIGAZ4oPiM1Y0NwT1N0gQNBwU77nsCziB3p9n2RrRvyZ/exec';
-  
-  function intentarLogin() {
-    const pwd = document.getElementById('login-pwd').value;
-    const btn = document.getElementById('btn-login');
-    if(!pwd) return;
+        function testConexion() {
+            document.getElementById('log').innerHTML = "Conectando con Google Sheets...";
+            
+            // Intentamos llamar a la configuración
+            var script = document.createElement('script');
+            script.src = url + '?accion=config&callback=resultado';
+            document.body.appendChild(script);
+            
+            // Si en 8 segundos no pasa nada
+            setTimeout(function() {
+                if(document.getElementById('log').innerHTML.includes("Conectando")) {
+                    document.getElementById('log').innerHTML = "<b style='color:red'>ERROR: Google no responde.</b><br>Verifica que el Apps Script esté publicado como 'Cualquier persona'.";
+                }
+            }, 8000);
+        }
 
-    btn.innerText = "Verificando...";
-    btn.disabled = true;
-
-    // Conexión JSONP limpia
-    const script = document.createElement('script');
-    script.src = url_api + '?accion=config&callback=loginCallback';
-    document.body.appendChild(script);
-  }
-
-  function loginCallback(data) {
-    const pwd = document.getElementById('login-pwd').value;
-    const config = data.config;
-    let perfil = "";
-
-    if(pwd === config.pwd_admin) perfil = "Administrador";
-    else if(pwd === config.pwd_mty) perfil = "Monterrey";
-    else if(pwd === config.pwd_slp) perfil = "San Luis Potosí";
-
-    if(perfil) {
-      document.getElementById('pantalla-login').style.display = 'none';
-      document.getElementById('pantalla-admin').style.display = 'block';
-      document.getElementById('user-label').innerText = "Perfil: " + perfil;
-      cargarMeds();
-    } else {
-      document.getElementById('login-err').style.display = 'block';
-      document.getElementById('btn-login').innerText = "Acceder al Panel";
-      document.getElementById('btn-login').disabled = false;
-    }
-  }
-
-  function cargarMeds() {
-    const script = document.createElement('script');
-    script.src = url_api + '?accion=medicamentos&callback=renderMeds';
-    document.body.appendChild(script);
-  }
-
-  function renderMeds(data) {
-    let html = `<table><thead><tr><th>Medicamento</th><th>Precio</th><th>SAT</th></tr></thead><tbody>`;
-    data.medicamentos.forEach(m => {
-      html += `<tr>
-        <td><b>${m.nombre}</b></td>
-        <td>$${m.precio}</td>
-        <td><small>Prod: ${m.sat_prod || '--'}<br>Uni: ${m.sat_unidad || 'H87'}</small></td>
-      </tr>`;
-    });
-    html += `</tbody></table>`;
-    document.getElementById('tabla-medicamentos').innerHTML = html;
-  }
-</script>
-
+        function resultado(data) {
+            var p = document.getElementById('pass').value;
+            if(p === data.config.pwd_admin || p === data.config.pwd_mty || p === data.config.pwd_slp) {
+                document.getElementById('log').innerHTML = "<b style='color:green'>¡ÉXITO! Conexión y contraseña correctas.</b>";
+                alert("Conexión exitosa. Ahora ya podemos cargar el panel completo.");
+            } else {
+                document.getElementById('log').innerHTML = "<b style='color:orange'>Conectado a Google, pero contraseña incorrecta.</b>";
+            }
+        }
+    </script>
 </body>
 </html>
