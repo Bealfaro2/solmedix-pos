@@ -225,7 +225,7 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
     <span id="chip-suc" class="chip-suc"></span>
     <span id="sync-status" class="sync sync-load">Conectando...</span>
     <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
-      <a href="admin.html" target="_blank" rel="noopener" class="t-btn t-btn-ghost" title="Acceso administrador">⚙ Admin</a>
+      <a href="admin.html" target="_blank" rel="noopener noreferrer" class="t-btn t-btn-ghost" title="Acceso administrador" onclick="window.open('admin.html','_blank');return false;">⚙ Admin</a>
       <button onclick="actualizarDatos()" class="t-btn t-btn-primary" title="Actualizar datos">↻ Actualizar</button>
     </div>
   </div>
@@ -807,7 +807,8 @@ function guardar() {
   var hora=document.getElementById('hor').value;
   var cliente=document.getElementById('cli').value.trim();
   if (!fecha||!cliente||!items.length){alrt('Completa fecha, cliente y al menos un medicamento','i');return;}
-  // Validate stock: recalculate original stock = local stock + already in cart
+
+  // Validar stock
   var stockUsado={};
   for(var si=0;si<items.length;si++){
     if(items[si].loteId) stockUsado[items[si].loteId]=(stockUsado[items[si].loteId]||0)+items[si].qty;
@@ -824,51 +825,59 @@ function guardar() {
       }
     }
   }
+
   var btn=document.getElementById('btn-guardar');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
+
   var folio=ventas.length+1;
   var total=0; for(var k=0;k<items.length;k++) total+=items[k].total;
   var v={id:folio,fecha:fecha,hora:hora,cliente:cliente,sucursal:sucursal,items:items.slice(),total:total,clave:genClave(fecha,cliente,folio)};
 
-  apiPost({accion:'guardar_venta',fecha:fecha,hora:hora,cliente:cliente,total:total,clave:v.clave,sucursal:sucursal,items:items}, function(err) {
-    if (!err) {
-      // Lotes already deducted locally when items were added
-      for (var i=0;i<items.length;i++) {
-        if (items[i].loteId) {
-          // Descontar localmente el array lotes para que la UI refleje stock real
-          for (var j=0;j<lotes.length;j++) {
-            if (String(lotes[j].id)===String(items[i].loteId)) {
-              lotes[j].existencias = Math.max(0, Number(lotes[j].existencias) - items[i].qty);
-              break;
-            }
-          }
-          // Descontar en Google Sheets via JSONP
-          (function(lid, qty){
-            jsonp(API_URL+'?accion=descontar_lote&lote_id='+lid+'&cantidad='+qty, function(err2, res){
-              if(!err2 && res && res.ok) console.log('Lote descontado:', lid, 'nueva existencia:', res.nuevaExistencia);
-            });
-          })(items[i].loteId, items[i].qty);
+  // Snapshot de items ANTES de limpiar la UI
+  var itemsSnapshot = items.slice();
+
+  // Descontar inventario LOCAL de inmediato con el snapshot
+  for(var di=0;di<itemsSnapshot.length;di++){
+    if(itemsSnapshot[di].loteId){
+      for(var dj=0;dj<lotes.length;dj++){
+        if(String(lotes[dj].id)===String(itemsSnapshot[di].loteId)){
+          lotes[dj].existencias = Math.max(0, Number(lotes[dj].existencias) - itemsSnapshot[di].qty);
+          break;
         }
       }
-      setSyncStatus('ok','Guardado en Google Sheets');
-      // Reload lotes after short delay to get server state
-      setTimeout(function(){
-        apiGet('lotes', function(e,d){ if(!e&&d){ lotes=d.lotes||[]; } });
-      }, 2000);
-    } else {
-      setSyncStatus('err','Guardado solo localmente');
     }
-  });
+  }
 
+  // Actualizar UI inmediatamente
   var found=false;
-  for (var c=0;c<clientes.length;c++) { if ((clientes[c].nombre||clientes[c]).toLowerCase()===cliente.toLowerCase()){found=true;break;} }
-  if (!found) { clientes.push({nombre:cliente}); renderListaClientes(); }
+  for(var c=0;c<clientes.length;c++){ if((clientes[c].nombre||clientes[c]).toLowerCase()===cliente.toLowerCase()){found=true;break;} }
+  if(!found){ clientes.push({nombre:cliente}); renderListaClientes(); }
   ventas.unshift(v);
   renderHist(); mostrarClave(v); limpiar();
   alrt('Venta guardada. Ticket generado.','s');
   btn.disabled=false; btn.textContent='Guardar y generar ticket';
-}
 
+  // Guardar en Sheets + descontar en servidor (asíncrono con snapshot)
+  apiPost({accion:'guardar_venta',fecha:fecha,hora:hora,cliente:cliente,total:total,clave:v.clave,sucursal:sucursal,items:itemsSnapshot}, function(err) {
+    if(!err){
+      setSyncStatus('ok','Guardado en Google Sheets');
+      for(var i=0;i<itemsSnapshot.length;i++){
+        if(itemsSnapshot[i].loteId){
+          (function(lid, qty){
+            jsonp(API_URL+'?accion=descontar_lote&lote_id='+lid+'&cantidad='+qty, function(err2, res){
+              if(!err2 && res && res.ok) console.log('Lote descontado:', lid, 'stock:', res.nuevaExistencia);
+            });
+          })(itemsSnapshot[i].loteId, itemsSnapshot[i].qty);
+        }
+      }
+      setTimeout(function(){
+        apiGet('lotes', function(e,d){ if(!e&&d){ lotes=d.lotes||[]; } });
+      }, 3000);
+    } else {
+      setSyncStatus('err','Error al sincronizar con servidor');
+    }
+  });
+}
 function toggleOjo(inputId, btn) {
   var inp = document.getElementById(inputId);
   if (inp.type==='password') { inp.type='text'; btn.textContent='🙈'; }
