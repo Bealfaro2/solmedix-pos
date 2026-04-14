@@ -1,53 +1,43 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>Solmedix — Diagnóstico</title>
+    <title>Solmedix Panel</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f4f3ee; }
-        .box { background: white; padding: 30px; border-radius: 15px; display: inline-block; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        input { padding: 10px; margin: 10px; border: 1px solid #ccc; border-radius: 5px; }
-        button { padding: 10px 20px; background: #185FA5; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        #log { margin-top: 20px; color: #666; font-size: 12px; }
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #f4f3ee; }
+        .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 300px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #185FA5; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="box">
-        <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" width="150">
-        <h2>Control de Acceso</h2>
-        <p>Si ves esto, el archivo HTML cargó correctamente.</p>
+    <div id="login-box" class="card">
+        <h2>Panel Solmedix</h2>
+        <p style="font-size: 13px; color: #666;">Introduce contraseña para conectar con Google Sheets</p>
         <input type="password" id="pass" placeholder="Contraseña">
-        <button onclick="testConexion()">Probar Conexión</button>
-        <div id="log">Esperando acción...</div>
+        <button onclick="conectar()">Entrar al Sistema</button>
+        <p id="msg" style="font-size: 12px; margin-top: 10px;"></p>
     </div>
 
     <script>
-        var url = 'https://script.google.com/macros/s/AKfycbyCRC2nLoBybekYy0THrABObIGAZ4oPiM1Y0NwT1N0gQNBwU77nsCziB3p9n2RrRvyZ/exec';
+        var api = 'https://script.google.com/macros/s/AKfycbyCRC2nLoBybekYy0THrABObIGAZ4oPiM1Y0NwT1N0gQNBwU77nsCziB3p9n2RrRvyZ/exec';
 
-        function testConexion() {
-            document.getElementById('log').innerHTML = "Conectando con Google Sheets...";
-            
-            // Intentamos llamar a la configuración
-            var script = document.createElement('script');
-            script.src = url + '?accion=config&callback=resultado';
-            document.body.appendChild(script);
-            
-            // Si en 8 segundos no pasa nada
-            setTimeout(function() {
-                if(document.getElementById('log').innerHTML.includes("Conectando")) {
-                    document.getElementById('log').innerHTML = "<b style='color:red'>ERROR: Google no responde.</b><br>Verifica que el Apps Script esté publicado como 'Cualquier persona'.";
-                }
-            }, 8000);
+        function conectar() {
+            document.getElementById('msg').innerText = "Conectando...";
+            var s = document.createElement('script');
+            s.src = api + '?accion=config&callback=respuesta';
+            document.body.appendChild(s);
         }
 
-        function resultado(data) {
+        function respuesta(data) {
             var p = document.getElementById('pass').value;
             if(p === data.config.pwd_admin || p === data.config.pwd_mty || p === data.config.pwd_slp) {
-                document.getElementById('log').innerHTML = "<b style='color:green'>¡ÉXITO! Conexión y contraseña correctas.</b>";
-                alert("Conexión exitosa. Ahora ya podemos cargar el panel completo.");
+                alert("¡CONEXIÓN EXITOSA!");
+                document.body.innerHTML = "<h1 style='text-align:center; margin-top:50px;'>Conectado a Google Sheets</h1>";
             } else {
-                document.getElementById('log').innerHTML = "<b style='color:orange'>Conectado a Google, pero contraseña incorrecta.</b>";
+                document.getElementById('msg').innerText = "Contraseña incorrecta";
+                document.getElementById('msg').style.color = "red";
             }
         }
     </script>
