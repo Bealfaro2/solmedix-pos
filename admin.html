@@ -1759,7 +1759,9 @@ function abrirModalMed(med){
   document.getElementById('med-cat').value=med?med.categoria:'Alta especialidad';
   document.getElementById('med-notas').value=med?med.notas:'';
   // Campos SAT
-  document.getElementById('med-tipo').value=med?(med.tipo||med.Tipo||''):'';
+  var _tipoVal=med?(med.tipo||med.Tipo||''):''; 
+  if(_tipoVal==='1')_tipoVal='01'; if(_tipoVal==='2')_tipoVal='02'; if(_tipoVal==='3')_tipoVal='03';
+  document.getElementById('med-tipo').value=_tipoVal;
   document.getElementById('med-clave-sat').value=med?(med.clave_sat||med['Clave SAT']||''):'';
   document.getElementById('med-clave-unidad').value=med?(med.clave_unidad||med['Clave Unidad']||''):'';
   document.getElementById('med-codigo-barras').value=med?(med.codigo_barras||med['codigo_barras']||''):'';
