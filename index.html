@@ -225,7 +225,7 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
     <span id="chip-suc" class="chip-suc"></span>
     <span id="sync-status" class="sync sync-load">Conectando...</span>
     <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
-      <a href="admin.html" class="t-btn t-btn-ghost" title="Acceso administrador">⚙ Admin</a>
+      <a href="admin.html" target="_blank" rel="noopener" class="t-btn t-btn-ghost" title="Acceso administrador">⚙ Admin</a>
       <button onclick="actualizarDatos()" class="t-btn t-btn-primary" title="Actualizar datos">↻ Actualizar</button>
     </div>
   </div>
@@ -835,8 +835,12 @@ function guardar() {
       // Lotes already deducted locally when items were added
       for (var i=0;i<items.length;i++) {
         if (items[i].loteId) {
+          // Descontar localmente el array lotes para que la UI refleje stock real
           for (var j=0;j<lotes.length;j++) {
-            if (String(lotes[j].id)===String(items[i].loteId)) { break; }
+            if (String(lotes[j].id)===String(items[i].loteId)) {
+              lotes[j].existencias = Math.max(0, Number(lotes[j].existencias) - items[i].qty);
+              break;
+            }
           }
           // Descontar en Google Sheets via JSONP
           (function(lid, qty){
