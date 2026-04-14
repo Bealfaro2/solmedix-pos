@@ -5,42 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solmedix — Administración</title>
 <style>
-  /* ESTILOS ORIGINALES RECONSTRUIDOS */
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f3ee;min-height:100vh}
-  
   #pantalla-login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
   .login-card{background:#fff;border-radius:16px;border:1px solid #e5e3dc;padding:2.5rem 2rem;width:100%;max-width:380px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.08)}
   .login-card h2{font-size:18px;font-weight:500;margin-bottom:.4rem;color:#1a1a1a}
   .login-card p{font-size:13px;color:#888;margin-bottom:1.5rem}
   .login-card input{width:100%;padding:12px;margin-bottom:12px;border:1px solid #ddd;border-radius:8px;text-align:center;font-size:16px}
-  
   #pantalla-admin{display:none}
   .nav-admin{background:#fff;border-bottom:1px solid #e5e3dc;padding:0 1.5rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
   .nav-tabs{display:flex;gap:1.5rem;height:100%}
   .nav-tab{height:100%;display:flex;align-items:center;padding:0 .5rem;font-size:14px;font-weight:500;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:0.2s}
   .nav-tab.active{color:#185FA5;border-bottom-color:#185FA5}
-  
   .container{max-width:1100px;margin:2rem auto;padding:0 1rem}
   .card{background:#fff;border-radius:12px;border:1px solid #e5e3dc;padding:1.5rem;margin-bottom:1.5rem}
-  
-  /* TABLAS */
   table{width:100%;border-collapse:collapse}
-  th{text-align:left;padding:12px;background:#f9f9f7;font-size:12px;color:#666;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #eee}
+  th{text-align:left;padding:12px;background:#f9f9f7;font-size:12px;color:#666;text-transform:uppercase;border-bottom:1px solid #eee}
   td{padding:12px;border-bottom:1px solid #eee;font-size:14px}
-
-  /* BOTONES */
   .btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-weight:500;font-size:14px;transition:0.2s;display:inline-flex;align-items:center;justify-content:center;gap:8px}
   .btn-primary{background:#185FA5;color:#fff}
   .btn-outline{background:#fff;border:1px solid #ddd;color:#666}
-
-  /* MODALES Y CAMPOS SAT */
   .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;z-index:1000;padding:1rem}
   .modal-overlay.show{display:flex}
   .modal{background:#fff;border-radius:16px;width:100%;max-width:550px;max-height:90vh;overflow-y:auto;position:relative}
   .modal-header{padding:1.5rem;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center}
   .modal-body{padding:1.5rem}
-  
   .sat-section{background:#f0f7ff;border:1px solid #cce3f5;border-radius:10px;padding:1.2rem;margin-top:1.5rem}
   .form-group{margin-bottom:1rem}
   .form-group label{display:block;font-size:12px;color:#666;margin-bottom:4px}
@@ -122,7 +111,6 @@
         <label>Código de Barras</label>
         <input type="text" id="f-barras">
       </div>
-
       <div class="sat-section">
         <p style="font-size:11px;font-weight:bold;color:#185FA5;margin-bottom:10px">DATOS FISCALES (SAT)</p>
         <div class="form-group">
@@ -132,15 +120,14 @@
         <div class="grid-2">
           <div class="form-group">
             <label>Clave SAT Prod/Serv</label>
-            <input type="text" id="f-sat-prod" placeholder="Ej: 51101500">
+            <input type="text" id="f-sat-prod">
           </div>
           <div class="form-group">
             <label>Clave Unidad SAT</label>
-            <input type="text" id="f-sat-unidad" value="H87">
+            <input type="text" id="f-sat-unidad">
           </div>
         </div>
       </div>
-
       <div style="margin-top:1.5rem;display:flex;gap:10px;justify-content:flex-end">
         <button class="btn btn-outline" onclick="cerrarModalMed()">Cancelar</button>
         <button class="btn btn-primary" onclick="guardarMedicamento()">Guardar</button>
@@ -150,12 +137,8 @@
 </div>
 
 <script>
-  // URL INTEGRADA CORRECTAMENTE
   var url_api = 'https://script.google.com/macros/s/AKfycbyCRC2nLoBybekYy0THrABObIGAZ4oPiM1Y0NwT1N0gQNBwU77nsCziB3p9n2RrRvyZ/exec';
-  var meds = [];
-  var lotes = [];
-  var config = {};
-  var perfilActual = '';
+  var meds = [], lotes = [], config = {}, perfilActual = '';
 
   function intentarLogin() {
     const pass = document.getElementById('login-pwd').value;
@@ -195,12 +178,7 @@
     meds = data.medicamentos;
     let html = `<table><thead><tr><th>Nombre</th><th>Precio</th><th>SAT</th><th>Acciones</th></tr></thead><tbody>`;
     meds.forEach(m => {
-      html += `<tr>
-        <td><b>${m.nombre}</b><br><small>${m.categoria}</small></td>
-        <td>$${m.precio}</td>
-        <td><small>P: ${m.sat_prod || '--'}<br>U: ${m.sat_unidad || 'H87'}</small></td>
-        <td><button class="btn btn-outline" style="padding:5px 10px" onclick="abrirModalMed('${m.id}')">Editar</button></td>
-      </tr>`;
+      html += `<tr><td><b>${m.nombre}</b><br><small>${m.categoria}</small></td><td>$${m.precio}</td><td><small>P: ${m.sat_prod || '--'}<br>U: ${m.sat_unidad || 'H87'}</small></td><td><button class="btn btn-outline" style="padding:5px 10px" onclick="abrirModalMed('${m.id}')">Editar</button></td></tr>`;
     });
     html += `</tbody></table>`;
     document.getElementById('tabla-medicamentos').innerHTML = html;
@@ -231,7 +209,7 @@
       document.getElementById('f-nombre').value = m.nombre;
       document.getElementById('f-cat').value = m.categoria;
       document.getElementById('f-precio').value = m.precio;
-      document.getElementById('f-barras').value = m.codigo_barras;
+      document.getElementById('f-barras').value = m.codigo_barras || '';
       document.getElementById('f-sat-tipo').value = m.tipo_producto || 'Unidad';
       document.getElementById('f-sat-prod').value = m.sat_prod || '51101500';
       document.getElementById('f-sat-unidad').value = m.sat_unidad || 'H87';
@@ -240,6 +218,7 @@
       document.getElementById('f-id').value = "";
       document.getElementById('f-nombre').value = "";
       document.getElementById('f-sat-prod').value = "51101500";
+      document.getElementById('f-sat-unidad').value = "H87";
     }
     document.getElementById('modal-med-overlay').classList.add('show');
   }
@@ -258,7 +237,6 @@
       sat_prod: document.getElementById('f-sat-prod').value,
       sat_unidad: document.getElementById('f-sat-unidad').value
     };
-
     fetch(url_api, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
     .then(() => {
       alert("Operación exitosa.");
