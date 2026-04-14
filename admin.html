@@ -6,61 +6,86 @@
     <title>Solmedix — Administración</title>
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:-apple-system,sans-serif;background:#f4f3ee;min-height:100vh}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f4f3ee;min-height:100vh}
         
         /* LOGIN */
         #pantalla-login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
-        .login-card{background:#fff;border-radius:20px;padding:3rem 2rem;width:100%;max-width:380px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.05);border:1px solid #e5e3dc}
-        /* Ajuste de logo */
-        .logo-main{max-width:220px;height:auto;margin-bottom:2rem;display:inline-block}
+        .login-card{background:#fff;border-radius:24px;padding:3.5rem 2.5rem;width:100%;max-width:400px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.08);border:1px solid #e5e3dc}
         
-        select, input{width:100%;padding:12px;margin-bottom:15px;border:1px solid #ddd;border-radius:10px;font-size:15px;outline:none}
-        .btn-primary{background:#185FA5;color:#fff;border:none;padding:14px;border-radius:10px;width:100%;font-weight:bold;cursor:pointer;font-size:16px}
+        /* CONTENEDOR DE LOGO REFORZADO */
+        .logo-wrapper{margin-bottom:2.5rem;min-height:80px;display:flex;align-items:center;justify-content:center}
+        .logo-main{max-width:240px;height:auto;display:block}
+        .logo-fallback{font-size:28px;font-weight:800;color:#185FA5;letter-spacing:-1px;display:none}
+
+        h2{font-size:20px;font-weight:600;margin-bottom:2rem;color:#333;letter-spacing:-0.5px}
+        label{display:block;text-align:left;font-size:11px;color:#888;margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+        
+        select, input{width:100%;padding:14px;margin-bottom:20px;border:1px solid #ddd;border-radius:12px;font-size:16px;outline:none;background:#fcfcfb;transition:0.2s}
+        select:focus, input:focus{border-color:#185FA5;box-shadow:0 0 0 4px rgba(24,95,165,0.1);background:#fff}
+        
+        .btn-primary{background:#185FA5;color:#fff;border:none;padding:16px;border-radius:12px;width:100%;font-weight:700;cursor:pointer;font-size:16px;box-shadow:0 4px 12px rgba(24,95,165,0.25);transition:0.2s}
+        .btn-primary:hover{background:#144d86;transform:translateY(-1px);box-shadow:0 6px 15px rgba(24,95,165,0.3)}
 
         /* PANEL */
         #pantalla-admin{display:none}
-        .nav-admin{background:#fff;border-bottom:1px solid #e5e3dc;padding:0 2rem;height:75px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-        .container{max-width:1100px;margin:2rem auto;padding:0 1.5rem}
-        .card{background:#fff;border-radius:16px;padding:1.5rem;box-shadow:0 4px 12px rgba(0,0,0,0.02);border:1px solid #e5e3dc}
+        .nav-admin{background:#fff;border-bottom:1px solid #e5e3dc;padding:0 2rem;height:80px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+        .container{max-width:1100px;margin:2.5rem auto;padding:0 1.5rem}
+        .card{background:#fff;border-radius:20px;padding:2rem;box-shadow:0 4px 20px rgba(0,0,0,0.03);border:1px solid #e5e3dc}
         
-        .search-box{width:100%;padding:12px;margin-bottom:20px;border:1px solid #ddd;border-radius:10px;background:#f9f9f7}
+        .search-box{width:100%;padding:14px 20px;margin-bottom:25px;border:1px solid #ddd;border-radius:14px;background:#f9f9f7;font-size:15px;outline:none}
+        .search-box:focus{background:#fff;border-color:#185FA5}
+
         table{width:100%;border-collapse:collapse}
-        th{text-align:left;padding:12px;font-size:11px;color:#888;text-transform:uppercase;border-bottom:2px solid #eee}
-        td{padding:12px;border-bottom:1px solid #eee;font-size:14px}
-        .sat-tag{display:inline-block;background:#eff6ff;color:#1e40af;padding:3px 7px;border-radius:5px;font-size:10px;font-weight:700;margin-top:3px;border:1px solid #dbeafe}
+        th{text-align:left;padding:15px;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #f4f3ee}
+        td{padding:18px 15px;border-bottom:1px solid #f4f3ee;font-size:15px;color:#444}
+        
+        .sat-tag{display:inline-block;background:#f0f7ff;color:#185FA5;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;margin-top:5px;border:1px solid #dbeafe}
     </style>
 </head>
 <body>
 
 <div id="pantalla-login">
     <div class="login-card">
-        <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" class="logo-main" alt="Solmedix">
+        <div class="logo-wrapper">
+            <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png?v=2" 
+                 class="logo-main" 
+                 alt="Solmedix"
+                 onerror="this.style.display='none'; document.getElementById('alt-logo').style.display='block';">
+            <div id="alt-logo" class="logo-fallback">SOLMEDIX</div>
+        </div>
         
-        <h2 style="font-size:18px;margin-bottom:1.5rem;color:#333">Administración</h2>
+        <h2>Acceso Administrativo</h2>
+        
+        <label>Usuario de Sucursal</label>
         <select id="user-select">
             <option value="pwd_admin">Administrador Global</option>
             <option value="pwd_mty">Sucursal Monterrey</option>
             <option value="pwd_slp">Sucursal San Luis Potosí</option>
         </select>
-        <input type="password" id="pass" placeholder="Contraseña">
+
+        <label>Contraseña</label>
+        <input type="password" id="pass" placeholder="••••••••">
+        
         <button class="btn-primary" onclick="login()">Entrar al Sistema</button>
-        <p id="err" style="color:red;font-size:12px;margin-top:10px;display:none">Contraseña incorrecta</p>
+        <p id="err" style="color:#d32f2f;font-size:13px;margin-top:15px;display:none;font-weight:600">⚠️ Contraseña incorrecta</p>
     </div>
 </div>
 
 <div id="pantalla-admin">
     <nav class="nav-admin">
-        <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" height="40" alt="Solmedix">
-        <div style="display:flex;align-items:center;gap:1rem">
-            <span id="label-user" style="font-size:13px;font-weight:bold;color:#185FA5;background:#f0f7ff;padding:5px 12px;border-radius:20px"></span>
-            <button onclick="location.reload()" style="background:none;border:1px solid #ccc;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px">Cerrar Sesión</button>
+        <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png?v=2" height="45" alt="Solmedix">
+        <div style="display:flex;align-items:center;gap:1.5rem">
+            <span id="label-user" style="font-size:13px;font-weight:700;color:#185FA5;background:#f0f7ff;padding:8px 16px;border-radius:30px"></span>
+            <button onclick="location.reload()" style="background:none;border:1px solid #ddd;padding:8px 15px;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;color:#666">Cerrar Sesión</button>
         </div>
     </nav>
 
     <div class="container">
         <div class="card">
-            <input type="text" id="busqueda" class="search-box" placeholder="🔍 Buscar medicamento o categoría..." onkeyup="filtrar()">
-            <div id="tabla-meds">Cargando inventario...</div>
+            <input type="text" id="busqueda" class="search-box" placeholder="🔍 Buscar por nombre de medicamento o categoría..." onkeyup="filtrar()">
+            <div id="tabla-meds">
+                <p style="text-align:center;padding:30px;color:#999">Sincronizando con Google Sheets...</p>
+            </div>
         </div>
     </div>
 </div>
@@ -100,12 +125,12 @@
     }
 
     function actualizarTabla(lista) {
-        var html = '<table><thead><tr><th>Medicamento</th><th>Precio</th><th>Datos SAT</th></tr></thead><tbody>';
+        var html = '<table><thead><tr><th>Medicamento / Categoría</th><th>Precio</th><th>Información SAT</th></tr></thead><tbody>';
         lista.forEach(function(m) {
             html += `<tr>
-                <td><b>${m.nombre}</b><br><small style="color:#999">${m.categoria}</small></td>
-                <td style="font-weight:bold;color:#185FA5;font-size:15px">$${m.precio}</td>
-                <td><div class="sat-tag">P: ${m.sat_prod || '51101500'}</div><br><div class="sat-tag">U: ${m.sat_unidad || 'H87'}</div></td>
+                <td><strong style="color:#185FA5;font-size:16px">${m.nombre}</strong><br><span style="color:#999;font-size:12px">${m.categoria}</span></td>
+                <td style="font-weight:800;font-size:18px;color:#333">$${m.precio}</td>
+                <td><div class="sat-tag">📦 ${m.sat_prod || '51101500'}</div><br><div class="sat-tag">📏 ${m.sat_unidad || 'H87'}</div></td>
             </tr>`;
         });
         html += '</tbody></table>';
