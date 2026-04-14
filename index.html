@@ -171,6 +171,19 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
 .t-btn-ghost:hover{background:var(--bg-3);color:var(--text);border-color:rgba(148,163,184,.3)}
 .t-btn-primary{background:var(--blue);border:1px solid var(--blue);color:#fff;box-shadow:0 2px 10px rgba(24,95,165,.35)}
 .t-btn-primary:hover{background:var(--blue-bright)}
+
+/* ── Logo blending — elimina el fondo blanco en tema oscuro ── */
+.logo-blend {
+  mix-blend-mode: screen;
+  filter: brightness(1.05) contrast(1.05);
+  background: transparent;
+}
+.logo-blend-dark {
+  /* Para fondo muy oscuro: screen hace que el blanco desaparezca */
+  mix-blend-mode: screen;
+  filter: brightness(0.95);
+  background: transparent;
+}
 </style>
 </head>
 <body>
@@ -178,7 +191,7 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
 <!-- LOGIN / SUCURSAL -->
 <div id="pantalla-sucursal">
   <div class="suc-card">
-    <img id="logo-inicio" src="" alt="Solmedix"/>
+    <img id="logo-inicio" src="" alt="Solmedix" class="logo-blend"/>
     <h2>Acceso al Sistema de Ventas</h2>
     <p>Selecciona tu sucursal e ingresa tu contraseña para continuar.</p>
     <div class="suc-btns">
@@ -342,7 +355,7 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
     <div>
       <div class="panel">
         <div class="logo-panel-wrap">
-          <img id="logo-panel" src="" alt="Solmedix"/>
+          <img id="logo-panel" src="" alt="Solmedix" class="logo-blend-dark"/>
           <div class="logo-panel-rfc">RFC: SSM180928AQ7</div>
           <div class="logo-panel-web">www.solmedixfarmacia.com</div>
         </div>
