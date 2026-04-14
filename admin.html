@@ -5,266 +5,220 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solmedix — Administración</title>
 <style>
-  /* ESTILOS ORIGINALES RECONSTRUIDOS */
+  /* ESTILOS ORIGINALES DEL SISTEMA SOLMEDIX */
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f3ee;min-height:100vh;color:#1a1a1a}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f3ee;min-height:100vh}
   
-  /* LOGIN */
   #pantalla-login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
   .login-card{background:#fff;border-radius:16px;border:1px solid #e5e3dc;padding:2.5rem 2rem;width:100%;max-width:380px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.08)}
   .login-card h2{font-size:18px;font-weight:500;margin-bottom:.4rem;color:#1a1a1a}
-  .login-card input{width:100%;padding:12px;margin-bottom:12px;border:1px solid #ddd;border-radius:8px;text-align:center}
+  .login-card p{font-size:13px;color:#888;margin-bottom:1.5rem}
+  .login-card input{width:100%;padding:12px;margin-bottom:12px;border:1px solid #ddd;border-radius:8px;text-align:center;font-size:16px}
   
-  /* DASHBOARD */
   #pantalla-admin{display:none}
-  .navbar{background:#fff;border-bottom:1px solid #e5e3dc;padding:0.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-  .nav-links{display:flex;gap:1.5rem}
-  .nav-links a{text-decoration:none;color:#666;font-size:14px;font-weight:500;cursor:pointer}
-  .nav-links a.active{color:#185FA5}
+  .nav-admin{background:#fff;border-bottom:1px solid #e5e3dc;padding:0 1.5rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+  .nav-tabs{display:flex;gap:1.5rem;height:100%}
+  .nav-tab{height:100%;display:flex;align-items:center;padding:0 .5rem;font-size:14px;font-weight:500;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:0.2s}
+  .nav-tab.active{color:#185FA5;border-bottom-color:#185FA5}
   
   .container{max-width:1100px;margin:2rem auto;padding:0 1rem}
   .card{background:#fff;border-radius:12px;border:1px solid #e5e3dc;padding:1.5rem;margin-bottom:1.5rem}
   
   /* TABLAS */
   table{width:100%;border-collapse:collapse}
-  th{text-align:left;padding:12px;background:#f9f9f7;font-size:12px;color:#666;text-transform:uppercase;letter-spacing:.05em}
+  th{text-align:left;padding:12px;background:#f9f9f7;font-size:12px;color:#666;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #eee}
   td{padding:12px;border-bottom:1px solid #eee;font-size:14px}
-  
-  /* BOTONES */
-  .btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-weight:500;transition:0.2s;font-size:14px}
-  .btn-primary{background:#185FA5;color:#fff}
-  .btn-outline{background:transparent;border:1px solid #ddd}
 
-  /* MODALES Y CAMPOS SAT */
-  .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:1000}
+  /* BOTONES */
+  .btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-weight:500;font-size:14px;transition:0.2s;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+  .btn-primary{background:#185FA5;color:#fff}
+  .btn-outline{background:#fff;border:1px solid #ddd;color:#666}
+
+  /* MODALES */
+  .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;z-index:1000;padding:1rem}
   .modal-overlay.show{display:flex}
-  .modal{background:#fff;padding:2rem;border-radius:16px;width:100%;max-width:550px;max-height:90vh;overflow-y:auto}
+  .modal{background:#fff;border-radius:16px;width:100%;max-width:550px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1)}
+  .modal-header{padding:1.5rem;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center}
+  .modal-body{padding:1.5rem}
+  
+  /* SECCION SAT */
+  .sat-section{background:#f0f7ff;border:1px solid #cce3f5;border-radius:10px;padding:1.2rem;margin-top:1.5rem}
+  .sat-title{font-size:11px;font-weight:bold;color:#185FA5;text-transform:uppercase;margin-bottom:10px;display:block}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:15px}
   .form-group{margin-bottom:1rem}
   .form-group label{display:block;font-size:12px;color:#666;margin-bottom:4px}
-  .form-group input, .form-group select{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px}
-  
-  .sat-box{background:#f0f7ff;border:1px solid #cce3f5;padding:15px;border-radius:8px;margin-top:15px}
-  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+  .form-group input, .form-group select{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px}
 </style>
 </head>
 <body>
 
 <div id="pantalla-login">
   <div class="login-card">
-    <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" style="max-width:180px;margin-bottom:1rem">
-    <h2>Panel de Control</h2>
-    <p>Ingresa la contraseña de administrador</p>
-    <input type="password" id="login-pwd" placeholder="Contraseña">
-    <button class="btn btn-primary" style="width:100%" onclick="intentarLogin()">Entrar al Sistema</button>
-    <p id="login-err" style="color:red;margin-top:10px;display:none">Contraseña incorrecta</p>
+    <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" style="max-width:180px;margin-bottom:1.5rem">
+    <h2>Panel de Administración</h2>
+    <p>Ingresa tus credenciales para continuar</p>
+    <input type="password" id="login-pwd" placeholder="Contraseña de Administrador">
+    <button class="btn btn-primary" style="width:100%" onclick="intentarLogin()">Acceder</button>
+    <div id="login-err" style="color:#c00;font-size:13px;margin-top:12px;display:none">Contraseña incorrecta</div>
   </div>
 </div>
 
 <div id="pantalla-admin">
-  <nav class="navbar">
-    <div style="display:flex;align-items:center;gap:10px">
+  <nav class="nav-admin">
+    <div style="display:flex;align-items:center;gap:1.5rem;height:100%">
       <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" height="30">
-      <span style="font-weight:bold;color:#185FA5">ADMIN</span>
+      <div class="nav-tabs">
+        <div class="nav-tab active" onclick="cambiarTab('meds', this)">Productos</div>
+        <div class="nav-tab" onclick="cambiarTab('lotes', this)">Existencias</div>
+        <div class="nav-tab" onclick="cambiarTab('ventas', this)">Ventas</div>
+      </div>
     </div>
-    <div class="nav-links">
-      <a onclick="showTab('meds')" id="link-meds" class="active">Medicamentos</a>
-      <a onclick="showTab('lotes')" id="link-lotes">Lotes e Inventario</a>
-      <a onclick="location.reload()">Cerrar Sesión</a>
+    <div style="display:flex;align-items:center;gap:1rem">
+      <span id="user-label" style="font-size:13px;color:#666"></span>
+      <button class="btn btn-outline" style="padding:6px 12px" onclick="location.reload()">Salir</button>
     </div>
   </nav>
 
   <div class="container">
-    <div id="tab-meds">
+    <div id="sec-meds" class="seccion-admin">
       <div class="card">
-        <div style="display:flex;justify-content:space-between;margin-bottom:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
           <h3>Catálogo de Productos</h3>
           <button class="btn btn-primary" onclick="abrirModalMed()">+ Nuevo Producto</button>
         </div>
-        <div id="cont-meds">Cargando productos...</div>
+        <div id="tabla-medicamentos">Cargando catálogo...</div>
       </div>
     </div>
 
-    <div id="tab-lotes" style="display:none">
+    <div id="sec-lotes" class="seccion-admin" style="display:none">
       <div class="card">
-        <h3>Inventario por Lotes</h3>
-        <div id="cont-lotes">Cargando lotes...</div>
+        <h3>Control de Lotes y Caducidades</h3>
+        <div id="tabla-lotes">Cargando inventario...</div>
       </div>
     </div>
   </div>
 </div>
 
-<div id="modal-med" class="modal-overlay">
+<div id="modal-med-overlay" class="modal-overlay">
   <div class="modal">
-    <h3 id="med-titulo">Editar Producto</h3><br>
-    <input type="hidden" id="f-id">
-    
-    <div class="form-group">
-      <label>Nombre Comercial / Genérico</label>
-      <input type="text" id="f-nombre">
+    <div class="modal-header">
+      <h3 id="modal-titulo">Editar Medicamento</h3>
+      <button onclick="cerrarModalMed()" style="background:none;border:none;font-size:24px;cursor:pointer">&times;</button>
     </div>
-
-    <div class="grid-2">
+    <div class="modal-body">
+      <input type="hidden" id="f-id">
       <div class="form-group">
-        <label>Categoría</label>
-        <input type="text" id="f-cat">
-      </div>
-      <div class="form-group">
-        <label>Precio de Venta</label>
-        <input type="number" id="f-precio" step="0.01">
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label>Código de Barras</label>
-      <input type="text" id="f-barras">
-    </div>
-
-    <div class="sat-box">
-      <p style="font-size:11px;font-weight:bold;color:#185FA5;margin-bottom:10px">REQUERIMIENTOS SAT (FACTURACIÓN)</p>
-      <div class="form-group">
-        <label>Tipo de Producto</label>
-        <input type="text" id="f-sat-tipo" value="Unidad">
+        <label>Nombre del Producto</label>
+        <input type="text" id="f-nombre" placeholder="Ej: Paracetamol 500mg">
       </div>
       <div class="grid-2">
         <div class="form-group">
-          <label>Clave SAT Prod</label>
-          <input type="text" id="f-sat-prod" placeholder="Ej: 51101500">
+          <label>Categoría</label>
+          <select id="f-cat">
+            <option value="Alta especialidad">Alta especialidad</option>
+            <option value="Genérico">Genérico</option>
+            <option value="Patente">Patente</option>
+            <option value="Abarrotes">Abarrotes</option>
+          </select>
         </div>
         <div class="form-group">
-          <label>Clave SAT Unidad</label>
-          <input type="text" id="f-sat-unidad" value="H87">
+          <label>Precio Venta</label>
+          <input type="number" id="f-precio" step="0.01">
         </div>
       </div>
-    </div>
+      <div class="form-group">
+        <label>Código de Barras</label>
+        <input type="text" id="f-barras">
+      </div>
 
-    <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end">
-      <button class="btn btn-outline" onclick="cerrarModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarMed()">Guardar Cambios</button>
+      <div class="sat-section">
+        <span class="sat-title">Configuración Fiscal SAT</span>
+        <div class="form-group">
+          <label>Tipo de Producto</label>
+          <input type="text" id="f-sat-tipo" value="Unidad">
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Clave SAT (Prod/Serv)</label>
+            <input type="text" id="f-sat-prod" placeholder="Ej: 51101500">
+          </div>
+          <div class="form-group">
+            <label>Clave Unidad SAT</label>
+            <input type="text" id="f-sat-unidad" value="H87">
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.5rem;display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-outline" onclick="cerrarModalMed()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-guardar-med" onclick="guardarMedicamento()">Guardar Cambios</button>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-  var API_URL = 'https://script.google.com/macros/s/AKfycbyCRC2nLoBybekYy0THrABObIGAZ4oPiM1Y0NwT1N0gQNBwU77nsCziB3p9n2RrRvyZ/exec'; 
+  // CONFIGURACIÓN INICIAL (ORIGINAL)
+  var url_api = 'https://script.google.com/macros/s/AKfycbyCRC2nLoBybekYy0THrABObIGAZ4oPiM1Y0NwT1N0gQNBwU77nsCziB3p9n2RrRvyZ/exec';
   var meds = [];
   var lotes = [];
   var config = {};
+  var perfilActual = '';
 
-  // LOGIN ORIGINAL
   function intentarLogin() {
-    const pwd = document.getElementById('login-pwd').value;
-    // Primero cargamos config para validar
+    const pass = document.getElementById('login-pwd').value;
+    if(!pass) return;
+    
+    // Cargamos config para validar usuarios (Monterrey, SLP, Admin)
     const script = document.createElement('script');
-    script.src = API_URL + '?accion=config&callback=validarAcceso';
+    script.src = url_api + '?accion=config&callback=procesarLogin';
     document.body.appendChild(script);
   }
 
-  function validarAcceso(data) {
+  function procesarLogin(data) {
     config = data.config;
-    const pwdIngresada = document.getElementById('login-pwd').value;
-    if(pwdIngresada === config.pwd_admin) {
+    const pass = document.getElementById('login-pwd').value;
+    
+    // Validación de perfiles original
+    if(pass === config.pwd_admin) perfilActual = 'Administrador';
+    else if(pass === config.pwd_mty) perfilActual = 'Monterrey';
+    else if(pass === config.pwd_slp) perfilActual = 'San Luis Potosí';
+
+    if(perfilActual) {
       document.getElementById('pantalla-login').style.display = 'none';
       document.getElementById('pantalla-admin').style.display = 'block';
+      document.getElementById('user-label').innerText = 'Perfil: ' + perfilActual;
       cargarDatos();
     } else {
       document.getElementById('login-err').style.display = 'block';
     }
   }
 
-  // GESTIÓN DE TABS
-  function showTab(tab) {
-    document.getElementById('tab-meds').style.display = tab === 'meds' ? 'block' : 'none';
-    document.getElementById('tab-lotes').style.display = tab === 'lotes' ? 'block' : 'none';
-    document.getElementById('link-meds').classList.toggle('active', tab === 'meds');
-    document.getElementById('link-lotes').classList.toggle('active', tab === 'lotes');
+  function cambiarTab(tab, el) {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.seccion-admin').forEach(s => s.style.display = 'none');
+    document.getElementById('sec-' + tab).style.display = 'block';
   }
 
-  // CARGA DE DATOS
   function cargarDatos() {
-    // Cargar Meds
+    // Medicamentos
     const s1 = document.createElement('script');
-    s1.src = API_URL + '?accion=medicamentos&callback=renderMeds';
+    s1.src = url_api + '?accion=medicamentos&callback=resMeds';
     document.body.appendChild(s1);
-    // Cargar Lotes
+    
+    // Lotes
     const s2 = document.createElement('script');
-    s2.src = API_URL + '?accion=lotes&callback=renderLotes';
+    s2.src = url_api + '?accion=lotes&callback=resLotes';
     document.body.appendChild(s2);
   }
 
-  function renderMeds(data) {
+  function resMeds(data) {
     meds = data.medicamentos;
-    let h = `<table><thead><tr><th>Producto</th><th>Precio</th><th>Fiscal (SAT)</th><th>Acciones</th></tr></thead><tbody>`;
+    let html = `<table><thead><tr><th>Medicamento</th><th>Precio</th><th>Clave SAT</th><th>Acciones</th></tr></thead><tbody>`;
     meds.forEach(m => {
-      h += `<tr>
+      html += `<tr>
         <td><b>${m.nombre}</b><br><small style="color:#888">${m.categoria} | ${m.id}</small></td>
         <td>$${m.precio}</td>
-        <td><small>Prod: ${m.sat_prod || '--'}<br>Uni: ${m.sat_unidad}</small></td>
-        <td><button class="btn btn-outline" style="padding:5px 10px" onclick="abrirModalMed('${m.id}')">Editar</button></td>
-      </tr>`;
-    });
-    h += `</tbody></table>`;
-    document.getElementById('cont-meds').innerHTML = h;
-  }
-
-  function renderLotes(data) {
-    lotes = data.lotes;
-    let h = `<table><thead><tr><th>Medicamento</th><th>Lote</th><th>Stock</th><th>Costo U.</th></tr></thead><tbody>`;
-    lotes.forEach(l => {
-      h += `<tr>
-        <td>${l.medicamento}</td>
-        <td><code>${l.lote}</code></td>
-        <td style="font-weight:bold; color:${l.existencias < 5 ? 'red' : 'green'}">${l.existencias}</td>
-        <td>$${l.costo_unitario}</td>
-      </tr>`;
-    });
-    h += `</tbody></table>`;
-    document.getElementById('cont-lotes').innerHTML = h;
-  }
-
-  // FUNCIONES MODAL
-  function abrirModalMed(id = null) {
-    if(id) {
-      const m = meds.find(x => x.id === id);
-      document.getElementById('med-titulo').innerText = "Editar Producto";
-      document.getElementById('f-id').value = m.id;
-      document.getElementById('f-nombre').value = m.nombre;
-      document.getElementById('f-cat').value = m.categoria;
-      document.getElementById('f-precio').value = m.precio;
-      document.getElementById('f-barras').value = m.codigo_barras;
-      document.getElementById('f-sat-tipo').value = m.tipo_producto || 'Unidad';
-      document.getElementById('f-sat-prod').value = m.sat_prod || '';
-      document.getElementById('f-sat-unidad').value = m.sat_unidad || 'H87';
-    } else {
-      document.getElementById('med-titulo').innerText = "Nuevo Producto";
-      document.getElementById('f-id').value = "";
-      document.getElementById('f-nombre').value = "";
-      document.getElementById('f-sat-prod').value = "51101500";
-    }
-    document.getElementById('modal-med').classList.add('show');
-  }
-
-  function cerrarModal() { document.getElementById('modal-med').classList.remove('show'); }
-
-  function guardarMed() {
-    const payload = {
-      accion: document.getElementById('f-id').value ? 'editar_medicamento' : 'guardar_medicamento',
-      id: document.getElementById('f-id').value,
-      nombre: document.getElementById('f-nombre').value,
-      categoria: document.getElementById('f-cat').value,
-      precio: document.getElementById('f-precio').value,
-      codigo_barras: document.getElementById('f-barras').value,
-      tipo_producto: document.getElementById('f-sat-tipo').value,
-      sat_prod: document.getElementById('f-sat-prod').value,
-      sat_unidad: document.getElementById('f-sat-unidad').value
-    };
-
-    fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
-    .then(() => {
-      alert("Solicitud procesada. Los cambios se verán en unos segundos.");
-      cerrarModal();
-      setTimeout(cargarDatos, 1500);
-    });
-  }
-</script>
-</body>
-</html>
+        <td><small>P: ${m.sat_prod || '--'}<br>U: ${m.sat_unidad || 'H87'}</small></td>
+        <td><button class="btn btn-outline" style="padding:5
