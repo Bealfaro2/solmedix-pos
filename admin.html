@@ -426,8 +426,10 @@ input:focus,select:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px 
 
 <!-- Modal medicamento -->
 <div class="overlay" id="modal-med-overlay" onclick="cerrarModalMed(event)">
-  <div class="modal">
+  <div class="modal" style="max-width:520px">
     <h2 id="modal-med-titulo">Nuevo medicamento</h2>
+
+    <!-- Datos generales -->
     <div class="fr"><label>Nombre completo *</label><input type="text" id="med-nombre" placeholder="Nombre del medicamento"/></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="fr"><label>Precio de venta ($) *</label><input type="number" id="med-precio" placeholder="0.00"/></div>
@@ -441,8 +443,35 @@ input:focus,select:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px 
       </select>
     </div>
     <div class="fr"><label>Notas</label><input type="text" id="med-notas" placeholder="Observaciones opcionales"/></div>
+
+    <!-- Datos SAT / Facturación -->
+    <div style="height:1px;background:#e5e3dc;margin:14px 0 12px"></div>
+    <div style="font-size:11px;font-weight:600;color:#185FA5;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">🧾 Datos para facturación (SAT)</div>
+    <div class="fr"><label>Tipo de objeto</label>
+      <select id="med-tipo">
+        <option value="">— Sin especificar —</option>
+        <option value="01">01 – No objeto de impuesto</option>
+        <option value="02">02 – Sí objeto de impuesto</option>
+        <option value="03">03 – Sí objeto de impuesto, no obliga a desglose</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fr">
+        <label>Clave SAT (producto/servicio)</label>
+        <input type="text" id="med-clave-sat" placeholder="Ej: 51101500" style="font-family:monospace"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,8)"/>
+        <div style="font-size:10px;color:#aaa;margin-top:3px">8 dígitos del catálogo SAT</div>
+      </div>
+      <div class="fr">
+        <label>Clave de unidad SAT</label>
+        <input type="text" id="med-clave-unidad" placeholder="Ej: H87" style="font-family:monospace;text-transform:uppercase"
+          oninput="this.value=this.value.toUpperCase().slice(0,3)"/>
+        <div style="font-size:10px;color:#aaa;margin-top:3px">H87=Pieza, E48=Servicio, KGM=Kg</div>
+      </div>
+    </div>
+
     <input type="hidden" id="med-editando-id"/>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
       <button class="btn" onclick="cerrarModalMedBtn()">Cancelar</button>
       <button class="btn btnp" id="btn-guardar-med" onclick="guardarMedicamento()">Guardar</button>
     </div>
@@ -1270,6 +1299,10 @@ function renderMeds(lista){
     if(m.costo)html+='<div style="font-size:11px;color:#888;margin-top:2px">Costo: $'+Number(m.costo).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
     if(m.notas)html+='<div style="font-size:11px;color:#888;margin-top:2px">'+m.notas+'</div>';
     if(m.codigo_barras)html+='<div style="font-size:11px;color:#888;margin-top:2px;font-family:monospace">CB: '+m.codigo_barras+'</div>';
+    var satClave=m.clave_sat||m['Clave SAT']||'';
+    var satUnidad=m.clave_unidad||m['Clave Unidad']||'';
+    var satTipo=m.tipo||m.Tipo||'';
+    if(satClave||satUnidad){html+='<div style="margin-top:6px;padding:5px 7px;background:#f0f6ff;border-radius:6px;font-size:10px;color:#185FA5;font-family:monospace">🧾 '+(satClave?'SAT:'+satClave+' ':' ')+(satUnidad?'Unidad:'+satUnidad+' ':' ')+(satTipo?'Tipo:'+satTipo:'')+'</div>';}
     html+='<div class="med-actions"><button class="btn btns btno" onclick="editarMed(\''+m.id+'\')" >Editar</button></div></div>';
   }
   grid.innerHTML=html;
@@ -1287,6 +1320,10 @@ function abrirModalMed(med){
   document.getElementById('med-costo').value=med?med.costo:'';
   document.getElementById('med-cat').value=med?med.categoria:'Alta especialidad';
   document.getElementById('med-notas').value=med?med.notas:'';
+  // Campos SAT
+  document.getElementById('med-tipo').value=med?(med.tipo||med.Tipo||''):'';
+  document.getElementById('med-clave-sat').value=med?(med.clave_sat||med['Clave SAT']||''):'';
+  document.getElementById('med-clave-unidad').value=med?(med.clave_unidad||med['Clave Unidad']||''):'';
   document.getElementById('med-editando-id').value=med?med.id:'';
   document.getElementById('med-alrt').style.display='none';
   document.getElementById('modal-med-overlay').classList.add('show');
@@ -1305,13 +1342,16 @@ function guardarMedicamento(){
   var costo=parseFloat(document.getElementById('med-costo').value)||0;
   var categoria=document.getElementById('med-cat').value;
   var notas=document.getElementById('med-notas').value.trim();
+  var tipo=document.getElementById('med-tipo').value;
+  var clave_sat=document.getElementById('med-clave-sat').value.trim();
+  var clave_unidad=document.getElementById('med-clave-unidad').value.trim().toUpperCase();
   var editId=document.getElementById('med-editando-id').value;
   if(!nombre||!precio){medAlrt('Nombre y precio son obligatorios','e');return;}
   var btn=document.getElementById('btn-guardar-med');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
-  apiPost({accion:editId?'editar_medicamento':'guardar_medicamento',id:editId,nombre:nombre,precio:precio,costo:costo,categoria:categoria,notas:notas},function(err){
-    if(editId){for(var i=0;i<medicamentos.length;i++){if(String(medicamentos[i].id)===String(editId)){Object.assign(medicamentos[i],{nombre:nombre,precio:precio,costo:costo,categoria:categoria,notas:notas});break;}}}
-    else{medicamentos.push({id:'m'+Date.now(),nombre:nombre,precio:precio,costo:costo,categoria:categoria,notas:notas});}
+  apiPost({accion:editId?'editar_medicamento':'guardar_medicamento',id:editId,nombre:nombre,precio:precio,costo:costo,categoria:categoria,notas:notas,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad},function(err){
+    if(editId){for(var i=0;i<medicamentos.length;i++){if(String(medicamentos[i].id)===String(editId)){Object.assign(medicamentos[i],{nombre:nombre,precio:precio,costo:costo,categoria:categoria,notas:notas,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad});break;}}}
+    else{medicamentos.push({id:'m'+Date.now(),nombre:nombre,precio:precio,costo:costo,categoria:categoria,notas:notas,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad});}
     renderMeds(); cerrarModalMedBtn();
     btn.disabled=false; btn.textContent='Guardar';
   });
