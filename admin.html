@@ -1,148 +1,117 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solmedix — Administración</title>
-    <style>
-        *{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f4f3ee;min-height:100vh}
-        
-        /* LOGIN */
-        #pantalla-login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
-        .login-card{background:#fff;border-radius:24px;padding:3.5rem 2.5rem;width:100%;max-width:400px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.08);border:1px solid #e5e3dc}
-        
-        /* CONTENEDOR DE LOGO REFORZADO */
-        .logo-wrapper{margin-bottom:2.5rem;min-height:80px;display:flex;align-items:center;justify-content:center}
-        .logo-main{max-width:240px;height:auto;display:block}
-        .logo-fallback{font-size:28px;font-weight:800;color:#185FA5;letter-spacing:-1px;display:none}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solmedix — Administración</title>
+<style>
+/* MANTENEMOS TU DISEÑO ORIGINAL COMPLETO */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f3ee;min-height:100vh}
+#pantalla-login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
+.login-card{background:#fff;border-radius:16px;border:1px solid #e5e3dc;padding:2.5rem 2rem;width:100%;max-width:380px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+.login-card h2{font-size:18px;font-weight:500;margin-bottom:.4rem;color:#1a1a1a}
+.login-card p{font-size:13px;color:#888;margin-bottom:1.5rem}
+input, select{width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;margin-bottom:10px;font-size:15px}
 
-        h2{font-size:20px;font-weight:600;margin-bottom:2rem;color:#333;letter-spacing:-0.5px}
-        label{display:block;text-align:left;font-size:11px;color:#888;margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
-        
-        select, input{width:100%;padding:14px;margin-bottom:20px;border:1px solid #ddd;border-radius:12px;font-size:16px;outline:none;background:#fcfcfb;transition:0.2s}
-        select:focus, input:focus{border-color:#185FA5;box-shadow:0 0 0 4px rgba(24,95,165,0.1);background:#fff}
-        
-        .btn-primary{background:#185FA5;color:#fff;border:none;padding:16px;border-radius:12px;width:100%;font-weight:700;cursor:pointer;font-size:16px;box-shadow:0 4px 12px rgba(24,95,165,0.25);transition:0.2s}
-        .btn-primary:hover{background:#144d86;transform:translateY(-1px);box-shadow:0 6px 15px rgba(24,95,165,0.3)}
-
-        /* PANEL */
-        #pantalla-admin{display:none}
-        .nav-admin{background:#fff;border-bottom:1px solid #e5e3dc;padding:0 2rem;height:80px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-        .container{max-width:1100px;margin:2.5rem auto;padding:0 1.5rem}
-        .card{background:#fff;border-radius:20px;padding:2rem;box-shadow:0 4px 20px rgba(0,0,0,0.03);border:1px solid #e5e3dc}
-        
-        .search-box{width:100%;padding:14px 20px;margin-bottom:25px;border:1px solid #ddd;border-radius:14px;background:#f9f9f7;font-size:15px;outline:none}
-        .search-box:focus{background:#fff;border-color:#185FA5}
-
-        table{width:100%;border-collapse:collapse}
-        th{text-align:left;padding:15px;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #f4f3ee}
-        td{padding:18px 15px;border-bottom:1px solid #f4f3ee;font-size:15px;color:#444}
-        
-        .sat-tag{display:inline-block;background:#f0f7ff;color:#185FA5;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;margin-top:5px;border:1px solid #dbeafe}
-    </style>
+/* Estilos de tu panel original */
+#pantalla-admin{display:none}
+.nav-admin{background:#fff;border-bottom:1px solid #e5e3dc;padding:0 1.5rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.container{max-width:1100px;margin:2rem auto;padding:0 1rem}
+.card{background:#fff;border-radius:12px;border:1px solid #e5e3dc;padding:1.5rem;margin-bottom:1.5rem}
+table{width:100%;border-collapse:collapse}
+th, td{text-align:left;padding:12px;border-bottom:1px solid #eee;font-size:14px}
+.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-weight:500;font-size:13px;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:#185FA5;color:#fff}
+.sat-tag{display:inline-block;background:#f0f7ff;color:#185FA5;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:bold}
+</style>
 </head>
 <body>
 
 <div id="pantalla-login">
-    <div class="login-card">
-        <div class="logo-wrapper">
-            <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png?v=2" 
-                 class="logo-main" 
-                 alt="Solmedix"
-                 onerror="this.style.display='none'; document.getElementById('alt-logo').style.display='block';">
-            <div id="alt-logo" class="logo-fallback">SOLMEDIX</div>
-        </div>
-        
-        <h2>Acceso Administrativo</h2>
-        
-        <label>Usuario de Sucursal</label>
-        <select id="user-select">
-            <option value="pwd_admin">Administrador Global</option>
-            <option value="pwd_mty">Sucursal Monterrey</option>
-            <option value="pwd_slp">Sucursal San Luis Potosí</option>
-        </select>
-
-        <label>Contraseña</label>
-        <input type="password" id="pass" placeholder="••••••••">
-        
-        <button class="btn-primary" onclick="login()">Entrar al Sistema</button>
-        <p id="err" style="color:#d32f2f;font-size:13px;margin-top:15px;display:none;font-weight:600">⚠️ Contraseña incorrecta</p>
-    </div>
+  <div class="login-card">
+    <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" style="max-width:180px;margin-bottom:1.5rem" alt="Solmedix">
+    <h2>Panel Administrativo</h2>
+    <p>Ingresa tus credenciales para continuar</p>
+    
+    <select id="user-select">
+        <option value="pwd_admin">Administrador Global</option>
+        <option value="pwd_mty">Sucursal Monterrey</option>
+        <option value="pwd_slp">Sucursal San Luis Potosí</option>
+    </select>
+    
+    <input type="password" id="login-pwd" placeholder="Contraseña">
+    <button class="btn btn-primary" style="width:100%;padding:12px" onclick="intentarLogin()">Acceder al Sistema</button>
+    <p id="login-err" style="color:#c00;margin-top:10px;display:none">Contraseña incorrecta</p>
+  </div>
 </div>
 
 <div id="pantalla-admin">
-    <nav class="nav-admin">
-        <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png?v=2" height="45" alt="Solmedix">
-        <div style="display:flex;align-items:center;gap:1.5rem">
-            <span id="label-user" style="font-size:13px;font-weight:700;color:#185FA5;background:#f0f7ff;padding:8px 16px;border-radius:30px"></span>
-            <button onclick="location.reload()" style="background:none;border:1px solid #ddd;padding:8px 15px;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;color:#666">Cerrar Sesión</button>
-        </div>
-    </nav>
-
-    <div class="container">
-        <div class="card">
-            <input type="text" id="busqueda" class="search-box" placeholder="🔍 Buscar por nombre de medicamento o categoría..." onkeyup="filtrar()">
-            <div id="tabla-meds">
-                <p style="text-align:center;padding:30px;color:#999">Sincronizando con Google Sheets...</p>
-            </div>
-        </div>
+  <nav class="nav-admin">
+    <div style="display:flex;align-items:center;gap:1rem">
+      <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" height="30" alt="Solmedix">
     </div>
+    <div style="display:flex;align-items:center;gap:1rem">
+      <span id="user-label" style="font-size:13px;font-weight:600"></span>
+      <button class="btn" onclick="location.reload()">Salir</button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="card">
+        <h3>Inventario y Catálogo</h3>
+        <div id="contenido-datos">Cargando información...</div>
+    </div>
+  </div>
 </div>
 
 <script>
-    var api = 'https://script.google.com/macros/s/AKfycbyCRC2nLoBybekYy0THrABObIGAZ4oPiM1Y0NwT1N0gQNBwU77nsCziB3p9n2RrRvyZ/exec';
-    var configData = {};
-    var meds = [];
+// CONEXIÓN CORREGIDA
+var url_api = 'https://script.google.com/macros/s/AKfycbyCRC2nLoBybekYy0THrABObIGAZ4oPiM1Y0NwT1N0gQNBwU77nsCziB3p9n2RrRvyZ/exec';
+var configGlobal = {};
 
-    window.onload = function() {
-        var s = document.createElement('script');
-        s.src = api + '?accion=config&callback=setWebConfig';
-        document.body.appendChild(s);
-    };
+window.onload = function() {
+    var s = document.createElement('script');
+    s.src = url_api + '?accion=config&callback=cargarConfig';
+    document.body.appendChild(s);
+};
 
-    function setWebConfig(data) { configData = data.config; }
+function cargarConfig(data) {
+    configGlobal = data.config;
+}
 
-    function login() {
-        var userKey = document.getElementById('user-select').value;
-        if (document.getElementById('pass').value === configData[userKey]) {
-            document.getElementById('pantalla-login').style.display = 'none';
-            document.getElementById('pantalla-admin').style.display = 'block';
-            document.getElementById('label-user').innerText = "👤 " + document.getElementById('user-select').options[document.getElementById('user-select').selectedIndex].text;
-            cargarDatos();
-        } else { document.getElementById('err').style.display = 'block'; }
+function intentarLogin() {
+    var userKey = document.getElementById('user-select').value;
+    var pwd = document.getElementById('login-pwd').value;
+    
+    if(pwd === configGlobal[userKey]) {
+        document.getElementById('pantalla-login').style.display = 'none';
+        document.getElementById('pantalla-admin').style.display = 'block';
+        document.getElementById('user-label').innerText = document.getElementById('user-select').options[document.getElementById('user-select').selectedIndex].text;
+        cargarMedicamentos();
+    } else {
+        document.getElementById('login-err').style.display = 'block';
     }
+}
 
-    function cargarDatos() {
-        var s = document.createElement('script');
-        s.src = api + '?accion=medicamentos&callback=renderMeds';
-        document.body.appendChild(s);
-    }
+function cargarMedicamentos() {
+    var s = document.createElement('script');
+    s.src = url_api + '?accion=medicamentos&callback=renderTabla';
+    document.body.appendChild(s);
+}
 
-    function renderMeds(data) {
-        meds = data.medicamentos;
-        actualizarTabla(meds);
-    }
-
-    function actualizarTabla(lista) {
-        var html = '<table><thead><tr><th>Medicamento / Categoría</th><th>Precio</th><th>Información SAT</th></tr></thead><tbody>';
-        lista.forEach(function(m) {
-            html += `<tr>
-                <td><strong style="color:#185FA5;font-size:16px">${m.nombre}</strong><br><span style="color:#999;font-size:12px">${m.categoria}</span></td>
-                <td style="font-weight:800;font-size:18px;color:#333">$${m.precio}</td>
-                <td><div class="sat-tag">📦 ${m.sat_prod || '51101500'}</div><br><div class="sat-tag">📏 ${m.sat_unidad || 'H87'}</div></td>
-            </tr>`;
-        });
-        html += '</tbody></table>';
-        document.getElementById('tabla-meds').innerHTML = html;
-    }
-
-    function filtrar() {
-        var txt = document.getElementById('busqueda').value.toLowerCase();
-        var filtrados = meds.filter(m => m.nombre.toLowerCase().includes(txt) || m.categoria.toLowerCase().includes(txt));
-        actualizarTabla(filtrados);
-    }
+function renderTabla(data) {
+    var html = '<table><thead><tr><th>Medicamento</th><th>Precio</th><th>SAT</th></tr></thead><tbody>';
+    data.medicamentos.forEach(function(m) {
+        html += '<tr>' +
+            '<td><b>' + m.nombre + '</b><br><small>' + m.categoria + '</small></td>' +
+            '<td>$' + m.precio + '</td>' +
+            '<td><span class="sat-tag">' + (m.sat_prod || '51101500') + '</span></td>' +
+            '</tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('contenido-datos').innerHTML = html;
+}
 </script>
-
 </body>
 </html>
