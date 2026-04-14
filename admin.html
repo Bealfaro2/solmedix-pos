@@ -858,6 +858,11 @@ select option { background:var(--bg-2); color:var(--text); }
       </select>
     </div>
     <div class="fr"><label>Notas</label><input type="text" id="med-notas" placeholder="Observaciones opcionales"/></div>
+    <div class="fr"><label>Código de barras</label>
+      <input type="text" id="med-codigo-barras" placeholder="Ej: 7501234567890" style="font-family:var(--mono)"
+        oninput="this.value=this.value.replace(/[^0-9]/g,'')"/>
+      <div style="font-size:10px;color:var(--text-3);margin-top:3px">Solo números — EAN-13, UPC-A, etc.</div>
+    </div>
     <div class="sat-section-divider"></div>
     <div class="sat-section-label">🧾 Datos para facturación (SAT)</div>
     <div class="fr"><label>Tipo de objeto</label>
@@ -1757,6 +1762,7 @@ function abrirModalMed(med){
   document.getElementById('med-tipo').value=med?(med.tipo||med.Tipo||''):'';
   document.getElementById('med-clave-sat').value=med?(med.clave_sat||med['Clave SAT']||''):'';
   document.getElementById('med-clave-unidad').value=med?(med.clave_unidad||med['Clave Unidad']||''):'';
+  document.getElementById('med-codigo-barras').value=med?(med.codigo_barras||med['codigo_barras']||''):'';
   document.getElementById('med-editando-id').value=med?med.id:'';
   document.getElementById('med-alrt').style.display='none';
   document.getElementById('modal-med-overlay').classList.add('show');
@@ -1778,13 +1784,14 @@ function guardarMedicamento(){
   var tipo=document.getElementById('med-tipo').value;
   var clave_sat=document.getElementById('med-clave-sat').value.trim();
   var clave_unidad=document.getElementById('med-clave-unidad').value.trim().toUpperCase();
+  var codigo_barras=document.getElementById('med-codigo-barras').value.trim();
   var editId=document.getElementById('med-editando-id').value;
   if(!nombre||!precio){medAlrt('Nombre y precio son obligatorios','e');return;}
   var btn=document.getElementById('btn-guardar-med');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
-  apiPost({accion:editId?'editar_medicamento':'guardar_medicamento',id:editId,nombre:nombre,precio:precio,costo:costo,categoria:categoria,notas:notas,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad},function(err){
-    if(editId){for(var i=0;i<medicamentos.length;i++){if(String(medicamentos[i].id)===String(editId)){Object.assign(medicamentos[i],{nombre:nombre,precio:precio,costo:costo,categoria:categoria,notas:notas,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad});break;}}}
-    else{medicamentos.push({id:'m'+Date.now(),nombre:nombre,precio:precio,costo:costo,categoria:categoria,notas:notas,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad});}
+  apiPost({accion:editId?'editar_medicamento':'guardar_medicamento',id:editId,nombre:nombre,precio:precio,costo:costo,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad},function(err){
+    if(editId){for(var i=0;i<medicamentos.length;i++){if(String(medicamentos[i].id)===String(editId)){Object.assign(medicamentos[i],{nombre:nombre,precio:precio,costo:costo,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad});break;}}}
+    else{medicamentos.push({id:'m'+Date.now(),nombre:nombre,precio:precio,costo:costo,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad});}
     renderMeds(); cerrarModalMedBtn();
     btn.disabled=false; btn.textContent='Guardar';
   });
