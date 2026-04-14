@@ -335,6 +335,8 @@ select option { background:var(--bg-2); color:var(--text); }
     <button class="nav-tab"     id="nt-inv"       onclick="navTab('inv')">📈 Rep. Inventario</button>
     <button class="nav-tab"     id="nt-entrada"   onclick="navTab('entrada')">📥 Entrada XML</button>
     <button class="nav-tab"     id="nt-compras"   onclick="navTab('compras')">🧾 Compras</button>
+    <button class="nav-tab"     id="nt-gastos"    onclick="navTab('gastos')">💸 Gastos</button>
+    <button class="nav-tab"     id="nt-utilidad"  onclick="navTab('utilidad')">📉 Utilidad</button>
     <button class="nav-tab"     id="nt-pwds"      onclick="navTab('pwds')" style="display:none">🔑 Contraseñas</button>
   </div>
 
@@ -654,6 +656,188 @@ select option { background:var(--bg-2); color:var(--text); }
       </div>
     </div>
 
+
+    <!-- GASTOS -->
+    <div id="sec-gastos" style="display:none">
+
+      <!-- SUB-TABS -->
+      <div style="display:flex;gap:4px;margin-bottom:18px">
+        <button class="nav-tab on" id="gt-fiscal"    onclick="gastosTab('fiscal')"   style="border-radius:var(--radius-sm)">📄 Gastos Fiscales (XML)</button>
+        <button class="nav-tab"    id="gt-nofiscal"  onclick="gastosTab('nofiscal')" style="border-radius:var(--radius-sm)">✏️ Gastos No Fiscales</button>
+      </div>
+
+      <!-- GASTOS FISCALES -->
+      <div id="sg-fiscal">
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div class="ptitle" style="margin:0">Registro de gastos fiscales por XML</div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btns btno" onclick="exportarGastosFiscalesCSV()">Exportar CSV</button>
+              <button class="btn btns btno" onclick="exportarGastosFiscalesPDF()">Exportar PDF</button>
+            </div>
+          </div>
+          <p style="font-size:13px;color:var(--text-2);margin-bottom:1.5rem;line-height:1.7">
+            Sube el XML de cualquier factura de gasto. El sistema extrae automáticamente todos los datos del CFDI 4.0.
+          </p>
+
+          <!-- Upload zone -->
+          <div id="gf-upload-zone"
+            style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:2rem;text-align:center;cursor:pointer;transition:all .2s;background:rgba(15,23,42,.3);margin-bottom:16px"
+            onclick="document.getElementById('gf-file-input').click()"
+            ondragover="event.preventDefault();this.style.borderColor='var(--blue-bright)';this.style.background='rgba(24,95,165,.1)'"
+            ondragleave="this.style.borderColor='';this.style.background=''"
+            ondrop="onGfDrop(event)">
+            <div style="font-size:32px;margin-bottom:8px">📄</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text-2)">Arrastra el XML aquí o haz clic para seleccionar</div>
+            <div style="font-size:12px;color:var(--text-3);margin-top:4px">CFDI 4.0 — cualquier tipo de gasto</div>
+            <input type="file" id="gf-file-input" accept=".xml" style="display:none" onchange="onGfFile(event)" multiple/>
+          </div>
+
+          <!-- Preview del XML parseado -->
+          <div id="gf-preview" style="display:none;margin-bottom:16px">
+            <div style="font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Vista previa — Confirma antes de guardar</div>
+            <div style="overflow-x:auto">
+              <table class="tbl" id="gf-preview-tabla">
+                <thead><tr>
+                  <th>Fecha</th><th>Proveedor</th><th>RFC</th><th>Concepto</th>
+                  <th style="text-align:right">Subtotal</th>
+                  <th style="text-align:right">IVA</th>
+                  <th style="text-align:right">Total</th>
+                  <th>Método</th><th>UUID</th><th></th>
+                </tr></thead>
+                <tbody id="gf-preview-body"></tbody>
+              </table>
+            </div>
+            <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:var(--radius-sm);padding:10px 13px;font-size:12px;color:#fcd34d;margin:12px 0">
+              ⚠️ Revisa los datos. Las facturas con RFC receptor diferente a SSM180928AQ7 están marcadas en amarillo.
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              <button class="btn" onclick="limpiarGfPreview()">Cancelar</button>
+              <button class="btn btnp" id="btn-guardar-gastos" onclick="guardarGastosFiscales()">Guardar gastos al sistema</button>
+            </div>
+            <div id="gf-alrt" style="display:none;margin-top:10px"></div>
+          </div>
+
+          <!-- Filtros y listado -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:flex-end;margin-bottom:14px">
+            <div><label>Fecha inicio</label><input type="date" id="gf-desde"/></div>
+            <div><label>Fecha fin</label><input type="date" id="gf-hasta"/></div>
+            <div id="gf-suc-div"><label>Sucursal</label>
+              <select id="gf-suc"><option value="">Todas</option><option value="MTY">Monterrey</option><option value="SLP">San Luis Potosí</option></select>
+            </div>
+            <div><button class="btn btnp" onclick="filtrarGastosFiscales()">Filtrar</button></div>
+          </div>
+          <div id="gf-stats" style="margin-bottom:14px"></div>
+          <div style="overflow-x:auto">
+            <table class="tbl">
+              <thead><tr>
+                <th>Fecha</th><th>Proveedor</th><th>Concepto</th>
+                <th style="text-align:right">Subtotal</th>
+                <th style="text-align:right">IVA</th>
+                <th style="text-align:right">Total</th>
+                <th>Método</th><th>Suc.</th><th>UUID</th><th></th>
+              </tr></thead>
+              <tbody id="gf-body"></tbody>
+              <tfoot id="gf-foot"></tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- GASTOS NO FISCALES -->
+      <div id="sg-nofiscal" style="display:none">
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div class="ptitle" style="margin:0">Gastos no fiscales</div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btns btno" onclick="exportarGastosNFCSV()">Exportar CSV</button>
+              <button class="btn btns btno" onclick="exportarGastosNFPDF()">Exportar PDF</button>
+            </div>
+          </div>
+
+          <!-- Formulario nuevo gasto -->
+          <div style="background:rgba(38,51,72,.7);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px">
+            <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px">Registrar nuevo gasto no fiscal</div>
+            <div style="display:grid;grid-template-columns:1fr 2fr 1fr auto;gap:10px;align-items:flex-end">
+              <div><label>Fecha *</label><input type="date" id="gnf-fecha"/></div>
+              <div><label>Concepto * <span style="font-size:10px;color:var(--text-3)">(máx 30 caracteres)</span></label>
+                <input type="text" id="gnf-concepto" placeholder="Ej: Renta efectivo marzo" maxlength="30"
+                  oninput="document.getElementById('gnf-chars').textContent=(30-this.value.length)+' restantes'"/>
+                <div style="font-size:10px;color:var(--text-3);margin-top:3px" id="gnf-chars">30 restantes</div>
+              </div>
+              <div><label>Monto ($) *</label><input type="number" id="gnf-monto" placeholder="0.00" step="0.01" min="0"/></div>
+              <div style="padding-bottom:20px"><button class="btn btnp" onclick="agregarGastoNF()">+ Agregar</button></div>
+            </div>
+            <div id="gnf-alrt" style="display:none;margin-top:8px"></div>
+          </div>
+
+          <!-- Filtros -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:flex-end;margin-bottom:14px">
+            <div><label>Fecha inicio</label><input type="date" id="gnf-desde"/></div>
+            <div><label>Fecha fin</label><input type="date" id="gnf-hasta"/></div>
+            <div id="gnf-suc-div"><label>Sucursal</label>
+              <select id="gnf-suc"><option value="">Todas</option><option value="MTY">Monterrey</option><option value="SLP">San Luis Potosí</option></select>
+            </div>
+            <div><button class="btn btnp" onclick="filtrarGastosNF()">Filtrar</button></div>
+          </div>
+          <div id="gnf-stats" style="margin-bottom:14px"></div>
+          <div style="overflow-x:auto">
+            <table class="tbl">
+              <thead><tr>
+                <th>Fecha</th><th>Concepto</th><th style="text-align:right">Monto</th><th>Suc.</th><th></th>
+              </tr></thead>
+              <tbody id="gnf-body"></tbody>
+              <tfoot id="gnf-foot"></tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UTILIDAD OPERATIVA -->
+    <div id="sec-utilidad" style="display:none">
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div class="ptitle" style="margin:0">Utilidad operativa</div>
+          <button class="btn btns btno" onclick="exportarUtilidadPDF()">Exportar PDF</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:flex-end;margin-bottom:18px">
+          <div><label>Fecha inicio</label><input type="date" id="ut-desde"/></div>
+          <div><label>Fecha fin</label><input type="date" id="ut-hasta"/></div>
+          <div id="ut-suc-div"><label>Sucursal</label>
+            <select id="ut-suc"><option value="">Todas</option><option value="MTY">Monterrey</option><option value="SLP">San Luis Potosí</option></select>
+          </div>
+          <div><button class="btn btnp" onclick="calcularUtilidad()">Calcular</button></div>
+        </div>
+
+        <div id="ut-result" style="display:none">
+          <!-- Tarjetas principales -->
+          <div class="reporte-header" id="ut-cards" style="margin-bottom:20px"></div>
+
+          <!-- Desglose waterfall -->
+          <div style="background:rgba(38,51,72,.6);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:16px">
+            <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">Desglose del cálculo</div>
+            <div id="ut-waterfall"></div>
+          </div>
+
+          <!-- Tablas de detalle -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div class="panel" style="margin:0">
+              <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">Top 5 gastos fiscales</div>
+              <table class="tbl"><thead><tr><th>Proveedor</th><th style="text-align:right">Total</th></tr></thead>
+              <tbody id="ut-top-gf"></tbody></table>
+            </div>
+            <div class="panel" style="margin:0">
+              <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">Top 5 gastos no fiscales</div>
+              <table class="tbl"><thead><tr><th>Concepto</th><th style="text-align:right">Monto</th></tr></thead>
+              <tbody id="ut-top-gnf"></tbody></table>
+            </div>
+          </div>
+        </div>
+        <div id="ut-empty" class="es" style="display:none">Selecciona un rango de fechas y presiona Calcular</div>
+      </div>
+    </div>
+
   </div><!-- /page-content -->
 </div><!-- /sistema -->
 
@@ -761,6 +945,8 @@ select option { background:var(--bg-2); color:var(--text); }
 var API_URL = 'https://script.google.com/macros/s/AKfycbyCRC2nLoBybekYy0THrABObIGAZ4oPiM1Y0NwT1N0gQNBwU77nsCziB3p9n2RrRvyZ/exec';
 var PWD_HASH = btoa('Suzuki18&');
 var ventas=[], clientes=[], medicamentos=[], lotes=[], compras=[];
+var gastosFiscales=[], gastosNF=[];
+var gfPendientes=[];
 var perfilActual=''; // 'admin', 'mty', 'slp'
 var configSistema={};
 var ventaABorrar=null;
@@ -820,13 +1006,15 @@ function aplicarPermisos() {
 
 function actualizarDatos() {
   setSyncStatus('load','Actualizando...');
-  var total=5, listo=0;
+  var total=7, listo=0;
   function done(){ listo++; if(listo>=total){ setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); if(document.getElementById('sec-compras').style.display==='block') renderCompras(); if(document.getElementById('sec-inv').style.display==='block') renderInventario(); } }
   apiGet('clientes',     function(e,d){ clientes=(d&&d.clientes)||[]; done(); });
   apiGet('ventas',       function(e,d){ ventas=((d&&d.ventas)||[]).reverse(); done(); });
   apiGet('medicamentos', function(e,d){ medicamentos=(d&&d.medicamentos)||[]; done(); });
   apiGet('lotes',        function(e,d){ lotes=(d&&d.lotes)||[]; done(); });
   apiGet('compras',      function(e,d){ compras=(d&&d.compras)||[]; done(); });
+  apiGet('gastos_fiscales',   function(e,d){ gastosFiscales=(d&&d.gastos_fiscales)||[]; done(); });
+  apiGet('gastos_no_fiscales',function(e,d){ gastosNF=(d&&d.gastos_no_fiscales)||[]; done(); });
 }
 
 function cerrarSesion() {
@@ -876,13 +1064,15 @@ function cargarTodo() {
   apiGet('medicamentos', function(e,d){ medicamentos=(d&&d.medicamentos)||[]; check(); });
   apiGet('lotes',        function(e,d){ lotes=(d&&d.lotes)||[]; check(); });
   apiGet('compras',      function(e,d){ compras=(d&&d.compras)||[]; check(); });
+  apiGet('gastos_fiscales',   function(e,d){ gastosFiscales=(d&&d.gastos_fiscales)||[]; check(); });
+  apiGet('gastos_no_fiscales',function(e,d){ gastosNF=(d&&d.gastos_no_fiscales)||[]; check(); });
 }
 
 function setSyncStatus(t,m){ var el=document.getElementById('sync-status'); el.className='sync sync-'+(t==='ok'?'ok':t==='err'?'err':'load'); el.textContent=m; }
 
 /* NAV */
 function navTab(t) {
-  ['reporte','meds','clientes','ventas','lotes','inv','entrada','compras','pwds'].forEach(function(x){
+  ['reporte','meds','clientes','ventas','lotes','inv','entrada','compras','gastos','utilidad','pwds'].forEach(function(x){
     document.getElementById('sec-'+x).style.display=t===x?'block':'none';
     var tabEl=document.getElementById('nt-'+x);
     // Don't show pwds tab for non-admin
@@ -893,6 +1083,8 @@ function navTab(t) {
   if(t==='c') renderClientesAdmin();
   if(t==='inv') renderInventario();
   if(t==='compras') renderCompras();
+  if(t==='gastos'){ filtrarGastosFiscales(); filtrarGastosNF(); }
+  if(t==='utilidad'){ inicializarFechasUtilidad(); }
 }
 
 /* REPORTE */
@@ -1508,6 +1700,19 @@ function mostrarTabsSegunPerfil(){
     if(sucDiv) sucDiv.style.display='none';
   } else {
     if(sucDiv) sucDiv.style.display='';
+  // Gastos y utilidad: misma lógica de sucursal
+  var gfSucDiv=document.getElementById('gf-suc-div');
+  var gnfSucDiv=document.getElementById('gnf-suc-div');
+  var utSucDiv=document.getElementById('ut-suc-div');
+  if(perfilActual==='mty'){
+    ['gf-suc','gnf-suc','ut-suc'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value='MTY'; });
+    [gfSucDiv,gnfSucDiv,utSucDiv].forEach(function(el){ if(el) el.style.display='none'; });
+  } else if(perfilActual==='slp'){
+    ['gf-suc','gnf-suc','ut-suc'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value='SLP'; });
+    [gfSucDiv,gnfSucDiv,utSucDiv].forEach(function(el){ if(el) el.style.display='none'; });
+  } else {
+    [gfSucDiv,gnfSucDiv,utSucDiv].forEach(function(el){ if(el) el.style.display=''; });
+  }
   }
 }
 
@@ -1735,6 +1940,588 @@ function guardarEdicionLote(){
   });
 }
 function loteAlrt(msg,tipo){var el=document.getElementById('lote-alrt');el.className='alrt '+(tipo==='e'?'ale':'als');el.textContent=msg;el.style.display='block';}
+
+/* ═══════════════════════════════════════════════════════════
+   GASTOS — MÓDULO COMPLETO
+═══════════════════════════════════════════════════════════ */
+
+// Sub-tabs gastos
+function gastosTab(t) {
+  document.getElementById('sg-fiscal').style.display   = t==='fiscal'   ? 'block' : 'none';
+  document.getElementById('sg-nofiscal').style.display = t==='nofiscal' ? 'block' : 'none';
+  document.getElementById('gt-fiscal').className   = 'nav-tab'+(t==='fiscal'  ?' on':'');
+  document.getElementById('gt-nofiscal').className = 'nav-tab'+(t==='nofiscal'?' on':'');
+  document.getElementById('gt-fiscal').style.borderRadius   = 'var(--radius-sm)';
+  document.getElementById('gt-nofiscal').style.borderRadius = 'var(--radius-sm)';
+}
+
+/* ─── PARSER XML → objeto gasto fiscal ─── */
+function parsearCFDI(xmlText) {
+  var parser = new DOMParser();
+  var doc = parser.parseFromString(xmlText, 'text/xml');
+  var ns  = 'http://www.sat.gob.mx/cfd/4';
+  var tfdNS = 'http://www.sat.gob.mx/TimbreFiscalDigital';
+
+  function attr(el, a) { return el ? (el.getAttribute(a)||'') : ''; }
+  function findNS(tag) {
+    return doc.getElementsByTagNameNS(ns, tag)[0] ||
+           doc.getElementsByTagName('cfdi:'+tag)[0] ||
+           doc.getElementsByTagName(tag)[0];
+  }
+
+  var comp   = findNS('Comprobante') || doc.documentElement;
+  var emisor = findNS('Emisor');
+  var recep  = findNS('Receptor');
+  var tfd    = doc.getElementsByTagNameNS(tfdNS,'TimbreFiscalDigital')[0] ||
+               doc.getElementsByTagName('tfd:TimbreFiscalDigital')[0];
+
+  var fecha  = attr(comp,'Fecha').slice(0,10);
+  var serie  = attr(comp,'Serie');
+  var folio  = attr(comp,'Folio');
+  var subtotal  = parseFloat(attr(comp,'SubTotal'))||0;
+  var descuento = parseFloat(attr(comp,'Descuento'))||0;
+  var total     = parseFloat(attr(comp,'Total'))||0;
+  var metodo    = attr(comp,'MetodoPago');
+  var forma     = attr(comp,'FormaPago');
+
+  // IVA: suma todos los Traslado donde Impuesto=002
+  var iva = 0;
+  var traslados = doc.getElementsByTagNameNS(ns,'Traslado');
+  if (!traslados.length) traslados = doc.getElementsByTagName('cfdi:Traslado');
+  for (var i=0;i<traslados.length;i++) {
+    if (traslados[i].getAttribute('Impuesto')==='002') {
+      iva += parseFloat(traslados[i].getAttribute('Importe')||'0');
+    }
+  }
+
+  // Conceptos → descripción concatenada
+  var conceptos = doc.getElementsByTagNameNS(ns,'Concepto');
+  if (!conceptos.length) conceptos = doc.getElementsByTagName('cfdi:Concepto');
+  var descs = [];
+  for (var j=0;j<conceptos.length;j++) {
+    var d = conceptos[j].getAttribute('Descripcion')||'';
+    if (d) descs.push(d);
+  }
+  var concepto = descs.join(' | ').slice(0,200);
+
+  var rfc_emisor = attr(emisor,'Rfc');
+  var nom_emisor = attr(emisor,'Nombre');
+  var rfc_rec    = attr(recep,'Rfc');
+  var uso_cfdi   = attr(recep,'UsoCFDI');
+  var uuid       = attr(tfd,'UUID');
+  var folio_full = (serie ? serie+'-'+folio : folio);
+
+  return {
+    uuid: uuid, fecha: fecha, folio: folio_full,
+    rfc_emisor: rfc_emisor, proveedor: nom_emisor,
+    concepto: concepto,
+    subtotal: Math.round(subtotal*100)/100,
+    descuento: Math.round(descuento*100)/100,
+    iva: Math.round(iva*100)/100,
+    total: Math.round(total*100)/100,
+    metodo_pago: metodo, forma_pago: forma,
+    uso_cfdi: uso_cfdi, rfc_receptor: rfc_rec
+  };
+}
+
+/* ─── UPLOAD HANDLERS ─── */
+function onGfDrop(e) {
+  e.preventDefault();
+  var files = e.dataTransfer.files;
+  procesarGfFiles(files);
+  document.getElementById('gf-upload-zone').style.borderColor='';
+  document.getElementById('gf-upload-zone').style.background='';
+}
+function onGfFile(e) {
+  procesarGfFiles(e.target.files);
+  e.target.value='';
+}
+
+function procesarGfFiles(files) {
+  gfPendientes = [];
+  var total = files.length, done = 0;
+  function check() { done++; if(done>=total) renderGfPreview(); }
+  for (var i=0;i<files.length;i++) {
+    (function(file){
+      if (!file.name.endsWith('.xml')) { check(); return; }
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        try {
+          var g = parsearCFDI(ev.target.result);
+          // Check duplicate UUID
+          var yaExiste = false;
+          for (var k=0;k<gastosFiscales.length;k++) {
+            if (gastosFiscales[k].uuid === g.uuid) { yaExiste=true; break; }
+          }
+          g._duplicate = yaExiste;
+          g._rfc_ok    = (g.rfc_receptor === 'SSM180928AQ7');
+          gfPendientes.push(g);
+        } catch(err) {
+          gfPendientes.push({_error: file.name+': '+err.message});
+        }
+        check();
+      };
+      reader.onerror = function(){ gfPendientes.push({_error: file.name+': Error de lectura'}); check(); };
+      reader.readAsText(file, 'UTF-8');
+    })(files[i]);
+  }
+}
+
+function renderGfPreview() {
+  if (!gfPendientes.length) return;
+  var suc = perfilActual==='mty'?'MTY':perfilActual==='slp'?'SLP':(document.getElementById('gf-suc').value||'MTY');
+  var html = '';
+  for (var i=0;i<gfPendientes.length;i++) {
+    var g = gfPendientes[i];
+    if (g._error) {
+      html += '<tr style="background:rgba(239,68,68,.1)"><td colspan="10" style="color:#fca5a5">⚠️ '+g._error+'</td></tr>';
+      continue;
+    }
+    var rowBg = g._duplicate ? 'background:rgba(239,68,68,.08)' : !g._rfc_ok ? 'background:rgba(245,158,11,.08)' : '';
+    var badge = g._duplicate ? '<span style="font-size:10px;background:rgba(239,68,68,.2);color:#fca5a5;padding:1px 6px;border-radius:99px;margin-left:4px">DUPLICADO</span>'
+              : !g._rfc_ok ? '<span style="font-size:10px;background:rgba(245,158,11,.18);color:#fcd34d;padding:1px 6px;border-radius:99px;margin-left:4px">RFC genérico</span>' : '';
+    html += '<tr style="'+rowBg+'">';
+    html += '<td>'+g.fecha+'</td>';
+    html += '<td style="font-weight:500">'+g.proveedor+'<br><span style="font-size:10px;color:var(--text-3);font-family:var(--mono)">'+g.rfc_emisor+'</span>'+badge+'</td>';
+    html += '<td style="font-size:11px;color:var(--text-2)">'+g.rfc_emisor+'</td>';
+    html += '<td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+g.concepto+'">'+g.concepto+'</td>';
+    html += '<td style="text-align:right">$'+g.subtotal.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td>';
+    html += '<td style="text-align:right">$'+g.iva.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td>';
+    html += '<td style="text-align:right;font-weight:700">$'+g.total.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td>';
+    html += '<td><span style="font-size:10px;font-family:var(--mono);background:'+(g.metodo_pago==='PPD'?'rgba(245,158,11,.14)':'rgba(16,185,129,.14)')+';color:'+(g.metodo_pago==='PPD'?'#fcd34d':'#6ee7b7')+';padding:2px 6px;border-radius:99px">'+g.metodo_pago+'</span></td>';
+    html += '<td style="font-size:10px;font-family:var(--mono);color:var(--text-3)" title="'+g.uuid+'">'+g.uuid.slice(0,8)+'…</td>';
+    html += '<td><button class="btn btnd btns" onclick="quitarGfPendiente('+i+')">✕</button></td>';
+    html += '</tr>';
+  }
+  document.getElementById('gf-preview-body').innerHTML = html;
+  document.getElementById('gf-preview').style.display = 'block';
+  document.getElementById('gf-upload-zone').style.display = 'none';
+}
+
+function quitarGfPendiente(i) {
+  gfPendientes.splice(i,1);
+  if (!gfPendientes.length) limpiarGfPreview();
+  else renderGfPreview();
+}
+
+function limpiarGfPreview() {
+  gfPendientes = [];
+  document.getElementById('gf-preview').style.display = 'none';
+  document.getElementById('gf-upload-zone').style.display = 'block';
+  document.getElementById('gf-alrt').style.display = 'none';
+}
+
+function guardarGastosFiscales() {
+  var suc = perfilActual==='mty'?'MTY':perfilActual==='slp'?'SLP':(document.getElementById('gf-suc').value||'MTY');
+  var aGuardar = gfPendientes.filter(function(g){ return !g._error && !g._duplicate; });
+  if (!aGuardar.length) {
+    gfAlrt('No hay gastos nuevos para guardar (todos son duplicados o tienen error).','e');
+    return;
+  }
+  var btn = document.getElementById('btn-guardar-gastos');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando…';
+  var done=0, errors=0;
+  function next(idx) {
+    if (idx>=aGuardar.length) {
+      btn.disabled=false; btn.textContent='Guardar gastos al sistema';
+      if (errors===0) {
+        gfAlrt('✅ '+done+' gasto(s) guardados correctamente.','s');
+        // Update local array
+        for (var i=0;i<aGuardar.length;i++) {
+          var g = Object.assign({}, aGuardar[i]);
+          g.sucursal = suc; g.estado='activa';
+          gastosFiscales.push(g);
+        }
+        filtrarGastosFiscales();
+        setTimeout(limpiarGfPreview, 2000);
+      } else {
+        gfAlrt(done+' guardados, '+errors+' errores.','e');
+      }
+      return;
+    }
+    var g = aGuardar[idx];
+    apiPost({
+      accion:'guardar_gasto_fiscal',
+      uuid:g.uuid, fecha:g.fecha, folio:g.folio,
+      rfc_emisor:g.rfc_emisor, proveedor:g.proveedor,
+      concepto:g.concepto, subtotal:g.subtotal, descuento:g.descuento,
+      iva:g.iva, total:g.total, metodo_pago:g.metodo_pago,
+      forma_pago:g.forma_pago, uso_cfdi:g.uso_cfdi, sucursal:suc
+    }, function(err){ if(!err) done++; else errors++; next(idx+1); });
+  }
+  next(0);
+}
+
+function gfAlrt(msg,tipo) {
+  var el=document.getElementById('gf-alrt');
+  el.className='alrt '+(tipo==='s'?'als':tipo==='e'?'ale':'ali');
+  el.textContent=msg; el.style.display='block';
+}
+
+/* ─── LISTADO GASTOS FISCALES ─── */
+function filtrarGastosFiscales() {
+  var desde = document.getElementById('gf-desde').value;
+  var hasta = document.getElementById('gf-hasta').value;
+  var suc   = document.getElementById('gf-suc').value;
+  if(perfilActual==='mty') suc='MTY';
+  if(perfilActual==='slp') suc='SLP';
+  var src = gastosFiscales.filter(function(g){
+    if (g.estado==='cancelada') return false;
+    var f=g.fecha||'';
+    if(desde && f<desde) return false;
+    if(hasta && f>hasta) return false;
+    if(suc && g.sucursal!==suc) return false;
+    return true;
+  });
+  renderGastosFiscales(src);
+}
+
+function renderGastosFiscales(src) {
+  var tbody = document.getElementById('gf-body');
+  var tfoot = document.getElementById('gf-foot');
+  if (!src.length) {
+    tbody.innerHTML='<tr><td colspan="10" class="es">Sin gastos fiscales en el periodo</td></tr>';
+    tfoot.innerHTML='';
+    document.getElementById('gf-stats').innerHTML='';
+    return;
+  }
+  var totalGF=0, totalIVA=0;
+  var html='';
+  for (var i=0;i<src.length;i++) {
+    var g=src[i];
+    totalGF+=g.total; totalIVA+=g.iva;
+    var bg=i%2===0?'':'background:rgba(148,163,184,.03)';
+    html+='<tr style="'+bg+'">';
+    html+='<td style="font-family:var(--mono);font-size:11px">'+g.fecha+'</td>';
+    html+='<td style="font-weight:500">'+g.proveedor+'</td>';
+    html+='<td style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+g.concepto+'">'+g.concepto+'</td>';
+    html+='<td style="text-align:right">$'+g.subtotal.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td>';
+    html+='<td style="text-align:right;color:var(--text-3)">$'+g.iva.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td>';
+    html+='<td style="text-align:right;font-weight:700">$'+g.total.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td>';
+    html+='<td><span style="font-size:10px;font-family:var(--mono);background:'+(g.metodo_pago==='PPD'?'rgba(245,158,11,.14)':'rgba(16,185,129,.14)')+';color:'+(g.metodo_pago==='PPD'?'#fcd34d':'#6ee7b7')+';padding:2px 6px;border-radius:99px">'+g.metodo_pago+'</span></td>';
+    html+='<td><span class="'+(g.sucursal==='MTY'?'chip-mty':'chip-slp')+'">'+g.sucursal+'</span></td>';
+    html+='<td style="font-size:10px;font-family:var(--mono);color:var(--text-3)" title="'+g.uuid+'">'+g.uuid.slice(0,8)+'…</td>';
+    html+='<td><button class="btn btnd btns" onclick="cancelarGastoFiscal(''+g.uuid+'')">Cancelar</button></td>';
+    html+='</tr>';
+  }
+  tbody.innerHTML=html;
+  tfoot.innerHTML='<tr style="background:rgba(38,51,72,.8);font-weight:700"><td colspan="3">TOTALES ('+src.length+' facturas)</td><td style="text-align:right">$'+(totalGF-totalIVA).toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td style="text-align:right;color:var(--text-3)">$'+totalIVA.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td style="text-align:right">$'+totalGF.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td colspan="4"></td></tr>';
+  document.getElementById('gf-stats').innerHTML='<div class="reporte-header"><div class="stat-card"><div class="stat-label">Facturas</div><div class="stat-value">'+src.length+'</div></div><div class="stat-card"><div class="stat-label">Total gastos</div><div class="stat-value" style="font-size:18px">$'+totalGF.toLocaleString("es-MX",{minimumFractionDigits:2})+'</div></div><div class="stat-card"><div class="stat-label">IVA acreditable</div><div class="stat-value" style="font-size:18px">$'+totalIVA.toLocaleString("es-MX",{minimumFractionDigits:2})+'</div></div><div class="stat-card"><div class="stat-label">Neto deducible</div><div class="stat-value" style="font-size:18px">$'+(totalGF-totalIVA).toLocaleString("es-MX",{minimumFractionDigits:2})+'</div></div></div>';
+  window._gfData = src;
+}
+
+function cancelarGastoFiscal(uuid) {
+  if(!confirm('¿Cancelar este gasto fiscal? Se marcará como cancelado en el sistema.')) return;
+  apiPost({accion:'cancelar_gasto_fiscal', uuid:uuid}, function(err){
+    for(var i=0;i<gastosFiscales.length;i++){
+      if(gastosFiscales[i].uuid===uuid){ gastosFiscales[i].estado='cancelada'; break; }
+    }
+    filtrarGastosFiscales();
+  });
+}
+
+function exportarGastosFiscalesCSV() {
+  var src=window._gfData||gastosFiscales;
+  if(!src.length){alert('Sin datos para exportar');return;}
+  var q=function(s){return String(s||'').split(',').join(' ');};
+  var lines=['Fecha,Proveedor,RFC Emisor,Concepto,Subtotal,Descuento,IVA,Total,Método,Forma,UUID,Sucursal'];
+  for(var i=0;i<src.length;i++){
+    var g=src[i];
+    lines.push([g.fecha,q(g.proveedor),g.rfc_emisor,q(g.concepto),g.subtotal,g.descuento,g.iva,g.total,g.metodo_pago,g.forma_pago,g.uuid,g.sucursal].join(','));
+  }
+  var blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='Solmedix_GastosFiscales_'+new Date().toISOString().split('T')[0]+'.csv'; a.click();
+}
+
+function exportarGastosFiscalesPDF() {
+  var src=window._gfData||gastosFiscales;
+  if(!src.length){alert('Sin datos para exportar');return;}
+  var totalGF=0, totalIVA=0;
+  var filas=src.map(function(g,i){
+    totalGF+=g.total; totalIVA+=g.iva;
+    var bg=i%2===0?'#fff':'#f9f9f9';
+    return '<tr style="background:'+bg+'"><td>'+g.fecha+'</td><td>'+g.proveedor+'</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+g.concepto+'</td><td style="text-align:right">$'+g.subtotal.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td style="text-align:right">$'+g.iva.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td style="text-align:right;font-weight:bold">$'+g.total.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td>'+g.metodo_pago+'</td><td>'+g.sucursal+'</td></tr>';
+  }).join('');
+  var w=window.open('','_blank','width=1000,height=700');
+  w.document.write('<!DOCTYPE html><html><head><title>Gastos Fiscales Solmedix</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;font-size:10px}h1{font-size:14px;margin-bottom:4px}h2{font-size:10px;color:#555;margin-bottom:10px}table{width:100%;border-collapse:collapse}th{background:#185FA5;color:#fff;padding:5px 7px;font-size:9px;text-align:left}td{padding:4px 7px;border-bottom:1px solid #eee;font-size:9px}tfoot td{background:#f0ede6;font-weight:bold;border-top:2px solid #185FA5}@media print{button{display:none}}</style></head><body>');
+  w.document.write('<h1>Solmedix — Gastos Fiscales</h1><h2>'+src.length+' facturas | Total: $'+totalGF.toLocaleString("es-MX",{minimumFractionDigits:2})+' | IVA: $'+totalIVA.toLocaleString("es-MX",{minimumFractionDigits:2})+'</h2>');
+  w.document.write('<table><thead><tr><th>Fecha</th><th>Proveedor</th><th>Concepto</th><th style="text-align:right">Subtotal</th><th style="text-align:right">IVA</th><th style="text-align:right">Total</th><th>Método</th><th>Suc.</th></tr></thead><tbody>'+filas+'</tbody><tfoot><tr><td colspan="3">TOTALES</td><td style="text-align:right">$'+(totalGF-totalIVA).toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td style="text-align:right">$'+totalIVA.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td style="text-align:right">$'+totalGF.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td colspan="2"></td></tr></tfoot></table>');
+  w.document.write('</body></html>'); w.document.close(); setTimeout(function(){w.print();},600);
+}
+
+/* ─── GASTOS NO FISCALES ─── */
+function inicializarFechasGastos() {
+  var hoy=new Date(), inicio=new Date(hoy.getFullYear(),hoy.getMonth(),1);
+  ['gf-desde','gf-hasta','gnf-desde','gnf-hasta'].forEach(function(id){
+    var el=document.getElementById(id); if(!el) return;
+    el.value = id.endsWith('hasta') ? hoy.toISOString().split('T')[0] : inicio.toISOString().split('T')[0];
+  });
+  document.getElementById('gnf-fecha').value = hoy.toISOString().split('T')[0];
+}
+
+function agregarGastoNF() {
+  var fecha   = document.getElementById('gnf-fecha').value;
+  var concepto= document.getElementById('gnf-concepto').value.trim().slice(0,30);
+  var monto   = parseFloat(document.getElementById('gnf-monto').value)||0;
+  var suc     = perfilActual==='mty'?'MTY':perfilActual==='slp'?'SLP':(document.getElementById('gnf-suc').value||'MTY');
+  if(!fecha){gnfAlrt('Ingresa la fecha','e');return;}
+  if(!concepto){gnfAlrt('Ingresa el concepto','e');return;}
+  if(!monto||monto<=0){gnfAlrt('Ingresa un monto válido','e');return;}
+  var btn=document.querySelector('#sg-nofiscal .panel button.btnp');
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Guardando…';}
+  apiPost({accion:'guardar_gasto_no_fiscal', fecha:fecha, concepto:concepto, monto:monto, sucursal:suc}, function(err){
+    if(!err){
+      gastosNF.push({fecha:fecha,concepto:concepto,monto:monto,sucursal:suc,estado:'activa'});
+      document.getElementById('gnf-concepto').value='';
+      document.getElementById('gnf-monto').value='';
+      document.getElementById('gnf-chars').textContent='30 restantes';
+      filtrarGastosNF();
+      gnfAlrt('Gasto registrado correctamente','s');
+    } else { gnfAlrt('Error al guardar. Intenta de nuevo.','e'); }
+    if(btn){btn.disabled=false;btn.textContent='+ Agregar';}
+  });
+}
+
+function filtrarGastosNF() {
+  var desde = document.getElementById('gnf-desde').value;
+  var hasta = document.getElementById('gnf-hasta').value;
+  var suc   = document.getElementById('gnf-suc').value;
+  if(perfilActual==='mty') suc='MTY';
+  if(perfilActual==='slp') suc='SLP';
+  var src = gastosNF.filter(function(g){
+    if(g.estado==='cancelada') return false;
+    var f=g.fecha||'';
+    if(desde && f<desde) return false;
+    if(hasta && f>hasta) return false;
+    if(suc && g.sucursal!==suc) return false;
+    return true;
+  });
+  renderGastosNF(src);
+}
+
+function renderGastosNF(src) {
+  var tbody=document.getElementById('gnf-body');
+  var tfoot=document.getElementById('gnf-foot');
+  if(!src.length){
+    tbody.innerHTML='<tr><td colspan="5" class="es">Sin gastos no fiscales en el periodo</td></tr>';
+    tfoot.innerHTML=''; document.getElementById('gnf-stats').innerHTML=''; return;
+  }
+  var total=0, html='';
+  for(var i=0;i<src.length;i++){
+    var g=src[i]; total+=g.monto;
+    var bg=i%2===0?'':'background:rgba(148,163,184,.03)';
+    html+='<tr style="'+bg+'">';
+    html+='<td style="font-family:var(--mono);font-size:11px">'+g.fecha+'</td>';
+    html+='<td style="font-weight:500">'+g.concepto+'</td>';
+    html+='<td style="text-align:right;font-weight:700">$'+Number(g.monto).toLocaleString("es-MX",{minimumFractionDigits:2})+'</td>';
+    html+='<td><span class="'+(g.sucursal==='MTY'?'chip-mty':'chip-slp')+'">'+g.sucursal+'</span></td>';
+    html+='<td><button class="btn btnd btns" onclick="cancelarGastoNF(this,''+g.fecha+'_'+encodeURIComponent(g.concepto)+'')">Cancelar</button></td>';
+    html+='</tr>';
+  }
+  tbody.innerHTML=html;
+  tfoot.innerHTML='<tr style="background:rgba(38,51,72,.8);font-weight:700"><td colspan="2">TOTAL ('+src.length+' registros)</td><td style="text-align:right">$'+total.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td colspan="2"></td></tr>';
+  document.getElementById('gnf-stats').innerHTML='<div class="reporte-header"><div class="stat-card"><div class="stat-label">Registros</div><div class="stat-value">'+src.length+'</div></div><div class="stat-card"><div class="stat-label">Total no fiscal</div><div class="stat-value" style="font-size:18px">$'+total.toLocaleString("es-MX",{minimumFractionDigits:2})+'</div></div></div>';
+  window._gnfData=src;
+}
+
+function cancelarGastoNF(btn, key) {
+  if(!confirm('¿Cancelar este gasto no fiscal?')) return;
+  // Find by key
+  var parts=key.split('_'); var fecha=parts[0]; var concepto=decodeURIComponent(parts.slice(1).join('_'));
+  apiPost({accion:'cancelar_gasto_no_fiscal', fecha:fecha, concepto:concepto}, function(err){
+    for(var i=0;i<gastosNF.length;i++){
+      if(gastosNF[i].fecha===fecha&&gastosNF[i].concepto===concepto){ gastosNF[i].estado='cancelada'; break; }
+    }
+    filtrarGastosNF();
+  });
+}
+
+function gnfAlrt(msg,tipo){
+  var el=document.getElementById('gnf-alrt');
+  el.className='alrt '+(tipo==='s'?'als':tipo==='e'?'ale':'ali');
+  el.textContent=msg; el.style.display='block';
+  if(tipo==='s') setTimeout(function(){el.style.display='none';},3500);
+}
+
+function exportarGastosNFCSV(){
+  var src=window._gnfData||gastosNF;
+  if(!src.length){alert('Sin datos');return;}
+  var lines=['Fecha,Concepto,Monto,Sucursal'];
+  for(var i=0;i<src.length;i++) lines.push(src[i].fecha+','+src[i].concepto.split(',').join(' ')+','+src[i].monto+','+src[i].sucursal);
+  var blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='Solmedix_GastosNoFiscales_'+new Date().toISOString().split('T')[0]+'.csv'; a.click();
+}
+
+function exportarGastosNFPDF(){
+  var src=window._gnfData||gastosNF;
+  if(!src.length){alert('Sin datos');return;}
+  var total=0;
+  var filas=src.map(function(g,i){
+    total+=g.monto;
+    var bg=i%2===0?'#fff':'#f9f9f9';
+    return '<tr style="background:'+bg+'"><td>'+g.fecha+'</td><td>'+g.concepto+'</td><td style="text-align:right;font-weight:bold">$'+Number(g.monto).toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td>'+g.sucursal+'</td></tr>';
+  }).join('');
+  var w=window.open('','_blank','width=700,height=600');
+  w.document.write('<!DOCTYPE html><html><head><title>Gastos No Fiscales</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:10px}h1{font-size:14px;margin-bottom:4px}table{width:100%;border-collapse:collapse}th{background:#185FA5;color:#fff;padding:5px 7px;font-size:9px;text-align:left}td{padding:4px 7px;border-bottom:1px solid #eee;font-size:9px}tfoot td{background:#f0ede6;font-weight:bold}@media print{button{display:none}}</style></head><body>');
+  w.document.write('<h1>Solmedix — Gastos No Fiscales</h1>');
+  w.document.write('<table><thead><tr><th>Fecha</th><th>Concepto</th><th style="text-align:right">Monto</th><th>Suc.</th></tr></thead><tbody>'+filas+'</tbody><tfoot><tr><td colspan="2">TOTAL</td><td style="text-align:right">$'+total.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td></td></tr></tfoot></table>');
+  w.document.write('</body></html>'); w.document.close(); setTimeout(function(){w.print();},600);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UTILIDAD OPERATIVA
+═══════════════════════════════════════════════════════════ */
+function inicializarFechasUtilidad() {
+  var hoy=new Date(), inicio=new Date(hoy.getFullYear(),hoy.getMonth(),1);
+  document.getElementById('ut-desde').value = inicio.toISOString().split('T')[0];
+  document.getElementById('ut-hasta').value = hoy.toISOString().split('T')[0];
+  document.getElementById('ut-empty').style.display = 'block';
+  document.getElementById('ut-result').style.display = 'none';
+}
+
+function calcularUtilidad() {
+  var desde = document.getElementById('ut-desde').value;
+  var hasta  = document.getElementById('ut-hasta').value;
+  var suc    = document.getElementById('ut-suc').value;
+  if(perfilActual==='mty') suc='MTY';
+  if(perfilActual==='slp') suc='SLP';
+  if(!desde||!hasta){alert('Selecciona el rango de fechas');return;}
+
+  function inRange(f,s) {
+    var fecha=String(f).split('T')[0];
+    var sucOk = !s || !s.length;
+    if(!sucOk) sucOk=(s.indexOf(fecha)>=0); // reused below properly
+    return fecha>=desde && fecha<=hasta;
+  }
+  function sucOk(v) { return !suc || v.sucursal===suc || (!v.sucursal&&suc==='MTY'); }
+
+  // 1. Ventas del periodo
+  var ventasFiltradas = ventas.filter(function(v){
+    return v.estado!=='cancelada' && inRange(v.fecha) && sucOk(v);
+  });
+  var totalVentas = ventasFiltradas.reduce(function(s,v){return s+Number(v.total);},0);
+
+  // 2. Costo de ventas (suma costo_promedio * cantidad de lotes vendidos)
+  //    Usamos ventas_detalle: cada item tiene qty y necesitamos costo del medicamento
+  var costoVentas = 0;
+  for(var i=0;i<ventasFiltradas.length;i++){
+    var v=ventasFiltradas[i];
+    for(var j=0;j<(v.items||[]).length;j++){
+      var it=v.items[j];
+      // Find costo from lotes (match by loteNum)
+      var costo=0;
+      for(var k=0;k<lotes.length;k++){
+        if(lotes[k].lote===it.loteNum){ costo=Number(lotes[k].costo)||0; break; }
+      }
+      costoVentas += costo * (Number(it.qty)||0);
+    }
+  }
+
+  // 3. Gastos fiscales del periodo
+  var gfFiltrados = gastosFiscales.filter(function(g){
+    return g.estado!=='cancelada' && inRange(g.fecha) && (!suc||g.sucursal===suc);
+  });
+  var totalGF = gfFiltrados.reduce(function(s,g){return s+Number(g.total);},0);
+  var totalIVA = gfFiltrados.reduce(function(s,g){return s+Number(g.iva);},0);
+  var totalGFneto = totalGF - totalIVA; // base deducible
+
+  // 4. Gastos no fiscales del periodo
+  var gnfFiltrados = gastosNF.filter(function(g){
+    return g.estado!=='cancelada' && inRange(g.fecha) && (!suc||g.sucursal===suc);
+  });
+  var totalGNF = gnfFiltrados.reduce(function(s,g){return s+Number(g.monto);},0);
+
+  // 5. Utilidad bruta y neta
+  var utilBruta = totalVentas - costoVentas;
+  var utilNeta  = utilBruta - totalGFneto - totalGNF;
+  var margen    = totalVentas>0 ? (utilNeta/totalVentas*100) : 0;
+
+  // ── Render ──
+  var fmt = function(n){ return '$'+Math.abs(n).toLocaleString('es-MX',{minimumFractionDigits:2}); };
+  var color = function(n){ return n>=0?'#6ee7b7':'#fca5a5'; };
+  var sign  = function(n){ return n>=0?'+':'-'; };
+
+  // Cards
+  document.getElementById('ut-cards').innerHTML =
+    '<div class="stat-card"><div class="stat-label">Ventas brutas</div><div class="stat-value" style="color:#93c5fd">'+fmt(totalVentas)+'</div><div class="stat-sub">'+ventasFiltradas.length+' ventas</div></div>'+
+    '<div class="stat-card"><div class="stat-label">Costo de ventas</div><div class="stat-value" style="color:#fca5a5">'+fmt(costoVentas)+'</div></div>'+
+    '<div class="stat-card"><div class="stat-label">Utilidad bruta</div><div class="stat-value" style="color:'+color(utilBruta)+'">'+sign(utilBruta)+fmt(utilBruta)+'</div></div>'+
+    '<div class="stat-card"><div class="stat-label">Gastos fiscales</div><div class="stat-value" style="color:#fca5a5">'+fmt(totalGFneto)+'</div><div class="stat-sub">IVA: '+fmt(totalIVA)+'</div></div>'+
+    '<div class="stat-card"><div class="stat-label">Gastos no fiscales</div><div class="stat-value" style="color:#fca5a5">'+fmt(totalGNF)+'</div></div>'+
+    '<div class="stat-card" style="border-color:'+color(utilNeta)+';box-shadow:0 0 0 1px '+color(utilNeta)+';"><div class="stat-label">UTILIDAD NETA</div><div class="stat-value" style="color:'+color(utilNeta)+'">'+sign(utilNeta)+fmt(utilNeta)+'</div><div class="stat-sub">Margen: '+margen.toFixed(1)+'%</div></div>';
+
+  // Waterfall
+  function wfRow(label, monto, tipo, acum) {
+    var isTotal = tipo==='total';
+    var isPos   = monto>=0;
+    var barColor = isTotal?(isPos?'rgba(16,185,129,.7)':'rgba(239,68,68,.7)'):(tipo==='ingreso'?'rgba(59,130,246,.6)':'rgba(239,68,68,.4)');
+    var pct = totalVentas>0 ? Math.min(100,Math.abs(monto)/totalVentas*100) : 0;
+    return '<div style="display:grid;grid-template-columns:200px 1fr 130px;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border-soft)">' +
+      '<div style="font-size:13px;'+(isTotal?'font-weight:700':'')+'color:'+(isTotal?color(monto):'var(--text-2)')+'">'+label+'</div>' +
+      '<div style="background:rgba(148,163,184,.08);border-radius:4px;overflow:hidden;height:18px">' +
+        '<div style="height:100%;width:'+pct+'%;background:'+barColor+';border-radius:4px;transition:width .4s"></div>' +
+      '</div>' +
+      '<div style="text-align:right;font-size:13px;font-weight:600;font-family:var(--mono);color:'+(isTotal?color(monto):'var(--text)')+'">'+
+        (isTotal?sign(monto):tipo==='ingreso'?'':'-')+fmt(monto)+'</div>' +
+    '</div>';
+  }
+  document.getElementById('ut-waterfall').innerHTML =
+    wfRow('(+) Ventas brutas',        totalVentas,  'ingreso') +
+    wfRow('(-) Costo de ventas',      costoVentas,  'egreso') +
+    wfRow('= Utilidad bruta',         utilBruta,    'total') +
+    wfRow('(-) Gastos fiscales neto', totalGFneto,  'egreso') +
+    wfRow('(-) Gastos no fiscales',   totalGNF,     'egreso') +
+    wfRow('= UTILIDAD NETA',          utilNeta,     'total');
+
+  // Top 5 GF
+  var provGF={};
+  gfFiltrados.forEach(function(g){ provGF[g.proveedor]=(provGF[g.proveedor]||0)+g.total; });
+  var topGF=Object.entries?Object.entries(provGF):Object.keys(provGF).map(function(k){return[k,provGF[k]];});
+  topGF.sort(function(a,b){return b[1]-a[1];});
+  document.getElementById('ut-top-gf').innerHTML=topGF.slice(0,5).map(function(r){
+    return '<tr><td>'+r[0]+'</td><td style="text-align:right;font-weight:600">$'+r[1].toLocaleString("es-MX",{minimumFractionDigits:2})+'</td></tr>';
+  }).join('') || '<tr><td colspan="2" class="es">Sin datos</td></tr>';
+
+  // Top 5 GNF
+  var concGNF={};
+  gnfFiltrados.forEach(function(g){ concGNF[g.concepto]=(concGNF[g.concepto]||0)+g.monto; });
+  var topGNF=Object.entries?Object.entries(concGNF):Object.keys(concGNF).map(function(k){return[k,concGNF[k]];});
+  topGNF.sort(function(a,b){return b[1]-a[1];});
+  document.getElementById('ut-top-gnf').innerHTML=topGNF.slice(0,5).map(function(r){
+    return '<tr><td>'+r[0]+'</td><td style="text-align:right;font-weight:600">$'+r[1].toLocaleString("es-MX",{minimumFractionDigits:2})+'</td></tr>';
+  }).join('') || '<tr><td colspan="2" class="es">Sin datos</td></tr>';
+
+  document.getElementById('ut-empty').style.display  = 'none';
+  document.getElementById('ut-result').style.display = 'block';
+  window._utData = { desde,hasta,suc,totalVentas,costoVentas,utilBruta,totalGFneto,totalGNF,utilNeta,margen };
+}
+
+function exportarUtilidadPDF(){
+  var d=window._utData;
+  if(!d){alert('Calcula primero la utilidad');return;}
+  var fmt=function(n){return '$'+Math.abs(n).toLocaleString('es-MX',{minimumFractionDigits:2});};
+  var sign=function(n){return n>=0?'+':'-';};
+  var w=window.open('','_blank','width=700,height=600');
+  w.document.write('<!DOCTYPE html><html><head><title>Utilidad Operativa Solmedix</title><style>@page{size:A4;margin:15mm}body{font-family:Arial,sans-serif;font-size:11px}h1{font-size:16px;margin-bottom:4px}h2{font-size:11px;color:#555;margin-bottom:16px}.row{display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #eee}.row.total{background:#f0f9ff;font-weight:bold;font-size:13px}.row.final{background:#185FA5;color:#fff;font-weight:bold;font-size:14px}@media print{button{display:none}}</style></head><body>');
+  w.document.write('<h1>Solmedix — Estado de Utilidad Operativa</h1>');
+  w.document.write('<h2>Periodo: '+d.desde+' al '+d.hasta+(d.suc?' | Sucursal: '+d.suc:' | Todas las sucursales')+'</h2>');
+  w.document.write('<div class="row"><span>(+) Ventas brutas</span><span>'+fmt(d.totalVentas)+'</span></div>');
+  w.document.write('<div class="row"><span>(-) Costo de ventas</span><span>-'+fmt(d.costoVentas)+'</span></div>');
+  w.document.write('<div class="row total"><span>= Utilidad bruta</span><span>'+sign(d.utilBruta)+fmt(d.utilBruta)+'</span></div>');
+  w.document.write('<div class="row"><span>(-) Gastos fiscales (neto s/IVA)</span><span>-'+fmt(d.totalGFneto)+'</span></div>');
+  w.document.write('<div class="row"><span>(-) Gastos no fiscales</span><span>-'+fmt(d.totalGNF)+'</span></div>');
+  w.document.write('<div class="row final"><span>= UTILIDAD NETA</span><span>'+sign(d.utilNeta)+fmt(d.utilNeta)+' ('+d.margen.toFixed(1)+'%)</span></div>');
+  w.document.write('</body></html>'); w.document.close(); setTimeout(function(){w.print();},600);
+}
+
+/* llamar inicializaciones al cargar datos */
+var _origInicFechas = inicializarFechas;
+function inicializarFechas(){
+  _origInicFechas();
+  inicializarFechasGastos();
+}
 
 </script>
 </body>
