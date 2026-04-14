@@ -258,7 +258,16 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
         </div>
         <div class="fr">
           <label>o seleccionar por nombre</label>
-          <select id="msel" onchange="onMedChange()"><option value="">Cargando medicamentos...</option></select>
+          <div class="ac-wrap" id="msel-wrap">
+            <input type="text" id="msel-input" placeholder="Escribe para buscar medicamento..."
+              autocomplete="off"
+              oninput="filtrarMeds()"
+              onkeydown="mselKey(event)"
+              onfocus="filtrarMeds()"
+              style="font-size:13px"/>
+            <div class="ac-list" id="msel-list"></div>
+            <input type="hidden" id="msel" value=""/>
+          </div>
         </div>
         <div id="lote-row" style="display:none" class="fr">
           <label>Lote disponible</label>
@@ -554,9 +563,9 @@ function onBarcodeInput() {
     if (String(medicamentos[i].codigo_barras||'') === code) {
       // Found - select it
       document.getElementById('msel').value = medicamentos[i].id;
+      document.getElementById('msel-input').value = medicamentos[i].nombre;
       onMedChange();
       document.getElementById('barcode').value = '';
-      // Focus on qty
       setTimeout(function(){ document.getElementById('qty').focus(); document.getElementById('qty').select(); }, 100);
       return;
     }
@@ -568,6 +577,7 @@ function onBarcodeInput() {
     for (var i=0;i<medicamentos.length;i++) {
       if (String(medicamentos[i].codigo_barras||'').indexOf(code) >= 0) {
         document.getElementById('msel').value = medicamentos[i].id;
+        document.getElementById('msel-input').value = medicamentos[i].nombre;
         onMedChange();
         document.getElementById('barcode').value = '';
         found = true;
@@ -579,24 +589,90 @@ function onBarcodeInput() {
 }
 
 function cargarSelectMeds() {
-  var cats = {};
+  // Datos listos — el filtrado se hace en filtrarMeds() sobre el array medicamentos[]
+  document.getElementById('msel-input').placeholder = 'Escribe para buscar medicamento...';
+  document.getElementById('msel').value = '';
+}
+
+var mselIdx = -1; // índice activo en lista
+
+function filtrarMeds() {
+  var q = document.getElementById('msel-input').value.trim().toLowerCase();
+  var list = document.getElementById('msel-list');
+  mselIdx = -1;
+
+  // Si no hay texto, ocultar
+  if (!q) { list.style.display='none'; return; }
+
+  var matches = [];
   for (var i=0;i<medicamentos.length;i++) {
-    var cat = medicamentos[i].categoria || 'Otros';
-    if (!cats[cat]) cats[cat]=[];
-    cats[cat].push(medicamentos[i]);
-  }
-  var html = '<option value="">Seleccionar medicamento...</option>';
-  var keys = Object.keys(cats).sort();
-  for (var k=0;k<keys.length;k++) {
-    html += '<optgroup label="'+keys[k]+'">';
-    for (var j=0;j<cats[keys[k]].length;j++) {
-      var m = cats[keys[k]][j];
-      html += '<option value="'+m.id+'">'+m.nombre+'</option>';
+    var m = medicamentos[i];
+    if (m.nombre.toLowerCase().indexOf(q)>=0 ||
+        (m.categoria||'').toLowerCase().indexOf(q)>=0) {
+      matches.push(m);
     }
-    html += '</optgroup>';
   }
-  html += '<option value="__c__">+ Otro medicamento...</option>';
-  document.getElementById('msel').innerHTML = html;
+  // Agregar opción "Otro"
+  matches.push({id:'__c__', nombre:'+ Otro medicamento...', precio:null, categoria:''});
+
+  if (!matches.length) { list.style.display='none'; return; }
+
+  var html = '';
+  for (var j=0;j<matches.length;j++) {
+    var m = matches[j];
+    var isOtro = m.id==='__c__';
+    // Stock total
+    var stock = 0;
+    for (var k=0;k<lotes.length;k++) {
+      if (String(lotes[k].med_id)===String(m.id)) stock+=Number(lotes[k].existencias);
+    }
+    var stockColor = stock>5?'#6ee7b7':stock>0?'#fcd34d':'#fca5a5';
+    var stockTxt = isOtro?'':stock+' pzas';
+    var precioTxt = (!isOtro && m.precio)?'$'+Number(m.precio).toLocaleString('es-MX',{minimumFractionDigits:2}):'';
+
+    html += '<div class="ac-item msel-item" data-idx="'+j+'" onmousedown="mselPickIdx('+j+')">' +
+            '<span style="font-size:13px;font-weight:'+(isOtro?'400':'500')+'">'+m.nombre+'</span>' +
+            '<span style="display:flex;gap:8px;align-items:center">' +
+            (precioTxt?'<span style="font-size:11px;color:#93c5fd;font-family:var(--mono)">'+precioTxt+'</span>':'') +
+            (stockTxt?'<span style="font-size:10px;font-weight:700;color:'+stockColor+'">'+stockTxt+'</span>':'') +
+            '</span></div>';
+  }
+  window._mselMatches = matches;
+  list.innerHTML = html;
+  list.style.display = 'block';
+}
+
+function mselPickIdx(idx) {
+  var matches = window._mselMatches || [];
+  if (!matches[idx]) return;
+  var medId = matches[idx].id;
+  mselPickId(medId);
+}
+
+function mselPickId(medId) {
+  document.getElementById('msel').value = medId;
+  var nombre = '';
+  for (var i=0;i<medicamentos.length;i++) {
+    if (String(medicamentos[i].id)===String(medId)) { nombre=medicamentos[i].nombre; break; }
+  }
+  if (medId==='__c__') nombre='+ Otro medicamento...';
+  document.getElementById('msel-input').value = medId==='__c__' ? '' : nombre;
+  document.getElementById('msel-list').style.display = 'none';
+  onMedChange();
+}
+
+function mselKey(e) {
+  var list = document.getElementById('msel-list');
+  var rows = list.querySelectorAll('.msel-item');
+  if (!rows.length) return;
+  if (e.key==='ArrowDown') { mselIdx=Math.min(mselIdx+1,rows.length-1); e.preventDefault(); }
+  else if (e.key==='ArrowUp') { mselIdx=Math.max(mselIdx-1,0); e.preventDefault(); }
+  else if (e.key==='Enter' && mselIdx>=0) {
+    var pickIdx = parseInt(rows[mselIdx].getAttribute('data-idx')||'0');
+    mselPickIdx(pickIdx); e.preventDefault(); return;
+  } else if (e.key==='Escape') { list.style.display='none'; return; }
+  for (var i=0;i<rows.length;i++) rows[i].classList.toggle('sel', i===mselIdx);
+  if (mselIdx>=0) rows[mselIdx].scrollIntoView({block:'nearest'});
 }
 
 function onMedChange() {
@@ -884,7 +960,7 @@ function toggleOjo(inputId, btn) {
   else { inp.type='password'; btn.textContent='👁'; }
 }
 
-function limpiar(){items=[];renderItems();document.getElementById('cli').value='';document.getElementById('barcode').value='';}
+function limpiar(){items=[];renderItems();document.getElementById('cli').value='';document.getElementById('barcode').value='';document.getElementById('msel-input').value='';document.getElementById('msel').value='';document.getElementById('msel-list').style.display='none';document.getElementById('lote-row').style.display='none';document.getElementById('crow').style.display='none';document.getElementById('pre').value='';}
 
 function mostrarClave(v) {
   vActual = v;
@@ -1066,7 +1142,10 @@ function acKey(e){
   else if(e.key==='Escape'){lst.style.display='none';return;}
   for(var i=0;i<rows.length;i++)rows[i].classList.toggle('sel',i===acIdx);
 }
-document.addEventListener('click',function(e){if(!e.target.closest('.ac-wrap'))document.getElementById('aclist').style.display='none';});
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.ac-wrap'))document.getElementById('aclist').style.display='none';
+  if(!e.target.closest('#msel-wrap'))document.getElementById('msel-list').style.display='none';
+});
 
 function renderListaClientes(){
   var cont=document.getElementById('lista-clientes');
