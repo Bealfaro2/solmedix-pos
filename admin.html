@@ -5,80 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solmedix — Administración</title>
     <style>
-        /* ESTILOS PROFESIONALES */
         *{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f3ee;min-height:100vh}
+        body{font-family:-apple-system,sans-serif;background:#f4f3ee;min-height:100vh}
         
+        /* LOGIN */
         #pantalla-login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
-        .login-card{background:#fff;border-radius:20px;border:1px solid #e5e3dc;padding:3rem 2.5rem;width:100%;max-width:400px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.05)}
-        .logo-main{max-width:200px;margin-bottom:2rem;display:block;margin-left:auto;margin-right:auto}
+        .login-card{background:#fff;border-radius:20px;padding:3rem 2rem;width:100%;max-width:380px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.05);border:1px solid #e5e3dc}
+        .logo-main{max-width:180px;margin-bottom:2rem}
         
-        h2{font-size:18px;font-weight:600;margin-bottom:1.5rem;color:#1a1a1a}
-        label{display:block;text-align:left;font-size:12px;color:#666;margin-bottom:6px;font-weight:600;text-transform:uppercase}
-        
-        select, input{width:100%;padding:14px;margin-bottom:18px;border:1px solid #ddd;border-radius:10px;font-size:15px;outline:none;transition:0.2s}
-        select:focus, input:focus{border-color:#185FA5;box-shadow:0 0 0 3px rgba(24,95,165,0.1)}
-        
+        select, input{width:100%;padding:12px;margin-bottom:15px;border:1px solid #ddd;border-radius:10px;font-size:15px;outline:none}
+        .btn-primary{background:#185FA5;color:#fff;border:none;padding:12px;border-radius:10px;width:100%;font-weight:bold;cursor:pointer}
+
+        /* PANEL */
         #pantalla-admin{display:none}
         .nav-admin{background:#fff;border-bottom:1px solid #e5e3dc;padding:0 2rem;height:70px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-        
         .container{max-width:1100px;margin:2rem auto;padding:0 1.5rem}
-        .card{background:#fff;border-radius:16px;border:1px solid #e5e3dc;padding:2rem;box-shadow:0 4px 12px rgba(0,0,0,0.02)}
+        .card{background:#fff;border-radius:16px;padding:1.5rem;box-shadow:0 4px 12px rgba(0,0,0,0.02);border:1px solid #e5e3dc}
         
-        table{width:100%;border-collapse:collapse;margin-top:1.5rem}
-        th{text-align:left;padding:15px;background:#f9f9f7;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #eee}
-        td{padding:15px;border-bottom:1px solid #eee;font-size:14px;color:#333}
-
-        .btn{padding:12px 24px;border-radius:10px;border:none;cursor:pointer;font-weight:600;font-size:14px;transition:0.3s;display:inline-flex;align-items:center;justify-content:center;gap:8px}
-        .btn-primary{background:#185FA5;color:#fff;width:100%}
-        .btn-primary:hover{background:#144d86;transform:translateY(-1px)}
-        .btn-outline{background:#fff;border:1px solid #ddd;color:#666;font-size:13px}
-        .btn-outline:hover{background:#f9f9f7;border-color:#ccc}
-
-        .sat-tag{display:inline-block;background:#eff6ff;color:#1e40af;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:700;margin-top:4px;border:1px solid #dbeafe}
+        /* TABLA */
+        .search-box{width:100%;padding:12px;margin-bottom:20px;border:1px solid #ddd;border-radius:10px;background:#f9f9f7}
+        table{width:100%;border-collapse:collapse}
+        th{text-align:left;padding:12px;font-size:11px;color:#888;text-transform:uppercase;border-bottom:2px solid #eee}
+        td{padding:12px;border-bottom:1px solid #eee;font-size:14px}
+        .sat-tag{display:inline-block;background:#eff6ff;color:#1e40af;padding:3px 7px;border-radius:5px;font-size:10px;font-weight:700;margin-top:3px;border:1px solid #dbeafe}
     </style>
 </head>
 <body>
 
 <div id="pantalla-login">
     <div class="login-card">
-        <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" class="logo-main" alt="Solmedix Logo">
-        <h2>Panel de Administración</h2>
-        
-        <label>Usuario</label>
+        <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" class="logo-main">
+        <h2 style="font-size:18px;margin-bottom:1.5rem">Administración</h2>
         <select id="user-select">
             <option value="pwd_admin">Administrador Global</option>
             <option value="pwd_mty">Sucursal Monterrey</option>
             <option value="pwd_slp">Sucursal San Luis Potosí</option>
         </select>
-
-        <label>Contraseña</label>
-        <input type="password" id="pass" placeholder="••••••••">
-        
-        <button class="btn btn-primary" onclick="login()">Iniciar Sesión</button>
-        <p id="err" style="color:#d32f2f;font-size:13px;margin-top:15px;display:none;font-weight:500">❌ Contraseña incorrecta</p>
+        <input type="password" id="pass" placeholder="Contraseña">
+        <button class="btn-primary" onclick="login()">Entrar al Sistema</button>
+        <p id="err" style="color:red;font-size:12px;margin-top:10px;display:none">Contraseña incorrecta</p>
     </div>
 </div>
 
 <div id="pantalla-admin">
     <nav class="nav-admin">
         <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" height="35">
-        <div style="display:flex;align-items:center;gap:1.5rem">
-            <span id="label-user" style="font-size:14px;font-weight:600;color:#1a1a1a;background:#f0f0f0;padding:6px 12px;border-radius:20px"></span>
-            <button class="btn btn-outline" onclick="location.reload()">Cerrar Sesión</button>
+        <div style="display:flex;align-items:center;gap:1rem">
+            <span id="label-user" style="font-size:13px;font-weight:bold;color:#185FA5"></span>
+            <button onclick="location.reload()" style="background:none;border:1px solid #ccc;padding:5px 10px;border-radius:5px;cursor:pointer">Salir</button>
         </div>
     </nav>
 
     <div class="container">
         <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee;padding-bottom:1rem">
-                <h3 style="font-size:20px;color:#1a1a1a">Catálogo de Medicamentos</h3>
-                <span style="font-size:12px;color:#888">Sincronizado con Google Sheets</span>
-            </div>
-            
-            <div id="tabla-meds">
-                <p style="padding:2rem;text-align:center;color:#666">Cargando inventario...</p>
-            </div>
+            <input type="text" id="busqueda" class="search-box" placeholder="🔍 Buscar medicamento o categoría..." onkeyup="filtrar()">
+            <div id="tabla-meds">Cargando inventario...</div>
         </div>
     </div>
 </div>
@@ -86,31 +67,24 @@
 <script>
     var api = 'https://script.google.com/macros/s/AKfycbyCRC2nLoBybekYy0THrABObIGAZ4oPiM1Y0NwT1N0gQNBwU77nsCziB3p9n2RrRvyZ/exec';
     var configData = {};
+    var meds = [];
 
-    // Carga inicial de configuración
     window.onload = function() {
         var s = document.createElement('script');
         s.src = api + '?accion=config&callback=setWebConfig';
         document.body.appendChild(s);
     };
 
-    function setWebConfig(data) {
-        configData = data.config;
-    }
+    function setWebConfig(data) { configData = data.config; }
 
     function login() {
         var userKey = document.getElementById('user-select').value;
-        var passInput = document.getElementById('pass').value;
-        var errorTxt = document.getElementById('err');
-
-        if (passInput === configData[userKey]) {
+        if (document.getElementById('pass').value === configData[userKey]) {
             document.getElementById('pantalla-login').style.display = 'none';
             document.getElementById('pantalla-admin').style.display = 'block';
-            document.getElementById('label-user').innerText = "👤 " + document.getElementById('user-select').options[document.getElementById('user-select').selectedIndex].text;
+            document.getElementById('label-user').innerText = document.getElementById('user-select').options[document.getElementById('user-select').selectedIndex].text;
             cargarDatos();
-        } else {
-            errorTxt.style.display = 'block';
-        }
+        } else { document.getElementById('err').style.display = 'block'; }
     }
 
     function cargarDatos() {
@@ -120,19 +94,27 @@
     }
 
     function renderMeds(data) {
-        var html = '<table><thead><tr><th>Medicamento / Categoría</th><th>Precio Venta</th><th>Información Fiscal SAT</th></tr></thead><tbody>';
-        data.medicamentos.forEach(function(m) {
+        meds = data.medicamentos;
+        actualizarTabla(meds);
+    }
+
+    function actualizarTabla(lista) {
+        var html = '<table><thead><tr><th>Medicamento</th><th>Precio</th><th>Datos SAT</th></tr></thead><tbody>';
+        lista.forEach(function(m) {
             html += `<tr>
-                <td><strong style="color:#185FA5">${m.nombre}</strong><br><span style="font-size:12px;color:#888">${m.categoria || 'Sin categoría'}</span></td>
-                <td style="font-weight:700;font-size:16px">$${m.precio}</td>
-                <td>
-                    <div class="sat-tag">📦 PROD: ${m.sat_prod || '51101500'}</div>
-                    <div class="sat-tag">📏 UNIDAD: ${m.sat_unidad || 'H87'}</div>
-                </td>
+                <td><b>${m.nombre}</b><br><small style="color:#999">${m.categoria}</small></td>
+                <td style="font-weight:bold;color:#185FA5;font-size:15px">$${m.precio}</td>
+                <td><div class="sat-tag">P: ${m.sat_prod || '51101500'}</div><br><div class="sat-tag">U: ${m.sat_unidad || 'H87'}</div></td>
             </tr>`;
         });
         html += '</tbody></table>';
         document.getElementById('tabla-meds').innerHTML = html;
+    }
+
+    function filtrar() {
+        var txt = document.getElementById('busqueda').value.toLowerCase();
+        var filtrados = meds.filter(m => m.nombre.toLowerCase().includes(txt) || m.categoria.toLowerCase().includes(txt));
+        actualizarTabla(filtrados);
     }
 </script>
 
