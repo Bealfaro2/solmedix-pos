@@ -3,55 +3,113 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Solmedix Admin — Fiscal</title>
+<title>Solmedix — Administración</title>
 <style>
-  :root { --primary: #185FA5; --bg: #f4f3ee; --border: #e5e3dc; }
-  body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; }
-  .container { max-width: 1100px; margin: 20px auto; padding: 0 20px; }
-  .card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-  th { text-align: left; padding: 12px; background: #f8f9fa; border-bottom: 2px solid #eee; font-size: 13px; }
-  td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
-  .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 500; }
-  .btn-primary { background: var(--primary); color: #fff; }
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
-  .modal-overlay.show { display: flex; }
-  .modal { background: #fff; padding: 25px; border-radius: 15px; width: 100%; max-width: 550px; }
-  .form-group { margin-bottom: 15px; }
-  .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
-  .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
-  .sat-section { background: #f0f4f8; padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary); margin-top: 10px; }
+  /* ESTILOS ORIGINALES RECONSTRUIDOS */
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f3ee;min-height:100vh;color:#1a1a1a}
+  
+  /* LOGIN */
+  #pantalla-login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
+  .login-card{background:#fff;border-radius:16px;border:1px solid #e5e3dc;padding:2.5rem 2rem;width:100%;max-width:380px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+  .login-card h2{font-size:18px;font-weight:500;margin-bottom:.4rem;color:#1a1a1a}
+  .login-card input{width:100%;padding:12px;margin-bottom:12px;border:1px solid #ddd;border-radius:8px;text-align:center}
+  
+  /* DASHBOARD */
+  #pantalla-admin{display:none}
+  .navbar{background:#fff;border-bottom:1px solid #e5e3dc;padding:0.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+  .nav-links{display:flex;gap:1.5rem}
+  .nav-links a{text-decoration:none;color:#666;font-size:14px;font-weight:500;cursor:pointer}
+  .nav-links a.active{color:#185FA5}
+  
+  .container{max-width:1100px;margin:2rem auto;padding:0 1rem}
+  .card{background:#fff;border-radius:12px;border:1px solid #e5e3dc;padding:1.5rem;margin-bottom:1.5rem}
+  
+  /* TABLAS */
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;padding:12px;background:#f9f9f7;font-size:12px;color:#666;text-transform:uppercase;letter-spacing:.05em}
+  td{padding:12px;border-bottom:1px solid #eee;font-size:14px}
+  
+  /* BOTONES */
+  .btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-weight:500;transition:0.2s;font-size:14px}
+  .btn-primary{background:#185FA5;color:#fff}
+  .btn-outline{background:transparent;border:1px solid #ddd}
+
+  /* MODALES Y CAMPOS SAT */
+  .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:1000}
+  .modal-overlay.show{display:flex}
+  .modal{background:#fff;padding:2rem;border-radius:16px;width:100%;max-width:550px;max-height:90vh;overflow-y:auto}
+  .form-group{margin-bottom:1rem}
+  .form-group label{display:block;font-size:12px;color:#666;margin-bottom:4px}
+  .form-group input, .form-group select{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px}
+  
+  .sat-box{background:#f0f7ff;border:1px solid #cce3f5;padding:15px;border-radius:8px;margin-top:15px}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:15px}
 </style>
 </head>
 <body>
 
-<div class="container">
-  <div class="card">
-    <div style="display:flex; justify-content: space-between; align-items: center;">
-      <h2>Catálogo de Medicamentos</h2>
-      <button class="btn btn-primary" onclick="abrirModal()">+ Nuevo Producto</button>
+<div id="pantalla-login">
+  <div class="login-card">
+    <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" style="max-width:180px;margin-bottom:1rem">
+    <h2>Panel de Control</h2>
+    <p>Ingresa la contraseña de administrador</p>
+    <input type="password" id="login-pwd" placeholder="Contraseña">
+    <button class="btn btn-primary" style="width:100%" onclick="intentarLogin()">Entrar al Sistema</button>
+    <p id="login-err" style="color:red;margin-top:10px;display:none">Contraseña incorrecta</p>
+  </div>
+</div>
+
+<div id="pantalla-admin">
+  <nav class="navbar">
+    <div style="display:flex;align-items:center;gap:10px">
+      <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" height="30">
+      <span style="font-weight:bold;color:#185FA5">ADMIN</span>
     </div>
-    <div id="tabla-meds">Cargando...</div>
+    <div class="nav-links">
+      <a onclick="showTab('meds')" id="link-meds" class="active">Medicamentos</a>
+      <a onclick="showTab('lotes')" id="link-lotes">Lotes e Inventario</a>
+      <a onclick="location.reload()">Cerrar Sesión</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div id="tab-meds">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;margin-bottom:1rem">
+          <h3>Catálogo de Productos</h3>
+          <button class="btn btn-primary" onclick="abrirModalMed()">+ Nuevo Producto</button>
+        </div>
+        <div id="cont-meds">Cargando productos...</div>
+      </div>
+    </div>
+
+    <div id="tab-lotes" style="display:none">
+      <div class="card">
+        <h3>Inventario por Lotes</h3>
+        <div id="cont-lotes">Cargando lotes...</div>
+      </div>
+    </div>
   </div>
 </div>
 
 <div id="modal-med" class="modal-overlay">
   <div class="modal">
-    <h3 id="m-titulo">Producto</h3>
+    <h3 id="med-titulo">Editar Producto</h3><br>
     <input type="hidden" id="f-id">
     
     <div class="form-group">
-      <label>Nombre del Producto</label>
+      <label>Nombre Comercial / Genérico</label>
       <input type="text" id="f-nombre">
     </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+    <div class="grid-2">
       <div class="form-group">
         <label>Categoría</label>
         <input type="text" id="f-cat">
       </div>
       <div class="form-group">
-        <label>Precio Venta</label>
+        <label>Precio de Venta</label>
         <input type="number" id="f-precio" step="0.01">
       </div>
     </div>
@@ -61,13 +119,13 @@
       <input type="text" id="f-barras">
     </div>
 
-    <div class="sat-section">
-      <small style="color:var(--primary); font-weight:bold;">DATOS FISCALES SAT</small>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:10px;">
-        <div class="form-group">
-          <label>Tipo (Unidad)</label>
-          <input type="text" id="f-sat-tipo" value="Unidad">
-        </div>
+    <div class="sat-box">
+      <p style="font-size:11px;font-weight:bold;color:#185FA5;margin-bottom:10px">REQUERIMIENTOS SAT (FACTURACIÓN)</p>
+      <div class="form-group">
+        <label>Tipo de Producto</label>
+        <input type="text" id="f-sat-tipo" value="Unidad">
+      </div>
+      <div class="grid-2">
         <div class="form-group">
           <label>Clave SAT Prod</label>
           <input type="text" id="f-sat-prod" placeholder="Ej: 51101500">
@@ -79,42 +137,95 @@
       </div>
     </div>
 
-    <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
-      <button class="btn" onclick="cerrarModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardar()">Guardar</button>
+    <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarMed()">Guardar Cambios</button>
     </div>
   </div>
 </div>
 
 <script>
-  var API_URL = 'TU_URL_DE_APPS_SCRIPT'; // Reemplazar con tu URL de implementación
-  var medicamentos = [];
+  var API_URL = 'https://script.google.com/macros/s/AKfycbyCRC2nLoBybekYy0THrABObIGAZ4oPiM1Y0NwT1N0gQNBwU77nsCziB3p9n2RrRvyZ/exec'; 
+  var meds = [];
+  var lotes = [];
+  var config = {};
 
-  function fetchMeds() {
+  // LOGIN ORIGINAL
+  function intentarLogin() {
+    const pwd = document.getElementById('login-pwd').value;
+    // Primero cargamos config para validar
     const script = document.createElement('script');
-    script.src = `${API_URL}?accion=medicamentos&callback=renderMeds`;
+    script.src = API_URL + '?accion=config&callback=validarAcceso';
     document.body.appendChild(script);
   }
 
-  function renderMeds(data) {
-    medicamentos = data.medicamentos;
-    let html = `<table><thead><tr><th>Nombre</th><th>Categoría</th><th>Precio</th><th>SAT</th><th>Acciones</th></tr></thead><tbody>`;
-    medicamentos.forEach(m => {
-      html += `<tr>
-        <td><b>${m.nombre}</b><br><small>${m.id}</small></td>
-        <td>${m.categoria}</td>
-        <td>$${m.precio}</td>
-        <td style="font-size:11px">Prod: ${m.sat_prod || '-'}<br>Uni: ${m.sat_unidad}</td>
-        <td><button class="btn" onclick="abrirModal('${m.id}')">Editar</button></td>
-      </tr>`;
-    });
-    html += `</tbody></table>`;
-    document.getElementById('tabla-meds').innerHTML = html;
+  function validarAcceso(data) {
+    config = data.config;
+    const pwdIngresada = document.getElementById('login-pwd').value;
+    if(pwdIngresada === config.pwd_admin) {
+      document.getElementById('pantalla-login').style.display = 'none';
+      document.getElementById('pantalla-admin').style.display = 'block';
+      cargarDatos();
+    } else {
+      document.getElementById('login-err').style.display = 'block';
+    }
   }
 
-  function abrirModal(id = null) {
+  // GESTIÓN DE TABS
+  function showTab(tab) {
+    document.getElementById('tab-meds').style.display = tab === 'meds' ? 'block' : 'none';
+    document.getElementById('tab-lotes').style.display = tab === 'lotes' ? 'block' : 'none';
+    document.getElementById('link-meds').classList.toggle('active', tab === 'meds');
+    document.getElementById('link-lotes').classList.toggle('active', tab === 'lotes');
+  }
+
+  // CARGA DE DATOS
+  function cargarDatos() {
+    // Cargar Meds
+    const s1 = document.createElement('script');
+    s1.src = API_URL + '?accion=medicamentos&callback=renderMeds';
+    document.body.appendChild(s1);
+    // Cargar Lotes
+    const s2 = document.createElement('script');
+    s2.src = API_URL + '?accion=lotes&callback=renderLotes';
+    document.body.appendChild(s2);
+  }
+
+  function renderMeds(data) {
+    meds = data.medicamentos;
+    let h = `<table><thead><tr><th>Producto</th><th>Precio</th><th>Fiscal (SAT)</th><th>Acciones</th></tr></thead><tbody>`;
+    meds.forEach(m => {
+      h += `<tr>
+        <td><b>${m.nombre}</b><br><small style="color:#888">${m.categoria} | ${m.id}</small></td>
+        <td>$${m.precio}</td>
+        <td><small>Prod: ${m.sat_prod || '--'}<br>Uni: ${m.sat_unidad}</small></td>
+        <td><button class="btn btn-outline" style="padding:5px 10px" onclick="abrirModalMed('${m.id}')">Editar</button></td>
+      </tr>`;
+    });
+    h += `</tbody></table>`;
+    document.getElementById('cont-meds').innerHTML = h;
+  }
+
+  function renderLotes(data) {
+    lotes = data.lotes;
+    let h = `<table><thead><tr><th>Medicamento</th><th>Lote</th><th>Stock</th><th>Costo U.</th></tr></thead><tbody>`;
+    lotes.forEach(l => {
+      h += `<tr>
+        <td>${l.medicamento}</td>
+        <td><code>${l.lote}</code></td>
+        <td style="font-weight:bold; color:${l.existencias < 5 ? 'red' : 'green'}">${l.existencias}</td>
+        <td>$${l.costo_unitario}</td>
+      </tr>`;
+    });
+    h += `</tbody></table>`;
+    document.getElementById('cont-lotes').innerHTML = h;
+  }
+
+  // FUNCIONES MODAL
+  function abrirModalMed(id = null) {
     if(id) {
-      const m = medicamentos.find(x => x.id === id);
+      const m = meds.find(x => x.id === id);
+      document.getElementById('med-titulo').innerText = "Editar Producto";
       document.getElementById('f-id').value = m.id;
       document.getElementById('f-nombre').value = m.nombre;
       document.getElementById('f-cat').value = m.categoria;
@@ -124,6 +235,7 @@
       document.getElementById('f-sat-prod').value = m.sat_prod || '';
       document.getElementById('f-sat-unidad').value = m.sat_unidad || 'H87';
     } else {
+      document.getElementById('med-titulo').innerText = "Nuevo Producto";
       document.getElementById('f-id').value = "";
       document.getElementById('f-nombre').value = "";
       document.getElementById('f-sat-prod').value = "51101500";
@@ -133,7 +245,7 @@
 
   function cerrarModal() { document.getElementById('modal-med').classList.remove('show'); }
 
-  function guardar() {
+  function guardarMed() {
     const payload = {
       accion: document.getElementById('f-id').value ? 'editar_medicamento' : 'guardar_medicamento',
       id: document.getElementById('f-id').value,
@@ -148,12 +260,11 @@
 
     fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
     .then(() => {
-      alert("Enviado. Recarga la página.");
+      alert("Solicitud procesada. Los cambios se verán en unos segundos.");
       cerrarModal();
+      setTimeout(cargarDatos, 1500);
     });
   }
-
-  window.onload = fetchMeds;
 </script>
 </body>
 </html>
