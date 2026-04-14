@@ -11,18 +11,18 @@
         /* LOGIN */
         #pantalla-login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
         .login-card{background:#fff;border-radius:20px;padding:3rem 2rem;width:100%;max-width:380px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.05);border:1px solid #e5e3dc}
-        .logo-main{max-width:180px;margin-bottom:2rem}
+        /* Ajuste de logo */
+        .logo-main{max-width:220px;height:auto;margin-bottom:2rem;display:inline-block}
         
         select, input{width:100%;padding:12px;margin-bottom:15px;border:1px solid #ddd;border-radius:10px;font-size:15px;outline:none}
-        .btn-primary{background:#185FA5;color:#fff;border:none;padding:12px;border-radius:10px;width:100%;font-weight:bold;cursor:pointer}
+        .btn-primary{background:#185FA5;color:#fff;border:none;padding:14px;border-radius:10px;width:100%;font-weight:bold;cursor:pointer;font-size:16px}
 
         /* PANEL */
         #pantalla-admin{display:none}
-        .nav-admin{background:#fff;border-bottom:1px solid #e5e3dc;padding:0 2rem;height:70px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+        .nav-admin{background:#fff;border-bottom:1px solid #e5e3dc;padding:0 2rem;height:75px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
         .container{max-width:1100px;margin:2rem auto;padding:0 1.5rem}
         .card{background:#fff;border-radius:16px;padding:1.5rem;box-shadow:0 4px 12px rgba(0,0,0,0.02);border:1px solid #e5e3dc}
         
-        /* TABLA */
         .search-box{width:100%;padding:12px;margin-bottom:20px;border:1px solid #ddd;border-radius:10px;background:#f9f9f7}
         table{width:100%;border-collapse:collapse}
         th{text-align:left;padding:12px;font-size:11px;color:#888;text-transform:uppercase;border-bottom:2px solid #eee}
@@ -34,8 +34,9 @@
 
 <div id="pantalla-login">
     <div class="login-card">
-        <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" class="logo-main">
-        <h2 style="font-size:18px;margin-bottom:1.5rem">Administración</h2>
+        <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" class="logo-main" alt="Solmedix">
+        
+        <h2 style="font-size:18px;margin-bottom:1.5rem;color:#333">Administración</h2>
         <select id="user-select">
             <option value="pwd_admin">Administrador Global</option>
             <option value="pwd_mty">Sucursal Monterrey</option>
@@ -49,10 +50,10 @@
 
 <div id="pantalla-admin">
     <nav class="nav-admin">
-        <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" height="35">
+        <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" height="40" alt="Solmedix">
         <div style="display:flex;align-items:center;gap:1rem">
-            <span id="label-user" style="font-size:13px;font-weight:bold;color:#185FA5"></span>
-            <button onclick="location.reload()" style="background:none;border:1px solid #ccc;padding:5px 10px;border-radius:5px;cursor:pointer">Salir</button>
+            <span id="label-user" style="font-size:13px;font-weight:bold;color:#185FA5;background:#f0f7ff;padding:5px 12px;border-radius:20px"></span>
+            <button onclick="location.reload()" style="background:none;border:1px solid #ccc;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px">Cerrar Sesión</button>
         </div>
     </nav>
 
@@ -82,7 +83,7 @@
         if (document.getElementById('pass').value === configData[userKey]) {
             document.getElementById('pantalla-login').style.display = 'none';
             document.getElementById('pantalla-admin').style.display = 'block';
-            document.getElementById('label-user').innerText = document.getElementById('user-select').options[document.getElementById('user-select').selectedIndex].text;
+            document.getElementById('label-user').innerText = "👤 " + document.getElementById('user-select').options[document.getElementById('user-select').selectedIndex].text;
             cargarDatos();
         } else { document.getElementById('err').style.display = 'block'; }
     }
