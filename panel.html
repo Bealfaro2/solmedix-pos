@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Solmedix Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body{font-family:sans-serif; background:#f4f3ee; display:flex; justify-content:center; align-items:center; min-height:100vh; margin:0}
+        .card{background:white; padding:2rem; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1); text-align:center; width:300px}
+        input{width:100%; padding:10px; margin:10px 0; border:1px solid #ccc; border-radius:5px; text-align:center}
+        button{width:100%; padding:10px; background:#185FA5; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold}
+        #admin-panel{display:none; width:90%; max-width:1000px; background:white; padding:20px; position:absolute; top:20px}
+        table{width:100%; border-collapse:collapse; margin-top:20px}
+        th, td{border-bottom:1px solid #eee; padding:10px; text-align:left}
+    </style>
+</head>
+<body>
+
+    <div id="login-box" class="card">
+        <img src="https://raw.githubusercontent.com/Bealfaro2/solmedix-pos/main/logo_solmedix.png" width="150">
+        <h3>Panel Admin</h3>
+        <input type="password" id="pass" placeholder="Contraseña">
+        <button onclick="login()">Entrar</button>
+        <p id="err" style="color:red; display:none">Error de acceso</p>
+    </div>
+
+    <div id="admin-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center">
+            <h2 id="sucursal-title">Cargando...</h2>
+            <button onclick="location.reload()" style="width:auto">Salir</button>
+        </div>
+        <div id="contenido">Cargando datos de Google Sheets...</div>
+    </div>
+
+    <script>
+        var api = 'https://script.google.com/macros/s/AKfycbyCRC2nLoBybekYy0THrABObIGAZ4oPiM1Y0NwT1N0gQNBwU77nsCziB3p9n2RrRvyZ/exec';
+        
+        function login() {
+            var p = document.getElementById('pass').value;
+            var s = document.createElement('script');
+            // Usamos JSONP para evitar bloqueos
+            s.src = api + '?accion=config&callback=check';
+            document.body.appendChild(s);
+        }
+
+        function check(data) {
+            var p = document.getElementById('pass').value;
+            var user = "";
+            if(p === data.config.pwd_admin) user = "Administrador";
+            else if(p === data.config.pwd_mty) user = "Monterrey";
+            else if(p === data.config.pwd_slp) user = "San Luis Potosí";
+
+            if(user !== "") {
+                document.getElementById('login-box').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'block';
+                document.getElementById('sucursal-title').innerText = "Sucursal: " + user;
+                cargarMeds();
+            } else {
+                document.getElementById('err').style.display = 'block';
+            }
+        }
+
+        function cargarMeds() {
+            var s = document.createElement('script');
+            s.src = api + '?accion=medicamentos&callback=draw';
+            document.body.appendChild(s);
+        }
+
+        function draw(data) {
+            var h = '<table><tr><th>Producto</th><th>Precio</th><th>SAT</th></tr>';
+            data.medicamentos.forEach(function(m) {
+                h += '<tr><td>'+m.nombre+'</td><td>$'+m.precio+'</td><td>'+(m.sat_prod || '---')+'</td></tr>';
+            });
+            h += '</table>';
+            document.getElementById('contenido').innerHTML = h;
+        }
+    </script>
+</body>
+</html>
