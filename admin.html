@@ -2201,7 +2201,7 @@ function renderGastosFiscales(src) {
     html+='<td><span style="font-size:10px;font-family:var(--mono);background:'+(g.metodo_pago==='PPD'?'rgba(245,158,11,.14)':'rgba(16,185,129,.14)')+';color:'+(g.metodo_pago==='PPD'?'#fcd34d':'#6ee7b7')+';padding:2px 6px;border-radius:99px">'+g.metodo_pago+'</span></td>';
     html+='<td><span class="'+(g.sucursal==='MTY'?'chip-mty':'chip-slp')+'">'+g.sucursal+'</span></td>';
     html+='<td style="font-size:10px;font-family:var(--mono);color:var(--text-3)" title="'+g.uuid+'">'+g.uuid.slice(0,8)+'…</td>';
-    html+='<td><button class="btn btnd btns" onclick="cancelarGastoFiscal(''+g.uuid+'')">Cancelar</button></td>';
+    html+='<td><button class="btn btnd btns" onclick="cancelarGFByIdx('+i+')"  >Cancelar</button></td>';
     html+='</tr>';
   }
   tbody.innerHTML=html;
@@ -2316,7 +2316,7 @@ function renderGastosNF(src) {
     html+='<td style="font-weight:500">'+g.concepto+'</td>';
     html+='<td style="text-align:right;font-weight:700">$'+Number(g.monto).toLocaleString("es-MX",{minimumFractionDigits:2})+'</td>';
     html+='<td><span class="'+(g.sucursal==='MTY'?'chip-mty':'chip-slp')+'">'+g.sucursal+'</span></td>';
-    html+='<td><button class="btn btnd btns" onclick="cancelarGastoNF(this,''+g.fecha+'_'+encodeURIComponent(g.concepto)+'')">Cancelar</button></td>';
+    html+='<td><button class="btn btnd btns" onclick="cancelarGNFByIdx('+i+')"  >Cancelar</button></td>';
     html+='</tr>';
   }
   tbody.innerHTML=html;
@@ -2521,6 +2521,19 @@ var _origInicFechas = inicializarFechas;
 function inicializarFechas(){
   _origInicFechas();
   inicializarFechasGastos();
+}
+
+/* ─── index-based cancel helpers (avoids quote nesting issues) ─── */
+function cancelarGastoFiscalByIndex(idx) {
+  var src = window._gfData || gastosFiscales;
+  if (!src || !src[idx]) return;
+  cancelarGastoFiscal(src[idx].uuid);
+}
+function cancelarGastoNFByIndex(idx) {
+  var src = window._gnfData || gastosNF;
+  if (!src || !src[idx]) return;
+  var g = src[idx];
+  cancelarGastoNF(null, g.fecha + '_' + encodeURIComponent(g.concepto));
 }
 
 </script>
