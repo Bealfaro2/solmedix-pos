@@ -3,155 +3,157 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Solmedix — Administración</title>
+<title>Solmedix Admin — Fiscal</title>
 <style>
-  /* Mantengo tus estilos originales y agrego mejoras para los nuevos campos */
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f3ee;min-height:100vh}
-  .container{max-width:1100px;margin:0 auto;padding:2rem 1rem}
-  .card{background:#fff;border-radius:12px;border:1px solid #e5e3dc;padding:1.5rem;margin-bottom:1.5rem}
-  .grid-fiscal{display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;margin-top:10px;background:#f9f9f7;padding:15px;border-radius:8px;border:1px dashed #ccc}
-  table{width:100%;border-collapse:collapse;margin-top:1rem}
-  th{text-align:left;padding:12px;background:#f9f9f7;font-size:13px;color:#666;border-bottom:1px solid #eee}
-  td{padding:12px;border-bottom:1px solid #eee;font-size:14px}
-  .btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-weight:500;transition:0.2s}
-  .btn-primary{background:#185FA5;color:#fff}
-  .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:1000}
-  .modal-overlay.show{display:flex}
-  .modal{background:#fff;padding:2rem;border-radius:16px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto}
-  .form-group{margin-bottom:1rem}
-  .form-group label{display:block;font-size:13px;color:#666;margin-bottom:4px}
-  .form-group input, .form-group select{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px}
-  .badge-sat{font-size:10px;background:#e2e8f0;padding:2px 6px;border-radius:4px;color:#475569;display:block;margin-top:4px}
+  :root { --primary: #185FA5; --bg: #f4f3ee; --border: #e5e3dc; }
+  body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; }
+  .container { max-width: 1100px; margin: 20px auto; padding: 0 20px; }
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+  th { text-align: left; padding: 12px; background: #f8f9fa; border-bottom: 2px solid #eee; font-size: 13px; }
+  td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+  .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 500; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #fff; padding: 25px; border-radius: 15px; width: 100%; max-width: 550px; }
+  .form-group { margin-bottom: 15px; }
+  .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
+  .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+  .sat-section { background: #f0f4f8; padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary); margin-top: 10px; }
 </style>
 </head>
 <body>
 
-<div id="app">
-  <div class="container">
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <h2>Catálogo de Medicamentos</h2>
-        <button class="btn btn-primary" onclick="abrirModalMed()">+ Nuevo Producto</button>
-      </div>
-      <div id="lista-meds">
-        </div>
+<div class="container">
+  <div class="card">
+    <div style="display:flex; justify-content: space-between; align-items: center;">
+      <h2>Catálogo de Medicamentos</h2>
+      <button class="btn btn-primary" onclick="abrirModal()">+ Nuevo Producto</button>
     </div>
+    <div id="tabla-meds">Cargando...</div>
   </div>
 </div>
 
-<div id="modal-med-overlay" class="modal-overlay" onclick="cerrarModalExterno(event, 'modal-med-overlay')">
+<div id="modal-med" class="modal-overlay">
   <div class="modal">
-    <h3 id="med-titulo">Nuevo Medicamento</h3>
-    <input type="hidden" id="med-id">
+    <h3 id="m-titulo">Producto</h3>
+    <input type="hidden" id="f-id">
     
     <div class="form-group">
-      <label>Nombre Comercial / Genérico</label>
-      <input type="text" id="med-nombre">
+      <label>Nombre del Producto</label>
+      <input type="text" id="f-nombre">
     </div>
-    
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px">
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
       <div class="form-group">
         <label>Categoría</label>
-        <select id="med-cat">
-          <option value="Patente">Patente</option>
-          <option value="Genérico">Genérico</option>
-          <option value="Abarrotes">Abarrotes</option>
-          <option value="Servicios">Servicios</option>
-        </select>
+        <input type="text" id="f-cat">
       </div>
       <div class="form-group">
-        <label>Precio de Venta</label>
-        <input type="number" id="med-precio" step="0.01">
+        <label>Precio Venta</label>
+        <input type="number" id="f-precio" step="0.01">
       </div>
     </div>
 
     <div class="form-group">
       <label>Código de Barras</label>
-      <input type="text" id="med-barras">
+      <input type="text" id="f-barras">
     </div>
 
-    <div class="form-group">
-      <label>¿Requiere Receta?</label>
-      <select id="med-receta">
-        <option value="NO">No</option>
-        <option value="SI">Sí</option>
-      </select>
-    </div>
-
-    <p style="font-size:12px; font-weight:bold; color:#185FA5; margin-top:15px;">DATOS FISCALES (SAT)</p>
-    <div class="grid-fiscal">
-      <div class="form-group">
-        <label>Tipo</label>
-        <input type="text" id="med-sat-tipo" value="Unidad">
-      </div>
-      <div class="form-group">
-        <label>Clave Producto</label>
-        <input type="text" id="med-sat-prod" placeholder="Ej: 51101500">
-        <span class="badge-sat">Medicamentos: 51101500</span>
-      </div>
-      <div class="form-group">
-        <label>Clave Unidad</label>
-        <input type="text" id="med-sat-unidad" value="H87">
-        <span class="badge-sat">Pieza: H87</span>
+    <div class="sat-section">
+      <small style="color:var(--primary); font-weight:bold;">DATOS FISCALES SAT</small>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:10px;">
+        <div class="form-group">
+          <label>Tipo (Unidad)</label>
+          <input type="text" id="f-sat-tipo" value="Unidad">
+        </div>
+        <div class="form-group">
+          <label>Clave SAT Prod</label>
+          <input type="text" id="f-sat-prod" placeholder="Ej: 51101500">
+        </div>
+        <div class="form-group">
+          <label>Clave SAT Unidad</label>
+          <input type="text" id="f-sat-unidad" value="H87">
+        </div>
       </div>
     </div>
 
-    <div style="margin-top:20px; display:flex; gap:10px">
-      <button class="btn btn-primary" id="btn-guardar-med" onclick="guardarMed()">Guardar Producto</button>
-      <button class="btn" onclick="cerrarModalMed()">Cancelar</button>
+    <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+      <button class="btn" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardar()">Guardar</button>
     </div>
   </div>
 </div>
 
 <script>
-// Lógica de carga y guardado (adaptada de tu código original)
-var medicamentos = [];
+  var API_URL = 'TU_URL_DE_APPS_SCRIPT'; // Reemplazar con tu URL de implementación
+  var medicamentos = [];
 
-function abrirModalMed(id = null) {
-  if(id) {
-    const m = medicamentos.find(x => x.id === id);
-    document.getElementById('med-titulo').innerText = "Editar Producto";
-    document.getElementById('med-id').value = m.id;
-    document.getElementById('med-nombre').value = m.nombre;
-    document.getElementById('med-cat').value = m.categoria;
-    document.getElementById('med-precio').value = m.precio;
-    document.getElementById('med-barras').value = m.codigo_barras;
-    document.getElementById('med-receta').value = m.receta;
-    document.getElementById('med-sat-tipo').value = m.tipo_producto || 'Unidad';
-    document.getElementById('med-sat-prod').value = m.sat_prod || '';
-    document.getElementById('med-sat-unidad').value = m.sat_unidad || 'H87';
-  } else {
-    document.getElementById('med-titulo').innerText = "Nuevo Producto";
-    document.getElementById('med-id').value = "";
-    document.getElementById('med-nombre').value = "";
-    document.getElementById('med-sat-prod').value = "51101500"; // Default Medicamentos
+  function fetchMeds() {
+    const script = document.createElement('script');
+    script.src = `${API_URL}?accion=medicamentos&callback=renderMeds`;
+    document.body.appendChild(script);
   }
-  document.getElementById('modal-med-overlay').classList.add('show');
-}
 
-function guardarMed() {
-  const data = {
-    accion: document.getElementById('med-id').value ? 'editar_medicamento' : 'guardar_medicamento',
-    id: document.getElementById('med-id').value,
-    nombre: document.getElementById('med-nombre').value,
-    categoria: document.getElementById('med-cat').value,
-    precio: document.getElementById('med-precio').value,
-    codigo_barras: document.getElementById('med-barras').value,
-    receta: document.getElementById('med-receta').value,
-    tipo_producto: document.getElementById('med-sat-tipo').value,
-    sat_prod: document.getElementById('med-sat-prod').value,
-    sat_unidad: document.getElementById('med-sat-unidad').value
-  };
+  function renderMeds(data) {
+    medicamentos = data.medicamentos;
+    let html = `<table><thead><tr><th>Nombre</th><th>Categoría</th><th>Precio</th><th>SAT</th><th>Acciones</th></tr></thead><tbody>`;
+    medicamentos.forEach(m => {
+      html += `<tr>
+        <td><b>${m.nombre}</b><br><small>${m.id}</small></td>
+        <td>${m.categoria}</td>
+        <td>$${m.precio}</td>
+        <td style="font-size:11px">Prod: ${m.sat_prod || '-'}<br>Uni: ${m.sat_unidad}</td>
+        <td><button class="btn" onclick="abrirModal('${m.id}')">Editar</button></td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+    document.getElementById('tabla-meds').innerHTML = html;
+  }
 
-  // Aquí llamarías a tu función apiPost original
-  console.log("Enviando datos:", data);
-  // apiPost(data, function(res) { ... });
-}
+  function abrirModal(id = null) {
+    if(id) {
+      const m = medicamentos.find(x => x.id === id);
+      document.getElementById('f-id').value = m.id;
+      document.getElementById('f-nombre').value = m.nombre;
+      document.getElementById('f-cat').value = m.categoria;
+      document.getElementById('f-precio').value = m.precio;
+      document.getElementById('f-barras').value = m.codigo_barras;
+      document.getElementById('f-sat-tipo').value = m.tipo_producto || 'Unidad';
+      document.getElementById('f-sat-prod').value = m.sat_prod || '';
+      document.getElementById('f-sat-unidad').value = m.sat_unidad || 'H87';
+    } else {
+      document.getElementById('f-id').value = "";
+      document.getElementById('f-nombre').value = "";
+      document.getElementById('f-sat-prod').value = "51101500";
+    }
+    document.getElementById('modal-med').classList.add('show');
+  }
 
-function cerrarModalMed() {
-  document.getElementById('modal-med-overlay').classList.remove('show');
-}
+  function cerrarModal() { document.getElementById('modal-med').classList.remove('show'); }
+
+  function guardar() {
+    const payload = {
+      accion: document.getElementById('f-id').value ? 'editar_medicamento' : 'guardar_medicamento',
+      id: document.getElementById('f-id').value,
+      nombre: document.getElementById('f-nombre').value,
+      categoria: document.getElementById('f-cat').value,
+      precio: document.getElementById('f-precio').value,
+      codigo_barras: document.getElementById('f-barras').value,
+      tipo_producto: document.getElementById('f-sat-tipo').value,
+      sat_prod: document.getElementById('f-sat-prod').value,
+      sat_unidad: document.getElementById('f-sat-unidad').value
+    };
+
+    fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
+    .then(() => {
+      alert("Enviado. Recarga la página.");
+      cerrarModal();
+    });
+  }
+
+  window.onload = fetchMeds;
 </script>
 </body>
 </html>
