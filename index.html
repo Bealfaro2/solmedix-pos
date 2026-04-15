@@ -301,6 +301,13 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
     <span id="sync-status" class="sync sync-load">Conectando...</span>
     <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
       <a href="admin.html" target="_blank" rel="noopener noreferrer" class="t-btn t-btn-ghost" title="Acceso administrador" onclick="window.open('admin.html','_blank');return false;">⚙ Admin</a>
+      <div style="position:relative;display:inline-block">
+        <button id="btn-caja-menu" onclick="toggleMenuCaja()" style="padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.15);color:#fcd34d">💰 Caja</button>
+        <div id="caja-menu-dropdown" style="display:none;position:absolute;top:110%;right:0;background:#1e293b;border:1px solid rgba(148,163,184,.15);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.4);min-width:160px;z-index:300;overflow:hidden">
+          <button onclick="abrirModalRetiro();document.getElementById('caja-menu-dropdown').style.display='none'" style="display:block;width:100%;padding:10px 14px;text-align:left;background:none;border:none;color:#f1f5f9;font-size:13px;cursor:pointer;border-bottom:1px solid rgba(148,163,184,.1)">💸 Retiro</button>
+          <button onclick="abrirModalCorte();document.getElementById('caja-menu-dropdown').style.display='none'" style="display:block;width:100%;padding:10px 14px;text-align:left;background:none;border:none;color:#f1f5f9;font-size:13px;cursor:pointer">🔒 Corte</button>
+        </div>
+      </div>
       <button onclick="actualizarDatos()" class="t-btn t-btn-primary" title="Actualizar datos">↻ Actualizar</button>
     </div>
   </div>
@@ -451,7 +458,43 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
       <button class="btn btnp" id="btn-gc" onclick="guardarCliente()">Guardar cliente</button>
     </div>
     <div id="modal-alrt" style="display:none;margin-top:8px"></div>
+    <!-- TAB CAJA -->
+  <div id="vk" style="display:none;padding:12px 0">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:13px;font-weight:600">Reporte de Caja</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btns btno" onclick="exportarCajaXLSX()">Excel</button>
+        <button class="btn btns btno" onclick="exportarCajaPDF()">PDF</button>
+        <button class="btn btns" onclick="window.print()">Imprimir</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:14px;align-items:flex-end">
+      <div><label style="font-size:11px;color:#888;display:block;margin-bottom:4px">Desde</label>
+        <input type="date" id="caja-desde" style="width:100%;padding:7px 9px;background:#1e293b;color:#f1f5f9;border:1px solid rgba(148,163,184,.2);border-radius:6px;font-size:13px"/></div>
+      <div><label style="font-size:11px;color:#888;display:block;margin-bottom:4px">Hasta</label>
+        <input type="date" id="caja-hasta" style="width:100%;padding:7px 9px;background:#1e293b;color:#f1f5f9;border:1px solid rgba(148,163,184,.2);border-radius:6px;font-size:13px"/></div>
+      <button class="btn btnp" onclick="renderReporteCaja()" style="padding:7px 14px">Filtrar</button>
+    </div>
+    <div id="caja-resumen" style="margin-bottom:12px"></div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="border-bottom:2px solid rgba(148,163,184,.2)">
+          <th style="padding:8px;text-align:left;color:#94a3b8;font-size:11px;text-transform:uppercase">Fecha</th>
+          <th style="padding:8px;text-align:right;color:#94a3b8;font-size:11px">Fondo</th>
+          <th style="padding:8px;text-align:right;color:#94a3b8;font-size:11px">Efectivo</th>
+          <th style="padding:8px;text-align:right;color:#94a3b8;font-size:11px">Transf.</th>
+          <th style="padding:8px;text-align:right;color:#94a3b8;font-size:11px">Tarjeta</th>
+          <th style="padding:8px;text-align:right;color:#94a3b8;font-size:11px">Retiros</th>
+          <th style="padding:8px;text-align:right;color:#94a3b8;font-size:11px">Total</th>
+          <th style="padding:8px;text-align:right;color:#94a3b8;font-size:11px">Diferencia</th>
+          <th style="padding:8px;color:#94a3b8;font-size:11px">Estado</th>
+        </tr></thead>
+        <tbody id="caja-reporte-body"></tbody>
+      </table>
+    </div>
   </div>
+
+</div>
 </div>
 
 <script>
@@ -544,6 +587,7 @@ function confirmarSuc() {
       return;
     }
     sucursal = sucSelected;
+    inicializarCaja();
     var chip = document.getElementById('chip-suc');
     chip.className = 'chip-suc ' + SUCURSALES[sucursal].chipClass;
     chip.textContent = SUCURSALES[sucursal].chipLabel;
@@ -1344,7 +1388,534 @@ function buscarPrecio(){
 }
 function alrt(msg,tipo){var el=document.getElementById('alrt');el.className='alrt '+(tipo==='s'?'als':tipo==='e'?'ale':'ali');el.textContent=msg;el.style.display='block';setTimeout(function(){el.style.display='none';},4500);}
 function malrt(msg,tipo){var el=document.getElementById('modal-alrt');el.className='alrt '+(tipo==='s'?'als':tipo==='e'?'ale':'ali');el.textContent=msg;el.style.display='block';}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   MÓDULO DE CAJA — index.html
+   Apertura · Retiro · Corte · Reporte
+═══════════════════════════════════════════════════════════════ */
+var cajaDia = [];          // registros de caja cargados del servidor
+var cajaHoy = null;        // apertura del día actual
+var cajaCorteHoy = null;   // corte del día actual
+
+/* ── Inicialización después de login ─────────────────────────── */
+function inicializarCaja() {
+  var hoy = document.getElementById('fec').value ||
+            new Date().toISOString().split('T')[0];
+  // Cargar caja del servidor
+  apiGet('caja', function(err, data) {
+    if (!err && data && data.caja) {
+      cajaDia = data.caja;
+    }
+    verificarBloqueo(hoy);
+  });
+}
+
+function verificarBloqueo(hoy) {
+  var ayer = new Date(hoy);
+  ayer.setDate(ayer.getDate() - 1);
+  var ayerStr = ayer.toISOString().split('T')[0];
+
+  // Buscar apertura de hoy para esta sucursal
+  cajaHoy = cajaDia.find(function(r) {
+    return r.fecha === hoy && r.sucursal === sucursal && r.tipo === 'apertura';
+  }) || null;
+
+  // Buscar corte de ayer
+  var cortesAyer = cajaDia.filter(function(r) {
+    return r.fecha === ayerStr && r.sucursal === sucursal && r.tipo === 'corte';
+  });
+  var hayCorteAyer = cortesAyer.length > 0;
+
+  // Buscar si ayer hubo apertura (si no hubo apertura ayer, no se exige corte)
+  var hayAperturaAyer = cajaDia.some(function(r) {
+    return r.fecha === ayerStr && r.sucursal === sucursal && r.tipo === 'apertura';
+  });
+
+  if (!cajaHoy) {
+    // Bloquear y mostrar modal apertura
+    mostrarBloqueCaja(hayAperturaAyer && !hayCorteAyer);
+  } else {
+    // Desbloquear sistema
+    document.getElementById('caja-bloqueo').style.display = 'none';
+    document.getElementById('main-app').style.display = 'block';
+    actualizarBtnCaja();
+  }
+}
+
+function mostrarBloqueCaja(pendienteCorteAyer) {
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('caja-bloqueo').style.display = 'flex';
+  if (pendienteCorteAyer) {
+    document.getElementById('caja-bloqueo-msg').innerHTML =
+      '<div style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:#fca5a5">' +
+      '⚠️ El día anterior no tiene corte de caja registrado.<br>Debes realizar el corte pendiente antes de abrir hoy.' +
+      '</div>';
+    document.getElementById('btn-abrir-apertura').style.display = 'none';
+    document.getElementById('btn-corte-pendiente').style.display = 'block';
+  } else {
+    document.getElementById('caja-bloqueo-msg').innerHTML = '';
+    document.getElementById('btn-abrir-apertura').style.display = 'block';
+    document.getElementById('btn-corte-pendiente').style.display = 'none';
+  }
+}
+
+/* ── MODAL APERTURA ──────────────────────────────────────────── */
+function abrirModalApertura() {
+  document.getElementById('ap-fondo').value = '';
+  document.getElementById('ap-cajero').value = '';
+  document.getElementById('ap-alrt').style.display = 'none';
+  document.getElementById('modal-apertura').classList.add('show');
+  document.getElementById('ap-cajero').focus();
+}
+
+function guardarApertura() {
+  var cajero = document.getElementById('ap-cajero').value.trim();
+  var fondo  = parseFloat(document.getElementById('ap-fondo').value) || 0;
+  if (!cajero) { cajaAlrt('ap-alrt','Ingresa el nombre del cajero','e'); return; }
+  if (fondo < 0) { cajaAlrt('ap-alrt','El fondo no puede ser negativo','e'); return; }
+
+  var btn = document.getElementById('btn-guardar-apertura');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Abriendo...';
+
+  var hoy = new Date().toISOString().split('T')[0];
+  var hora = new Date().toLocaleTimeString('es-MX');
+
+  apiPost({ accion:'guardar_caja', fecha:hoy, hora:hora, sucursal:sucursal,
+    tipo:'apertura', fondo_inicial:fondo, notas:'Cajero: '+cajero },
+    function(err) {
+      if (!err) {
+        cajaHoy = { fecha:hoy, sucursal:sucursal, tipo:'apertura',
+                    fondo_inicial:fondo, notas:'Cajero: '+cajero };
+        cajaDia.push(cajaHoy);
+        document.getElementById('modal-apertura').classList.remove('show');
+        document.getElementById('caja-bloqueo').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
+        actualizarBtnCaja();
+      } else {
+        cajaAlrt('ap-alrt','Error al guardar. Intenta de nuevo.','e');
+      }
+      btn.disabled = false; btn.textContent = 'Abrir caja';
+    });
+}
+
+/* ── MODAL RETIRO ────────────────────────────────────────────── */
+function abrirModalRetiro() {
+  document.getElementById('ret-monto').value = '';
+  document.getElementById('ret-nombre').value = '';
+  document.getElementById('ret-notas').value = '';
+  document.getElementById('ret-alrt').style.display = 'none';
+  document.getElementById('modal-retiro').classList.add('show');
+  document.getElementById('ret-nombre').focus();
+}
+
+function guardarRetiro() {
+  var nombre = document.getElementById('ret-nombre').value.trim();
+  var monto  = parseFloat(document.getElementById('ret-monto').value) || 0;
+  var notas  = document.getElementById('ret-notas').value.trim();
+  if (!nombre) { cajaAlrt('ret-alrt','El nombre de quien retira es obligatorio','e'); return; }
+  if (!monto || monto <= 0) { cajaAlrt('ret-alrt','Ingresa un monto válido','e'); return; }
+
+  var btn = document.getElementById('btn-guardar-retiro');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Guardando...';
+
+  var hoy = new Date().toISOString().split('T')[0];
+  var hora = new Date().toLocaleTimeString('es-MX');
+
+  apiPost({ accion:'guardar_caja', fecha:hoy, hora:hora, sucursal:sucursal,
+    tipo:'retiro', retiro_monto:monto, retiro_nombre:nombre, notas:notas },
+    function(err) {
+      if (!err) {
+        cajaDia.push({ fecha:hoy, sucursal:sucursal, tipo:'retiro',
+                       retiro_monto:monto, retiro_nombre:nombre, notas:notas });
+        document.getElementById('modal-retiro').classList.remove('show');
+        alrt('Retiro registrado: $'+monto.toLocaleString('es-MX',{minimumFractionDigits:2})+' — '+nombre, 's');
+      } else {
+        cajaAlrt('ret-alrt','Error al guardar. Intenta de nuevo.','e');
+      }
+      btn.disabled = false; btn.textContent = 'Registrar retiro';
+    });
+}
+
+/* ── MODAL CORTE ─────────────────────────────────────────────── */
+function abrirModalCorte() {
+  document.getElementById('cort-efectivo').value = '';
+  document.getElementById('cort-cajero').value = '';
+  document.getElementById('cort-alrt').style.display = 'none';
+
+  var hoy = new Date().toISOString().split('T')[0];
+  var ventasHoy = ventas.filter(function(v) {
+    return String(v.fecha).split('T')[0] === hoy &&
+           v.sucursal === sucursal && v.estado !== 'cancelada';
+  });
+
+  var efec = 0, trans = 0, tarj = 0;
+  ventasHoy.forEach(function(v) {
+    (v.items||[]).forEach(function(it) {
+      var p = (it.pago||'').toLowerCase();
+      var t = Number(it.total)||0;
+      if (p.indexOf('efectivo')>=0 || p.indexOf('efec')>=0) efec += t;
+      else if (p.indexOf('transferencia')>=0 || p.indexOf('trans')>=0) trans += t;
+      else if (p.indexOf('tarjeta')>=0 || p.indexOf('card')>=0) tarj += t;
+      else efec += t; // default efectivo
+    });
+  });
+
+  var retiros = cajaDia.filter(function(r) {
+    return r.fecha === hoy && r.sucursal === sucursal && r.tipo === 'retiro';
+  }).reduce(function(s,r){ return s + Number(r.retiro_monto||0); }, 0);
+
+  var fondo = cajaHoy ? Number(cajaHoy.fondo_inicial||0) : 0;
+  var totalVentas = efec + trans + tarj;
+
+  // Fill in the corte summary
+  document.getElementById('cort-fondo').textContent    = '$'+fondo.toLocaleString('es-MX',{minimumFractionDigits:2});
+  document.getElementById('cort-efec-v').textContent   = '$'+efec.toLocaleString('es-MX',{minimumFractionDigits:2});
+  document.getElementById('cort-trans-v').textContent  = '$'+trans.toLocaleString('es-MX',{minimumFractionDigits:2});
+  document.getElementById('cort-tarj-v').textContent   = '$'+tarj.toLocaleString('es-MX',{minimumFractionDigits:2});
+  document.getElementById('cort-retiros').textContent  = '-$'+retiros.toLocaleString('es-MX',{minimumFractionDigits:2});
+  document.getElementById('cort-total-v').textContent  = '$'+totalVentas.toLocaleString('es-MX',{minimumFractionDigits:2});
+  var esperado = fondo + efec - retiros;
+  document.getElementById('cort-esperado').textContent = '$'+esperado.toLocaleString('es-MX',{minimumFractionDigits:2});
+
+  // Store for guardarCorte
+  window._corteData = { efec:efec, trans:trans, tarj:tarj,
+    totalVentas:totalVentas, fondo:fondo, retiros:retiros, esperado:esperado };
+
+  document.getElementById('modal-corte').classList.add('show');
+  document.getElementById('cort-cajero').focus();
+}
+
+function calcularDiferencia() {
+  var contado = parseFloat(document.getElementById('cort-efectivo').value)||0;
+  var esp = window._corteData ? window._corteData.esperado : 0;
+  var diff = contado - esp;
+  var color = diff >= 0 ? '#6ee7b7' : '#fca5a5';
+  var sign  = diff >= 0 ? '+' : '';
+  document.getElementById('cort-diferencia').textContent = sign+'$'+diff.toLocaleString('es-MX',{minimumFractionDigits:2});
+  document.getElementById('cort-diferencia').style.color = color;
+}
+
+function guardarCorte() {
+  var cajero   = document.getElementById('cort-cajero').value.trim();
+  var contado  = parseFloat(document.getElementById('cort-efectivo').value)||0;
+  if (!cajero) { cajaAlrt('cort-alrt','Ingresa el nombre del cajero','e'); return; }
+  if (!document.getElementById('cort-efectivo').value) {
+    cajaAlrt('cort-alrt','Ingresa el efectivo contado','e'); return;
+  }
+
+  var d = window._corteData;
+  var diff = contado - d.esperado;
+  var btn = document.getElementById('btn-guardar-corte');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Cerrando caja...';
+
+  var hoy = new Date().toISOString().split('T')[0];
+  var hora = new Date().toLocaleTimeString('es-MX');
+
+  apiPost({ accion:'guardar_caja', fecha:hoy, hora:hora, sucursal:sucursal,
+    tipo:'corte', fondo_inicial:d.fondo,
+    efectivo_ventas:d.efec, transferencia_ventas:d.trans, tarjeta_ventas:d.tarj,
+    total_ventas:d.totalVentas, efectivo_contado:contado, diferencia:diff,
+    notas:'Cajero: '+cajero },
+    function(err) {
+      if (!err) {
+        cajaDia.push({ fecha:hoy, sucursal:sucursal, tipo:'corte',
+          fondo_inicial:d.fondo, efectivo_ventas:d.efec,
+          transferencia_ventas:d.trans, tarjeta_ventas:d.tarj,
+          total_ventas:d.totalVentas, efectivo_contado:contado,
+          diferencia:diff, notas:'Cajero: '+cajero });
+        cajaCorteHoy = cajaDia[cajaDia.length-1];
+        document.getElementById('modal-corte').classList.remove('show');
+        actualizarBtnCaja();
+        alrt('Caja cerrada correctamente. Diferencia: '+(diff>=0?'+':'')+
+          '$'+Math.abs(diff).toLocaleString('es-MX',{minimumFractionDigits:2}),'s');
+        renderReporteCaja();
+      } else {
+        cajaAlrt('cort-alrt','Error al guardar. Intenta de nuevo.','e');
+      }
+      btn.disabled = false; btn.textContent = 'Cerrar caja';
+    });
+}
+
+/* ── BOTÓN CAJA en topbar ────────────────────────────────────── */
+function actualizarBtnCaja() {
+  var hoy = new Date().toISOString().split('T')[0];
+  var tieneCorte = cajaDia.some(function(r) {
+    return r.fecha===hoy && r.sucursal===sucursal && r.tipo==='corte';
+  });
+  var btnCaja = document.getElementById('btn-caja-menu');
+  if (btnCaja) {
+    btnCaja.style.background = tieneCorte ?
+      'rgba(16,185,129,.2)' : 'rgba(245,158,11,.2)';
+  }
+}
+
+function toggleMenuCaja() {
+  var m = document.getElementById('caja-menu-dropdown');
+  m.style.display = m.style.display==='block' ? 'none' : 'block';
+}
+
+document.addEventListener('click', function(e) {
+  var m = document.getElementById('caja-menu-dropdown');
+  var btn = document.getElementById('btn-caja-menu');
+  if (m && btn && !btn.contains(e.target) && !m.contains(e.target)) {
+    m.style.display = 'none';
+  }
+});
+
+/* ── REPORTE DE CAJA ─────────────────────────────────────────── */
+function renderReporteCaja() {
+  var desde = document.getElementById('caja-desde').value;
+  var hasta  = document.getElementById('caja-hasta').value;
+
+  var src = cajaDia.filter(function(r) {
+    return r.sucursal === sucursal &&
+           (!desde || r.fecha >= desde) &&
+           (!hasta  || r.fecha <= hasta);
+  });
+
+  if (!src.length) {
+    document.getElementById('caja-reporte-body').innerHTML =
+      '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-3)">Sin registros en el periodo seleccionado</td></tr>';
+    document.getElementById('caja-resumen').innerHTML = '';
+    window._cajaReporteData = [];
+    return;
+  }
+
+  // Agrupar por día
+  var dias = {};
+  src.forEach(function(r) {
+    if (!dias[r.fecha]) dias[r.fecha] = { aperturas:[], retiros:[], cortes:[] };
+    if (r.tipo==='apertura') dias[r.fecha].aperturas.push(r);
+    if (r.tipo==='retiro')   dias[r.fecha].retiros.push(r);
+    if (r.tipo==='corte')    dias[r.fecha].cortes.push(r);
+  });
+
+  var html = '';
+  var totalVentasPeriodo = 0, totalRetiradoPeriodo = 0;
+  var fechas = Object.keys(dias).sort().reverse();
+
+  fechas.forEach(function(fecha) {
+    var d = dias[fecha];
+    var fechaF = fecha.split('-').reverse().join('/');
+    var fondo = d.aperturas.length ? Number(d.aperturas[0].fondo_inicial||0) : 0;
+    var retiros = d.retiros.reduce(function(s,r){ return s+Number(r.retiro_monto||0); },0);
+    var corte = d.cortes.length ? d.cortes[d.cortes.length-1] : null;
+    var totalV = corte ? Number(corte.total_ventas||0) : 0;
+    var diff   = corte ? Number(corte.diferencia||0) : null;
+    var diffColor = diff===null?'var(--text-3)':diff>=0?'#6ee7b7':'#fca5a5';
+    var diffTxt = diff===null?'—':(diff>=0?'+':'')+
+      '$'+Math.abs(diff).toLocaleString('es-MX',{minimumFractionDigits:2});
+    var estado = corte ?
+      '<span style="background:rgba(16,185,129,.15);color:#6ee7b7;padding:2px 8px;border-radius:99px;font-size:11px">✓ Cerrada</span>' :
+      '<span style="background:rgba(245,158,11,.15);color:#fcd34d;padding:2px 8px;border-radius:99px;font-size:11px">⏳ Abierta</span>';
+
+    totalVentasPeriodo += totalV;
+    totalRetiradoPeriodo += retiros;
+
+    html += '<tr>';
+    html += '<td style="font-weight:600">'+fechaF+'</td>';
+    html += '<td style="text-align:right">$'+fondo.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    if (corte) {
+      html += '<td style="text-align:right">$'+Number(corte.efectivo_ventas||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+      html += '<td style="text-align:right">$'+Number(corte.transferencia_ventas||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+      html += '<td style="text-align:right">$'+Number(corte.tarjeta_ventas||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    } else {
+      html += '<td colspan="3" style="text-align:center;color:var(--text-3)">Sin corte</td>';
+    }
+    html += '<td style="text-align:right;color:#fca5a5">-$'+retiros.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    html += '<td style="text-align:right;font-weight:700">$'+totalV.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    html += '<td style="text-align:right;font-weight:700;color:'+diffColor+'">'+diffTxt+'</td>';
+    html += '<td>'+estado+'</td>';
+    // Retiros detalle
+    if (d.retiros.length) {
+      html += '</tr><tr><td colspan="9" style="padding:4px 12px 8px;font-size:11px;color:var(--text-3)">';
+      html += '↳ Retiros: '+d.retiros.map(function(r){
+        return r.retiro_nombre+' $'+Number(r.retiro_monto||0).toLocaleString('es-MX',{minimumFractionDigits:2});
+      }).join(' · ');
+      html += '</td>';
+    }
+    html += '</tr>';
+  });
+
+  document.getElementById('caja-reporte-body').innerHTML = html;
+
+  // Resumen del periodo
+  document.getElementById('caja-resumen').innerHTML =
+    '<div class="reporte-header">' +
+    '<div class="stat-card"><div class="stat-label">Días en periodo</div><div class="stat-value">'+fechas.length+'</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Total ventas</div><div class="stat-value" style="font-size:18px">$'+totalVentasPeriodo.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Total retiros</div><div class="stat-value" style="font-size:18px;color:#fca5a5">$'+totalRetiradoPeriodo.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div></div>' +
+    '</div>';
+
+  window._cajaReporteData = { dias:dias, fechas:fechas, desde:desde, hasta:hasta };
+}
+
+function inicializarFechasCaja() {
+  var hoy = new Date().toISOString().split('T')[0];
+  document.getElementById('caja-desde').value = hoy;
+  document.getElementById('caja-hasta').value = hoy;
+  renderReporteCaja();
+}
+
+/* ── EXPORTAR CAJA ───────────────────────────────────────────── */
+function exportarCajaXLSX() {
+  var d = window._cajaReporteData;
+  if (!d || !d.fechas || !d.fechas.length) { alert('Sin datos'); return; }
+  var rows = [['Fecha','Fondo Inicial','Efectivo Ventas','Transferencia','Tarjeta',
+               'Retiros','Total Ventas','Efectivo Contado','Diferencia','Estado']];
+  d.fechas.forEach(function(fecha) {
+    var dia = d.dias[fecha];
+    var fondo = dia.aperturas.length ? Number(dia.aperturas[0].fondo_inicial||0) : 0;
+    var retiros = dia.retiros.reduce(function(s,r){ return s+Number(r.retiro_monto||0); },0);
+    var corte = dia.cortes.length ? dia.cortes[dia.cortes.length-1] : null;
+    rows.push([
+      fecha.split('-').reverse().join('/'),
+      fondo,
+      corte ? Number(corte.efectivo_ventas||0) : '',
+      corte ? Number(corte.transferencia_ventas||0) : '',
+      corte ? Number(corte.tarjeta_ventas||0) : '',
+      retiros,
+      corte ? Number(corte.total_ventas||0) : '',
+      corte ? Number(corte.efectivo_contado||0) : '',
+      corte ? Number(corte.diferencia||0) : '',
+      corte ? 'Cerrada' : 'Abierta'
+    ]);
+  });
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Caja');
+  XLSX.writeFile(wb, 'Solmedix_Caja_'+sucursal+'_'+d.desde+'_'+d.hasta+'.xlsx');
+}
+
+function exportarCajaPDF() {
+  var d = window._cajaReporteData;
+  if (!d || !d.fechas || !d.fechas.length) { alert('Sin datos'); return; }
+  var filas = d.fechas.map(function(fecha, i) {
+    var dia = d.dias[fecha];
+    var fondo = dia.aperturas.length ? Number(dia.aperturas[0].fondo_inicial||0) : 0;
+    var retiros = dia.retiros.reduce(function(s,r){ return s+Number(r.retiro_monto||0); },0);
+    var corte = dia.cortes.length ? dia.cortes[dia.cortes.length-1] : null;
+    var diff = corte ? Number(corte.diferencia||0) : null;
+    var bg = i%2===0?'#fff':'#f9f9f9';
+    return '<tr style="background:'+bg+'">' +
+      '<td>'+fecha.split('-').reverse().join('/')+'</td>' +
+      '<td style="text-align:right">$'+fondo.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>' +
+      (corte ?
+        '<td style="text-align:right">$'+Number(corte.efectivo_ventas||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>'+
+        '<td style="text-align:right">$'+Number(corte.transferencia_ventas||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>'+
+        '<td style="text-align:right">$'+Number(corte.tarjeta_ventas||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>'
+        : '<td colspan="3" style="text-align:center;color:#888">Sin corte</td>') +
+      '<td style="text-align:right;color:#c00">$'+retiros.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>' +
+      '<td style="text-align:right;font-weight:bold">$'+(corte?Number(corte.total_ventas||0):0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>' +
+      '<td style="text-align:right;font-weight:bold;color:'+(diff===null?'#888':diff>=0?'green':'red')+'">'+(diff===null?'—':(diff>=0?'+':'')+diff.toLocaleString('es-MX',{minimumFractionDigits:2}))+'</td>' +
+      '<td>'+(corte?'✓ Cerrada':'⏳ Abierta')+'</td>' +
+      '</tr>';
+  }).join('');
+  var w = window.open('','_blank','width=900,height=700');
+  w.document.write('<!DOCTYPE html><html><head><title>Reporte Caja Solmedix</title>'+
+    '<style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;font-size:10px}'+
+    'h1{font-size:14px;margin-bottom:4px}h2{font-size:10px;color:#555;margin-bottom:10px}'+
+    'table{width:100%;border-collapse:collapse}th{background:#185FA5;color:#fff;padding:5px 7px;font-size:9px;text-align:left}'+
+    'td{padding:4px 7px;border-bottom:1px solid #eee;font-size:9px}@media print{button{display:none}}</style></head><body>');
+  w.document.write('<h1>Solmedix — Reporte de Caja · Sucursal '+sucursal+'</h1>');
+  w.document.write('<h2>Periodo: '+d.desde+' al '+d.hasta+'</h2>');
+  w.document.write('<table><thead><tr><th>Fecha</th><th style="text-align:right">Fondo</th>'+
+    '<th style="text-align:right">Efectivo</th><th style="text-align:right">Transf.</th>'+
+    '<th style="text-align:right">Tarjeta</th><th style="text-align:right">Retiros</th>'+
+    '<th style="text-align:right">Total</th><th style="text-align:right">Diferencia</th>'+
+    '<th>Estado</th></tr></thead><tbody>'+filas+'</tbody></table>');
+  w.document.write('</body></html>');
+  w.document.close(); setTimeout(function(){ w.print(); }, 600);
+}
+
+function cajaAlrt(elId, msg, tipo) {
+  var el = document.getElementById(elId);
+  if (!el) return;
+  el.className = 'alrt '+(tipo==='s'?'als':tipo==='e'?'ale':'ali');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
 </script>
+
+<!-- BLOQUEO DE CAJA -->
+<div id="caja-bloqueo" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.97);z-index:1000;align-items:center;justify-content:center;flex-direction:column">
+  <div style="background:#1e293b;border:1px solid rgba(148,163,184,.15);border-radius:20px;padding:2.5rem;width:90%;max-width:420px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,.5)">
+    <div style="font-size:48px;margin-bottom:12px">🔒</div>
+    <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;color:#f1f5f9">Apertura de Caja</h2>
+    <p style="font-size:13px;color:#94a3b8;margin-bottom:16px">Debes registrar la apertura de caja antes de iniciar operaciones.</p>
+    <div id="caja-bloqueo-msg"></div>
+    <button id="btn-abrir-apertura" onclick="abrirModalApertura()" style="width:100%;padding:12px;border-radius:8px;background:#2b7fd4;color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:8px">Abrir caja del día</button>
+    <button id="btn-corte-pendiente" onclick="abrirModalCorte()" style="display:none;width:100%;padding:12px;border-radius:8px;background:rgba(239,68,68,.2);color:#fca5a5;border:1px solid rgba(239,68,68,.3);font-size:14px;font-weight:600;cursor:pointer">Registrar corte del día anterior</button>
+  </div>
+</div>
+
+<!-- MODAL APERTURA -->
+<div class="overlay" id="modal-apertura" onclick="if(event.target===this){}">
+  <div class="modal" style="max-width:400px;text-align:center">
+    <div style="font-size:40px;margin-bottom:10px">🟢</div>
+    <h2 style="margin-bottom:16px">Apertura de caja</h2>
+    <div class="fr"><label>Nombre del cajero *</label>
+      <input type="text" id="ap-cajero" placeholder="Tu nombre completo"/></div>
+    <div class="fr"><label>Fondo inicial ($)</label>
+      <input type="number" id="ap-fondo" placeholder="0.00" min="0" step="0.01"/></div>
+    <div id="ap-alrt" style="display:none;margin-bottom:10px"></div>
+    <button class="btn btnp" id="btn-guardar-apertura" onclick="guardarApertura()" style="width:100%;padding:11px;font-size:14px">Abrir caja</button>
+  </div>
+</div>
+
+<!-- MODAL RETIRO -->
+<div class="overlay" id="modal-retiro" onclick="if(event.target===this)this.classList.remove('show')">
+  <div class="modal" style="max-width:400px">
+    <h2 style="margin-bottom:16px">💸 Registrar retiro</h2>
+    <div class="fr"><label>Nombre de quien retira *</label>
+      <input type="text" id="ret-nombre" placeholder="Nombre completo"/></div>
+    <div class="fr"><label>Monto a retirar ($) *</label>
+      <input type="number" id="ret-monto" placeholder="0.00" min="0.01" step="0.01"/></div>
+    <div class="fr"><label>Motivo / Notas</label>
+      <input type="text" id="ret-notas" placeholder="Ej: Pago proveedor, gastos oficina..."/></div>
+    <div id="ret-alrt" style="display:none;margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="document.getElementById('modal-retiro').classList.remove('show')">Cancelar</button>
+      <button class="btn btnp" id="btn-guardar-retiro" onclick="guardarRetiro()">Registrar retiro</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CORTE -->
+<div class="overlay" id="modal-corte" onclick="if(event.target===this)this.classList.remove('show')">
+  <div class="modal" style="max-width:460px">
+    <div style="font-size:36px;text-align:center;margin-bottom:8px">🔒</div>
+    <h2 style="text-align:center;margin-bottom:16px">Corte de caja</h2>
+    <!-- Resumen automático -->
+    <div style="background:rgba(38,51,72,.8);border:1px solid rgba(148,163,184,.15);border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><span style="color:#94a3b8">Fondo inicial:</span></div><div style="text-align:right;font-weight:600" id="cort-fondo">$0.00</div>
+        <div><span style="color:#94a3b8">Ventas efectivo:</span></div><div style="text-align:right;color:#6ee7b7;font-weight:600" id="cort-efec-v">$0.00</div>
+        <div><span style="color:#94a3b8">Transferencias:</span></div><div style="text-align:right;color:#93c5fd;font-weight:600" id="cort-trans-v">$0.00</div>
+        <div><span style="color:#94a3b8">Tarjeta:</span></div><div style="text-align:right;color:#c4b5fd;font-weight:600" id="cort-tarj-v">$0.00</div>
+        <div><span style="color:#94a3b8">Retiros:</span></div><div style="text-align:right;color:#fca5a5;font-weight:600" id="cort-retiros">-$0.00</div>
+        <div style="border-top:1px solid rgba(148,163,184,.2);padding-top:6px"><span style="color:#94a3b8">Total ventas:</span></div>
+        <div style="text-align:right;font-weight:700;border-top:1px solid rgba(148,163,184,.2);padding-top:6px" id="cort-total-v">$0.00</div>
+        <div><span style="color:#fcd34d;font-weight:600">Efectivo esperado:</span></div><div style="text-align:right;font-weight:700;color:#fcd34d" id="cort-esperado">$0.00</div>
+      </div>
+    </div>
+    <div class="fr"><label>Efectivo físico contado ($) *</label>
+      <input type="number" id="cort-efectivo" placeholder="0.00" min="0" step="0.01" oninput="calcularDiferencia()"/></div>
+    <div style="text-align:center;margin-bottom:14px">
+      <span style="font-size:12px;color:#94a3b8">Diferencia: </span>
+      <span style="font-size:18px;font-weight:700" id="cort-diferencia">—</span>
+    </div>
+    <div class="fr"><label>Nombre del cajero *</label>
+      <input type="text" id="cort-cajero" placeholder="Tu nombre completo"/></div>
+    <div id="cort-alrt" style="display:none;margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="document.getElementById('modal-corte').classList.remove('show')">Cancelar</button>
+      <button class="btn btnd" id="btn-guardar-corte" onclick="guardarCorte()" style="background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.4);color:#6ee7b7">Cerrar caja</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
 </body>
