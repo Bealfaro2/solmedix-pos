@@ -1559,12 +1559,13 @@ function exportarPDF(){
 
 /* REPORTE INVENTARIO */
 function renderInventario(lista){
-  var src=lista||lotes;
+  var src=(lista||lotes).slice();
   // Filtrar por sucursal según perfil
   if(!lista) {
     if(perfilActual==='mty') src=src.filter(function(l){ return l.sucursal==='MTY'||!l.sucursal; });
     if(perfilActual==='slp') src=src.filter(function(l){ return l.sucursal==='SLP'; });
   }
+  src.sort(function(a,b){ return a.medicamento.localeCompare(b.medicamento,'es'); });
   if(!src.length){document.getElementById('inv-body').innerHTML='<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px">Sin datos de inventario</td></tr>';return;}
   var totalPiezas=0,totalValor=0;
   var html='';
@@ -2102,7 +2103,7 @@ function mostrarTabsSegunPerfil(){
    RENDER FUNCTIONS (medicamentos, clientes, ventas, lotes)
 ═══════════════════════════════════════════ */
 function renderMeds(lista){
-  var src=lista||medicamentos;
+  var src=(lista||medicamentos).slice().sort(function(a,b){return a.nombre.localeCompare(b.nombre,'es');});
   var grid=document.getElementById('med-grid');
   if(!src.length){grid.innerHTML='<div class="es">No hay medicamentos</div>';return;}
   var html='';
@@ -2179,7 +2180,7 @@ function guardarMedicamento(){
 function medAlrt(msg,tipo){var el=document.getElementById('med-alrt');el.className='alrt '+(tipo==='e'?'ale':'als');el.textContent=msg;el.style.display='block';}
 
 function renderClientesAdmin(lista){
-  var src=lista||clientes;
+  var src=(lista||clientes).slice().sort(function(a,b){return a.nombre.localeCompare(b.nombre,'es');});
   // Filtrar por sucursal según perfil
   if(!lista) {
     if(perfilActual==='mty') src=src.filter(function(c){ return c.sucursal==='MTY'||!c.sucursal; });
@@ -2310,12 +2311,13 @@ function calcularOptimo(medId) {
 }
 
 function renderLotesAdmin(lista){
-  var src=lista||lotes;
+  var src=(lista||lotes).slice();
   // Filtrar por sucursal según perfil
   if(!lista) {
     if(perfilActual==='mty') src=src.filter(function(l){ return l.sucursal==='MTY'||!l.sucursal; });
     if(perfilActual==='slp') src=src.filter(function(l){ return l.sucursal==='SLP'; });
   }
+  src.sort(function(a,b){ return a.medicamento.localeCompare(b.medicamento,'es'); });
   var tbody=document.getElementById('lotes-body');
   if(!src.length){tbody.innerHTML='<tr><td colspan="6" class="es">Sin lotes</td></tr>';return;}
   var html='';
