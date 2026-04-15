@@ -899,13 +899,23 @@ select option { background:var(--bg-2); color:var(--text); }
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="fr">
         <label>Clave SAT (producto/servicio)</label>
-        <input type="text" id="med-clave-sat" placeholder="Ej: 51101500" style="font-family:var(--mono)"
-          oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,8)"/>
-        <div style="font-size:10px;color:var(--text-3);margin-top:3px">8 dígitos del catálogo SAT</div>
+        <select id="med-clave-sat" style="font-family:var(--mono);font-size:12px">
+          <option value="">— Sin especificar —</option>
+          <option value="51111800">51111800 — Hormonas y antihormonas</option>
+          <option value="51111900">51111900 — Antitumorales naturales</option>
+          <option value="51131500">51131500 — Medicamentos antianémicos</option>
+          <option value="51142100">51142100 — Fármacos antiinflamatorios no esteroideos</option>
+          <option value="51142900">51142900 — Fármacos anestésicos, complementos y analépticos</option>
+          <option value="51171800">51171800 — Agentes antivértigo, antinauseantes y antieméticos</option>
+          <option value="51181700">51181700 — Corticosteroides</option>
+          <option value="51182400">51182400 — Sales de calcio y reguladores del calcio</option>
+          <option value="51201500">51201500 — Inmunosupresores</option>
+          <option value="51201800">51201800 — Agentes inmunoestimulantes</option>
+        </select>
       </div>
       <div class="fr">
         <label>Clave de unidad SAT</label>
-        <input type="text" id="med-clave-unidad" placeholder="Ej: H87" style="font-family:var(--mono);text-transform:uppercase"
+        <input type="text" id="med-clave-unidad" value="H87" placeholder="Ej: H87" style="font-family:var(--mono);text-transform:uppercase"
           oninput="this.value=this.value.toUpperCase().slice(0,3)"/>
         <div style="font-size:10px;color:var(--text-3);margin-top:3px">H87=Pieza · E48=Servicio · KGM=Kg</div>
       </div>
@@ -1787,6 +1797,7 @@ function abrirModalMed(med){
   if(_tipoVal==='1')_tipoVal='01'; if(_tipoVal==='2')_tipoVal='02'; if(_tipoVal==='3')_tipoVal='03';
   document.getElementById('med-tipo').value=_tipoVal;
   document.getElementById('med-clave-sat').value=med?(med.clave_sat||med['Clave SAT']||''):'';
+  if(!med) document.getElementById('med-clave-unidad').value='H87';
   document.getElementById('med-clave-unidad').value=med?(med.clave_unidad||med['Clave Unidad']||''):'';
   document.getElementById('med-codigo-barras').value=med?(med.codigo_barras||med['codigo_barras']||''):'';
   document.getElementById('med-editando-id').value=med?med.id:'';
