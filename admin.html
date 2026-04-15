@@ -645,6 +645,7 @@ select option { background:var(--bg-2); color:var(--text); }
               <th style="text-align:right">Cant.</th>
               <th style="text-align:right">Costo unit.</th>
               <th style="text-align:right">Importe</th>
+              <th></th>
             </tr></thead>
             <tbody id="compras-body"></tbody>
             <tfoot id="compras-foot"></tfoot>
@@ -1102,6 +1103,39 @@ select option { background:var(--bg-2); color:var(--text); }
       <button class="btn btnp" id="btn-guardar-lote" onclick="guardarEdicionLote()">Guardar cambios</button>
     </div>
     <div id="lote-alrt" style="display:none;margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- MODAL DEVOLUCIÓN COMPRA -->
+<div class="overlay" id="modal-devolucion-overlay" onclick="cerrarModalDevolucion(event)">
+  <div class="modal" style="max-width:520px">
+    <div style="font-size:36px;text-align:center;margin-bottom:12px">↩️</div>
+    <h2 style="text-align:center;margin-bottom:6px">Devolución de compra</h2>
+    <p style="font-size:13px;color:var(--text-2);text-align:center;margin-bottom:18px" id="dev-subtitulo"></p>
+
+    <!-- Info de la compra -->
+    <div id="dev-info" style="background:rgba(38,51,72,.8);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px;font-size:13px"></div>
+
+    <!-- Aviso si hay ventas del lote -->
+    <div id="dev-aviso-ventas" style="display:none;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px">
+      <div style="font-weight:700;color:#fcd34d;margin-bottom:8px">⚠️ Este lote tiene ventas registradas</div>
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:8px">Los siguientes folios de venta usaron piezas de este lote. Deberás <strong style="color:#fcd34d">regenerar esos tickets</strong> después de aplicar la devolución:</div>
+      <div id="dev-folios-lista" style="font-family:var(--mono);font-size:12px;color:#fcd34d"></div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:8px">La devolución ajustará solo las existencias actuales en inventario. Los registros de venta no se modifican.</div>
+    </div>
+
+    <div id="dev-confirm-check" style="display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;cursor:pointer" onclick="document.getElementById('dev-check').checked=!document.getElementById('dev-check').checked;actualizarBtnDevolucion()">
+      <input type="checkbox" id="dev-check" style="width:16px;height:16px;margin-top:2px;accent-color:var(--blue-bright);cursor:pointer" onchange="actualizarBtnDevolucion()"/>
+      <label style="font-size:13px;color:var(--text-2);cursor:pointer" id="dev-check-label">
+        Confirmo que esta compra fue registrada por error y entiendo que las ventas ya realizadas deben ser regeneradas manualmente.
+      </label>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="cerrarModalDevolucionBtn()">Cancelar</button>
+      <button class="btn btnd" id="btn-aplicar-devolucion" onclick="aplicarDevolucionCompra()" disabled style="opacity:.4">↩ Aplicar devolución</button>
+    </div>
+    <div id="dev-alrt" style="display:none;margin-top:10px"></div>
   </div>
 </div>
 
@@ -3049,6 +3083,139 @@ function inventarioTab(t) {
   document.getElementById('it-reporte').style.borderRadius = 'var(--radius-sm)';
   if(t==='lotes')   renderLotesAdmin();
   if(t==='reporte') renderInventario();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DEVOLUCIÓN DE COMPRA
+═══════════════════════════════════════════════════════════ */
+var _compraADevolver = null;
+
+function pedirDevolucionCompra(idx) {
+  var src = window._comprasData || compras;
+  var c   = src[idx];
+  if (!c) return;
+  _compraADevolver = c;
+
+  var fecha = String(c.fecha).split('T')[0].split('-').reverse().join('/');
+  document.getElementById('dev-subtitulo').textContent = c.medicamento + ' — Lote ' + c.lote;
+  document.getElementById('dev-info').innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+    '<div><div style="font-size:10px;color:var(--text-3);text-transform:uppercase;margin-bottom:3px">Proveedor</div><div style="font-weight:600">' + c.proveedor + '</div></div>' +
+    '<div><div style="font-size:10px;color:var(--text-3);text-transform:uppercase;margin-bottom:3px">Fecha / Folio</div><div style="font-weight:600">' + fecha + ' · ' + c.folio + '</div></div>' +
+    '<div><div style="font-size:10px;color:var(--text-3);text-transform:uppercase;margin-bottom:3px">Piezas compradas</div><div style="font-weight:700;color:#93c5fd">' + c.cantidad + ' pzas</div></div>' +
+    '<div><div style="font-size:10px;color:var(--text-3);text-transform:uppercase;margin-bottom:3px">Importe</div><div style="font-weight:700;color:#fca5a5">$' + Number(c.importe).toLocaleString('es-MX',{minimumFractionDigits:2}) + '</div></div>' +
+    '</div>';
+
+  // Buscar ventas que usaron este lote
+  var ventasLote = [];
+  for (var i = 0; i < ventas.length; i++) {
+    var v = ventas[i];
+    if (v.estado === 'cancelada') continue;
+    for (var j = 0; j < (v.items || []).length; j++) {
+      var it = v.items[j];
+      if (String(it.loteNum || '').toUpperCase() === String(c.lote).toUpperCase()) {
+        ventasLote.push('#' + String(v.id).padStart(4,'0') + ' (' + v.cliente + ')');
+        break;
+      }
+    }
+  }
+
+  var avisoEl = document.getElementById('dev-aviso-ventas');
+  if (ventasLote.length) {
+    avisoEl.style.display = 'block';
+    document.getElementById('dev-folios-lista').innerHTML =
+      ventasLote.map(function(f){ return '• ' + f; }).join('<br>');
+    document.getElementById('dev-check-label').textContent =
+      'Confirmo que esta compra fue registrada por error, entiendo que ' + ventasLote.length +
+      ' venta(s) usaron este lote y debo regenerar esos tickets manualmente después de aplicar la devolución.';
+  } else {
+    avisoEl.style.display = 'none';
+    document.getElementById('dev-check-label').textContent =
+      'Confirmo que esta compra fue registrada por error y quiero eliminarla del sistema.';
+  }
+
+  document.getElementById('dev-check').checked = false;
+  document.getElementById('btn-aplicar-devolucion').disabled = true;
+  document.getElementById('btn-aplicar-devolucion').style.opacity = '.4';
+  document.getElementById('dev-alrt').style.display = 'none';
+  document.getElementById('modal-devolucion-overlay').classList.add('show');
+}
+
+function actualizarBtnDevolucion() {
+  var checked = document.getElementById('dev-check').checked;
+  var btn = document.getElementById('btn-aplicar-devolucion');
+  btn.disabled = !checked;
+  btn.style.opacity = checked ? '1' : '.4';
+}
+
+function cerrarModalDevolucion(e) {
+  if (e.target === document.getElementById('modal-devolucion-overlay')) cerrarModalDevolucionBtn();
+}
+function cerrarModalDevolucionBtn() {
+  document.getElementById('modal-devolucion-overlay').classList.remove('show');
+  _compraADevolver = null;
+}
+
+function aplicarDevolucionCompra() {
+  var c = _compraADevolver;
+  if (!c) return;
+  var btn = document.getElementById('btn-aplicar-devolucion');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Procesando...';
+
+  // Encontrar lote en inventario
+  var loteObj = null;
+  for (var i = 0; i < lotes.length; i++) {
+    if (String(lotes[i].med_id) === String(c.med_id) &&
+        String(lotes[i].lote).toUpperCase() === String(c.lote).toUpperCase()) {
+      loteObj = lotes[i]; break;
+    }
+  }
+  var existActual = loteObj ? Number(loteObj.existencias) : 0;
+  var piezasADescontar = Math.min(existActual, Number(c.cantidad));
+
+  // Folios afectados para el mensaje final
+  var ventasLote = [];
+  for (var i = 0; i < ventas.length; i++) {
+    var v = ventas[i];
+    if (v.estado === 'cancelada') continue;
+    for (var j = 0; j < (v.items || []).length; j++) {
+      var it = v.items[j];
+      if (String(it.loteNum || '').toUpperCase() === String(c.lote).toUpperCase()) {
+        ventasLote.push('#' + String(v.id).padStart(4,'0'));
+        break;
+      }
+    }
+  }
+
+  function finalizarDevolucion() {
+    compras = compras.filter(function(x) {
+      return !(x.folio === c.folio && x.lote === c.lote && String(x.med_id) === String(c.med_id));
+    });
+    window._comprasData = compras;
+    renderCompras();
+    cerrarModalDevolucionBtn();
+    btn.disabled = false;
+    btn.innerHTML = '&#8617; Aplicar devolución';
+    var msg = '\u2705 Devolución aplicada. Compra eliminada';
+    if (piezasADescontar > 0) msg += ', ' + piezasADescontar + ' pza(s) descontadas del inventario.';
+    else msg += '.';
+    if (ventasLote.length) msg += '\n\u26a0\ufe0f Recuerda regenerar los tickets: ' + ventasLote.join(', ');
+    alert(msg);
+  }
+
+  if (loteObj && existActual > 0) {
+    var nuevasExist = existActual - piezasADescontar;
+    apiPost({ accion: 'editar_lote', id: loteObj.id, existencias: nuevasExist, costo: loteObj.costo },
+      function(err) {
+        if (!err) { loteObj.existencias = nuevasExist; renderLotesAdmin(); }
+        apiPost({ accion: 'borrar_compra', folio: c.folio, lote: c.lote, med_id: c.med_id },
+          function() { finalizarDevolucion(); });
+      });
+  } else {
+    apiPost({ accion: 'borrar_compra', folio: c.folio, lote: c.lote, med_id: c.med_id },
+      function() { finalizarDevolucion(); });
+  }
 }
 
 </script>
