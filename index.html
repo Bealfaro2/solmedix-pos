@@ -185,6 +185,63 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
   filter: brightness(0.95);
   background: transparent;
 }
+
+/* ── Firma agencia ── */
+.agencia-firma {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 0; right: 0;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+}
+.agencia-firma .agencia-nombre {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #2b7fd4, #60a5fa, #2b7fd4);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+.agencia-firma .agencia-sub {
+  font-size: 9px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+@keyframes shimmer { to { background-position: 200% center; } }
+
+/* ── Firma agencia ── */
+.agencia-firma {
+  text-align: center;
+  margin-top: 2rem;
+  pointer-events: none;
+}
+.agencia-firma .agencia-nombre {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #2b7fd4, #60a5fa, #2b7fd4);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+.agencia-firma .agencia-sub {
+  font-size: 9px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: rgba(148,163,184,.5);
+  margin-top: 3px;
+}
+@keyframes shimmer { to { background-position: 200% center; } }
 </style>
 </head>
 <body>
@@ -225,6 +282,10 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
     </div>
     <div class="suc-warning show" id="suc-warning" style="display:none">Contraseña incorrecta. Intenta de nuevo.</div>
     <button class="suc-confirm" id="suc-confirm" onclick="confirmarSuc()" style="display:none">Entrar al sistema</button>
+  <div class="agencia-firma">
+    <div class="agencia-nombre">Siete Yo Cho</div>
+    <div class="agencia-sub">Agencia de Estrategias de Negocios</div>
+  </div>
   </div>
 </div>
 
