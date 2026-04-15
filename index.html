@@ -1007,6 +1007,8 @@ function guardar() {
   renderHist(); mostrarClave(v); limpiar();
   alrt('Venta guardada. Ticket generado.','s');
   btn.disabled=false; btn.textContent='Guardar y generar ticket';
+  // Abrir popup de impresión automáticamente
+  imprimir();
 
   // Guardar en Sheets + descontar en servidor (asíncrono con snapshot)
   apiPost({accion:'guardar_venta',fecha:fecha,hora:hora,cliente:cliente,total:total,clave:v.clave,sucursal:sucursal,items:itemsSnapshot}, function(err) {
