@@ -1158,7 +1158,7 @@ function cargarTodo() {
   setSyncStatus('load','Cargando...');
   // Load config
   apiGet('config', function(e,d){ if(!e&&d) configSistema=d.config||{}; });
-  var total=5, listo=0;
+  var total=7, listo=0;
   function check(){ listo++; if(listo>=total){ setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); inicializarFechas(); inicializarFechasCompras(); if(document.getElementById('sec-precios')&&document.getElementById('sec-precios').style.display!=='none') renderReportePrecios(); } }
   setTimeout(function(){ if(listo < total){ listo=total; setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); inicializarFechas(); inicializarFechasCompras(); }}, 6000);
   apiGet('clientes',     function(e,d){ clientes=(d&&d.clientes)||[]; check(); });
@@ -1187,7 +1187,10 @@ function navTab(t) {
   if(t==='compras'){ renderCompras(); comprasTab('entrada'); }
   if(t==='gastos'){ filtrarGastosFiscales(); filtrarGastosNF(); }
   if(t==='utilidad'){ inicializarFechasUtilidad(); }
-  if(t==='precios'){ setTimeout(renderReportePrecios, 50); }
+  if(t==='precios'){
+    if(medicamentos.length){ setTimeout(renderReportePrecios, 50); }
+    else { setTimeout(function(){ if(medicamentos.length) renderReportePrecios(); }, 3000); }
+  }
 }
 
 /* REPORTE */
