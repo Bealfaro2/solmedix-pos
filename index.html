@@ -1852,7 +1852,7 @@ function cajaAlrt(elId, msg, tipo) {
 </div>
 
 <!-- MODAL APERTURA -->
-<div class="overlay" id="modal-apertura" onclick="if(event.target===this){}">
+<div class="overlay" id="modal-apertura" onclick="if(event.target===this){}" style="z-index:1100">
   <div class="modal" style="max-width:400px;text-align:center">
     <div style="font-size:40px;margin-bottom:10px">🟢</div>
     <h2 style="margin-bottom:16px">Apertura de caja</h2>
@@ -1866,7 +1866,7 @@ function cajaAlrt(elId, msg, tipo) {
 </div>
 
 <!-- MODAL RETIRO -->
-<div class="overlay" id="modal-retiro" onclick="if(event.target===this)this.classList.remove('show')">
+<div class="overlay" id="modal-retiro" onclick="if(event.target===this)this.classList.remove('show')" style="z-index:1100">
   <div class="modal" style="max-width:400px">
     <h2 style="margin-bottom:16px">💸 Registrar retiro</h2>
     <div class="fr"><label>Nombre de quien retira *</label>
@@ -1884,7 +1884,7 @@ function cajaAlrt(elId, msg, tipo) {
 </div>
 
 <!-- MODAL CORTE -->
-<div class="overlay" id="modal-corte" onclick="if(event.target===this)this.classList.remove('show')">
+<div class="overlay" id="modal-corte" onclick="if(event.target===this)this.classList.remove('show')" style="z-index:1100">
   <div class="modal" style="max-width:460px">
     <div style="font-size:36px;text-align:center;margin-bottom:8px">🔒</div>
     <h2 style="text-align:center;margin-bottom:16px">Corte de caja</h2>
