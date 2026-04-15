@@ -344,9 +344,7 @@ select option { background:var(--bg-2); color:var(--text); }
     <button class="nav-tab on"  id="nt-reporte"  onclick="navTab('reporte')">📊 Ventas</button>
     <button class="nav-tab"     id="nt-meds"      onclick="navTab('meds')">💊 Medicamentos</button>
     <button class="nav-tab"     id="nt-clientes"  onclick="navTab('clientes')">👤 Clientes</button>
-    <button class="nav-tab"     id="nt-ventas"    onclick="navTab('ventas')">📋 Gestión Ventas</button>
     <button class="nav-tab"     id="nt-lotes"     onclick="navTab('lotes')">📦 Inventario</button>
-    <button class="nav-tab"     id="nt-inv"       onclick="navTab('inv')">📈 Rep. Inventario</button>
     <button class="nav-tab"     id="nt-compras"   onclick="navTab('compras')">🧾 Compras</button>
     <button class="nav-tab"     id="nt-gastos"    onclick="navTab('gastos')">💸 Gastos</button>
     <button class="nav-tab"     id="nt-utilidad"  onclick="navTab('utilidad')">📉 Utilidad</button>
@@ -356,9 +354,16 @@ select option { background:var(--bg-2); color:var(--text); }
 
   <div class="page-content">
 
-    <!-- REPORTE VENTAS -->
-    <div id="sec-reporte">
-      <div class="panel">
+    <!-- VENTAS (unificado: Reporte + Gestión) -->
+    <div id="sec-reporte" style="display:none">
+
+      <div style="display:flex;gap:4px;margin-bottom:18px">
+        <button class="nav-tab on" id="vt-reporte" onclick="ventasTab('reporte')" style="border-radius:var(--radius-sm)">📊 Reporte de Ventas</button>
+        <button class="nav-tab"    id="vt-gestion" onclick="ventasTab('gestion')" style="border-radius:var(--radius-sm)">📋 Gestión de Ventas</button>
+      </div>
+
+      <div id="sv-reporte">
+        <div class="panel">
         <div class="ptitle">Filtros</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:flex-end">
           <div><label>Fecha inicio</label><input type="date" id="r-desde"/></div>
@@ -395,36 +400,10 @@ select option { background:var(--bg-2); color:var(--text); }
         </div>
       </div>
       <div id="reporte-vacio" class="es" style="display:none">Sin ventas en el periodo seleccionado</div>
-    </div>
-
-    <!-- MEDICAMENTOS -->
-    <div id="sec-meds" style="display:none">
-      <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-          <div class="ptitle" style="margin:0">Catálogo de medicamentos</div>
-          <button class="btn btng btns" onclick="abrirModalMed(null)">+ Nuevo medicamento</button>
-        </div>
-        <div class="fr" style="margin-bottom:14px">
-          <input type="text" id="bq-med" placeholder="Buscar medicamento..." oninput="filtrarMeds()"/>
-        </div>
-        <div class="med-grid" id="med-grid"><div class="es">Cargando...</div></div>
       </div>
-    </div>
 
-    <!-- CLIENTES -->
-    <div id="sec-clientes" style="display:none">
-      <div class="panel">
-        <div class="ptitle">Gestión de clientes</div>
-        <div class="fr" style="margin-bottom:14px">
-          <input type="text" id="bq-cli" placeholder="Buscar por nombre, teléfono o RFC..." oninput="filtrarClientesAdmin()"/>
-        </div>
-        <div id="lista-cli-admin" class="es">Cargando clientes...</div>
-      </div>
-    </div>
-
-    <!-- VENTAS (gestión) -->
-    <div id="sec-ventas" style="display:none">
-      <div class="panel">
+      <div id="sv-gestion" style="display:none">
+        <div class="panel">
         <div class="ptitle">Gestión de ventas</div>
         <div class="fr" style="margin-bottom:14px">
           <input type="text" id="bq-venta" placeholder="Buscar por cliente, folio o clave..." oninput="filtrarVentasAdmin()"/>
@@ -438,11 +417,21 @@ select option { background:var(--bg-2); color:var(--text); }
           </table>
         </div>
       </div>
+      </div>
+
     </div>
 
-    <!-- INVENTARIO / LOTES -->
+
+<!-- INVENTARIO (unificado: Lotes + Reporte) -->
     <div id="sec-lotes" style="display:none">
-      <div class="panel">
+
+      <div style="display:flex;gap:4px;margin-bottom:18px">
+        <button class="nav-tab on" id="it-lotes"   onclick="inventarioTab('lotes')"   style="border-radius:var(--radius-sm)">📦 Inventario por lote</button>
+        <button class="nav-tab"    id="it-reporte"  onclick="inventarioTab('reporte')" style="border-radius:var(--radius-sm)">📈 Reporte de inventario</button>
+      </div>
+
+      <div id="si-lotes">
+        <div class="panel">
         <div class="ptitle">Inventario por lote</div>
         <div class="fr" style="margin-bottom:14px">
           <input type="text" id="bq-lote" placeholder="Buscar medicamento o lote..." oninput="filtrarLotes()"/>
@@ -456,11 +445,10 @@ select option { background:var(--bg-2); color:var(--text); }
           </table>
         </div>
       </div>
-    </div>
+      </div>
 
-    <!-- REPORTE INVENTARIO -->
-    <div id="sec-inv" style="display:none">
-      <div class="panel">
+      <div id="si-reporte" style="display:none">
+        <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
           <div class="ptitle" style="margin:0">Reporte de inventario</div>
           <div style="display:flex;gap:6px">
@@ -485,7 +473,10 @@ select option { background:var(--bg-2); color:var(--text); }
           </table>
         </div>
       </div>
+      </div>
+
     </div>
+
 
     <!-- COMPRAS (unificado: Entrada XML + Reporte + Trazabilidad) -->
     <div id="sec-compras" style="display:none">
@@ -1173,7 +1164,7 @@ function setSyncStatus(t,m){ var el=document.getElementById('sync-status'); el.c
 
 /* NAV */
 function navTab(t) {
-  ['reporte','meds','clientes','ventas','lotes','inv','compras','gastos','utilidad','precios','pwds'].forEach(function(x){
+  ['reporte','meds','clientes','lotes','compras','gastos','utilidad','precios','pwds'].forEach(function(x){
     document.getElementById('sec-'+x).style.display=t===x?'block':'none';
     var tabEl=document.getElementById('nt-'+x);
     // Don't show pwds tab for non-admin
@@ -1182,7 +1173,8 @@ function navTab(t) {
     tabEl.style.display='';
   });
   if(t==='c') renderClientesAdmin();
-  if(t==='inv') renderInventario();
+  if(t==='reporte'){ ventasTab('reporte'); }
+  if(t==='lotes'){ inventarioTab('lotes'); }
   if(t==='compras'){ renderCompras(); comprasTab('entrada'); }
   if(t==='gastos'){ filtrarGastosFiscales(); filtrarGastosNF(); }
   if(t==='utilidad'){ inicializarFechasUtilidad(); }
@@ -2816,6 +2808,30 @@ function exportarPreciosPDF() {
     '<th style="text-align:right">Utilidad/pza</th></tr></thead><tbody>'+filas+'</tbody></table>');
   w.document.write('</body></html>');
   w.document.close(); setTimeout(function(){w.print();},600);
+}
+
+/* Sub-tabs Ventas */
+function ventasTab(t) {
+  document.getElementById('sv-reporte').style.display = t==='reporte' ? 'block' : 'none';
+  document.getElementById('sv-gestion').style.display = t==='gestion' ? 'block' : 'none';
+  document.getElementById('vt-reporte').className = 'nav-tab'+(t==='reporte'?' on':'');
+  document.getElementById('vt-gestion').className = 'nav-tab'+(t==='gestion'?' on':'');
+  document.getElementById('vt-reporte').style.borderRadius = 'var(--radius-sm)';
+  document.getElementById('vt-gestion').style.borderRadius = 'var(--radius-sm)';
+  if(t==='reporte') inicializarFechas();
+  if(t==='gestion') renderVentasAdmin();
+}
+
+/* Sub-tabs Inventario */
+function inventarioTab(t) {
+  document.getElementById('si-lotes').style.display   = t==='lotes'   ? 'block' : 'none';
+  document.getElementById('si-reporte').style.display = t==='reporte' ? 'block' : 'none';
+  document.getElementById('it-lotes').className   = 'nav-tab'+(t==='lotes'  ?' on':'');
+  document.getElementById('it-reporte').className = 'nav-tab'+(t==='reporte'?' on':'');
+  document.getElementById('it-lotes').style.borderRadius   = 'var(--radius-sm)';
+  document.getElementById('it-reporte').style.borderRadius = 'var(--radius-sm)';
+  if(t==='lotes')   renderLotesAdmin();
+  if(t==='reporte') renderInventario();
 }
 
 </script>
