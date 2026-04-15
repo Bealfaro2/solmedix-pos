@@ -592,8 +592,8 @@ select option { background:var(--bg-2); color:var(--text); }
             <div>
               <label>Sucursal destino</label>
               <select id="xlsx-suc">
-                <option value="MTY">Monterrey</option>
-                <option value="SLP" selected>San Luis Potosí</option>
+                <option value="MTY" id="xlsx-suc-mty">Monterrey</option>
+                <option value="SLP" id="xlsx-suc-slp">San Luis Potosí</option>
               </select>
             </div>
             <div style="font-size:12px;color:var(--text-3);padding-top:20px">
@@ -3160,6 +3160,29 @@ function inventarioTab(t) {
   });
   if(t==='lotes')   renderLotesAdmin();
   if(t==='reporte') renderInventario();
+  if(t==='carga') {
+    // Ajustar selector de sucursal según perfil
+    var selSuc = document.getElementById('xlsx-suc');
+    var mtyOpt = document.getElementById('xlsx-suc-mty');
+    var slpOpt = document.getElementById('xlsx-suc-slp');
+    if(perfilActual==='mty') {
+      selSuc.value = 'MTY';
+      if(slpOpt) slpOpt.style.display = 'none';
+      if(mtyOpt) mtyOpt.style.display = '';
+      selSuc.disabled = true;
+    } else if(perfilActual==='slp') {
+      selSuc.value = 'SLP';
+      if(mtyOpt) mtyOpt.style.display = 'none';
+      if(slpOpt) slpOpt.style.display = '';
+      selSuc.disabled = true;
+    } else {
+      // Admin: ve ambas opciones, SLP por defecto
+      if(mtyOpt) mtyOpt.style.display = '';
+      if(slpOpt) slpOpt.style.display = '';
+      selSuc.value = 'SLP';
+      selSuc.disabled = false;
+    }
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
