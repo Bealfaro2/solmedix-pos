@@ -687,6 +687,8 @@ function filtrarMeds() {
       matches.push(m);
     }
   }
+  // Ordenar alfabéticamente antes de agregar "Otro"
+  matches.sort(function(a,b){ return a.nombre.localeCompare(b.nombre,'es'); });
   // Agregar opción "Otro"
   matches.push({id:'__c__', nombre:'+ Otro medicamento...', precio:null, categoria:''});
 
@@ -1305,7 +1307,7 @@ function buscarPrecio(){
   var q=document.getElementById('bqp').value.trim().toLowerCase();
   var cont=document.getElementById('lista-precios');
   if(!medicamentos.length){cont.innerHTML='<div class="es">Cargando...</div>';return;}
-  var src=q.length<2?medicamentos:medicamentos.filter(function(m){return m.nombre.toLowerCase().indexOf(q)>=0||m.categoria.toLowerCase().indexOf(q)>=0;});
+  var src=(q.length<2?medicamentos:medicamentos.filter(function(m){return m.nombre.toLowerCase().indexOf(q)>=0||m.categoria.toLowerCase().indexOf(q)>=0;})).slice().sort(function(a,b){return a.nombre.localeCompare(b.nombre,'es');});
   if(!src.length){cont.innerHTML='<div class="es">Sin resultados</div>';return;}
   var html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">';
   html+='<thead><tr style="border-bottom:2px solid #eee">';
