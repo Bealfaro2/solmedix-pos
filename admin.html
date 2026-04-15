@@ -5,6 +5,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzBmMTcyYSIvPgogIDxyZWN0IHg9IjEzIiB5PSI2IiB3aWR0aD0iNiIgaGVpZ2h0PSIyMCIgcng9IjIiIGZpbGw9IiMyYjdmZDQiLz4KICA8cmVjdCB4PSI2IiB5PSIxMyIgd2lkdGg9IjIwIiBoZWlnaHQ9IjYiIHJ4PSIyIiBmaWxsPSIjMmI3ZmQ0Ii8+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solmedix — Administración</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -513,8 +514,9 @@ select option { background:var(--bg-2); color:var(--text); }
     <div id="sec-lotes" style="display:none">
 
       <div style="display:flex;gap:4px;margin-bottom:18px">
-        <button class="nav-tab on" id="it-lotes"  onclick="inventarioTab('lotes')"   style="border-radius:var(--radius-sm)">📦 Inventario por lote</button>
+        <button class="nav-tab on" id="it-lotes"   onclick="inventarioTab('lotes')"   style="border-radius:var(--radius-sm)">📦 Inventario por lote</button>
         <button class="nav-tab"    id="it-reporte" onclick="inventarioTab('reporte')" style="border-radius:var(--radius-sm)">📈 Reporte de inventario</button>
+        <button class="nav-tab"    id="it-carga"   onclick="inventarioTab('carga')"   style="border-radius:var(--radius-sm)">📥 Carga Excel</button>
       </div>
 
       <div id="si-lotes">
@@ -561,6 +563,73 @@ select option { background:var(--bg-2); color:var(--text); }
         </div>
       </div>
     </div>
+      <!-- CARGA MASIVA EXCEL -->
+      <div id="si-carga" style="display:none">
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div class="ptitle" style="margin:0">Carga masiva de inventario desde Excel</div>
+          </div>
+          <p style="font-size:13px;color:var(--text-2);margin-bottom:1.5rem;line-height:1.7">
+            Sube el archivo Excel con el inventario de la sucursal. El sistema vinculará automáticamente
+            cada medicamento por nombre. Podrás revisar y corregir antes de aplicar.
+          </p>
+
+          <!-- Upload zone -->
+          <div id="xlsx-upload-zone"
+            style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:2.5rem;text-align:center;cursor:pointer;transition:all .2s;background:rgba(15,23,42,.3);margin-bottom:16px"
+            onclick="document.getElementById('xlsx-file-input').click()"
+            ondragover="event.preventDefault();this.style.borderColor='var(--blue-bright)';this.style.background='rgba(24,95,165,.08)'"
+            ondragleave="this.style.borderColor='';this.style.background=''"
+            ondrop="onXlsxDrop(event)">
+            <div style="font-size:36px;margin-bottom:10px">📊</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text-2)">Arrastra el Excel aquí o haz clic para seleccionar</div>
+            <div style="font-size:12px;color:var(--text-3);margin-top:5px">Archivo .xlsx — hoja "lotes" con columnas: medicamento, lote, existencias, costo_unitario</div>
+            <input type="file" id="xlsx-file-input" accept=".xlsx,.xls" style="display:none" onchange="onXlsxFile(event)"/>
+          </div>
+
+          <!-- Sucursal selector -->
+          <div style="display:grid;grid-template-columns:200px 1fr;gap:12px;align-items:center;margin-bottom:16px">
+            <div>
+              <label>Sucursal destino</label>
+              <select id="xlsx-suc">
+                <option value="MTY">Monterrey</option>
+                <option value="SLP" selected>San Luis Potosí</option>
+              </select>
+            </div>
+            <div style="font-size:12px;color:var(--text-3);padding-top:20px">
+              Los lotes se agregarán al inventario de la sucursal seleccionada.
+            </div>
+          </div>
+
+          <!-- Vista previa -->
+          <div id="xlsx-preview" style="display:none">
+            <div style="font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">
+              Vista previa — Verifica el match de cada medicamento antes de aplicar
+            </div>
+            <div style="overflow-x:auto;margin-bottom:14px">
+              <table class="tbl" id="xlsx-preview-tabla">
+                <thead><tr>
+                  <th>Nombre en Excel</th>
+                  <th style="width:260px">Medicamento en sistema</th>
+                  <th style="width:130px;text-align:center">Lote</th>
+                  <th style="width:90px;text-align:center">Existencias</th>
+                  <th style="width:110px;text-align:right">Costo unit.</th>
+                  <th style="width:60px;text-align:center">Estado</th>
+                </tr></thead>
+                <tbody id="xlsx-preview-body"></tbody>
+              </table>
+            </div>
+            <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:var(--radius-sm);padding:11px 13px;font-size:12px;color:#fcd34d;margin-bottom:14px">
+              ⚠️ Verifica que cada fila tenga el medicamento correcto vinculado. Las filas en rojo no tienen coincidencia — selecciona el medicamento manualmente.
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              <button class="btn" onclick="limpiarXlsx()">Cancelar</button>
+              <button class="btn btnp" id="btn-aplicar-xlsx" onclick="aplicarCargaXlsx()">Aplicar carga al inventario</button>
+            </div>
+            <div id="xlsx-alrt" style="display:none;margin-top:10px"></div>
+          </div>
+        </div>
+      </div>
 
     </div>
   </div>
@@ -3082,10 +3151,13 @@ function ventasTab(t) {
 function inventarioTab(t) {
   document.getElementById('si-lotes').style.display   = t==='lotes'   ? 'block' : 'none';
   document.getElementById('si-reporte').style.display = t==='reporte' ? 'block' : 'none';
+  document.getElementById('si-carga').style.display   = t==='carga'   ? 'block' : 'none';
   document.getElementById('it-lotes').className   = 'nav-tab'+(t==='lotes'  ?' on':'');
   document.getElementById('it-reporte').className = 'nav-tab'+(t==='reporte'?' on':'');
-  document.getElementById('it-lotes').style.borderRadius   = 'var(--radius-sm)';
-  document.getElementById('it-reporte').style.borderRadius = 'var(--radius-sm)';
+  document.getElementById('it-carga').className   = 'nav-tab'+(t==='carga'  ?' on':'');
+  ['it-lotes','it-reporte','it-carga'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.style.borderRadius='var(--radius-sm)';
+  });
   if(t==='lotes')   renderLotesAdmin();
   if(t==='reporte') renderInventario();
 }
@@ -3221,6 +3293,220 @@ function aplicarDevolucionCompra() {
     apiPost({ accion: 'borrar_compra', folio: c.folio, lote: c.lote, med_id: c.med_id },
       function() { finalizarDevolucion(); });
   }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CARGA MASIVA DE INVENTARIO DESDE EXCEL
+═══════════════════════════════════════════════════════════ */
+var _xlsxFilas = [];
+
+function onXlsxDrop(e) {
+  e.preventDefault();
+  var file = e.dataTransfer.files[0];
+  if (file) procesarXlsx(file);
+  document.getElementById('xlsx-upload-zone').style.borderColor = '';
+  document.getElementById('xlsx-upload-zone').style.background  = '';
+}
+function onXlsxFile(e) {
+  var file = e.target.files[0];
+  if (file) procesarXlsx(file);
+  e.target.value = '';
+}
+
+function procesarXlsx(file) {
+  if (!file.name.match(/\.xlsx?$/i)) { alert('Solo archivos .xlsx o .xls'); return; }
+
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var data = new Uint8Array(ev.target.result);
+      var wb   = XLSX.read(data, { type: 'array' });
+
+      // Buscar hoja "lotes" o primera hoja
+      var sheetName = wb.SheetNames.indexOf('lotes') >= 0 ? 'lotes' : wb.SheetNames[0];
+      var ws   = wb.Sheets[sheetName];
+      var rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+      if (!rows.length) { alert('El archivo está vacío o no tiene datos en la hoja "lotes"'); return; }
+
+      _xlsxFilas = rows.map(function(r) {
+        // Normalizar nombres de columna (case-insensitive)
+        var keys = Object.keys(r);
+        function getVal(names) {
+          for (var i=0;i<names.length;i++) {
+            for (var j=0;j<keys.length;j++) {
+              if (keys[j].toLowerCase().trim() === names[i]) return r[keys[j]];
+            }
+          }
+          return '';
+        }
+        var nombre     = String(getVal(['medicamento','nombre','med','medicamento ']) || '').trim();
+        var lote       = String(getVal(['lote','numero de lote','num lote','lote ']) || '').trim();
+        var existencias= Number(getVal(['existencias','existencia','stock','piezas','qty']) || 0);
+        var costo      = Number(getVal(['costo_unitario','costo unitario','costo','precio','precio unitario']) || 0);
+        var notas      = String(getVal(['notas','nota','observaciones','observacion']) || '').trim();
+        var med_id_raw = String(getVal(['med_id','medid','id medicamento','id']) || '').trim();
+
+        // Auto-match por nombre
+        var matchId = med_id_raw || autoMatchNombre(nombre);
+
+        return { nombre: nombre, lote: lote, existencias: existencias,
+                 costo: costo, notas: notas, medId: matchId };
+      }).filter(function(r){ return r.nombre || r.lote; });
+
+      if (!_xlsxFilas.length) { alert('No se encontraron filas con datos válidos'); return; }
+      renderXlsxPreview();
+    } catch(err) {
+      alert('Error al leer el archivo: ' + err.message +
+            '\n\nAsegúrate de que SheetJS esté cargado. Si el error persiste, guarda el archivo como .xlsx en Excel.');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* Auto-match: busca el medicamento con mayor coincidencia de palabras */
+function autoMatchNombre(nombre) {
+  if (!nombre) return '';
+  var desc  = nombre.toLowerCase();
+  var bestId = '', bestScore = 0;
+  for (var i = 0; i < medicamentos.length; i++) {
+    var nom   = medicamentos[i].nombre.toLowerCase();
+    var words = nom.split(/\s+/);
+    var hits  = 0;
+    for (var j = 0; j < words.length; j++) {
+      if (words[j].length > 2 && desc.indexOf(words[j]) >= 0) hits++;
+    }
+    var score = words.length ? hits / words.length : 0;
+    if (score > bestScore && score >= 0.35) { bestScore = score; bestId = medicamentos[i].id; }
+  }
+  return bestId;
+}
+
+function renderXlsxPreview() {
+  var html = '';
+  for (var i = 0; i < _xlsxFilas.length; i++) {
+    var f = _xlsxFilas[i];
+    var matched = !!f.medId;
+    var rowBg   = matched ? '' : 'background:rgba(239,68,68,.08)';
+    var badge   = matched
+      ? '<span style="font-size:10px;background:rgba(16,185,129,.15);color:#6ee7b7;padding:2px 6px;border-radius:99px">✓ Vinculado</span>'
+      : '<span style="font-size:10px;background:rgba(239,68,68,.15);color:#fca5a5;padding:2px 6px;border-radius:99px">⚠ Sin match</span>';
+
+    // Select de medicamentos
+    var opts = '<option value="">-- Seleccionar --</option>';
+    for (var j = 0; j < medicamentos.length; j++) {
+      var m = medicamentos[j];
+      opts += '<option value="'+m.id+'"'+(m.id===f.medId?' selected':'')+'>'+m.nombre+'</option>';
+    }
+
+    html += '<tr style="'+rowBg+'">';
+    html += '<td style="font-size:12px;color:var(--text-2)">'+f.nombre+'</td>';
+    html += '<td><select style="font-size:11px" onchange="_xlsxFilas['+i+'].medId=this.value;actualizarBadgeXlsx('+i+',this)">'+opts+'</select></td>';
+    html += '<td style="text-align:center;font-family:var(--mono);font-size:11px">'+f.lote+'</td>';
+    html += '<td style="text-align:center;font-weight:700">'+f.existencias+'</td>';
+    html += '<td style="text-align:right">$'+Number(f.costo).toLocaleString("es-MX",{minimumFractionDigits:2})+'</td>';
+    html += '<td style="text-align:center" id="xlsx-badge-'+i+'">'+badge+'</td>';
+    html += '</tr>';
+  }
+  document.getElementById('xlsx-preview-body').innerHTML = html;
+  document.getElementById('xlsx-preview').style.display = 'block';
+  document.getElementById('xlsx-upload-zone').style.display = 'none';
+  document.getElementById('xlsx-alrt').style.display = 'none';
+}
+
+function actualizarBadgeXlsx(idx, sel) {
+  var badge = document.getElementById('xlsx-badge-'+idx);
+  if (!badge) return;
+  if (sel.value) {
+    badge.innerHTML = '<span style="font-size:10px;background:rgba(16,185,129,.15);color:#6ee7b7;padding:2px 6px;border-radius:99px">✓ Vinculado</span>';
+    sel.closest('tr').style.background = '';
+  } else {
+    badge.innerHTML = '<span style="font-size:10px;background:rgba(239,68,68,.15);color:#fca5a5;padding:2px 6px;border-radius:99px">⚠ Sin match</span>';
+    sel.closest('tr').style.background = 'rgba(239,68,68,.08)';
+  }
+}
+
+function limpiarXlsx() {
+  _xlsxFilas = [];
+  document.getElementById('xlsx-preview').style.display = 'none';
+  document.getElementById('xlsx-upload-zone').style.display = 'block';
+  document.getElementById('xlsx-alrt').style.display = 'none';
+}
+
+function xlsxAlrt(msg, tipo) {
+  var el = document.getElementById('xlsx-alrt');
+  el.className = 'alrt '+(tipo==='s'?'als':tipo==='e'?'ale':'ali');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function aplicarCargaXlsx() {
+  var suc = document.getElementById('xlsx-suc').value || 'SLP';
+
+  // Validar que todas tengan medId
+  var sinVincular = _xlsxFilas.filter(function(f){ return !f.medId; });
+  if (sinVincular.length) {
+    xlsxAlrt('Hay '+sinVincular.length+' fila(s) sin medicamento vinculado. Asígnalas antes de continuar.','e');
+    return;
+  }
+  var sinLote = _xlsxFilas.filter(function(f){ return !f.lote; });
+  if (sinLote.length) {
+    xlsxAlrt('Hay '+sinLote.length+' fila(s) sin número de lote. El lote es obligatorio.','e');
+    return;
+  }
+
+  var btn = document.getElementById('btn-aplicar-xlsx');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Aplicando...';
+
+  var ok = 0, err = 0;
+
+  function siguiente(idx) {
+    if (idx >= _xlsxFilas.length) {
+      btn.disabled = false; btn.textContent = 'Aplicar carga al inventario';
+      if (err === 0) {
+        xlsxAlrt('✅ '+ok+' lotes cargados correctamente al inventario de '+suc+'.','s');
+        apiGet('lotes', function(e,d){ if(!e&&d){ lotes=d.lotes||[]; renderLotesAdmin(); renderInventario(); } });
+        setTimeout(limpiarXlsx, 3000);
+      } else {
+        xlsxAlrt('Se cargaron '+ok+' lotes. '+err+' errores.','e');
+      }
+      return;
+    }
+
+    var f = _xlsxFilas[idx];
+    // Obtener nombre del medicamento
+    var medNombre = '';
+    for (var i=0;i<medicamentos.length;i++) {
+      if (String(medicamentos[i].id) === String(f.medId)) { medNombre = medicamentos[i].nombre; break; }
+    }
+
+    // Verificar si ya existe el lote
+    var loteExist = null;
+    for (var i=0;i<lotes.length;i++) {
+      if (String(lotes[i].med_id)===String(f.medId) &&
+          String(lotes[i].lote).toUpperCase()===String(f.lote).toUpperCase()) {
+        loteExist = lotes[i]; break;
+      }
+    }
+
+    function done(success) { if(success) ok++; else err++; siguiente(idx+1); }
+
+    if (loteExist) {
+      // Sumar existencias al lote ya existente
+      var nuevas = Number(loteExist.existencias) + f.existencias;
+      apiPost({ accion:'editar_lote', id:loteExist.id,
+                existencias:nuevas, costo:f.costo||loteExist.costo },
+        function(e){ done(!e); });
+    } else {
+      // Crear lote nuevo
+      apiPost({ accion:'agregar_lote', med_id:f.medId, medicamento:medNombre,
+                lote:f.lote, existencias:f.existencias, costo:f.costo },
+        function(e){ done(!e); });
+    }
+  }
+
+  siguiente(0);
 }
 
 </script>
