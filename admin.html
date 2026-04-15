@@ -1415,8 +1415,8 @@ function exportarPDF(){
   if(!filas.length){alert('Genera el reporte primero');return;}
   var filaHtml=filas.map(function(r,i){
     var pct=d.totalPiezas>0?(r.piezas/d.totalPiezas*100):0;
-    var bg=i%2===0?'#fff':'#f9f9f9';
-    return '<tr style="background:'+bg+'">'+
+    var bg=i%2===0?'':'background:rgba(148,163,184,.04)';
+    return '<tr style="'+bg+'">' +
       '<td>'+r.nom+'</td>'+
       '<td style="text-align:right;font-weight:bold">'+r.piezas+'</td>'+
       '<td>'+
@@ -1467,16 +1467,16 @@ function renderInventario(lista){
     var color=stock>5?'#166534':stock>0?'#d97706':'#c00';
     var cat='';
     for(var j=0;j<medicamentos.length;j++){if(String(medicamentos[j].id)===String(l.med_id)){cat=medicamentos[j].categoria||'';break;}}
-    var bg=i%2===0?'#fff':'#fafaf8';
-    html+='<tr style="background:'+bg+'"><td>'+l.medicamento+'</td>';
-    html+='<td style="color:#777;font-size:12px">'+cat+'</td>';
-    html+='<td style="font-family:monospace">'+l.lote+'</td>';
-    html+='<td style="text-align:right;font-weight:600;color:'+color+'">'+stock+'</td>';
-    html+='<td style="text-align:right">$'+costo.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
-    html+='<td style="text-align:right;font-weight:600">$'+valor.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
+    var bg=i%2===0?'':'background:rgba(148,163,184,.04)';
+    html+='<tr style="'+bg+'"><td>'+l.medicamento+'</td>';
+    html+='<td style="color:var(--text-3);font-size:12px">'+cat+'</td>';
+    html+='<td style="font-family:monospace;color:var(--text-2)">'+l.lote+'</td>';
+    html+='<td style="text-align:right;font-weight:700;color:'+color+'">'+stock+'</td>';
+    html+='<td style="text-align:right;color:var(--text)">$'+costo.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    html+='<td style="text-align:right;font-weight:600;color:var(--text)">$'+valor.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
   }
   document.getElementById('inv-body').innerHTML=html;
-  document.getElementById('inv-foot').innerHTML='<tr style="background:#f0ede6;font-weight:600"><td colspan="3">TOTALES</td><td style="text-align:right">'+totalPiezas+' pzas</td><td></td><td style="text-align:right">$'+totalValor.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
+  document.getElementById('inv-foot').innerHTML='<tr style="background:rgba(38,51,72,.8);font-weight:700;color:var(--text)"><td colspan="3">TOTALES</td><td style="text-align:right">'+totalPiezas+' pzas</td><td></td><td style="text-align:right">$'+totalValor.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
   document.getElementById('reporte-inv-stats').innerHTML='<div class="reporte-header"><div class="stat-card"><div class="stat-label">Lotes activos</div><div class="stat-value">'+src.length+'</div></div><div class="stat-card"><div class="stat-label">Total piezas</div><div class="stat-value">'+totalPiezas+'</div></div><div class="stat-card"><div class="stat-label">Valor inventario</div><div class="stat-value">$'+totalValor.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div><div class="stat-sub">a precio de costo</div></div></div>';
   window._invData={src:src,totalPiezas:totalPiezas,totalValor:totalValor};
 }
@@ -1514,7 +1514,7 @@ function exportarInventarioPDF(){
     var stock=Number(l.existencias),costo=Number(l.costo)||0,valor=stock*costo;
     totalPiezas+=stock; totalValor+=valor;
     var color=stock>5?'green':stock>0?'darkorange':'red';
-    var bg=i%2===0?'#fff':'#f9f9f9';
+    var bg=i%2===0?'':'background:rgba(148,163,184,.04)';
     return '<tr style="background:'+bg+'"><td>'+l.medicamento+'</td><td style="color:#777">'+cat+'</td><td style="font-family:monospace">'+l.lote+'</td><td style="text-align:right;color:'+color+';font-weight:bold">'+stock+'</td><td style="text-align:right">$'+costo.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td><td style="text-align:right;font-weight:bold">$'+valor.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
   }).join('');
   var fecha=new Date().toLocaleDateString('es-MX');
@@ -1795,7 +1795,7 @@ function renderCompras(lista) {
     var imp=Number(c.importe)||0;
     var cant=Number(c.cantidad)||0;
     totalImporte+=imp; totalPiezas+=cant;
-    var bg=i%2===0?'#fff':'#fafaf8';
+    var bg=i%2===0?'':'background:rgba(148,163,184,.04)';
     html+='<tr style="background:'+bg+'"><td>'+fecha+'</td><td style="font-weight:500">'+c.proveedor+'</td>';
     html+='<td style="font-family:monospace;font-size:11px">'+c.folio+'</td>';
     html+='<td>'+c.medicamento+'</td>';
@@ -1910,7 +1910,7 @@ function exportarComprasPDF() {
   var filas = src.map(function(c,i){
     var fecha=String(c.fecha).split('T')[0].split('-').reverse().join('/');
     var imp=Number(c.importe)||0; totalImporte+=imp;
-    var bg=i%2===0?'#fff':'#f9f9f9';
+    var bg=i%2===0?'':'background:rgba(148,163,184,.04)';
     return '<tr style="background:'+bg+'"><td>'+fecha+'</td><td>'+c.proveedor+'</td><td style="font-family:monospace">'+c.folio+'</td><td>'+c.medicamento+'</td><td style="font-family:monospace">'+c.lote+'</td><td style="text-align:right">'+c.cantidad+'</td><td style="text-align:right">$'+Number(c.costo_unitario).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td><td style="text-align:right;font-weight:bold">$'+imp.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
   }).join('');
   var w = window.open('','_blank','width=1000,height=700');
@@ -2559,7 +2559,7 @@ function exportarGastosFiscalesPDF() {
   var totalGF=0, totalIVA=0;
   var filas=src.map(function(g,i){
     totalGF+=g.total; totalIVA+=g.iva;
-    var bg=i%2===0?'#fff':'#f9f9f9';
+    var bg=i%2===0?'':'background:rgba(148,163,184,.04)';
     return '<tr style="background:'+bg+'"><td>'+g.fecha+'</td><td>'+g.proveedor+'</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+g.concepto+'</td><td style="text-align:right">$'+g.subtotal.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td style="text-align:right">$'+g.iva.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td style="text-align:right;font-weight:bold">$'+g.total.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td>'+g.metodo_pago+'</td><td>'+g.sucursal+'</td></tr>';
   }).join('');
   var w=window.open('','_blank','width=1000,height=700');
@@ -2679,7 +2679,7 @@ function exportarGastosNFPDF(){
   var total=0;
   var filas=src.map(function(g,i){
     total+=g.monto;
-    var bg=i%2===0?'#fff':'#f9f9f9';
+    var bg=i%2===0?'':'background:rgba(148,163,184,.04)';
     return '<tr style="background:'+bg+'"><td>'+g.fecha+'</td><td>'+g.concepto+'</td><td style="text-align:right;font-weight:bold">$'+Number(g.monto).toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td>'+g.sucursal+'</td></tr>';
   }).join('');
   var w=window.open('','_blank','width=700,height=600');
@@ -2999,10 +2999,10 @@ function exportarPreciosPDF() {
   var src = window._rpData || [];
   if(!src.length){alert('Sin datos para exportar');return;}
   var filas = src.map(function(m,i){
-    var bg=i%2===0?'#fff':'#f9f9f9';
+    var bg=i%2===0?'':'background:rgba(148,163,184,.04)';
     var mc=m._margen>=40?'green':m._margen>=20?'#b8860b':'red';
     var sc=m._stock>5?'green':m._stock>0?'#b8860b':'red';
-    return '<tr style="background:'+bg+'">'+
+    return '<tr style="'+bg+'">' +
       '<td>'+m.nombre+'</td>'+
       '<td style="color:#777">'+m.categoria+'</td>'+
       '<td style="text-align:right">$'+Number(m.costo).toLocaleString("es-MX",{minimumFractionDigits:2})+'</td>'+
