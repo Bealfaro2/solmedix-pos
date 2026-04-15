@@ -1830,16 +1830,21 @@ function renderCompras(lista) {
     var cant=Number(c.cantidad)||0;
     totalImporte+=imp; totalPiezas+=cant;
     var bg=i%2===0?'':'background:rgba(148,163,184,.04)';
-    html+='<tr style="background:'+bg+'"><td>'+fecha+'</td><td style="font-weight:500">'+c.proveedor+'</td>';
+    var btnDev = perfilActual==='admin'
+      ? '<button class="btn btnd btns" onclick="pedirDevolucionCompra('+i+')">&#8617; Devolver</button>'
+      : '';
+    html+='<tr style="'+bg+'">';
+    html+='<td>'+fecha+'</td><td style="font-weight:500">'+c.proveedor+'</td>';
     html+='<td style="font-family:monospace;font-size:11px">'+c.folio+'</td>';
     html+='<td>'+c.medicamento+'</td>';
     html+='<td style="font-family:monospace;font-size:11px">'+c.lote+'</td>';
     html+='<td style="text-align:right">'+cant+'</td>';
     html+='<td style="text-align:right">$'+Number(c.costo_unitario).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
-    html+='<td style="text-align:right;font-weight:600">$'+imp.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
+    html+='<td style="text-align:right;font-weight:600">$'+imp.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    html+='<td>'+btnDev+'</td></tr>';
   }
   document.getElementById('compras-body').innerHTML = html;
-  document.getElementById('compras-foot').innerHTML = '<tr style="background:rgba(38,51,72,.8);font-weight:700;color:var(--text)"><td colspan="5">TOTALES</td><td style="text-align:right">'+totalPiezas+' pzas</td><td></td><td style="text-align:right">$'+totalImporte.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
+  document.getElementById('compras-foot').innerHTML = '<tr style="background:rgba(38,51,72,.8);font-weight:700;color:var(--text)"><td colspan="5">TOTALES</td><td style="text-align:right">'+totalPiezas+' pzas</td><td></td><td style="text-align:right">$'+totalImporte.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td><td></td></tr>';
 
   // Stats
   var provCount = {};
