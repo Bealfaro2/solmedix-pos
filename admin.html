@@ -1560,6 +1560,11 @@ function exportarPDF(){
 /* REPORTE INVENTARIO */
 function renderInventario(lista){
   var src=lista||lotes;
+  // Filtrar por sucursal según perfil
+  if(!lista) {
+    if(perfilActual==='mty') src=src.filter(function(l){ return l.sucursal==='MTY'||!l.sucursal; });
+    if(perfilActual==='slp') src=src.filter(function(l){ return l.sucursal==='SLP'; });
+  }
   if(!src.length){document.getElementById('inv-body').innerHTML='<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px">Sin datos de inventario</td></tr>';return;}
   var totalPiezas=0,totalValor=0;
   var html='';
@@ -1840,7 +1845,7 @@ function aplicarEntrada() {
     }
 
     // Register compra
-    apiPost({ accion:'registrar_compra', fecha:xmlFacturaInfo.fecha, proveedor:xmlFacturaInfo.proveedor,
+    apiPost({ accion:'registrar_compra', sucursal:(perfilActual==='slp'?'SLP':'MTY'), fecha:xmlFacturaInfo.fecha, proveedor:xmlFacturaInfo.proveedor,
       rfc_proveedor:xmlFacturaInfo.rfcProv, folio:xmlFacturaInfo.folio, uuid:xmlFacturaInfo.uuid,
       med_id:c.medId, medicamento:medNombre, lote:c.lote, cantidad:c.cantidad,
       costo_unitario:c.valorUnitario, importe:c.cantidad*c.valorUnitario }, function(){});
@@ -1852,7 +1857,7 @@ function aplicarEntrada() {
         procesarSiguiente(idx + 1);
       });
     } else {
-      apiPost({ accion:'agregar_lote', med_id:c.medId, medicamento:medNombre, lote:c.lote, existencias:c.cantidad, costo:c.valorUnitario }, function(err) {
+      apiPost({ accion:'agregar_lote', med_id:c.medId, medicamento:medNombre, lote:c.lote, existencias:c.cantidad, costo:c.valorUnitario, sucursal:(perfilActual==='slp'?'SLP':'MTY') }, function(err) {
         if (!err) procesados++; else errores++;
         procesarSiguiente(idx + 1);
       });
@@ -1875,6 +1880,11 @@ function entradaAlrt(msg, tipo) {
 ═══════════════════════════════════════════════ */
 function renderCompras(lista) {
   var src = lista || compras;
+  // Filtrar por sucursal según perfil
+  if(!lista) {
+    if(perfilActual==='mty') src=src.filter(function(c){ return c.sucursal==='MTY'||!c.sucursal; });
+    if(perfilActual==='slp') src=src.filter(function(c){ return c.sucursal==='SLP'; });
+  }
   // Populate proveedor filter
   var provs = {};
   for (var i=0;i<compras.length;i++) provs[compras[i].proveedor] = true;
@@ -2296,6 +2306,11 @@ function calcularOptimo(medId) {
 
 function renderLotesAdmin(lista){
   var src=lista||lotes;
+  // Filtrar por sucursal según perfil
+  if(!lista) {
+    if(perfilActual==='mty') src=src.filter(function(l){ return l.sucursal==='MTY'||!l.sucursal; });
+    if(perfilActual==='slp') src=src.filter(function(l){ return l.sucursal==='SLP'; });
+  }
   var tbody=document.getElementById('lotes-body');
   if(!src.length){tbody.innerHTML='<tr><td colspan="6" class="es">Sin lotes</td></tr>';return;}
   var html='';
@@ -3524,7 +3539,7 @@ function aplicarCargaXlsx() {
     } else {
       // Crear lote nuevo
       apiPost({ accion:'agregar_lote', med_id:f.medId, medicamento:medNombre,
-                lote:f.lote, existencias:f.existencias, costo:f.costo },
+                lote:f.lote, existencias:f.existencias, costo:f.costo, sucursal:suc },
         function(e){ done(!e); });
     }
   }
