@@ -350,6 +350,7 @@ select option { background:var(--bg-2); color:var(--text); }
     <button class="nav-tab"     id="nt-compras"   onclick="navTab('compras')">🧾 Compras</button>
     <button class="nav-tab"     id="nt-gastos"    onclick="navTab('gastos')">💸 Gastos</button>
     <button class="nav-tab"     id="nt-utilidad"  onclick="navTab('utilidad')">📉 Utilidad</button>
+    <button class="nav-tab"     id="nt-precios"   onclick="navTab('precios')">💰 Precios</button>
     <button class="nav-tab"     id="nt-pwds"      onclick="navTab('pwds')" style="display:none">🔑 Contraseñas</button>
   </div>
 
@@ -583,6 +584,69 @@ select option { background:var(--bg-2); color:var(--text); }
           <div><button class="btn btnp" onclick="buscarTrazabilidad()">Buscar</button></div>
         </div>
         <div id="traz-result"></div>
+      </div>
+    </div>
+
+
+    <!-- REPORTE PRECIOS -->
+    <div id="sec-precios" style="display:none">
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <div class="ptitle" style="margin:0">Reporte de precios y costos</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <!-- Filtro columnas -->
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-2);cursor:pointer">
+              <input type="checkbox" id="rp-col-costo"   checked onchange="renderReportePrecios()" style="width:auto;accent-color:var(--blue)"> Costo
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-2);cursor:pointer">
+              <input type="checkbox" id="rp-col-precio"  checked onchange="renderReportePrecios()" style="width:auto;accent-color:var(--blue)"> Precio
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-2);cursor:pointer">
+              <input type="checkbox" id="rp-col-stock"   checked onchange="renderReportePrecios()" style="width:auto;accent-color:var(--blue)"> Existencias
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-2);cursor:pointer">
+              <input type="checkbox" id="rp-col-margen"  checked onchange="renderReportePrecios()" style="width:auto;accent-color:var(--blue)"> Margen
+            </label>
+            <div style="width:1px;height:20px;background:var(--border);margin:0 4px"></div>
+            <button class="btn btns btno" onclick="exportarPreciosCSV()">Exportar CSV</button>
+            <button class="btn btns btno" onclick="exportarPreciosPDF()">Exportar PDF</button>
+          </div>
+        </div>
+
+        <!-- Búsqueda y filtro categoría -->
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;margin-bottom:14px;align-items:flex-end">
+          <div>
+            <label>Buscar medicamento</label>
+            <input type="text" id="rp-buscar" placeholder="Nombre o categoría..." oninput="renderReportePrecios()"/>
+          </div>
+          <div>
+            <label>Categoría</label>
+            <select id="rp-cat" onchange="renderReportePrecios()">
+              <option value="">Todas las categorías</option>
+            </select>
+          </div>
+          <div>
+            <label>Ordenar por</label>
+            <select id="rp-orden" onchange="renderReportePrecios()" style="width:160px">
+              <option value="nombre">Nombre A-Z</option>
+              <option value="precio-desc">Precio mayor-menor</option>
+              <option value="precio-asc">Precio menor-mayor</option>
+              <option value="margen-desc">Margen mayor-menor</option>
+              <option value="stock-desc">Stock mayor-menor</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div id="rp-stats" style="margin-bottom:14px"></div>
+
+        <!-- Tabla -->
+        <div style="overflow-x:auto">
+          <table class="tbl" id="rp-tabla">
+            <thead id="rp-thead"></thead>
+            <tbody id="rp-body"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -1110,7 +1174,7 @@ function setSyncStatus(t,m){ var el=document.getElementById('sync-status'); el.c
 
 /* NAV */
 function navTab(t) {
-  ['reporte','meds','clientes','ventas','lotes','inv','compras','gastos','utilidad','pwds'].forEach(function(x){
+  ['reporte','meds','clientes','ventas','lotes','inv','compras','gastos','utilidad','precios','pwds'].forEach(function(x){
     document.getElementById('sec-'+x).style.display=t===x?'block':'none';
     var tabEl=document.getElementById('nt-'+x);
     // Don't show pwds tab for non-admin
@@ -1123,6 +1187,7 @@ function navTab(t) {
   if(t==='compras'){ renderCompras(); comprasTab('entrada'); }
   if(t==='gastos'){ filtrarGastosFiscales(); filtrarGastosNF(); }
   if(t==='utilidad'){ inicializarFechasUtilidad(); }
+  if(t==='precios'){ renderReportePrecios(); }
 }
 
 /* REPORTE */
@@ -2584,6 +2649,170 @@ function comprasTab(t) {
   document.getElementById('ct-entrada').style.borderRadius = 'var(--radius-sm)';
   document.getElementById('ct-reporte').style.borderRadius = 'var(--radius-sm)';
   if (t==='reporte') { renderCompras(); inicializarFechasCompras(); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   REPORTE DE PRECIOS Y COSTOS
+═══════════════════════════════════════════════════════════ */
+
+function renderReportePrecios() {
+  var q      = (document.getElementById('rp-buscar').value||'').trim().toLowerCase();
+  var catFil = document.getElementById('rp-cat').value;
+  var orden  = document.getElementById('rp-orden').value;
+
+  var showCosto  = document.getElementById('rp-col-costo').checked;
+  var showPrecio = document.getElementById('rp-col-precio').checked;
+  var showStock  = document.getElementById('rp-col-stock').checked;
+  var showMargen = document.getElementById('rp-col-margen').checked;
+
+  // Poblar categorías
+  var cats = {};
+  for (var i=0;i<medicamentos.length;i++) cats[medicamentos[i].categoria||'Sin categoría']=true;
+  var sel = document.getElementById('rp-cat');
+  var curCat = sel.value;
+  sel.innerHTML = '<option value="">Todas las categorías</option>';
+  Object.keys(cats).sort().forEach(function(c){
+    sel.innerHTML += '<option value="'+c+'"'+(c===curCat?' selected':'')+'>'+c+'</option>';
+  });
+  sel.value = curCat;
+
+  // Filtrar
+  var src = medicamentos.filter(function(m){
+    var matchQ   = !q || m.nombre.toLowerCase().indexOf(q)>=0 || (m.categoria||'').toLowerCase().indexOf(q)>=0;
+    var matchCat = !catFil || (m.categoria||'')=== catFil;
+    return matchQ && matchCat;
+  });
+
+  // Enriquecer con stock total
+  src = src.map(function(m){
+    var stock=0;
+    var lotesList=[];
+    for(var j=0;j<lotes.length;j++){
+      if(String(lotes[j].med_id)===String(m.id)){
+        stock+=Number(lotes[j].existencias);
+        if(Number(lotes[j].existencias)>0) lotesList.push(lotes[j].lote+' ('+lotes[j].existencias+')');
+      }
+    }
+    var costo  = Number(m.costo)||0;
+    var precio = Number(m.precio)||0;
+    var margen = precio>0 ? ((precio-costo)/precio*100) : 0;
+    var utilidad = precio - costo;
+    return Object.assign({}, m, {_stock:stock, _lotes:lotesList, _margen:margen, _utilidad:utilidad});
+  });
+
+  // Ordenar
+  src.sort(function(a,b){
+    if(orden==='precio-desc') return Number(b.precio)-Number(a.precio);
+    if(orden==='precio-asc')  return Number(a.precio)-Number(b.precio);
+    if(orden==='margen-desc') return b._margen-a._margen;
+    if(orden==='stock-desc')  return b._stock-a._stock;
+    return a.nombre.localeCompare(b.nombre, 'es');
+  });
+
+  // Stats globales
+  var totalMeds  = src.length;
+  var sinStock   = src.filter(function(m){return m._stock===0;}).length;
+  var margenProm = src.length ? src.reduce(function(s,m){return s+m._margen;},0)/src.length : 0;
+  var valorInv   = src.reduce(function(s,m){return s+(Number(m.costo)||0)*m._stock;},0);
+  document.getElementById('rp-stats').innerHTML =
+    '<div class="reporte-header">' +
+    '<div class="stat-card"><div class="stat-label">Medicamentos</div><div class="stat-value">'+totalMeds+'</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Sin stock</div><div class="stat-value" style="color:'+(sinStock>0?'#fca5a5':'#6ee7b7')+'">'+sinStock+'</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Margen promedio</div><div class="stat-value">'+margenProm.toFixed(1)+'%</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Valor inventario</div><div class="stat-value" style="font-size:16px">$'+valorInv.toLocaleString("es-MX",{minimumFractionDigits:2})+'</div><div class="stat-sub">a precio costo</div></div>' +
+    '</div>';
+
+  // Encabezados dinámicos
+  var thead = '<tr><th style="width:35%">Medicamento</th><th>Categoría</th>';
+  if(showCosto)  thead += '<th style="text-align:right">Costo</th>';
+  if(showPrecio) thead += '<th style="text-align:right">Precio venta</th>';
+  if(showStock)  thead += '<th style="text-align:right">Existencias</th>';
+  if(showMargen) thead += '<th style="text-align:right">Margen</th><th style="text-align:right">Utilidad/pza</th>';
+  thead += '</tr>';
+  document.getElementById('rp-thead').innerHTML = thead;
+
+  // Filas
+  if(!src.length){
+    document.getElementById('rp-body').innerHTML='<tr><td colspan="8" class="es">Sin resultados</td></tr>';
+    window._rpData = [];
+    return;
+  }
+
+  var html='';
+  for(var i=0;i<src.length;i++){
+    var m = src[i];
+    var costo  = Number(m.costo)||0;
+    var precio = Number(m.precio)||0;
+    var margenColor = m._margen>=40?'#6ee7b7':m._margen>=20?'#fcd34d':'#fca5a5';
+    var stockColor  = m._stock>5?'#6ee7b7':m._stock>0?'#fcd34d':'#fca5a5';
+    var bg = i%2===0?'':'background:rgba(148,163,184,.03)';
+
+    // Alert si vende a pérdida
+    var perdida = costo>0 && precio>0 && precio<costo;
+
+    html+='<tr style="'+bg+(perdida?';outline:1px solid rgba(239,68,68,.3)':'')+'">';
+    html+='<td><div style="font-weight:500;font-size:13px">'+m.nombre+(perdida?' <span style="font-size:10px;background:rgba(239,68,68,.2);color:#fca5a5;padding:1px 6px;border-radius:99px">⚠ Pérdida</span>':'')+'</div>';
+    if(m.codigo_barras) html+='<div style="font-size:10px;color:var(--text-3);font-family:var(--mono)">CB: '+m.codigo_barras+'</div>';
+    html+='</td>';
+    html+='<td style="font-size:12px;color:var(--text-2)">'+( m.categoria||'—')+'</td>';
+    if(showCosto)  html+='<td style="text-align:right;font-family:var(--mono)">$'+costo.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td>';
+    if(showPrecio) html+='<td style="text-align:right;font-weight:700;font-family:var(--mono);color:#93c5fd">$'+precio.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td>';
+    if(showStock)  html+='<td style="text-align:right;font-weight:700;color:'+stockColor+'">'+m._stock+'<div style="font-size:10px;font-weight:400;color:var(--text-3)">'+(m._lotes.join(', ')||'—')+'</div></td>';
+    if(showMargen) {
+      html+='<td style="text-align:right;font-weight:700;color:'+margenColor+'">'+m._margen.toFixed(1)+'%</td>';
+      html+='<td style="text-align:right;font-family:var(--mono);color:'+(m._utilidad>=0?'#6ee7b7':'#fca5a5')+'">$'+m._utilidad.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td>';
+    }
+    html+='</tr>';
+  }
+  document.getElementById('rp-body').innerHTML = html;
+  window._rpData = src;
+}
+
+function exportarPreciosCSV() {
+  var src = window._rpData || [];
+  if(!src.length){alert('Sin datos para exportar');return;}
+  var lines=['Medicamento,Categoría,Costo,Precio Venta,Existencias,Margen %,Utilidad/pza'];
+  src.forEach(function(m){
+    var q=function(s){return '"'+(s||'').replace(/"/g,'')+ '"';};
+    lines.push([q(m.nombre),q(m.categoria),m.costo,m.precio,m._stock,m._margen.toFixed(2),m._utilidad.toFixed(2)].join(','));
+  });
+  var blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='Solmedix_Precios_'+new Date().toISOString().split('T')[0]+'.csv'; a.click();
+}
+
+function exportarPreciosPDF() {
+  var src = window._rpData || [];
+  if(!src.length){alert('Sin datos para exportar');return;}
+  var filas = src.map(function(m,i){
+    var bg=i%2===0?'#fff':'#f9f9f9';
+    var mc=m._margen>=40?'green':m._margen>=20?'#b8860b':'red';
+    var sc=m._stock>5?'green':m._stock>0?'#b8860b':'red';
+    return '<tr style="background:'+bg+'">'+
+      '<td>'+m.nombre+'</td>'+
+      '<td style="color:#777">'+m.categoria+'</td>'+
+      '<td style="text-align:right">$'+Number(m.costo).toLocaleString("es-MX",{minimumFractionDigits:2})+'</td>'+
+      '<td style="text-align:right;font-weight:bold">$'+Number(m.precio).toLocaleString("es-MX",{minimumFractionDigits:2})+'</td>'+
+      '<td style="text-align:right;color:'+sc+';font-weight:bold">'+m._stock+'</td>'+
+      '<td style="text-align:right;color:'+mc+';font-weight:bold">'+m._margen.toFixed(1)+'%</td>'+
+      '<td style="text-align:right">$'+m._utilidad.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td>'+
+      '</tr>';
+  }).join('');
+  var w=window.open('','_blank','width=1100,height=700');
+  w.document.write('<!DOCTYPE html><html><head><title>Precios Solmedix</title>'+
+    '<style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;font-size:10px}'+
+    'h1{font-size:15px;margin-bottom:4px}h2{font-size:10px;color:#555;margin-bottom:10px}'+
+    'table{width:100%;border-collapse:collapse}th{background:#185FA5;color:#fff;padding:5px 7px;font-size:9px;text-align:left}'+
+    'td{padding:4px 7px;border-bottom:1px solid #eee;font-size:9px}@media print{button{display:none}}</style>'+
+    '</head><body>');
+  w.document.write('<h1>Solmedix — Reporte de Precios y Costos</h1>');
+  w.document.write('<h2>'+src.length+' medicamentos | '+new Date().toLocaleDateString("es-MX")+'</h2>');
+  w.document.write('<table><thead><tr><th>Medicamento</th><th>Categoría</th>'+
+    '<th style="text-align:right">Costo</th><th style="text-align:right">Precio venta</th>'+
+    '<th style="text-align:right">Existencias</th><th style="text-align:right">Margen</th>'+
+    '<th style="text-align:right">Utilidad/pza</th></tr></thead><tbody>'+filas+'</tbody></table>');
+  w.document.write('</body></html>');
+  w.document.close(); setTimeout(function(){w.print();},600);
 }
 
 </script>
