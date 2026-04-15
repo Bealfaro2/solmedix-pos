@@ -2180,6 +2180,11 @@ function medAlrt(msg,tipo){var el=document.getElementById('med-alrt');el.classNa
 
 function renderClientesAdmin(lista){
   var src=lista||clientes;
+  // Filtrar por sucursal según perfil
+  if(!lista) {
+    if(perfilActual==='mty') src=src.filter(function(c){ return c.sucursal==='MTY'||!c.sucursal; });
+    if(perfilActual==='slp') src=src.filter(function(c){ return c.sucursal==='SLP'; });
+  }
   var cont=document.getElementById('lista-cli-admin');
   if(!src.length){cont.innerHTML='<div class="es">No hay clientes</div>';return;}
   var html='<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Nombre</th><th>Telefono</th><th>RFC</th><th>Correo</th><th></th></tr></thead><tbody>';
@@ -2219,7 +2224,7 @@ function guardarEdicionCliente(){
   if(!nombre){cliAlrt('El nombre es obligatorio','e');return;}
   var btn=document.getElementById('btn-guardar-cli');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
-  var datos={accion:'editar_cliente',id:id,nombre:nombre,telefono:document.getElementById('cli-tel').value.trim(),rfc:document.getElementById('cli-rfc').value.trim().toUpperCase(),correo:document.getElementById('cli-correo').value.trim()};
+  var datos={accion:'editar_cliente',id:id,nombre:nombre,telefono:document.getElementById('cli-tel').value.trim(),rfc:document.getElementById('cli-rfc').value.trim().toUpperCase(),correo:document.getElementById('cli-correo').value.trim(),sucursal:perfilActual==='slp'?'SLP':'MTY'};
   apiPost(datos,function(err){
     for(var i=0;i<clientes.length;i++){if(String(clientes[i].id)===String(id)){Object.assign(clientes[i],{nombre:datos.nombre,telefono:datos.telefono,rfc:datos.rfc,correo:datos.correo});break;}}
     renderClientesAdmin(); cerrarModalCliBtn();
