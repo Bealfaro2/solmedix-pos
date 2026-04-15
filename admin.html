@@ -1434,7 +1434,7 @@ function exportarPDF(){
     'h1{font-size:15px;margin-bottom:4px}h2{font-size:11px;font-weight:normal;color:#555;margin-bottom:10px}'+
     'table{width:100%;border-collapse:collapse}th{background:#185FA5;color:#fff;padding:6px 8px;text-align:left;font-size:9px}'+
     'td{padding:5px 8px;border-bottom:1px solid #eee;font-size:10px}'+
-    'tfoot td{background:#f0ede6;font-weight:bold;border-top:2px solid #185FA5}'+
+    'tfoot td{background:rgba(38,51,72,.8);font-weight:bold;border-top:2px solid #185FA5}'+
     '@media print{button{display:none}}</style></head><body>');
   w.document.write('<h1>Solmedix — Reporte de Ventas por Medicamento</h1>');
   w.document.write('<h2>Periodo: '+d.desde+' al '+d.hasta+' | Sucursal: '+suc+' | '+d.totalPiezas+' piezas totales</h2>');
@@ -1519,7 +1519,7 @@ function exportarInventarioPDF(){
   }).join('');
   var fecha=new Date().toLocaleDateString('es-MX');
   var w=window.open('','_blank','width=1000,height=700');
-  w.document.write('<!DOCTYPE html><html><head><title>Inventario Solmedix</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;font-size:10px;color:#000}h1{font-size:15px;margin-bottom:4px}h2{font-size:11px;font-weight:normal;color:#555;margin-bottom:10px}.resumen{display:flex;gap:16px;margin-bottom:12px}.res-card{background:#f5f5f5;padding:6px 12px;border-radius:4px;min-width:120px}.res-label{font-size:9px;color:#777}.res-value{font-size:13px;font-weight:bold}table{width:100%;border-collapse:collapse}th{background:#185FA5;color:#fff;padding:5px 7px;text-align:left;font-size:9px}td{padding:4px 7px;border-bottom:1px solid #eee;font-size:9px}tfoot td{background:#f0ede6;font-weight:bold;border-top:2px solid #185FA5}@media print{button{display:none}}</style></head><body>');
+  w.document.write('<!DOCTYPE html><html><head><title>Inventario Solmedix</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;font-size:10px;color:#000}h1{font-size:15px;margin-bottom:4px}h2{font-size:11px;font-weight:normal;color:#555;margin-bottom:10px}.resumen{display:flex;gap:16px;margin-bottom:12px}.res-card{background:rgba(38,51,72,.6);padding:6px 12px;border-radius:4px;min-width:120px}.res-label{font-size:9px;color:#777}.res-value{font-size:13px;font-weight:bold}table{width:100%;border-collapse:collapse}th{background:#185FA5;color:#fff;padding:5px 7px;text-align:left;font-size:9px}td{padding:4px 7px;border-bottom:1px solid #eee;font-size:9px}tfoot td{background:rgba(38,51,72,.8);font-weight:bold;border-top:2px solid #185FA5}@media print{button{display:none}}</style></head><body>');
   w.document.write('<h1>Solmedix — Reporte de Inventario</h1>');
   w.document.write('<h2>Generado el '+fecha+' | '+lotes.length+' lotes activos</h2>');
   w.document.write('<div class="resumen"><div class="res-card"><div class="res-label">Total piezas</div><div class="res-value">'+totalPiezas+'</div></div><div class="res-card"><div class="res-label">Valor inventario</div><div class="res-value">$'+totalValor.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div></div></div>');
@@ -1805,7 +1805,7 @@ function renderCompras(lista) {
     html+='<td style="text-align:right;font-weight:600">$'+imp.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
   }
   document.getElementById('compras-body').innerHTML = html;
-  document.getElementById('compras-foot').innerHTML = '<tr style="background:#f0ede6;font-weight:600"><td colspan="5">TOTALES</td><td style="text-align:right">'+totalPiezas+' pzas</td><td></td><td style="text-align:right">$'+totalImporte.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
+  document.getElementById('compras-foot').innerHTML = '<tr style="background:rgba(38,51,72,.8);font-weight:700;color:var(--text)"><td colspan="5">TOTALES</td><td style="text-align:right">'+totalPiezas+' pzas</td><td></td><td style="text-align:right">$'+totalImporte.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
 
   // Stats
   var provCount = {};
@@ -1880,7 +1880,7 @@ function buscarTrazabilidad() {
     }
     html += '</tbody></table></div></div>';
   } else if (comprasLote.length) {
-    html += '<div style="background:#f9f8f5;border-radius:8px;padding:10px 12px;font-size:13px;color:#888">Este lote aun no tiene ventas registradas.</div>';
+    html += '<div style="background:rgba(38,51,72,.4);border-radius:8px;padding:10px 12px;font-size:13px;color:#888">Este lote aun no tiene ventas registradas.</div>';
   }
 
   cont.innerHTML = html;
@@ -1914,7 +1914,7 @@ function exportarComprasPDF() {
     return '<tr style="background:'+bg+'"><td>'+fecha+'</td><td>'+c.proveedor+'</td><td style="font-family:monospace">'+c.folio+'</td><td>'+c.medicamento+'</td><td style="font-family:monospace">'+c.lote+'</td><td style="text-align:right">'+c.cantidad+'</td><td style="text-align:right">$'+Number(c.costo_unitario).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td><td style="text-align:right;font-weight:bold">$'+imp.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
   }).join('');
   var w = window.open('','_blank','width=1000,height=700');
-  w.document.write('<!DOCTYPE html><html><head><title>Compras Solmedix</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;font-size:10px}h1{font-size:15px;margin-bottom:4px}h2{font-size:11px;color:#555;margin-bottom:10px}table{width:100%;border-collapse:collapse}th{background:#185FA5;color:#fff;padding:5px 7px;text-align:left;font-size:9px}td{padding:4px 7px;border-bottom:1px solid #eee;font-size:9px}tfoot td{background:#f0ede6;font-weight:bold;border-top:2px solid #185FA5}@media print{button{display:none}}</style></head><body>');
+  w.document.write('<!DOCTYPE html><html><head><title>Compras Solmedix</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;font-size:10px}h1{font-size:15px;margin-bottom:4px}h2{font-size:11px;color:#555;margin-bottom:10px}table{width:100%;border-collapse:collapse}th{background:#185FA5;color:#fff;padding:5px 7px;text-align:left;font-size:9px}td{padding:4px 7px;border-bottom:1px solid #eee;font-size:9px}tfoot td{background:rgba(38,51,72,.8);font-weight:bold;border-top:2px solid #185FA5}@media print{button{display:none}}</style></head><body>');
   w.document.write('<h1>Solmedix — Reporte de Compras</h1><h2>'+src.length+' registros | Total: $'+totalImporte.toLocaleString('es-MX',{minimumFractionDigits:2})+'</h2>');
   w.document.write('<table><thead><tr><th>Fecha</th><th>Proveedor</th><th>Folio</th><th>Medicamento</th><th>Lote</th><th style="text-align:right">Cant.</th><th style="text-align:right">Costo unit.</th><th style="text-align:right">Importe</th></tr></thead><tbody>'+filas+'</tbody><tfoot><tr><td colspan="7">TOTAL</td><td style="text-align:right">$'+totalImporte.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr></tfoot></table>');
   w.document.write('</body></html>');
@@ -1999,7 +1999,7 @@ function renderMeds(lista){
     var satClave=m.clave_sat||m['Clave SAT']||'';
     var satUnidad=m.clave_unidad||m['Clave Unidad']||'';
     var satTipo=m.tipo||m.Tipo||'';
-    if(satClave||satUnidad){html+='<div style="margin-top:6px;padding:5px 7px;background:#f0f6ff;border-radius:6px;font-size:10px;color:#185FA5;font-family:monospace">🧾 '+(satClave?'SAT:'+satClave+' ':' ')+(satUnidad?'Unidad:'+satUnidad+' ':' ')+(satTipo?'Tipo:'+satTipo:'')+'</div>';}
+    if(satClave||satUnidad){html+='<div style="margin-top:6px;padding:5px 7px;background:rgba(24,95,165,.15);border-radius:6px;font-size:10px;color:#185FA5;font-family:monospace">🧾 '+(satClave?'SAT:'+satClave+' ':' ')+(satUnidad?'Unidad:'+satUnidad+' ':' ')+(satTipo?'Tipo:'+satTipo:'')+'</div>';}
     html+='<div class="med-actions"><button class="btn btns btno" onclick="editarMed(\''+m.id+'\')" >Editar</button></div></div>';
   }
   grid.innerHTML=html;
@@ -2120,7 +2120,7 @@ function renderVentasAdmin(lista){
   for(var i=0;i<src.length;i++){
     var v=src[i];
     var cancelada=v.estado==='cancelada';
-    html+='<tr style="'+(cancelada?'background:#fef2f2;color:#aaa':'')+'"><td><strong>#'+String(v.id).padStart(4,'0')+'</strong></td><td>'+ff(v.fecha)+'</td><td>'+v.cliente+'</td>';
+    html+='<tr style="'+(cancelada?'background:rgba(239,68,68,.08);color:#aaa':'')+'"><td><strong>#'+String(v.id).padStart(4,'0')+'</strong></td><td>'+ff(v.fecha)+'</td><td>'+v.cliente+'</td>';
     html+='<td><strong>$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</strong></td>';
     html+='<td><span class="'+(v.sucursal==='MTY'?'chip-mty':'chip-slp')+'">'+(v.sucursal||'—')+'</span></td>';
     html+='<td style="font-family:monospace;font-size:11px">'+v.clave+'</td>';
@@ -2524,7 +2524,7 @@ function renderGastosFiscales(src) {
     html+='</tr>';
   }
   tbody.innerHTML=html;
-  tfoot.innerHTML='<tr style="background:rgba(38,51,72,.8);font-weight:700"><td colspan="3">TOTALES ('+src.length+' facturas)</td><td style="text-align:right">$'+(totalGF-totalIVA).toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td style="text-align:right;color:var(--text-3)">$'+totalIVA.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td style="text-align:right">$'+totalGF.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td colspan="4"></td></tr>';
+  tfoot.innerHTML='<tr style="background:rgba(38,51,72,.8);font-weight:700;color:var(--text)"><td colspan="3">TOTALES ('+src.length+' facturas)</td><td style="text-align:right">$'+(totalGF-totalIVA).toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td style="text-align:right;color:var(--text-3)">$'+totalIVA.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td style="text-align:right">$'+totalGF.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td colspan="4"></td></tr>';
   document.getElementById('gf-stats').innerHTML='<div class="reporte-header"><div class="stat-card"><div class="stat-label">Facturas</div><div class="stat-value">'+src.length+'</div></div><div class="stat-card"><div class="stat-label">Total gastos</div><div class="stat-value" style="font-size:18px">$'+totalGF.toLocaleString("es-MX",{minimumFractionDigits:2})+'</div></div><div class="stat-card"><div class="stat-label">IVA acreditable</div><div class="stat-value" style="font-size:18px">$'+totalIVA.toLocaleString("es-MX",{minimumFractionDigits:2})+'</div></div><div class="stat-card"><div class="stat-label">Neto deducible</div><div class="stat-value" style="font-size:18px">$'+(totalGF-totalIVA).toLocaleString("es-MX",{minimumFractionDigits:2})+'</div></div></div>';
   window._gfData = src;
 }
@@ -2563,7 +2563,7 @@ function exportarGastosFiscalesPDF() {
     return '<tr style="background:'+bg+'"><td>'+g.fecha+'</td><td>'+g.proveedor+'</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+g.concepto+'</td><td style="text-align:right">$'+g.subtotal.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td style="text-align:right">$'+g.iva.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td style="text-align:right;font-weight:bold">$'+g.total.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td>'+g.metodo_pago+'</td><td>'+g.sucursal+'</td></tr>';
   }).join('');
   var w=window.open('','_blank','width=1000,height=700');
-  w.document.write('<!DOCTYPE html><html><head><title>Gastos Fiscales Solmedix</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;font-size:10px}h1{font-size:14px;margin-bottom:4px}h2{font-size:10px;color:#555;margin-bottom:10px}table{width:100%;border-collapse:collapse}th{background:#185FA5;color:#fff;padding:5px 7px;font-size:9px;text-align:left}td{padding:4px 7px;border-bottom:1px solid #eee;font-size:9px}tfoot td{background:#f0ede6;font-weight:bold;border-top:2px solid #185FA5}@media print{button{display:none}}</style></head><body>');
+  w.document.write('<!DOCTYPE html><html><head><title>Gastos Fiscales Solmedix</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;font-size:10px}h1{font-size:14px;margin-bottom:4px}h2{font-size:10px;color:#555;margin-bottom:10px}table{width:100%;border-collapse:collapse}th{background:#185FA5;color:#fff;padding:5px 7px;font-size:9px;text-align:left}td{padding:4px 7px;border-bottom:1px solid #eee;font-size:9px}tfoot td{background:rgba(38,51,72,.8);font-weight:bold;border-top:2px solid #185FA5}@media print{button{display:none}}</style></head><body>');
   w.document.write('<h1>Solmedix — Gastos Fiscales</h1><h2>'+src.length+' facturas | Total: $'+totalGF.toLocaleString("es-MX",{minimumFractionDigits:2})+' | IVA: $'+totalIVA.toLocaleString("es-MX",{minimumFractionDigits:2})+'</h2>');
   w.document.write('<table><thead><tr><th>Fecha</th><th>Proveedor</th><th>Concepto</th><th style="text-align:right">Subtotal</th><th style="text-align:right">IVA</th><th style="text-align:right">Total</th><th>Método</th><th>Suc.</th></tr></thead><tbody>'+filas+'</tbody><tfoot><tr><td colspan="3">TOTALES</td><td style="text-align:right">$'+(totalGF-totalIVA).toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td style="text-align:right">$'+totalIVA.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td style="text-align:right">$'+totalGF.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td colspan="2"></td></tr></tfoot></table>');
   w.document.write('</body></html>'); w.document.close(); setTimeout(function(){w.print();},600);
@@ -2639,7 +2639,7 @@ function renderGastosNF(src) {
     html+='</tr>';
   }
   tbody.innerHTML=html;
-  tfoot.innerHTML='<tr style="background:rgba(38,51,72,.8);font-weight:700"><td colspan="2">TOTAL ('+src.length+' registros)</td><td style="text-align:right">$'+total.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td colspan="2"></td></tr>';
+  tfoot.innerHTML='<tr style="background:rgba(38,51,72,.8);font-weight:700;color:var(--text)"><td colspan="2">TOTAL ('+src.length+' registros)</td><td style="text-align:right">$'+total.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td colspan="2"></td></tr>';
   document.getElementById('gnf-stats').innerHTML='<div class="reporte-header"><div class="stat-card"><div class="stat-label">Registros</div><div class="stat-value">'+src.length+'</div></div><div class="stat-card"><div class="stat-label">Total no fiscal</div><div class="stat-value" style="font-size:18px">$'+total.toLocaleString("es-MX",{minimumFractionDigits:2})+'</div></div></div>';
   window._gnfData=src;
 }
@@ -2683,7 +2683,7 @@ function exportarGastosNFPDF(){
     return '<tr style="background:'+bg+'"><td>'+g.fecha+'</td><td>'+g.concepto+'</td><td style="text-align:right;font-weight:bold">$'+Number(g.monto).toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td>'+g.sucursal+'</td></tr>';
   }).join('');
   var w=window.open('','_blank','width=700,height=600');
-  w.document.write('<!DOCTYPE html><html><head><title>Gastos No Fiscales</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:10px}h1{font-size:14px;margin-bottom:4px}table{width:100%;border-collapse:collapse}th{background:#185FA5;color:#fff;padding:5px 7px;font-size:9px;text-align:left}td{padding:4px 7px;border-bottom:1px solid #eee;font-size:9px}tfoot td{background:#f0ede6;font-weight:bold}@media print{button{display:none}}</style></head><body>');
+  w.document.write('<!DOCTYPE html><html><head><title>Gastos No Fiscales</title><style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:10px}h1{font-size:14px;margin-bottom:4px}table{width:100%;border-collapse:collapse}th{background:#185FA5;color:#fff;padding:5px 7px;font-size:9px;text-align:left}td{padding:4px 7px;border-bottom:1px solid #eee;font-size:9px}tfoot td{background:rgba(38,51,72,.8);font-weight:bold}@media print{button{display:none}}</style></head><body>');
   w.document.write('<h1>Solmedix — Gastos No Fiscales</h1>');
   w.document.write('<table><thead><tr><th>Fecha</th><th>Concepto</th><th style="text-align:right">Monto</th><th>Suc.</th></tr></thead><tbody>'+filas+'</tbody><tfoot><tr><td colspan="2">TOTAL</td><td style="text-align:right">$'+total.toLocaleString("es-MX",{minimumFractionDigits:2})+'</td><td></td></tr></tfoot></table>');
   w.document.write('</body></html>'); w.document.close(); setTimeout(function(){w.print();},600);
@@ -2823,7 +2823,7 @@ function exportarUtilidadPDF(){
   var fmt=function(n){return '$'+Math.abs(n).toLocaleString('es-MX',{minimumFractionDigits:2});};
   var sign=function(n){return n>=0?'+':'-';};
   var w=window.open('','_blank','width=700,height=600');
-  w.document.write('<!DOCTYPE html><html><head><title>Utilidad Operativa Solmedix</title><style>@page{size:A4;margin:15mm}body{font-family:Arial,sans-serif;font-size:11px}h1{font-size:16px;margin-bottom:4px}h2{font-size:11px;color:#555;margin-bottom:16px}.row{display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #eee}.row.total{background:#f0f9ff;font-weight:bold;font-size:13px}.row.final{background:#185FA5;color:#fff;font-weight:bold;font-size:14px}@media print{button{display:none}}</style></head><body>');
+  w.document.write('<!DOCTYPE html><html><head><title>Utilidad Operativa Solmedix</title><style>@page{size:A4;margin:15mm}body{font-family:Arial,sans-serif;font-size:11px}h1{font-size:16px;margin-bottom:4px}h2{font-size:11px;color:#555;margin-bottom:16px}.row{display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #eee}.row.total{background:rgba(16,185,129,.08);font-weight:bold;font-size:13px}.row.final{background:#185FA5;color:#fff;font-weight:bold;font-size:14px}@media print{button{display:none}}</style></head><body>');
   w.document.write('<h1>Solmedix — Estado de Utilidad Operativa</h1>');
   w.document.write('<h2>Periodo: '+d.desde+' al '+d.hasta+(d.suc?' | Sucursal: '+d.suc:' | Todas las sucursales')+'</h2>');
   w.document.write('<div class="row"><span>(+) Ventas brutas</span><span>'+fmt(d.totalVentas)+'</span></div>');
