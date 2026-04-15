@@ -1134,10 +1134,16 @@ function copiar(){
 /* HISTORIAL */
 function renderHist(){
   var cont=document.getElementById('lista');
-  if(!ventas.length){cont.innerHTML='<div class="es">Sin ventas registradas</div>';return;}
+  // Filtrar por sucursal del perfil activo
+  var srcV=ventas.filter(function(v){
+    if(sucursal==='MTY') return v.sucursal==='MTY'||!v.sucursal;
+    if(sucursal==='SLP') return v.sucursal==='SLP';
+    return true;
+  });
+  if(!srcV.length){cont.innerHTML='<div class="es">Sin ventas registradas</div>';return;}
   var rows='';
-  for(var i=0;i<Math.min(ventas.length,25);i++){
-    var v=ventas[i];
+  for(var i=0;i<Math.min(srcV.length,25);i++){
+    var v=srcV[i];
     var cancelada=(v.estado==='cancelada');
     var bg=cancelada?'background:#fef2f2;border:1px solid #fecaca':'border:1px solid #ede9e0';
     var td=cancelada?'text-decoration:line-through;color:#aaa':'';
@@ -1174,9 +1180,14 @@ function buscar(){
   var q=document.getElementById('bq').value.trim().toLowerCase();
   var cont=document.getElementById('bres');
   if(q.length<2){cont.innerHTML='<div class="es">Ingresa al menos 2 caracteres</div>';return;}
+  var srcB=ventas.filter(function(v){
+    if(sucursal==='MTY') return v.sucursal==='MTY'||!v.sucursal;
+    if(sucursal==='SLP') return v.sucursal==='SLP';
+    return true;
+  });
   var html='',found=false;
-  for(var i=0;i<ventas.length;i++){
-    var v=ventas[i];
+  for(var i=0;i<srcB.length;i++){
+    var v=srcB[i];
     if(v.cliente.toLowerCase().indexOf(q)>=0||v.clave.toLowerCase().indexOf(q)>=0||String(v.id).indexOf(q)>=0){
       found=true;
       html+='<div class="sc" onclick="ver(\''+v.id+'\')">';
@@ -1305,12 +1316,19 @@ function buscarPrecio(){
     var m=src[i];
     var exTotal=0;
     for(var j=0;j<lotes.length;j++){
-      if(String(lotes[j].med_id)===String(m.id))exTotal+=Number(lotes[j].existencias);
+      if(String(lotes[j].med_id)===String(m.id)){
+        // Solo sumar existencias del lote de la sucursal activa
+        var ls=lotes[j].sucursal||'';
+        var match=(sucursal==='MTY'&&(ls==='MTY'||ls===''))||
+                  (sucursal==='SLP'&&ls==='SLP')||
+                  (!sucursal);
+        if(match) exTotal+=Number(lotes[j].existencias);
+      }
     }
     var exColor=exTotal>5?'#166534':exTotal>0?'#d97706':'#c00';
     var exTxt=exTotal>0?exTotal+' pzas':'Sin stock';
-    var bg=i%2===0?'#fff':'#fafaf8';
-    html+='<tr style="background:'+bg+';border-bottom:1px solid #f5f5f5">';
+    var bg=i%2===0?'':'background:rgba(255,255,255,.03)';
+    html+='<tr style="'+bg+';border-bottom:1px solid rgba(255,255,255,.07)">';
     html+='<td style="padding:7px 8px;font-weight:500">'+m.nombre+'</td>';
     html+='<td style="padding:7px 8px;color:#777;font-size:12px">'+m.categoria+'</td>';
     html+='<td style="padding:7px 8px;text-align:right;font-weight:600;color:#185FA5">$'+Number(m.precio).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
