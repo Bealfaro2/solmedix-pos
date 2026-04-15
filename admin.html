@@ -290,6 +290,63 @@ select option { background:var(--bg-2); color:var(--text); }
   filter: brightness(0.95);
   background: transparent;
 }
+
+/* ── Firma agencia ── */
+.agencia-firma {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 0; right: 0;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+}
+.agencia-firma .agencia-nombre {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #2b7fd4, #60a5fa, #2b7fd4);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+.agencia-firma .agencia-sub {
+  font-size: 9px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+@keyframes shimmer { to { background-position: 200% center; } }
+
+/* ── Firma agencia ── */
+.agencia-firma {
+  text-align: center;
+  margin-top: 2rem;
+  pointer-events: none;
+}
+.agencia-firma .agencia-nombre {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #2b7fd4, #60a5fa, #2b7fd4);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+.agencia-firma .agencia-sub {
+  font-size: 9px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: rgba(148,163,184,.5);
+  margin-top: 3px;
+}
+@keyframes shimmer { to { background-position: 200% center; } }
 </style>
 </head>
 <body>
@@ -317,6 +374,10 @@ select option { background:var(--bg-2); color:var(--text); }
         style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-2);padding:2px">👁</button>
     </div>
     <button class="btn btnp" style="width:100%;margin-top:10px;padding:12px;font-size:15px" onclick="login()">Entrar</button>
+        <div class="agencia-firma">
+          <div class="agencia-nombre">Siete Yo Cho</div>
+          <div class="agencia-sub">Agencia de Estrategias de Negocios</div>
+        </div>
   </div>
 </div>
 
@@ -1101,6 +1162,7 @@ function login() {
   // Show/hide features based on perfil
   aplicarPermisos();
   mostrarTabsSegunPerfil();
+  navTab('reporte');
   cargarTodo();
 }
 
@@ -1124,13 +1186,15 @@ function actualizarDatos() {
   setSyncStatus('load','Actualizando...');
   var total=7, listo=0;
   function done(){ listo++; if(listo>=total){ setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); if(document.getElementById('sec-compras').style.display==='block') renderCompras(); if(document.getElementById('sec-inv').style.display==='block') renderInventario(); } }
-  apiGet('clientes',     function(e,d){ clientes=(d&&d.clientes)||[]; done(); });
-  apiGet('ventas',       function(e,d){ ventas=((d&&d.ventas)||[]).reverse(); done(); });
-  apiGet('medicamentos', function(e,d){ medicamentos=(d&&d.medicamentos)||[]; done(); });
-  apiGet('lotes',        function(e,d){ lotes=(d&&d.lotes)||[]; done(); });
-  apiGet('compras',      function(e,d){ compras=(d&&d.compras)||[]; done(); });
-  apiGet('gastos_fiscales',   function(e,d){ gastosFiscales=(d&&d.gastos_fiscales)||[]; done(); });
-  apiGet('gastos_no_fiscales',function(e,d){ gastosNF=(d&&d.gastos_no_fiscales)||[]; done(); });
+  apiGet('get_all', function(e,d){
+    if(!e && d){
+      clientes=(d.clientes)||[]; ventas=((d.ventas)||[]).reverse();
+      medicamentos=(d.medicamentos)||[]; lotes=(d.lotes)||[];
+      compras=(d.compras)||[]; gastosFiscales=(d.gastos_fiscales)||[];
+      gastosNF=(d.gastos_no_fiscales)||[];
+    }
+    listo=total; done();
+  });
 }
 
 function cerrarSesion() {
@@ -1175,13 +1239,29 @@ function cargarTodo() {
   var total=7, listo=0;
   function check(){ listo++; if(listo>=total){ setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); inicializarFechas(); inicializarFechasCompras(); renderReportePrecios(); } }
   setTimeout(function(){ if(listo < total){ listo=total; setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); inicializarFechas(); inicializarFechasCompras(); renderReportePrecios(); }}, 6000);
-  apiGet('clientes',     function(e,d){ clientes=(d&&d.clientes)||[]; check(); });
-  apiGet('ventas',       function(e,d){ ventas=((d&&d.ventas)||[]).reverse(); check(); });
-  apiGet('medicamentos', function(e,d){ medicamentos=(d&&d.medicamentos)||[]; check(); });
-  apiGet('lotes',        function(e,d){ lotes=(d&&d.lotes)||[]; check(); });
-  apiGet('compras',      function(e,d){ compras=(d&&d.compras)||[]; check(); });
-  apiGet('gastos_fiscales',   function(e,d){ gastosFiscales=(d&&d.gastos_fiscales)||[]; check(); });
-  apiGet('gastos_no_fiscales',function(e,d){ gastosNF=(d&&d.gastos_no_fiscales)||[]; check(); });
+  // Carga todo en una sola petición para máxima velocidad
+  apiGet('get_all', function(e,d){
+    if(!e && d){
+      clientes     = (d.clientes)||[];
+      ventas       = ((d.ventas)||[]).reverse();
+      medicamentos = (d.medicamentos)||[];
+      lotes        = (d.lotes)||[];
+      compras      = (d.compras)||[];
+      gastosFiscales = (d.gastos_fiscales)||[];
+      gastosNF       = (d.gastos_no_fiscales)||[];
+    }
+    // Fallback individual si get_all no disponible
+    else {
+      apiGet('clientes',     function(e2,d2){ clientes=(d2&&d2.clientes)||[]; });
+      apiGet('ventas',       function(e2,d2){ ventas=((d2&&d2.ventas)||[]).reverse(); });
+      apiGet('medicamentos', function(e2,d2){ medicamentos=(d2&&d2.medicamentos)||[]; });
+      apiGet('lotes',        function(e2,d2){ lotes=(d2&&d2.lotes)||[]; });
+      apiGet('compras',      function(e2,d2){ compras=(d2&&d2.compras)||[]; });
+      apiGet('gastos_fiscales',   function(e2,d2){ gastosFiscales=(d2&&d2.gastos_fiscales)||[]; });
+      apiGet('gastos_no_fiscales',function(e2,d2){ gastosNF=(d2&&d2.gastos_no_fiscales)||[]; });
+    }
+    listo=total; check();
+  });
 }
 
 function setSyncStatus(t,m){ var el=document.getElementById('sync-status'); el.className='sync sync-'+(t==='ok'?'ok':t==='err'?'err':'load'); el.textContent=m; }
