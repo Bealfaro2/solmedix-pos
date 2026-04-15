@@ -1224,10 +1224,16 @@ document.addEventListener('click',function(e){
 
 function renderListaClientes(){
   var cont=document.getElementById('lista-clientes');
-  if(!clientes.length){cont.innerHTML='<div class="es">No hay clientes registrados</div>';return;}
+  var srcCli=clientes.filter(function(c){
+    var s=typeof c==='string'?'':c.sucursal||'';
+    if(sucursal==='MTY') return s==='MTY'||s==='';
+    if(sucursal==='SLP') return s==='SLP';
+    return true;
+  });
+  if(!srcCli.length){cont.innerHTML='<div class="es">No hay clientes registrados</div>';return;}
   var html='';
-  for(var i=0;i<clientes.length;i++){
-    var c=typeof clientes[i]==='string'?{nombre:clientes[i]}:clientes[i];
+  for(var i=0;i<srcCli.length;i++){
+    var c=typeof srcCli[i]==='string'?{nombre:srcCli[i]}:srcCli[i];
     html+='<div class="sc" style="cursor:default"><div style="flex:1;min-width:0"><div style="font-weight:500;font-size:13px">'+c.nombre+'</div>';
     if(c.telefono)html+='<div class="sm">'+c.telefono+'</div>';
     if(c.rfc)html+='<div class="sm">RFC: '+c.rfc+'</div>';
@@ -1238,9 +1244,15 @@ function renderListaClientes(){
 function filtrarClientes(){
   var q=document.getElementById('bqc').value.trim().toLowerCase();
   var cont=document.getElementById('lista-clientes');
+  var srcCli=clientes.filter(function(c){
+    var s=typeof c==='string'?'':c.sucursal||'';
+    if(sucursal==='MTY') return s==='MTY'||s==='';
+    if(sucursal==='SLP') return s==='SLP';
+    return true;
+  });
   var html='',found=false;
-  for(var i=0;i<clientes.length;i++){
-    var c=typeof clientes[i]==='string'?{nombre:clientes[i]}:clientes[i];
+  for(var i=0;i<srcCli.length;i++){
+    var c=typeof srcCli[i]==='string'?{nombre:srcCli[i]}:srcCli[i];
     if(q.length<2||c.nombre.toLowerCase().indexOf(q)>=0){
       found=true;
       html+='<div class="sc" style="cursor:pointer" onmousedown="acPick(\''+c.nombre.replace(/'/g,"\\'")+'\');tab(\'h\')"><div><div style="font-weight:500">'+c.nombre+'</div>'+(c.telefono?'<div class="sm">'+c.telefono+'</div>':'')+'</div></div>';
@@ -1259,7 +1271,7 @@ function guardarCliente(){
   if(!nombre){malrt('El nombre es obligatorio','e');return;}
   var btn=document.getElementById('btn-gc');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
-  apiPost({accion:'guardar_cliente',nombre:nombre,telefono:document.getElementById('m-tel').value.trim(),rfc:document.getElementById('m-rfc').value.trim().toUpperCase(),correo:document.getElementById('m-correo').value.trim()},function(err){
+  apiPost({accion:'guardar_cliente',nombre:nombre,telefono:document.getElementById('m-tel').value.trim(),rfc:document.getElementById('m-rfc').value.trim().toUpperCase(),correo:document.getElementById('m-correo').value.trim(),sucursal:sucursal},function(err){
     clientes.push({nombre:nombre,telefono:document.getElementById('m-tel').value.trim()});
     renderListaClientes();
     document.getElementById('cli').value=nombre;
