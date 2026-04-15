@@ -709,11 +709,14 @@ select option { background:var(--bg-2); color:var(--text); }
         <div style="overflow-x:auto">
           <table class="tbl">
             <thead><tr>
-              <th>Fecha</th><th>Proveedor</th><th>Folio</th>
-              <th>Medicamento</th><th>Lote</th>
-              <th style="text-align:right">Cant.</th>
+              <th onclick="sortCompras('fecha')" style="cursor:pointer;user-select:none" id="cth-fecha">Fecha <span id="cth-fecha-icon">↓</span></th>
+              <th onclick="sortCompras('proveedor')" style="cursor:pointer;user-select:none" id="cth-proveedor">Proveedor <span id="cth-proveedor-icon"></span></th>
+              <th>Folio</th>
+              <th onclick="sortCompras('medicamento')" style="cursor:pointer;user-select:none" id="cth-medicamento">Medicamento <span id="cth-medicamento-icon"></span></th>
+              <th>Lote</th>
+              <th style="text-align:right" onclick="sortCompras('cantidad')" style="cursor:pointer;user-select:none">Cant. <span id="cth-cantidad-icon"></span></th>
               <th style="text-align:right">Costo unit.</th>
-              <th style="text-align:right">Importe</th>
+              <th style="text-align:right" onclick="sortCompras('importe')" style="cursor:pointer;user-select:none">Importe <span id="cth-importe-icon"></span></th>
               <th></th>
             </tr></thead>
             <tbody id="compras-body"></tbody>
@@ -1880,12 +1883,14 @@ function entradaAlrt(msg, tipo) {
    REPORTE DE COMPRAS Y TRAZABILIDAD
 ═══════════════════════════════════════════════ */
 function renderCompras(lista) {
-  var src = lista || compras;
+  var src = (lista || compras).slice();
   // Filtrar por sucursal según perfil
   if(!lista) {
     if(perfilActual==='mty') src=src.filter(function(c){ return c.sucursal==='MTY'||!c.sucursal; });
     if(perfilActual==='slp') src=src.filter(function(c){ return c.sucursal==='SLP'; });
   }
+  // Aplicar orden activo
+  if(!lista) aplicarOrdenCompras(src);
   // Populate proveedor filter
   var provs = {};
   for (var i=0;i<compras.length;i++) provs[compras[i].proveedor] = true;
@@ -3552,6 +3557,60 @@ function aplicarCargaXlsx() {
   }
 
   siguiente(0);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ORDENAMIENTO DE TABLA COMPRAS
+═══════════════════════════════════════════════════════════ */
+var _comprasSort = { col: 'fecha', dir: -1 }; // -1 = desc (más reciente primero)
+
+function sortCompras(col) {
+  if (_comprasSort.col === col) {
+    _comprasSort.dir *= -1; // Toggle dirección
+  } else {
+    _comprasSort.col = col;
+    _comprasSort.dir = col === 'fecha' ? -1 : 1; // Fecha: desc por defecto, resto: asc
+  }
+  // Actualizar iconos
+  var cols = ['fecha','proveedor','medicamento','cantidad','importe'];
+  cols.forEach(function(c) {
+    var el = document.getElementById('cth-'+c+'-icon');
+    if (!el) return;
+    if (c === _comprasSort.col) {
+      el.textContent = _comprasSort.dir === 1 ? ' ↑' : ' ↓';
+      el.style.color = 'var(--blue-bright)';
+    } else {
+      el.textContent = '';
+      el.style.color = '';
+    }
+  });
+  // Re-renderizar con orden aplicado
+  var src = (window._comprasData || compras).slice();
+  aplicarOrdenCompras(src);
+  renderCompras(src);
+}
+
+function aplicarOrdenCompras(src) {
+  var col = _comprasSort.col, dir = _comprasSort.dir;
+  src.sort(function(a, b) {
+    var va, vb;
+    if (col === 'fecha') {
+      va = String(a.fecha).split('T')[0];
+      vb = String(b.fecha).split('T')[0];
+      return va < vb ? -dir : va > vb ? dir : 0;
+    }
+    if (col === 'proveedor' || col === 'medicamento') {
+      va = String(a[col]||'').toLowerCase();
+      vb = String(b[col]||'').toLowerCase();
+      return va.localeCompare(vb, 'es') * dir;
+    }
+    if (col === 'cantidad' || col === 'importe') {
+      va = Number(a[col]||0);
+      vb = Number(b[col]||0);
+      return (va - vb) * dir;
+    }
+    return 0;
+  });
 }
 
 </script>
