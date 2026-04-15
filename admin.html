@@ -2714,7 +2714,7 @@ function renderReportePrecios() {
     if(orden==='precio-asc')  return Number(a.precio)-Number(b.precio);
     if(orden==='margen-desc') return b._margen-a._margen;
     if(orden==='stock-desc')  return b._stock-a._stock;
-    return a.nombre.localeCompare(b.nombre, 'es');
+    return a.nombre.localeCompare(b.nombre);
   });
 
   // Stats globales
