@@ -452,8 +452,8 @@ select option { background:var(--bg-2); color:var(--text); }
           <div style="overflow-x:auto">
             <table class="tbl">
               <thead><tr>
-                <th>Folio</th><th>Fecha</th><th>Cliente</th>
-                <th>Medicamentos</th><th>Total</th><th>Pago</th><th>Suc.</th>
+                <th>Medicamento</th><th style="text-align:right">Piezas</th>
+                <th>Participación</th><th style="text-align:right">Importe</th>
               </tr></thead>
               <tbody id="reporte-body"></tbody>
             </table>
@@ -1313,81 +1313,142 @@ function generarReporte(){
   if(perfilActual==='mty') suc='MTY';
   if(perfilActual==='slp') suc='SLP';
   if(!desde||!hasta){alert('Selecciona el rango de fechas');return;}
+
   var filtradas=ventas.filter(function(v){
     var f=String(v.fecha).split('T')[0]||v.fecha;
     var sucOk=!suc||v.sucursal===suc;
-    // Restrict by profile
     if(perfilActual==='mty') sucOk=sucOk&&(v.sucursal==='MTY'||!v.sucursal);
     if(perfilActual==='slp') sucOk=sucOk&&v.sucursal==='SLP';
-    return f>=desde&&f<=hasta&&sucOk;
+    return f>=desde&&f<=hasta&&sucOk&&v.estado!=='cancelada';
   });
+
   var resumen=document.getElementById('reporte-resumen'),vacio=document.getElementById('reporte-vacio');
   if(!filtradas.length){resumen.style.display='none';vacio.style.display='block';return;}
   vacio.style.display='none'; resumen.style.display='block';
-  var total=filtradas.reduce(function(s,v){return s+Number(v.total);},0);
-  var totalMTY=filtradas.filter(function(v){return v.sucursal==='MTY';}).reduce(function(s,v){return s+Number(v.total);},0);
-  var totalSLP=filtradas.filter(function(v){return v.sucursal==='SLP';}).reduce(function(s,v){return s+Number(v.total);},0);
-  var prom=total/filtradas.length;
-  var statsHtml='<div class="stat-card"><div class="stat-label">Total ventas</div><div class="stat-value">'+filtradas.length+'</div><div class="stat-sub">'+desde+' al '+hasta+'</div></div>';
-  statsHtml+='<div class="stat-card"><div class="stat-label">Ingresos totales</div><div class="stat-value">$'+total.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div></div>';
-  statsHtml+='<div class="stat-card"><div class="stat-label">Ticket promedio</div><div class="stat-value">$'+prom.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div></div>';
-  if(!suc){
-    statsHtml+='<div class="stat-card"><div class="stat-label">Monterrey</div><div class="stat-value">$'+totalMTY.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div><div class="stat-sub">'+filtradas.filter(function(v){return v.sucursal==='MTY';}).length+' ventas</div></div>';
-    statsHtml+='<div class="stat-card"><div class="stat-label">San Luis P.</div><div class="stat-value">$'+totalSLP.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div><div class="stat-sub">'+filtradas.filter(function(v){return v.sucursal==='SLP';}).length+' ventas</div></div>';
-  }
-  document.getElementById('reporte-stats').innerHTML=statsHtml;
-  var tbody='';
+
+  // ── Agrupar por medicamento ──
+  var mapa = {}; // nombre → {piezas, importe, categoria}
   for(var i=0;i<filtradas.length;i++){
     var v=filtradas[i];
-    var meds=(v.items||[]).map(function(it){return it.nombre;}).join(', ')||'—';
-    var pagos=[].concat.apply([],[(v.items||[]).map(function(it){return it.pago;})]).filter(function(x,i,a){return a.indexOf(x)===i;}).join(', ')||'—';
-    tbody+='<tr><td><strong>#'+String(v.id).padStart(4,'0')+'</strong></td><td>'+ff(v.fecha)+'</td><td>'+v.cliente+'</td>';
-    tbody+='<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+meds+'">'+meds+'</td>';
-    tbody+='<td><strong>$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</strong></td><td>'+pagos+'</td>';
-    tbody+='<td><span class="'+(v.sucursal==='MTY'?'chip-mty':'chip-slp')+'">'+(v.sucursal||'—')+'</span></td></tr>';
+    for(var j=0;j<(v.items||[]).length;j++){
+      var it=v.items[j];
+      var nom=it.nombre||'Sin nombre';
+      if(!mapa[nom]) mapa[nom]={piezas:0, importe:0};
+      mapa[nom].piezas  += Number(it.qty)||1;
+      mapa[nom].importe += Number(it.precio||0) * (Number(it.qty)||1);
+    }
   }
+
+  // Ordenar por piezas descendente
+  var filas = Object.keys(mapa).map(function(nom){
+    return {nom:nom, piezas:mapa[nom].piezas, importe:mapa[nom].importe};
+  }).sort(function(a,b){ return b.piezas - a.piezas; });
+
+  // ── Stats ──
+  var totalIngresos = filtradas.reduce(function(s,v){return s+Number(v.total);},0);
+  var totalPiezas   = filas.reduce(function(s,r){return s+r.piezas;},0);
+  var totalMTY = filtradas.filter(function(v){return v.sucursal==='MTY';}).reduce(function(s,v){return s+Number(v.total);},0);
+  var totalSLP = filtradas.filter(function(v){return v.sucursal==='SLP';}).reduce(function(s,v){return s+Number(v.total);},0);
+
+  var statsHtml='';
+  statsHtml+='<div class="stat-card"><div class="stat-label">Folios en periodo</div><div class="stat-value">'+filtradas.length+'</div><div class="stat-sub">'+desde+' al '+hasta+'</div></div>';
+  statsHtml+='<div class="stat-card"><div class="stat-label">Total piezas</div><div class="stat-value">'+totalPiezas+'</div></div>';
+  statsHtml+='<div class="stat-card"><div class="stat-label">Ingresos totales</div><div class="stat-value">$'+totalIngresos.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div></div>';
+  statsHtml+='<div class="stat-card"><div class="stat-label">Medicamentos distintos</div><div class="stat-value">'+filas.length+'</div></div>';
+  if(!suc){
+    statsHtml+='<div class="stat-card"><div class="stat-label">Monterrey</div><div class="stat-value">$'+totalMTY.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div></div>';
+    statsHtml+='<div class="stat-card"><div class="stat-label">San Luis P.</div><div class="stat-value">$'+totalSLP.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div></div>';
+  }
+  document.getElementById('reporte-stats').innerHTML=statsHtml;
+
+  // ── Tabla por medicamento ──
+  var tbody='';
+  for(var k=0;k<filas.length;k++){
+    var r=filas[k];
+    var pct = totalPiezas>0 ? (r.piezas/totalPiezas*100) : 0;
+    tbody+='<tr>';
+    tbody+='<td style="font-weight:600">'+r.nom+'</td>';
+    tbody+='<td style="text-align:right;font-weight:700;font-size:15px">'+r.piezas+'</td>';
+    tbody+='<td style="width:180px;padding:10px 12px">';
+    tbody+='<div style="background:rgba(43,127,212,.15);border-radius:4px;overflow:hidden;height:12px">';
+    tbody+='<div style="height:100%;width:'+pct.toFixed(1)+'%;background:var(--blue-bright);border-radius:4px"></div>';
+    tbody+='</div>';
+    tbody+='<div style="font-size:10px;color:var(--text-3);margin-top:2px">'+pct.toFixed(1)+'% del total</div>';
+    tbody+='</td>';
+    tbody+='<td style="text-align:right">$'+r.importe.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    tbody+='</tr>';
+  }
+  // Fila de totales
+  tbody+='<tr style="background:rgba(38,51,72,.8);font-weight:700">';
+  tbody+='<td>TOTAL</td>';
+  tbody+='<td style="text-align:right">'+totalPiezas+' pzas</td>';
+  tbody+='<td></td>';
+  tbody+='<td style="text-align:right">$'+totalIngresos.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+  tbody+='</tr>';
+
   document.getElementById('reporte-body').innerHTML=tbody;
-  window._reporteData=filtradas;
+  window._reporteData={filas:filas, desde:desde, hasta:hasta, suc:suc, totalPiezas:totalPiezas, totalIngresos:totalIngresos};
 }
 
 function exportarCSV(){
-  var data=window._reporteData||[];
-  if(!data.length)return;
-  var q=function(s){return s===null||s===undefined?'':String(s).split(',').join(' ').split('"').join(' ');};
-  var lines=['Folio,Fecha,Cliente,Medicamentos,Total,Forma de pago,Sucursal,Clave'];
-  for(var i=0;i<data.length;i++){
-    var v=data[i];
-    var meds=(v.items||[]).map(function(it){return it.nombre;}).join(' | ');
-    var pagos=(v.items||[]).map(function(it){return it.pago;}).filter(function(x,i,a){return a.indexOf(x)===i;}).join(' | ');
-    lines.push(String(v.id).padStart(4,'0')+','+ff(v.fecha)+','+q(v.cliente)+','+q(meds)+','+v.total+','+q(pagos)+','+(v.sucursal||'')+','+q(v.clave));
+  var d=window._reporteData||{};
+  var filas=d.filas||[];
+  if(!filas.length){alert('Genera el reporte primero');return;}
+  var q=function(s){return '"'+(String(s||'')).replace(/"/g,'')+'"';};
+  var lines=['Medicamento,Piezas,Importe,% del total'];
+  for(var i=0;i<filas.length;i++){
+    var r=filas[i];
+    var pct=d.totalPiezas>0?(r.piezas/d.totalPiezas*100):0;
+    lines.push(q(r.nom)+','+r.piezas+','+r.importe.toFixed(2)+','+pct.toFixed(1)+'%');
   }
-  var csv=lines.join('\n');
-  var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  lines.push('"TOTAL",'+d.totalPiezas+','+d.totalIngresos.toFixed(2)+',100%');
+  var blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8'});
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download='Solmedix_Reporte_'+document.getElementById('r-desde').value+'_'+document.getElementById('r-hasta').value+'.csv';
+  a.download='Solmedix_Reporte_'+d.desde+'_'+d.hasta+'.csv';
   a.click();
 }
 
-/* EXPORTAR PDF VENTAS */
 function exportarPDF(){
-  var data=window._reporteData||[];
-  if(!data.length){alert('Genera el reporte primero');return;}
-  var desde=document.getElementById('r-desde').value;
-  var hasta=document.getElementById('r-hasta').value;
-  var suc=document.getElementById('r-suc').value||'Todas las sucursales';
-  var total=data.reduce(function(s,v){return s+Number(v.total);},0);
-  var filas=data.map(function(v,i){
-    var meds=(v.items||[]).map(function(it){return it.nombre;}).join(', ')||'—';
+  var d=window._reporteData||{};
+  var filas=d.filas||[];
+  if(!filas.length){alert('Genera el reporte primero');return;}
+  var filaHtml=filas.map(function(r,i){
+    var pct=d.totalPiezas>0?(r.piezas/d.totalPiezas*100):0;
     var bg=i%2===0?'#fff':'#f9f9f9';
-    return '<tr style="background:'+bg+'"><td>#'+String(v.id).padStart(4,'0')+'</td><td>'+ff(v.fecha)+'</td><td>'+v.cliente+'</td><td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+meds+'</td><td style="text-align:right">$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td><td>'+(v.sucursal||'—')+'</td></tr>';
+    return '<tr style="background:'+bg+'">'+
+      '<td>'+r.nom+'</td>'+
+      '<td style="text-align:right;font-weight:bold">'+r.piezas+'</td>'+
+      '<td>'+
+        '<div style="background:#e8eef5;border-radius:3px;overflow:hidden;height:10px;width:120px">'+
+        '<div style="height:100%;width:'+pct.toFixed(1)+'%;background:#185FA5"></div></div>'+
+        '<span style="font-size:9px;color:#888">'+pct.toFixed(1)+'%</span>'+
+      '</td>'+
+      '<td style="text-align:right">$'+r.importe.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>'+
+    '</tr>';
   }).join('');
-  var w=window.open('','_blank','width=1000,height=700');
-  w.document.write('<!DOCTYPE html><html><head><title>Reporte Ventas Solmedix</title><style>@page{size:A4 landscape;margin:15mm}body{font-family:Arial,sans-serif;font-size:10px;color:#000}h1{font-size:15px;margin-bottom:4px}h2{font-size:11px;font-weight:normal;color:#555;margin-bottom:10px}table{width:100%;border-collapse:collapse}th{background:#185FA5;color:#fff;padding:6px 8px;text-align:left;font-size:9px}td{padding:4px 7px;border-bottom:1px solid #eee;font-size:9px}tr:nth-child(even) td{background:#f9f9f9}.total-row{text-align:right;font-weight:bold;font-size:11px;margin-top:10px;padding:8px}@media print{button{display:none}}</style></head><body>');
-  w.document.write('<h1>Solmedix — Reporte de Ventas</h1>');
-  w.document.write('<h2>Periodo: '+desde+' al '+hasta+' | Sucursal: '+suc+' | '+data.length+' ventas</h2>');
-  w.document.write('<table><thead><tr><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Medicamentos</th><th style="text-align:right">Total</th><th>Suc.</th></tr></thead><tbody>'+filas+'</tbody></table>');
-  w.document.write('<div class="total-row">Total del periodo: $'+total.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>');
+  var suc=d.suc||'Todas las sucursales';
+  var w=window.open('','_blank','width=800,height=700');
+  w.document.write('<!DOCTYPE html><html><head><title>Reporte Ventas Solmedix</title>'+
+    '<style>@page{size:A4;margin:15mm}body{font-family:Arial,sans-serif;font-size:10px;color:#000}'+
+    'h1{font-size:15px;margin-bottom:4px}h2{font-size:11px;font-weight:normal;color:#555;margin-bottom:10px}'+
+    'table{width:100%;border-collapse:collapse}th{background:#185FA5;color:#fff;padding:6px 8px;text-align:left;font-size:9px}'+
+    'td{padding:5px 8px;border-bottom:1px solid #eee;font-size:10px}'+
+    'tfoot td{background:#f0ede6;font-weight:bold;border-top:2px solid #185FA5}'+
+    '@media print{button{display:none}}</style></head><body>');
+  w.document.write('<h1>Solmedix — Reporte de Ventas por Medicamento</h1>');
+  w.document.write('<h2>Periodo: '+d.desde+' al '+d.hasta+' | Sucursal: '+suc+' | '+d.totalPiezas+' piezas totales</h2>');
+  w.document.write('<table><thead><tr>'+
+    '<th>Medicamento</th>'+
+    '<th style="text-align:right">Piezas vendidas</th>'+
+    '<th>Participación</th>'+
+    '<th style="text-align:right">Importe</th>'+
+    '</tr></thead><tbody>'+filaHtml+'</tbody>'+
+    '<tfoot><tr><td><strong>TOTAL</strong></td>'+
+    '<td style="text-align:right">'+d.totalPiezas+' pzas</td>'+
+    '<td>100%</td>'+
+    '<td style="text-align:right">$'+d.totalIngresos.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>'+
+    '</tr></tfoot></table>');
   w.document.write('</body></html>');
   w.document.close();
   setTimeout(function(){w.print();},600);
