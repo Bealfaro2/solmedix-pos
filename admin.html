@@ -346,7 +346,6 @@ select option { background:var(--bg-2); color:var(--text); }
     <button class="nav-tab"     id="nt-ventas"    onclick="navTab('ventas')">📋 Gestión Ventas</button>
     <button class="nav-tab"     id="nt-lotes"     onclick="navTab('lotes')">📦 Inventario</button>
     <button class="nav-tab"     id="nt-inv"       onclick="navTab('inv')">📈 Rep. Inventario</button>
-    <button class="nav-tab"     id="nt-entrada"   onclick="navTab('entrada')">📥 Entrada XML</button>
     <button class="nav-tab"     id="nt-compras"   onclick="navTab('compras')">🧾 Compras</button>
     <button class="nav-tab"     id="nt-gastos"    onclick="navTab('gastos')">💸 Gastos</button>
     <button class="nav-tab"     id="nt-utilidad"  onclick="navTab('utilidad')">📉 Utilidad</button>
@@ -486,9 +485,18 @@ select option { background:var(--bg-2); color:var(--text); }
       </div>
     </div>
 
-    <!-- ENTRADA XML -->
-    <div id="sec-entrada" style="display:none">
-      <div class="panel">
+    <!-- COMPRAS (unificado: Entrada XML + Reporte + Trazabilidad) -->
+    <div id="sec-compras" style="display:none">
+
+      <!-- Sub-tabs -->
+      <div style="display:flex;gap:4px;margin-bottom:18px">
+        <button class="nav-tab" id="ct-entrada" onclick="comprasTab('entrada')" style="border-radius:var(--radius-sm)">📥 Entrada XML</button>
+        <button class="nav-tab" id="ct-reporte" onclick="comprasTab('reporte')" style="border-radius:var(--radius-sm)">🧾 Reporte de Compras</button>
+      </div>
+
+      <!-- SUB-SECCIÓN: Entrada XML -->
+      <div id="sc-entrada">
+        <div class="panel">
         <div class="ptitle">Entrada de inventario por XML (CFDI)</div>
         <p style="font-size:13px;color:var(--text-2);margin-bottom:1.5rem;line-height:1.7">
           Sube el archivo XML de la factura de tu proveedor. El sistema leerá automáticamente
@@ -529,10 +537,9 @@ select option { background:var(--bg-2); color:var(--text); }
           <div id="entrada-alrt" style="display:none;margin-top:10px"></div>
         </div>
       </div>
-    </div>
-
-    <!-- COMPRAS -->
-    <div id="sec-compras" style="display:none">
+      <!-- SUB-SECCIÓN: Reporte + Trazabilidad -->
+      <div id="sc-reporte-compras" style="display:none">
+        <div id="sec-compras" style="display:none">
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
           <div class="ptitle" style="margin:0">Reporte de compras</div>
@@ -667,9 +674,9 @@ select option { background:var(--bg-2); color:var(--text); }
 
         <div id="pwd-alrt" style="display:none;margin-top:14px"></div>
       </div>
+      </div>
+
     </div>
-
-
     <!-- GASTOS -->
     <div id="sec-gastos" style="display:none">
 
@@ -1090,7 +1097,7 @@ function setSyncStatus(t,m){ var el=document.getElementById('sync-status'); el.c
 
 /* NAV */
 function navTab(t) {
-  ['reporte','meds','clientes','ventas','lotes','inv','entrada','compras','gastos','utilidad','pwds'].forEach(function(x){
+  ['reporte','meds','clientes','ventas','lotes','inv','compras','gastos','utilidad','pwds'].forEach(function(x){
     document.getElementById('sec-'+x).style.display=t===x?'block':'none';
     var tabEl=document.getElementById('nt-'+x);
     // Don't show pwds tab for non-admin
@@ -1100,7 +1107,7 @@ function navTab(t) {
   });
   if(t==='c') renderClientesAdmin();
   if(t==='inv') renderInventario();
-  if(t==='compras') renderCompras();
+  if(t==='compras'){ renderCompras(); comprasTab('entrada'); }
   if(t==='gastos'){ filtrarGastosFiscales(); filtrarGastosNF(); }
   if(t==='utilidad'){ inicializarFechasUtilidad(); }
 }
@@ -2556,6 +2563,16 @@ function cancelarGastoNFByIndex(idx) {
   if (!src || !src[idx]) return;
   var g = src[idx];
   cancelarGastoNF(null, g.fecha + '_' + encodeURIComponent(g.concepto));
+}
+
+/* Sub-tabs módulo Compras */
+function comprasTab(t) {
+  document.getElementById('sc-entrada').style.display        = t==='entrada' ? 'block' : 'none';
+  document.getElementById('sc-reporte-compras').style.display = t==='reporte' ? 'block' : 'none';
+  document.getElementById('ct-entrada').className = 'nav-tab'+(t==='entrada'?' on':'');
+  document.getElementById('ct-reporte').className = 'nav-tab'+(t==='reporte'?' on':'');
+  document.getElementById('ct-entrada').style.borderRadius = 'var(--radius-sm)';
+  document.getElementById('ct-reporte').style.borderRadius = 'var(--radius-sm)';
 }
 
 </script>
