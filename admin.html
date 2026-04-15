@@ -1159,7 +1159,7 @@ function cargarTodo() {
   // Load config
   apiGet('config', function(e,d){ if(!e&&d) configSistema=d.config||{}; });
   var total=5, listo=0;
-  function check(){ listo++; if(listo>=total){ setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); inicializarFechas(); inicializarFechasCompras(); } }
+  function check(){ listo++; if(listo>=total){ setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); inicializarFechas(); inicializarFechasCompras(); if(document.getElementById('sec-precios')&&document.getElementById('sec-precios').style.display!=='none') renderReportePrecios(); } }
   setTimeout(function(){ if(listo < total){ listo=total; setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); inicializarFechas(); inicializarFechasCompras(); }}, 6000);
   apiGet('clientes',     function(e,d){ clientes=(d&&d.clientes)||[]; check(); });
   apiGet('ventas',       function(e,d){ ventas=((d&&d.ventas)||[]).reverse(); check(); });
@@ -1187,7 +1187,7 @@ function navTab(t) {
   if(t==='compras'){ renderCompras(); comprasTab('entrada'); }
   if(t==='gastos'){ filtrarGastosFiscales(); filtrarGastosNF(); }
   if(t==='utilidad'){ inicializarFechasUtilidad(); }
-  if(t==='precios'){ renderReportePrecios(); }
+  if(t==='precios'){ setTimeout(renderReportePrecios, 50); }
 }
 
 /* REPORTE */
@@ -2656,6 +2656,14 @@ function comprasTab(t) {
 ═══════════════════════════════════════════════════════════ */
 
 function renderReportePrecios() {
+  // Guard: elements must exist and data must be ready
+  if (!document.getElementById('rp-buscar')) return;
+  if (!medicamentos.length) {
+    document.getElementById('rp-stats').innerHTML = '';
+    document.getElementById('rp-thead').innerHTML = '';
+    document.getElementById('rp-body').innerHTML  = '<tr><td colspan="8" class="es" style="color:var(--text-3)">Cargando datos...</td></tr>';
+    return;
+  }
   var q      = (document.getElementById('rp-buscar').value||'').trim().toLowerCase();
   var catFil = document.getElementById('rp-cat').value;
   var orden  = document.getElementById('rp-orden').value;
