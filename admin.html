@@ -1123,6 +1123,7 @@ function inicializarFechas(){
   var hoy=new Date(), inicio=new Date(hoy.getFullYear(),hoy.getMonth(),1);
   document.getElementById('r-hasta').value=hoy.toISOString().split('T')[0];
   document.getElementById('r-desde').value=inicio.toISOString().split('T')[0];
+  inicializarFechasGastos();
 }
 
 function ff(f){ if(!f)return''; var p=String(f).split('T')[0].split('-'); return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:f; }
@@ -2545,12 +2546,7 @@ function exportarUtilidadPDF(){
   w.document.write('</body></html>'); w.document.close(); setTimeout(function(){w.print();},600);
 }
 
-/* llamar inicializaciones al cargar datos */
-var _origInicFechas = inicializarFechas;
-function inicializarFechas(){
-  _origInicFechas();
-  inicializarFechasGastos();
-}
+
 
 /* ─── index-based cancel helpers (avoids quote nesting issues) ─── */
 function cancelarGastoFiscalByIndex(idx) {
