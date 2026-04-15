@@ -421,13 +421,39 @@ select option { background:var(--bg-2); color:var(--text); }
 
     </div>
 
+    <!-- MEDICAMENTOS -->
+    <div id="sec-meds" style="display:none">
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="ptitle" style="margin:0">Catálogo de medicamentos</div>
+          <button class="btn btng btns" onclick="abrirModalMed(null)">+ Nuevo medicamento</button>
+        </div>
+        <div class="fr" style="margin-bottom:14px">
+          <input type="text" id="bq-med" placeholder="Buscar medicamento..." oninput="filtrarMeds()"/>
+        </div>
+        <div class="med-grid" id="med-grid"><div class="es">Cargando...</div></div>
+      </div>
+    </div>
 
-<!-- INVENTARIO (unificado: Lotes + Reporte) -->
+    
+    <!-- CLIENTES -->
+    <div id="sec-clientes" style="display:none">
+      <div class="panel">
+        <div class="ptitle">Gestión de clientes</div>
+        <div class="fr" style="margin-bottom:14px">
+          <input type="text" id="bq-cli" placeholder="Buscar por nombre, teléfono o RFC..." oninput="filtrarClientesAdmin()"/>
+        </div>
+        <div id="lista-cli-admin" class="es">Cargando clientes...</div>
+      </div>
+    </div>
+
+    
+    <!-- INVENTARIO (unificado: Lotes + Reporte) -->
     <div id="sec-lotes" style="display:none">
 
       <div style="display:flex;gap:4px;margin-bottom:18px">
-        <button class="nav-tab on" id="it-lotes"   onclick="inventarioTab('lotes')"   style="border-radius:var(--radius-sm)">📦 Inventario por lote</button>
-        <button class="nav-tab"    id="it-reporte"  onclick="inventarioTab('reporte')" style="border-radius:var(--radius-sm)">📈 Reporte de inventario</button>
+        <button class="nav-tab on" id="it-lotes"  onclick="inventarioTab('lotes')"   style="border-radius:var(--radius-sm)">📦 Inventario por lote</button>
+        <button class="nav-tab"    id="it-reporte" onclick="inventarioTab('reporte')" style="border-radius:var(--radius-sm)">📈 Reporte de inventario</button>
       </div>
 
       <div id="si-lotes">
@@ -473,10 +499,7 @@ select option { background:var(--bg-2); color:var(--text); }
           </table>
         </div>
       </div>
-      </div>
-
     </div>
-
 
     <!-- COMPRAS (unificado: Entrada XML + Reporte + Trazabilidad) -->
     <div id="sec-compras" style="display:none">
@@ -577,8 +600,9 @@ select option { background:var(--bg-2); color:var(--text); }
         <div id="traz-result"></div>
       </div>
     </div>
-    </div>
+      </div>
 
+    
 
     <!-- REPORTE PRECIOS -->
     <div id="sec-precios" style="display:none">
@@ -1150,7 +1174,7 @@ function cargarTodo() {
   apiGet('config', function(e,d){ if(!e&&d) configSistema=d.config||{}; });
   var total=7, listo=0;
   function check(){ listo++; if(listo>=total){ setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); inicializarFechas(); inicializarFechasCompras(); renderReportePrecios(); } }
-  setTimeout(function(){ if(listo < total){ listo=total; setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); inicializarFechas(); inicializarFechasCompras(); }}, 6000);
+  setTimeout(function(){ if(listo < total){ listo=total; setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); inicializarFechas(); inicializarFechasCompras(); renderReportePrecios(); }}, 6000);
   apiGet('clientes',     function(e,d){ clientes=(d&&d.clientes)||[]; check(); });
   apiGet('ventas',       function(e,d){ ventas=((d&&d.ventas)||[]).reverse(); check(); });
   apiGet('medicamentos', function(e,d){ medicamentos=(d&&d.medicamentos)||[]; check(); });
@@ -1795,7 +1819,7 @@ function mostrarTabsSegunPerfil(){
     if(sucDiv) sucDiv.style.display='none';
   } else {
     if(sucDiv) sucDiv.style.display='';
-  // Gastos y utilidad: misma lógica de sucursal
+  }
   var gfSucDiv=document.getElementById('gf-suc-div');
   var gnfSucDiv=document.getElementById('gnf-suc-div');
   var utSucDiv=document.getElementById('ut-suc-div');
@@ -1807,7 +1831,6 @@ function mostrarTabsSegunPerfil(){
     [gfSucDiv,gnfSucDiv,utSucDiv].forEach(function(el){ if(el) el.style.display='none'; });
   } else {
     [gfSucDiv,gnfSucDiv,utSucDiv].forEach(function(el){ if(el) el.style.display=''; });
-  }
   }
 }
 
@@ -2810,7 +2833,6 @@ function exportarPreciosPDF() {
   w.document.close(); setTimeout(function(){w.print();},600);
 }
 
-/* Sub-tabs Ventas */
 function ventasTab(t) {
   document.getElementById('sv-reporte').style.display = t==='reporte' ? 'block' : 'none';
   document.getElementById('sv-gestion').style.display = t==='gestion' ? 'block' : 'none';
@@ -2822,7 +2844,6 @@ function ventasTab(t) {
   if(t==='gestion') renderVentasAdmin();
 }
 
-/* Sub-tabs Inventario */
 function inventarioTab(t) {
   document.getElementById('si-lotes').style.display   = t==='lotes'   ? 'block' : 'none';
   document.getElementById('si-reporte').style.display = t==='reporte' ? 'block' : 'none';
