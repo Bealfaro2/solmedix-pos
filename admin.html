@@ -2572,6 +2572,7 @@ function comprasTab(t) {
   document.getElementById('ct-reporte').className = 'nav-tab'+(t==='reporte'?' on':'');
   document.getElementById('ct-entrada').style.borderRadius = 'var(--radius-sm)';
   document.getElementById('ct-reporte').style.borderRadius = 'var(--radius-sm)';
+  if (t==='reporte') { renderCompras(); inicializarFechasCompras(); }
 }
 
 </script>
