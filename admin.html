@@ -3668,27 +3668,33 @@ function aplicarOrdenCompras(src) {
 var _cajaDatosAdmin = [];
 
 function inicializarCajaAdmin() {
-  // Lock sucursal selector by profile
-  var sel = document.getElementById('ca-suc');
-  var wrap = document.getElementById('ca-suc-wrap');
-  if (perfilActual === 'mty') {
-    sel.value = 'MTY'; sel.disabled = true;
-    if (wrap) wrap.style.display = 'none';
-  } else if (perfilActual === 'slp') {
-    sel.value = 'SLP'; sel.disabled = true;
-    if (wrap) wrap.style.display = 'none';
-  } else {
-    sel.disabled = false;
-    if (wrap) wrap.style.display = '';
-  }
-  // Set default dates
-  var hoy = new Date().toISOString().split('T')[0];
-  var mesInicio = hoy.slice(0,7) + '-01';
-  if (!document.getElementById('ca-desde').value)
-    document.getElementById('ca-desde').value = mesInicio;
-  if (!document.getElementById('ca-hasta').value)
-    document.getElementById('ca-hasta').value = hoy;
-  renderCajaAdmin();
+  // Cargar datos de caja frescos del servidor
+  apiGet('caja', function(err, data) {
+    if (!err && data && data.caja) {
+      caja = data.caja;
+    }
+    // Lock sucursal selector by profile
+    var sel = document.getElementById('ca-suc');
+    var wrap = document.getElementById('ca-suc-wrap');
+    if (perfilActual === 'mty') {
+      sel.value = 'MTY'; sel.disabled = true;
+      if (wrap) wrap.style.display = 'none';
+    } else if (perfilActual === 'slp') {
+      sel.value = 'SLP'; sel.disabled = true;
+      if (wrap) wrap.style.display = 'none';
+    } else {
+      sel.disabled = false;
+      if (wrap) wrap.style.display = '';
+    }
+    // Set default dates
+    var hoy = new Date().toISOString().split('T')[0];
+    var mesInicio = hoy.slice(0,7) + '-01';
+    if (!document.getElementById('ca-desde').value)
+      document.getElementById('ca-desde').value = mesInicio;
+    if (!document.getElementById('ca-hasta').value)
+      document.getElementById('ca-hasta').value = hoy;
+    renderCajaAdmin();
+  });
 }
 
 function renderCajaAdmin() {
