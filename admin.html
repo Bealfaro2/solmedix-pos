@@ -3213,6 +3213,12 @@ function exportarPreciosPDF() {
 }
 
 function ventasTab(t) {
+  // Fix sv-caja placement if it ended up inside sv-gestion
+  var svCaja = document.getElementById('sv-caja');
+  var svGestion = document.getElementById('sv-gestion');
+  if (svCaja && svGestion && svGestion.contains(svCaja)) {
+    svGestion.parentElement.insertBefore(svCaja, svGestion.nextSibling);
+  }
   document.getElementById('sv-reporte').style.display = t==='reporte' ? 'block' : 'none';
   document.getElementById('sv-gestion').style.display = t==='gestion' ? 'block' : 'none';
   document.getElementById('sv-caja').style.display    = t==='caja'    ? 'block' : 'none';
