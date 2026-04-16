@@ -1240,8 +1240,8 @@ select option { background:var(--bg-2); color:var(--text); }
       <div style="font-size:11px;color:var(--text-3);margin-top:8px">La devolución ajustará solo las existencias actuales en inventario. Los registros de venta no se modifican.</div>
     </div>
 
-    <div id="dev-confirm-check" style="display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;cursor:pointer" onclick="document.getElementById('dev-check').checked=!document.getElementById('dev-check').checked;actualizarBtnDevolucion()">
-      <input type="checkbox" id="dev-check" style="width:16px;height:16px;margin-top:2px;accent-color:var(--blue-bright);cursor:pointer" onchange="actualizarBtnDevolucion()"/>
+    <div id="dev-confirm-check" style="display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;cursor:pointer" onclick="var cb=document.getElementById('dev-check');cb.checked=!cb.checked;actualizarBtnDevolucion()">
+      <input type="checkbox" id="dev-check" style="width:16px;height:16px;margin-top:2px;accent-color:var(--blue-bright);cursor:pointer" onclick="event.stopPropagation();actualizarBtnDevolucion()"/>
       <label style="font-size:13px;color:var(--text-2);cursor:pointer" id="dev-check-label">
         Confirmo que esta compra fue registrada por error y entiendo que las ventas ya realizadas deben ser regeneradas manualmente.
       </label>
