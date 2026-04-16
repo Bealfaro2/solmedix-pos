@@ -3668,33 +3668,52 @@ function aplicarOrdenCompras(src) {
 var _cajaDatosAdmin = [];
 
 function inicializarCajaAdmin() {
-  // Cargar datos de caja frescos del servidor
-  apiGet('caja', function(err, data) {
-    if (!err && data && data.caja) {
+  // Configurar selector de sucursal
+  var sel  = document.getElementById('ca-suc');
+  var wrap = document.getElementById('ca-suc-wrap');
+  if (perfilActual === 'mty') {
+    sel.value = 'MTY'; sel.disabled = true;
+    if (wrap) wrap.style.display = 'none';
+  } else if (perfilActual === 'slp') {
+    sel.value = 'SLP'; sel.disabled = true;
+    if (wrap) wrap.style.display = 'none';
+  } else {
+    sel.disabled = false;
+    if (wrap) wrap.style.display = '';
+  }
+  // Fechas por defecto
+  var hoy = new Date().toISOString().split('T')[0];
+  var mesInicio = hoy.slice(0,7) + '-01';
+  if (!document.getElementById('ca-desde').value)
+    document.getElementById('ca-desde').value = mesInicio;
+  if (!document.getElementById('ca-hasta').value)
+    document.getElementById('ca-hasta').value = hoy;
+
+  // Cargar caja via JSONP igual que el resto del sistema
+  if (caja && caja.length > 0) {
+    // Ya tenemos datos, solo renderizar
+    renderCajaAdmin();
+    return;
+  }
+  // Cargar del servidor
+  var cbName = 'cajaCb_' + Date.now();
+  window[cbName] = function(data) {
+    delete window[cbName];
+    var sc = document.getElementById(cbName);
+    if (sc) sc.remove();
+    if (data && data.caja) {
       caja = data.caja;
     }
-    // Lock sucursal selector by profile
-    var sel = document.getElementById('ca-suc');
-    var wrap = document.getElementById('ca-suc-wrap');
-    if (perfilActual === 'mty') {
-      sel.value = 'MTY'; sel.disabled = true;
-      if (wrap) wrap.style.display = 'none';
-    } else if (perfilActual === 'slp') {
-      sel.value = 'SLP'; sel.disabled = true;
-      if (wrap) wrap.style.display = 'none';
-    } else {
-      sel.disabled = false;
-      if (wrap) wrap.style.display = '';
-    }
-    // Set default dates
-    var hoy = new Date().toISOString().split('T')[0];
-    var mesInicio = hoy.slice(0,7) + '-01';
-    if (!document.getElementById('ca-desde').value)
-      document.getElementById('ca-desde').value = mesInicio;
-    if (!document.getElementById('ca-hasta').value)
-      document.getElementById('ca-hasta').value = hoy;
     renderCajaAdmin();
-  });
+  };
+  var sc = document.createElement('script');
+  sc.id = cbName;
+  sc.onerror = function() {
+    delete window[cbName]; sc.remove();
+    renderCajaAdmin();
+  };
+  sc.src = API_URL + '?accion=caja&callback=' + cbName;
+  document.head.appendChild(sc);
 }
 
 function renderCajaAdmin() {
