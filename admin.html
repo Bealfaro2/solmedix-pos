@@ -3725,7 +3725,8 @@ function renderCajaAdmin() {
   if (perfilActual === 'slp') suc = 'SLP';
 
   var src = (caja||[]).filter(function(r) {
-    var ok = (!desde || r.fecha >= desde) && (!hasta || r.fecha <= hasta);
+    var fecha = String(r.fecha||'').split('T')[0];
+    var ok = (!desde || fecha >= desde) && (!hasta || fecha <= hasta);
     if (suc) ok = ok && r.sucursal === suc;
     return ok;
   });
@@ -3733,8 +3734,9 @@ function renderCajaAdmin() {
   // Group by date+sucursal
   var grupos = {};
   src.forEach(function(r) {
-    var key = r.fecha + '|' + r.sucursal;
-    if (!grupos[key]) grupos[key] = { fecha:r.fecha, sucursal:r.sucursal, aperturas:[], retiros:[], cortes:[] };
+    var fecha = String(r.fecha||'').split('T')[0];
+    var key = fecha + '|' + r.sucursal;
+    if (!grupos[key]) grupos[key] = { fecha:fecha, sucursal:r.sucursal, aperturas:[], retiros:[], cortes:[] };
     if (r.tipo==='apertura') grupos[key].aperturas.push(r);
     if (r.tipo==='retiro')   grupos[key].retiros.push(r);
     if (r.tipo==='corte')    grupos[key].cortes.push(r);
