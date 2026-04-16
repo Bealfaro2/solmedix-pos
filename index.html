@@ -1669,9 +1669,10 @@ function renderReporteCaja() {
   var hasta  = document.getElementById('caja-hasta').value;
 
   var src = cajaDia.filter(function(r) {
+    var fecha = String(r.fecha||'').split('T')[0];
     return r.sucursal === sucursal &&
-           (!desde || r.fecha >= desde) &&
-           (!hasta  || r.fecha <= hasta);
+           (!desde || fecha >= desde) &&
+           (!hasta  || fecha <= hasta);
   });
 
   if (!src.length) {
