@@ -45,52 +45,13 @@
 
     <div class="max-w-7xl mx-auto px-6 py-8">
 
-        <!-- PANEL 0: PACIENTES -->
-        <div id="panel-0" class="tab-panel hidden">
-            <div class="flex justify-between mb-6">
-                <h2 class="text-2xl font-semibold">Pacientes Registrados</h2>
-                <button onclick="showPatientForm()" class="bg-blue-900 text-white px-6 py-3 rounded-3xl flex items-center gap-2">
-                    <i class="fas fa-plus"></i> Nuevo Paciente
-                </button>
-            </div>
-            <div class="bg-white rounded-3xl shadow overflow-hidden">
-                <table class="w-full">
-                    <thead class="bg-slate-50"><tr>
-                        <th class="px-8 py-4 text-left">Nombre</th>
-                        <th class="px-8 py-4 text-left">Dirección</th>
-                        <th class="px-8 py-4 text-left">WhatsApp</th>
-                    </tr></thead>
-                    <tbody id="patients-table" class="divide-y"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- PANEL 1: MÉDICOS -->
-        <div id="panel-1" class="tab-panel hidden">
-            <div class="flex justify-between mb-6">
-                <h2 class="text-2xl font-semibold">Médicos Colaboradores</h2>
-                <button onclick="showDoctorForm()" class="bg-blue-900 text-white px-6 py-3 rounded-3xl flex items-center gap-2">
-                    <i class="fas fa-plus"></i> Nuevo Médico
-                </button>
-            </div>
-            <div class="bg-white rounded-3xl shadow overflow-hidden">
-                <table class="w-full">
-                    <thead class="bg-slate-50"><tr>
-                        <th class="px-8 py-4 text-left">Nombre</th>
-                        <th class="px-8 py-4 text-left">Especialidad</th>
-                        <th class="px-8 py-4 text-left">Cédula</th>
-                        <th class="px-8 py-4 text-left">WhatsApp</th>
-                    </tr></thead>
-                    <tbody id="doctors-table" class="divide-y"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- PANEL 2: MEDICAMENTOS -->
-        <div id="panel-2" class="tab-panel hidden">
+        <!-- PANEL 2: MEDICAMENTOS (corregido) -->
+        <div id="panel-2" class="tab-panel">
             <div class="flex justify-between mb-6">
                 <h2 class="text-2xl font-semibold">Medicamentos (Google Sheets)</h2>
-                <button onclick="syncMedications()" class="bg-emerald-600 text-white px-6 py-3 rounded-3xl">Sincronizar</button>
+                <button onclick="syncMedications()" class="bg-emerald-600 text-white px-6 py-3 rounded-3xl flex items-center gap-2">
+                    <i class="fas fa-sync"></i> Sincronizar
+                </button>
             </div>
             <div class="bg-white rounded-3xl shadow overflow-hidden">
                 <table class="w-full">
@@ -100,13 +61,14 @@
                         <th class="px-8 py-4 text-left">Lote</th>
                         <th class="px-8 py-4 text-left">Caducidad</th>
                     </tr></thead>
-                    <tbody id="medications-table" class="divide-y"></tbody>
+                    <tbody id="medications-table" class="divide-y text-sm"></tbody>
                 </table>
             </div>
+            <p id="no-meds" class="text-center text-slate-400 mt-8 hidden">No hay medicamentos cargados aún.</p>
         </div>
 
         <!-- PANEL 3: DISPENSACIÓN -->
-        <div id="panel-3" class="tab-panel">
+        <div id="panel-3" class="tab-panel hidden">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div class="bg-white rounded-3xl shadow p-8">
                     <div class="flex items-center gap-3 mb-6">
@@ -149,12 +111,6 @@
                 </button>
             </div>
         </div>
-
-        <!-- PANEL 4: REPORTES -->
-        <div id="panel-4" class="tab-panel hidden">
-            <h2 class="text-2xl font-semibold mb-6">Reportes</h2>
-            <p class="text-slate-500">Los reportes se mostrarán aquí una vez que registres dispensaciones.</p>
-        </div>
     </div>
 
     <!-- Modal Paciente -->
@@ -173,46 +129,17 @@
         </div>
     </div>
 
-    <!-- Modal Médico -->
-    <div id="modal-doctor" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-[100]">
-        <div class="bg-white rounded-3xl max-w-lg w-full mx-4 p-8">
-            <h3 class="text-xl font-semibold mb-6">Nuevo Médico Colaborador</h3>
-            <form onsubmit="saveDoctor(event)">
-                <input id="d-nombre" required placeholder="Nombre completo del médico" class="w-full px-6 py-4 border rounded-3xl mb-4">
-                <select id="d-especialidad" required class="w-full px-6 py-4 border rounded-3xl mb-4">
-                    <option value="">Selecciona especialidad...</option>
-                    <option value="PEDIATRÍA">PEDIATRÍA</option>
-                    <option value="CARDIOLOGÍA">CARDIOLOGÍA</option>
-                    <option value="PSICOLOGÍA">PSICOLOGÍA</option>
-                    <option value="MEDICINA INTERNA">MEDICINA INTERNA</option>
-                    <option value="CIRUGÍA GENERAL">CIRUGÍA GENERAL</option>
-                    <option value="DENTISTA">DENTISTA</option>
-                    <option value="OFTALMOLOGICA">OFTALMOLOGÍA</option>
-                </select>
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <input id="d-cedula" required placeholder="Cédula Profesional" class="w-full px-6 py-4 border rounded-3xl">
-                    <input id="d-rfc" placeholder="RFC (opcional)" class="w-full px-6 py-4 border rounded-3xl">
-                </div>
-                <input id="d-whatsapp" required placeholder="WhatsApp del médico" class="w-full px-6 py-4 border rounded-3xl mb-6">
-                <div class="flex gap-3">
-                    <button type="button" onclick="hideModals()" class="flex-1 py-4 border rounded-3xl">Cancelar</button>
-                    <button type="submit" class="flex-1 py-4 bg-blue-900 text-white rounded-3xl">Guardar Médico</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <script>
         const BASE_URL = "https://script.google.com/macros/s/AKfycby7ihnIDQ3hxTeldszc0gdpjUpVQMEZNgNYPjU1yazl6cFzQeVj47Mxyg_DItI06NDe/exec";
 
-        let patients = [], doctors = [], medications = [], currentDispMeds = [];
+        let patients = [], medications = [], currentDispMeds = [];
 
-        // Cargar medicamentos desde Google Sheets
         async function loadMedicationsFromSheets() {
             try {
                 const res = await fetch(BASE_URL + "?action=getAllMedications");
                 const data = await res.json();
                 medications = Array.isArray(data) ? data : [];
+                renderMedications();
                 console.log("Medicamentos cargados:", medications.length);
             } catch (e) {
                 console.error("Error cargando medicamentos:", e);
@@ -236,15 +163,10 @@
 
         function hideModals() {
             document.getElementById('modal-patient').classList.add('hidden');
-            document.getElementById('modal-doctor').classList.add('hidden');
         }
 
         function showPatientForm() {
             document.getElementById('modal-patient').classList.remove('hidden');
-        }
-
-        function showDoctorForm() {
-            document.getElementById('modal-doctor').classList.remove('hidden');
         }
 
         function savePatient(e) {
@@ -258,25 +180,6 @@
             if (!p.nombre || !p.direccion || !p.whatsapp) return alert("Todos los campos son obligatorios");
             patients.push(p);
             localStorage.setItem('ibgd_patients', JSON.stringify(patients));
-            hideModals();
-        }
-
-        function saveDoctor(e) {
-            e.preventDefault();
-            const d = {
-                id: "D" + Date.now(),
-                nombre: document.getElementById('d-nombre').value.trim(),
-                especialidad: document.getElementById('d-especialidad').value,
-                cedula: document.getElementById('d-cedula').value.trim(),
-                rfc: document.getElementById('d-rfc').value.trim(),
-                whatsapp: document.getElementById('d-whatsapp').value.trim()
-            };
-            if (!d.nombre || !d.especialidad || !d.cedula || !d.whatsapp) {
-                return alert("Nombre, Especialidad, Cédula y WhatsApp son obligatorios");
-            }
-            doctors.push(d);
-            localStorage.setItem('ibgd_doctors', JSON.stringify(doctors));
-            alert("✅ Médico guardado correctamente");
             hideModals();
         }
 
@@ -302,6 +205,27 @@
                 `).join('');
             }
             document.getElementById('meds-count').textContent = currentDispMeds.length;
+        }
+
+        function renderMedications() {
+            const tbody = document.getElementById('medications-table');
+            tbody.innerHTML = '';
+
+            if (medications.length === 0) {
+                document.getElementById('no-meds').classList.remove('hidden');
+                return;
+            }
+
+            medications.forEach(m => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-8 py-5 font-mono">${m.codigoBarras}</td>
+                    <td class="px-8 py-5">${m.descripcion}</td>
+                    <td class="px-8 py-5">${m.lote || '-'}</td>
+                    <td class="px-8 py-5">${m.caducidad || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
         async function registerDispensation() {
@@ -330,16 +254,15 @@
                     renderCurrentDispMeds();
                 }
             } catch (e) {
-                alert("Error de conexión con Google Sheets");
+                alert("Error de conexión");
             }
         }
 
-        // Iniciar el sistema
+        // Iniciar
         window.onload = async () => {
             patients = JSON.parse(localStorage.getItem('ibgd_patients') || '[]');
-            doctors = JSON.parse(localStorage.getItem('ibgd_doctors') || '[]');
             await loadMedicationsFromSheets();
-            navigate(3); // Abre en Dispensación por defecto
+            navigate(3);
         };
     </script>
 </body>
