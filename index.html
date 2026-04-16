@@ -1412,34 +1412,66 @@ function inicializarCaja() {
 }
 
 function verificarBloqueo(hoy) {
-  var ayer = new Date(hoy);
+  var ayer = new Date(hoy + 'T12:00:00');
   ayer.setDate(ayer.getDate() - 1);
   var ayerStr = ayer.toISOString().split('T')[0];
 
-  // Buscar apertura de hoy para esta sucursal
+  // Normalizar fechas de cajaDia (quitar T...)
+  cajaDia.forEach(function(r){ r.fecha = String(r.fecha||'').split('T')[0]; });
+
+  // Buscar apertura de hoy
   cajaHoy = cajaDia.find(function(r) {
     return r.fecha === hoy && r.sucursal === sucursal && r.tipo === 'apertura';
   }) || null;
 
-  // Buscar corte de ayer
-  var cortesAyer = cajaDia.filter(function(r) {
-    return r.fecha === ayerStr && r.sucursal === sucursal && r.tipo === 'corte';
-  });
-  var hayCorteAyer = cortesAyer.length > 0;
+  // Buscar corte de hoy
+  cajaCorteHoy = cajaDia.find(function(r) {
+    return r.fecha === hoy && r.sucursal === sucursal && r.tipo === 'corte';
+  }) || null;
 
-  // Buscar si ayer hubo apertura (si no hubo apertura ayer, no se exige corte)
+  // Si ya se hizo corte hoy → bloquear hasta mañana
+  if (cajaCorteHoy) {
+    mostrarBloqueCajaCerrada(hoy);
+    return;
+  }
+
+  // Buscar apertura y corte de ayer
   var hayAperturaAyer = cajaDia.some(function(r) {
     return r.fecha === ayerStr && r.sucursal === sucursal && r.tipo === 'apertura';
   });
+  var hayCorteAyer = cajaDia.some(function(r) {
+    return r.fecha === ayerStr && r.sucursal === sucursal && r.tipo === 'corte';
+  });
 
+  // Corte pendiente de ayer
+  if (hayAperturaAyer && !hayCorteAyer) {
+    _cortePendienteFecha = ayerStr;
+    mostrarBloqueCaja(true);
+    return;
+  }
+
+  // Sin apertura de hoy → pedir apertura
   if (!cajaHoy) {
-    // Bloquear y mostrar modal apertura
-    mostrarBloqueCaja(hayAperturaAyer && !hayCorteAyer);
-  } else {
-    // Desbloquear sistema
-    document.getElementById('caja-bloqueo').style.display = 'none';
-    document.getElementById('sistema').style.display = 'block';
-    actualizarBtnCaja();
+    _cortePendienteFecha = null;
+    mostrarBloqueCaja(false);
+    return;
+  }
+
+  // Todo OK — desbloquear
+  _cortePendienteFecha = null;
+  document.getElementById('caja-bloqueo').style.display = 'none';
+  document.getElementById('sistema').style.display = 'block';
+  // Solo habilitar ventas si no hay pendiente
+  habilitarVentas(true);
+  actualizarBtnCaja();
+}
+
+function habilitarVentas(enable) {
+  var btn = document.getElementById('btn-guardar');
+  if (btn) {
+    btn.disabled = !enable;
+    btn.title = enable ? '' : 'Resuelve el corte pendiente para vender';
+    btn.style.opacity = enable ? '1' : '.4';
   }
 }
 
@@ -1447,9 +1479,12 @@ function mostrarBloqueCaja(pendienteCorteAyer) {
   document.getElementById('sistema').style.display = 'none';
   document.getElementById('caja-bloqueo').style.display = 'flex';
   if (pendienteCorteAyer) {
+    var fechaF = _cortePendienteFecha ? _cortePendienteFecha.split('-').reverse().join('/') : 'ayer';
     document.getElementById('caja-bloqueo-msg').innerHTML =
-      '<div style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:#fca5a5">' +
-      '⚠️ El día anterior no tiene corte de caja registrado.<br>Debes realizar el corte pendiente antes de abrir hoy.' +
+      '<div style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:14px;margin-bottom:14px;font-size:13px;color:#fca5a5;text-align:left">' +
+      '<div style="font-weight:700;font-size:15px;margin-bottom:6px">⚠️ Corte pendiente: ' + fechaF + '</div>' +
+      'El día <strong>' + fechaF + '</strong> quedó sin corte de caja.<br>' +
+      'Debes registrar ese corte antes de continuar.' +
       '</div>';
     document.getElementById('btn-abrir-apertura').style.display = 'none';
     document.getElementById('btn-corte-pendiente').style.display = 'block';
@@ -1458,6 +1493,19 @@ function mostrarBloqueCaja(pendienteCorteAyer) {
     document.getElementById('btn-abrir-apertura').style.display = 'block';
     document.getElementById('btn-corte-pendiente').style.display = 'none';
   }
+}
+
+function mostrarBloqueCajaCerrada(hoy) {
+  var fechaF = hoy.split('-').reverse().join('/');
+  document.getElementById('sistema').style.display = 'none';
+  document.getElementById('caja-bloqueo').style.display = 'flex';
+  document.getElementById('caja-bloqueo-msg').innerHTML =
+    '<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:10px;padding:14px;margin-bottom:14px;font-size:13px;color:#6ee7b7;text-align:left">' +
+    '<div style="font-weight:700;font-size:15px;margin-bottom:6px">✅ Caja cerrada — ' + fechaF + '</div>' +
+    'El corte de caja ya fue registrado hoy.<br>Regresa mañana para iniciar operaciones.' +
+    '</div>';
+  document.getElementById('btn-abrir-apertura').style.display = 'none';
+  document.getElementById('btn-corte-pendiente').style.display = 'none';
 }
 
 /* ── MODAL APERTURA ──────────────────────────────────────────── */
@@ -1543,9 +1591,12 @@ function abrirModalCorte() {
   document.getElementById('cort-cajero').value = '';
   document.getElementById('cort-alrt').style.display = 'none';
 
-  var hoy = new Date().toISOString().split('T')[0];
+  var fechaCorte = _cortePendienteFecha || new Date().toISOString().split('T')[0];
+  var hoy = fechaCorte;
+  var labelEl = document.getElementById('cort-fecha-label');
+  if (labelEl) labelEl.textContent = 'Corte del día: ' + fechaCorte.split('-').reverse().join('/');
   var ventasHoy = ventas.filter(function(v) {
-    return String(v.fecha).split('T')[0] === hoy &&
+    return String(v.fecha).split('T')[0] === fechaCorte &&
            v.sucursal === sucursal && v.estado !== 'cancelada';
   });
 
@@ -1609,7 +1660,7 @@ function guardarCorte() {
   var btn = document.getElementById('btn-guardar-corte');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Cerrando caja...';
 
-  var hoy = new Date().toISOString().split('T')[0];
+  var hoy = _cortePendienteFecha || new Date().toISOString().split('T')[0];
   var hora = new Date().toLocaleTimeString('es-MX');
 
   apiPost({ accion:'guardar_caja', fecha:hoy, hora:hora, sucursal:sucursal,
@@ -1626,10 +1677,23 @@ function guardarCorte() {
           diferencia:diff, notas:'Cajero: '+cajero });
         cajaCorteHoy = cajaDia[cajaDia.length-1];
         document.getElementById('modal-corte').classList.remove('show');
-        actualizarBtnCaja();
-        alrt('Caja cerrada correctamente. Diferencia: '+(diff>=0?'+':'')+
-          '$'+Math.abs(diff).toLocaleString('es-MX',{minimumFractionDigits:2}),'s');
-        renderReporteCaja();
+        // Si era corte pendiente, ahora pedir apertura de hoy
+        if (_cortePendienteFecha) {
+          _cortePendienteFecha = null;
+          cajaDia.push({ fecha:hoy, sucursal:sucursal, tipo:'corte' });
+          mostrarResumenCorte(diff, function() {
+            // Verificar de nuevo — ahora pedirá apertura de hoy
+            verificarBloqueo(new Date().toISOString().split('T')[0]);
+          });
+        } else {
+          // Corte normal del día → cerrar sesión después de resumen
+          cajaDia.push({ fecha:hoy, sucursal:sucursal, tipo:'corte' });
+          cajaCorteHoy = cajaDia[cajaDia.length-1];
+          actualizarBtnCaja();
+          mostrarResumenCorte(diff, function() {
+            cerrarSesionPosCorte();
+          });
+        }
       } else {
         cajaAlrt('cort-alrt','Error al guardar. Intenta de nuevo.','e');
       }
@@ -1888,7 +1952,8 @@ function cajaAlrt(elId, msg, tipo) {
 <div class="overlay" id="modal-corte" onclick="if(event.target===this)this.classList.remove('show')" style="z-index:1100">
   <div class="modal" style="max-width:460px">
     <div style="font-size:36px;text-align:center;margin-bottom:8px">🔒</div>
-    <h2 style="text-align:center;margin-bottom:16px">Corte de caja</h2>
+    <h2 style="text-align:center;margin-bottom:4px">Corte de caja</h2>
+    <div id="cort-fecha-label" style="text-align:center;font-size:13px;color:#fcd34d;margin-bottom:16px;font-weight:600"></div>
     <!-- Resumen automático -->
     <div style="background:rgba(38,51,72,.8);border:1px solid rgba(148,163,184,.15);border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
