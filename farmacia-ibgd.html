@@ -7,118 +7,77 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
-        body { font-family: 'Inter', system_ui, sans-serif; }
-        .header-font { font-family: 'Playfair Display', sans-serif; }
-        .nav-link.active { border-bottom: 4px solid #1e40af; color: #1e40af; font-weight: 600; }
+        body { font-family: system-ui, sans-serif; }
     </style>
 </head>
-<body class="bg-slate-50">
+<body class="bg-slate-50 p-8">
 
-    <!-- HEADER -->
-    <div class="bg-white shadow-sm sticky top-0 z-50 border-b">
-        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-            <div class="flex items-center gap-x-4">
-                <img src="IBGD.jfif" alt="Logo IBGD" class="h-14 w-auto object-contain" onerror="this.style.display='none';">
-                <div>
-                    <h1 class="header-font text-3xl font-bold text-slate-900">Día del Vecino</h1>
-                    <p class="text-blue-900">Abril 2026 • Iglesia Bautista Gracia de Dios</p>
-                </div>
+    <div class="max-w-4xl mx-auto">
+        <div class="flex items-center gap-4 mb-8">
+            <img src="IBGD.jfif" alt="Logo" class="h-16" onerror="this.style.display='none'">
+            <div>
+                <h1 class="text-3xl font-bold">Día del Vecino - Farmacia</h1>
+                <p class="text-blue-700">Abril 2026 • Iglesia Bautista Gracia de Dios</p>
             </div>
-            <button onclick="syncMedications()" 
-                    class="flex items-center gap-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-3xl text-sm font-medium">
-                <i class="fas fa-sync"></i> Sincronizar Sheets
-            </button>
         </div>
 
-        <!-- NAVEGACIÓN -->
-        <div class="max-w-7xl mx-auto px-6 flex text-sm font-medium border-b bg-white">
-            <button onclick="navigate(3)" id="tab-3" class="nav-link active px-8 py-5 flex items-center gap-x-2"><i class="fas fa-hand-holding-medical"></i> DISPENSACIÓN</button>
-            <button onclick="navigate(2)" id="tab-2" class="nav-link px-8 py-5 flex items-center gap-x-2"><i class="fas fa-pills"></i> MEDICAMENTOS</button>
-            <button onclick="navigate(0)" id="tab-0" class="nav-link px-8 py-5 flex items-center gap-x-2"><i class="fas fa-user"></i> PACIENTES</button>
-            <button onclick="navigate(1)" id="tab-1" class="nav-link px-8 py-5 flex items-center gap-x-2"><i class="fas fa-user-md"></i> MÉDICOS</button>
-            <button onclick="navigate(4)" id="tab-4" class="nav-link px-8 py-5 flex items-center gap-x-2"><i class="fas fa-chart-bar"></i> REPORTES</button>
-        </div>
-    </div>
+        <button onclick="syncMedications()" 
+                class="bg-emerald-600 text-white px-8 py-4 rounded-2xl text-lg font-medium mb-8">
+            🔄 Sincronizar con Google Sheets
+        </button>
 
-    <div class="max-w-7xl mx-auto px-6 py-10 text-center">
-        <h2 class="text-2xl font-semibold mb-4">Cargando sistema...</h2>
-        <p class="text-slate-500">Si ves esta pantalla por mucho tiempo, revisa la consola (F12).</p>
+        <div id="status" class="bg-white p-6 rounded-2xl shadow mb-8">
+            <p><strong>Estado:</strong> <span id="status-text">Cargando...</span></p>
+            <p class="mt-2"><strong>Medicamentos encontrados:</strong> <span id="count">0</span></p>
+        </div>
+
+        <button onclick="testConnection()" 
+                class="bg-blue-600 text-white px-6 py-3 rounded-xl">
+            Probar conexión con Apps Script
+        </button>
+
+        <pre id="debug" class="mt-8 bg-slate-900 text-green-400 p-4 rounded-xl text-sm overflow-auto max-h-96"></pre>
     </div>
 
     <script>
         const BASE_URL = "https://script.google.com/macros/s/AKfycby7ihnIDQ3hxTeldszc0gdpjUpVQMEZNgNYPjU1yazl6cFzQeVj47Mxyg_DItI06NDe/exec";
 
-        let patients = [], medications = [], currentDispMeds = [];
-
-        // Función principal de carga
-        async function initSystem() {
-            try {
-                console.log("Iniciando sistema...");
-                patients = JSON.parse(localStorage.getItem('ibgd_patients') || '[]');
-                
-                // Cargar medicamentos
-                const res = await fetch(BASE_URL + "?action=getAllMedications");
-                const data = await res.json();
-                medications = Array.isArray(data) ? data : [];
-                console.log("Medicamentos cargados:", medications.length);
-
-                // Mostrar la pestaña de Dispensación
-                showPanel(3);
-
-            } catch (error) {
-                console.error("Error al iniciar:", error);
-                alert("Error de conexión con Google Sheets.\n\nVerifica que el Apps Script esté redeplegado correctamente.");
-            }
-        }
-
-        function showPanel(tab) {
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
-            const panel = document.getElementById(`panel-${tab}`);
-            if (panel) panel.classList.remove('hidden');
-            
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            const activeTab = document.getElementById(`tab-${tab}`);
-            if (activeTab) activeTab.classList.add('active');
-        }
-
-        function navigate(tab) {
-            showPanel(tab);
-        }
-
         async function syncMedications() {
+            const status = document.getElementById('status-text');
+            status.textContent = "Sincronizando...";
+            
             try {
                 const res = await fetch(BASE_URL + "?action=getAllMedications");
                 const data = await res.json();
-                medications = Array.isArray(data) ? data : [];
-                alert("✅ Sincronizado correctamente (" + medications.length + " medicamentos)");
-            } catch (e) {
-                alert("No se pudo sincronizar. Verifica la conexión.");
+                
+                document.getElementById('count').textContent = Array.isArray(data) ? data.length : 0;
+                document.getElementById('debug').textContent = JSON.stringify(data, null, 2);
+                
+                if (data.length === 0) {
+                    status.textContent = "✅ Conexión OK, pero no hay medicamentos en la hoja";
+                } else {
+                    status.textContent = `✅ ${data.length} medicamentos cargados correctamente`;
+                }
+            } catch (err) {
+                status.textContent = "❌ Error de conexión";
+                document.getElementById('debug').textContent = "Error: " + err.message;
             }
         }
 
-        function addMedicationByBarcode() {
-            const code = document.getElementById('barcode-input').value.trim();
-            const med = medications.find(m => m.codigoBarras === code);
-            if (!med) return alert("Código no encontrado");
-            currentDispMeds.push(med);
-            document.getElementById('barcode-input').value = '';
-            alert("Medicamento agregado: " + med.descripcion);
+        async function testConnection() {
+            try {
+                const res = await fetch(BASE_URL);
+                const text = await res.text();
+                document.getElementById('debug').textContent = "Respuesta del servidor:\n" + text;
+            } catch (err) {
+                document.getElementById('debug').textContent = "Error de conexión:\n" + err.message;
+            }
         }
 
-        async function registerDispensation() {
-            if (currentDispMeds.length === 0) return alert("Agrega al menos un medicamento");
-            alert("✅ Dispensación registrada (guardada en Google Sheets)");
-            currentDispMeds = [];
-        }
-
-        // Modal simple
-        function showPatientForm() {
-            alert("Funcionalidad de nuevo paciente activada (versión básica)");
-        }
-
-        // Iniciar
-        window.onload = initSystem;
+        // Iniciar automáticamente
+        window.onload = () => {
+            document.getElementById('status-text').textContent = "Listo - Presiona Sincronizar";
+        };
     </script>
 </body>
 </html>
