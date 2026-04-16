@@ -719,7 +719,7 @@ select option { background:var(--bg-2); color:var(--text); }
                 <th style="width:70px;text-align:center">Cant.</th>
                 <th style="width:110px;text-align:right">Costo unit.</th>
                 <th style="width:160px">Núm. de lote *</th>
-                <th style="width:160px">Medicamento en sistema</th>
+                <th style="width:260px">Medicamento en sistema</th>
               </tr></thead>
               <tbody id="xml-conceptos-body"></tbody>
             </table>
@@ -1802,7 +1802,7 @@ function renderXmlResult() {
     html += '<td style="text-align:center;font-weight:600">'+c.cantidad+'</td>';
     html += '<td style="text-align:right">$'+c.valorUnitario.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
     html += '<td><input type="text" id="lote-'+i+'" placeholder="Num. lote" style="font-family:monospace;font-size:12px" oninput="xmlConceptos['+i+'].lote=this.value"/></td>';
-    html += '<td><select id="med-'+i+'" style="font-size:11px" onchange="xmlConceptos['+i+'].medId=this.value">'+opts+'</select></td>';
+    html += '<td><select id="med-'+i+'" style="font-size:11px;width:100%;min-width:240px" onchange="xmlConceptos['+i+'].medId=this.value">'+opts+'</select></td>';
     html += '</tr>';
   }
   document.getElementById('xml-conceptos-body').innerHTML = html;
@@ -1841,7 +1841,21 @@ function limpiarXml() {
 }
 
 function aplicarEntrada() {
-  // Validate
+  // ── Verificar duplicado: mismo folio + mismo proveedor ──────────
+  if (xmlFacturaInfo && xmlFacturaInfo.folio && xmlFacturaInfo.proveedor) {
+    var folioNorm = String(xmlFacturaInfo.folio).trim().toUpperCase();
+    var provNorm  = String(xmlFacturaInfo.proveedor).trim().toUpperCase();
+    var duplicado = compras.some(function(c) {
+      return String(c.folio||'').trim().toUpperCase() === folioNorm &&
+             String(c.proveedor||'').trim().toUpperCase() === provNorm;
+    });
+    if (duplicado) {
+      entradaAlrt('⚠️ Folio registrado previamente — el folio ' + xmlFacturaInfo.folio +
+        ' del proveedor ' + xmlFacturaInfo.proveedor + ' ya existe en el sistema. Verifica antes de continuar.', 'e');
+      return;
+    }
+  }
+  // Validate lotes
   var sinLote = xmlConceptos.filter(function(c){ return c.medId && !c.lote; });
   if (sinLote.length > 0) {
     entradaAlrt('Hay '+sinLote.length+' medicamento(s) vinculados sin numero de lote. Agrega el lote o desvincularlos.','e');
