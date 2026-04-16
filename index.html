@@ -1677,23 +1677,16 @@ function guardarCorte() {
           diferencia:diff, notas:'Cajero: '+cajero });
         cajaCorteHoy = cajaDia[cajaDia.length-1];
         document.getElementById('modal-corte').classList.remove('show');
-        // Si era corte pendiente, ahora pedir apertura de hoy
-        if (_cortePendienteFecha) {
-          _cortePendienteFecha = null;
-          cajaDia.push({ fecha:hoy, sucursal:sucursal, tipo:'corte' });
-          mostrarResumenCorte(diff, function() {
-            // Verificar de nuevo — ahora pedirá apertura de hoy
-            verificarBloqueo(new Date().toISOString().split('T')[0]);
-          });
-        } else {
-          // Corte normal del día → cerrar sesión después de resumen
-          cajaDia.push({ fecha:hoy, sucursal:sucursal, tipo:'corte' });
+        cajaDia.push({ fecha:hoy, sucursal:sucursal, tipo:'corte' });
+        // Siempre cerrar sesión después del corte (pendiente o normal)
+        if (!_cortePendienteFecha) {
           cajaCorteHoy = cajaDia[cajaDia.length-1];
           actualizarBtnCaja();
-          mostrarResumenCorte(diff, function() {
-            cerrarSesionPosCorte();
-          });
         }
+        _cortePendienteFecha = null;
+        mostrarResumenCorte(diff, function() {
+          cerrarSesionPosCorte();
+        });
       } else {
         cajaAlrt('cort-alrt','Error al guardar. Intenta de nuevo.','e');
       }
