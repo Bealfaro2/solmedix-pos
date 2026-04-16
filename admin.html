@@ -1162,19 +1162,15 @@ select option { background:var(--bg-2); color:var(--text); }
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="fr">
         <label>Clave SAT (producto/servicio)</label>
-        <select id="med-clave-sat" style="font-family:var(--mono);font-size:12px">
-          <option value="">— Sin especificar —</option>
-          <option value="51111800">51111800 — Hormonas y antihormonas</option>
-          <option value="51111900">51111900 — Antitumorales naturales</option>
-          <option value="51131500">51131500 — Medicamentos antianémicos</option>
-          <option value="51142100">51142100 — Fármacos antiinflamatorios no esteroideos</option>
-          <option value="51142900">51142900 — Fármacos anestésicos, complementos y analépticos</option>
-          <option value="51171800">51171800 — Agentes antivértigo, antinauseantes y antieméticos</option>
-          <option value="51181700">51181700 — Corticosteroides</option>
-          <option value="51182400">51182400 — Sales de calcio y reguladores del calcio</option>
-          <option value="51201500">51201500 — Inmunosupresores</option>
-          <option value="51201800">51201800 — Agentes inmunoestimulantes</option>
-        </select>
+        <div style="position:relative">
+          <input type="text" id="med-clave-sat-input" placeholder="Buscar clave SAT..." autocomplete="off"
+            style="font-family:var(--mono);font-size:12px;width:100%;box-sizing:border-box"
+            oninput="filtrarClavesSat(this.value)"
+            onfocus="filtrarClavesSat(this.value)"
+            onblur="setTimeout(function(){document.getElementById('sat-dropdown').style.display='none'},200)"/>
+          <input type="hidden" id="med-clave-sat"/>
+          <div id="sat-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#1e293b;border:1px solid rgba(148,163,184,.2);border-radius:6px;z-index:200;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.4)"></div>
+        </div>
       </div>
       <div class="fr">
         <label>Clave de unidad SAT</label>
@@ -2193,7 +2189,7 @@ function abrirModalMed(med){
   var _tipoVal=med?(med.tipo||med.Tipo||''):''; 
   if(_tipoVal==='1')_tipoVal='01'; if(_tipoVal==='2')_tipoVal='02'; if(_tipoVal==='3')_tipoVal='03';
   document.getElementById('med-tipo').value=_tipoVal;
-  document.getElementById('med-clave-sat').value=med?(med.clave_sat||med['Clave SAT']||''):'';
+  setClaveSatInput(med?(med.clave_sat||med['Clave SAT']||''):'');
   if(!med) document.getElementById('med-clave-unidad').value='H87';
   document.getElementById('med-clave-unidad').value=med?(med.clave_unidad||med['Clave Unidad']||''):'';
   document.getElementById('med-codigo-barras').value=med?(med.codigo_barras||med['codigo_barras']||''):'';
@@ -3874,6 +3870,58 @@ function exportarCajaAdminPDF() {
     '<th>Total</th><th>Diferencia</th><th>Estado</th></tr></thead><tbody>'+filas+'</tbody></table>');
   w.document.write('</body></html>');
   w.document.close(); setTimeout(function(){ w.print(); }, 600);
+}
+
+/* ── Catálogo de Claves SAT ─────────────────────────────────── */
+var CLAVES_SAT = [
+  { clave:'51111700', desc:'Antibióticos antineoplásicos' },
+  { clave:'51111800', desc:'Hormonas y antihormonas' },
+  { clave:'51111900', desc:'Antitumorales naturales' },
+  { clave:'51131500', desc:'Medicamentos antianémicos' },
+  { clave:'51142100', desc:'Fármacos antiinflamatorios no esteroideos' },
+  { clave:'51142900', desc:'Fármacos anestésicos, complementos y analépticos' },
+  { clave:'51171800', desc:'Agentes antivértigo, antinauseantes y antieméticos' },
+  { clave:'51181700', desc:'Corticosteroides' },
+  { clave:'51182400', desc:'Sales de calcio y reguladores del calcio' },
+  { clave:'51201500', desc:'Inmunosupresores' },
+  { clave:'51201800', desc:'Agentes inmunoestimulantes' }
+];
+
+function filtrarClavesSat(q) {
+  var dd = document.getElementById('sat-dropdown');
+  if (!dd) return;
+  var terms = (q||'').toLowerCase().trim().split(/\s+/);
+  var matches = CLAVES_SAT.filter(function(s) {
+    var haystack = (s.clave + ' ' + s.desc).toLowerCase();
+    return terms.every(function(t){ return !t || haystack.indexOf(t) >= 0; });
+  });
+  if (!matches.length && !q) matches = CLAVES_SAT; // show all when empty
+  if (!matches.length) { dd.style.display='none'; return; }
+  dd.innerHTML = matches.map(function(s) {
+    return '<div onclick="seleccionarClaveSat(\'' + s.clave + '\',\'' + s.desc.replace(/'/g,"\'") + '\')" ' +
+      'style="padding:8px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid rgba(148,163,184,.1);font-family:var(--mono)"' +
+      ' onmouseover="this.style.background=\'rgba(43,127,212,.2)\'" onmouseout="this.style.background=\'\'">' +
+      '<span style="color:#93c5fd">' + s.clave + '</span> — ' + s.desc + '</div>';
+  }).join('');
+  dd.style.display = 'block';
+}
+
+function seleccionarClaveSat(clave, desc) {
+  var inp = document.getElementById('med-clave-sat-input');
+  var hid = document.getElementById('med-clave-sat');
+  var dd  = document.getElementById('sat-dropdown');
+  if (inp) inp.value = clave + ' — ' + desc;
+  if (hid) hid.value = clave;
+  if (dd)  dd.style.display = 'none';
+}
+
+function setClaveSatInput(clave) {
+  // Used when editing a medicamento to pre-fill the input
+  var sat = CLAVES_SAT.find(function(s){ return s.clave === clave; });
+  var inp = document.getElementById('med-clave-sat-input');
+  var hid = document.getElementById('med-clave-sat');
+  if (inp) inp.value = sat ? clave + ' — ' + sat.desc : clave;
+  if (hid) hid.value = clave || '';
 }
 
 </script>
