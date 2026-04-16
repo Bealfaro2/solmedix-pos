@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Día del Vecino Abril 2026 - Farmacia IBGD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+        body { font-family: 'Inter', system_ui, sans-serif; }
+        .header-font { font-family: 'Playfair Display', sans-serif; }
+        .logo-container { filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.1)); }
+        .nav-link { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .nav-link.active { border-bottom: 3px solid #1e3a8a; color: #1e3a8a; }
+        .scan-input { animation: scan-pulse 2s infinite; }
+        @keyframes scan-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            50% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+        }
+        .data-table tr:hover { background-color: #f8fafc; }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <!-- HEADER -->
+    <div class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center justify-between px-8 py-5">
+                <div class="flex items-center gap-x-6">
+                    <div class="logo-container">
+                        <img src="IBGD.jfif" alt="Iglesia Bautista Gracia de Dios" class="h-20 w-auto object-contain">
+                    </div>
+                    <div>
+                        <h1 class="header-font text-3xl font-bold tracking-tight text-slate-900">Día del Vecino</h1>
+                        <p class="text-lg font-semibold text-blue-900 -mt-1">Abril 2026</p>
+                        <div class="flex items-center gap-x-2 text-sm font-medium text-emerald-600">
+                            <i class="fas fa-cross text-xl"></i>
+                            <span>Iglesia Bautista Gracia de Dios</span>
+                            <span class="px-3 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded-full font-bold">FARMACIA</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-x-4">
+                    <button onclick="syncMedications()" 
+                            class="flex items-center gap-x-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-sm font-medium">
+                        <i class="fas fa-sync"></i>
+                        <span>Sincronizar Google Sheets</span>
+                    </button>
+                    <button onclick="exportAllData()" 
+                            class="flex items-center gap-x-2 px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-2xl text-sm font-medium">
+                        <i class="fas fa-download"></i> Exportar
+                    </button>
+                </div>
+            </div>
+
+            <!-- NAVEGACIÓN -->
+            <div class="px-8 border-t flex items-center text-sm font-medium">
+                <button onclick="navigate(0)" id="tab-0" class="nav-link active px-8 py-4 flex items-center gap-x-2"> <i class="fas fa-user"></i> PACIENTES </button>
+                <button onclick="navigate(1)" id="tab-1" class="nav-link px-8 py-4 flex items-center gap-x-2"> <i class="fas fa-user-md"></i> MÉDICOS </button>
+                <button onclick="navigate(2)" id="tab-2" class="nav-link px-8 py-4 flex items-center gap-x-2"> <i class="fas fa-pills"></i> MEDICAMENTOS </button>
+                <button onclick="navigate(3)" id="tab-3" class="nav-link px-8 py-4 flex items-center gap-x-2 bg-blue-50 text-blue-700 rounded-t-3xl"> <i class="fas fa-hand-holding-medical"></i> DISPENSACIÓN </button>
+                <button onclick="navigate(4)" id="tab-4" class="nav-link px-8 py-4 flex items-center gap-x-2"> <i class="fas fa-chart-bar"></i> REPORTES </
