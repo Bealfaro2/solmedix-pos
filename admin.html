@@ -2190,8 +2190,7 @@ function abrirModalMed(med){
   if(_tipoVal==='1')_tipoVal='01'; if(_tipoVal==='2')_tipoVal='02'; if(_tipoVal==='3')_tipoVal='03';
   document.getElementById('med-tipo').value=_tipoVal;
   setClaveSatInput(med?(med.clave_sat||med['Clave SAT']||''):'');
-  if(!med) document.getElementById('med-clave-unidad').value='H87';
-  document.getElementById('med-clave-unidad').value=med?(med.clave_unidad||med['Clave Unidad']||''):'';
+  document.getElementById('med-clave-unidad').value=med?(med.clave_unidad||med['Clave Unidad']||'H87'):'H87';
   document.getElementById('med-codigo-barras').value=med?(med.codigo_barras||med['codigo_barras']||''):'';
   document.getElementById('med-editando-id').value=med?med.id:'';
   document.getElementById('med-alrt').style.display='none';
