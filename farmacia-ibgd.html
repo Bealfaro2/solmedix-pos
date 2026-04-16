@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Día del Vecino Abril 2026 - Farmacia IBGD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+        body { font-family: 'Inter', system_ui, sans-serif; }
+        .header-font { font-family: 'Playfair Display', sans-serif; }
+        .nav-link { transition: all 0.2s; }
+        .nav-link.active { border-bottom: 4px solid #1e40af; color: #1e40af; font-weight: 600; }
+        .scan-input { animation: scan-pulse 2s infinite; }
+        @keyframes scan-pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.4); } 50% { box-shadow: 0 0 0 15px rgba(16,185,129,0); } }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <!-- HEADER -->
+    <div class="bg-white shadow-sm sticky top-0 z-50 border-b">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-x-4">
+                <img src="IBGD.jfif" alt="Logo IBGD" class="h-14 w-auto object-contain" onerror="this.style.display='none';">
+                <div>
+                    <h1 class="header-font text-3xl font-bold text-slate-900">Día del Vecino</h1>
+                    <p class="text-blue-900">Abril 2026 • Iglesia Bautista Gracia de Dios</p>
+                </div>
+            </div>
+            <button onclick="syncMedications()" 
+                    class="flex items-center gap-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-3xl text-sm font-medium">
+                <i class="fas fa-sync"></i> Sincronizar Sheets
+            </button>
+        </div>
+
+        <!-- NAVEGACIÓN -->
+        <div class="max-w-7xl mx-auto px-6 flex text-sm font-medium border-b bg-white overflow-x-auto">
+            <button onclick="navigate(0)" id="tab-0" class="nav-link px-8 py-5 flex items-center gap-x-2"><i class="fas fa-user"></i> PACIENTES</button>
+            <button onclick="navigate(1)" id="tab-1" class="nav-link px-8 py-5 flex items-center gap-x-2"><i class="fas fa-user-md"></i> MÉDICOS</button>
+            <button onclick="navigate(2)" id="tab-2" class="nav-link px-8 py-5 flex items-center gap-x-2"><i class="fas fa-pills"></i> MEDICAMENTOS</button>
+            <button onclick="navigate(3)" id="tab-3" class="nav-link active px-8 py-5 flex items-center gap-x-2 bg-blue-50 text-blue-700"><i class="fas fa-hand-holding-medical"></i> DISPENSACIÓN</button>
+            <button onclick="navigate(4)" id="tab-4" class="nav-link px-8 py-5 flex items-center gap-x-2"><i class="fas fa-chart-bar"></i> REPORTES</button>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+
+        <!-- PANEL 0: PACIENTES -->
+        <div id="panel-0" class="tab-panel hidden">
+            <h2 class="text-2xl font-semibold mb-6">Pacientes Registrados</h2>
+            <button onclick="showPatientForm()" class="bg-blue-900 text-white px-6 py-3 rounded-3xl mb-6">+ Nuevo Paciente</button>
+            <div class="bg-white rounded-3xl shadow overflow-hidden">
+                <table class="w-full"><thead class="bg-slate-50"><tr>
+                    <th class="px-8 py-4 text-left">Nombre</th>
+                    <th class="px-8 py-4 text-left">Dirección</th>
+                    <th class="px-8 py-4 text-left">WhatsApp</th>
+                </tr></thead>
+                <tbody id="patients-table"></tbody></table>
+            </div>
+        </div>
+
+        <!-- PANEL 1: MÉDICOS -->
+        <div id="panel-1" class="tab-panel hidden">
+            <h2 class="text-2xl font-semibold mb-6">Médicos Colaboradores</h2>
+            <button onclick="showDoctorForm()" class="bg-blue-900 text-white px-6 py-3 rounded-3xl mb-6">+ Nuevo Médico</button>
+            <div class="bg-white rounded-3xl shadow overflow-hidden">
+                <table class="w-full"><thead class="bg-slate-50"><tr>
+                    <th class="px-8 py-4 text-left">Nombre</th>
+                    <th class="px-8 py-4 text-left">Especialidad</th>
+                    <th class="px-8 py-4 text-left">Cédula</th>
+                    <th class="px-8 py-4 text-left">WhatsApp</th>
+                </tr></thead>
+                <tbody id="doctors-table"></tbody></table>
+            </div>
+        </div>
+
+        <!-- PANEL 2: MEDICAMENTOS -->
+        <div id="panel-2" class="tab-panel hidden">
+            <div class="flex justify-between mb-6">
+                <h2 class="text-2xl font-semibold">Medicamentos (Google Sheets)</h2>
+                <button onclick="syncMedications()" class="bg-emerald-600 text-white px-6 py-3 rounded-3xl">Sincronizar</button>
+            </div>
+            <div class="bg-white rounded-3xl shadow overflow-hidden">
+                <table class="w-full"><thead class="bg-slate-50"><tr>
+                    <th class="px-8 py-4 text-left">Código Barras</th>
+                    <th class="px-8 py-4 text-left">Descripción</th>
+                    <th class="px-8 py-4 text-left">Lote</th>
+                    <th class="px-8 py-4 text-left">Caducidad</th>
+                </tr></thead>
+                <tbody id="medications-table"></tbody></table>
+            </div>
+        </div>
+
+        <!-- PANEL 3: DISPENSACIÓN -->
+        <div id="panel-3" class="tab-panel">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white rounded-3xl shadow p-8">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-8 h-8 bg-blue-100 text-blue-700 rounded-2xl flex items-center justify-center font-bold">1</div>
+                        <h3 class="font-semibold text-xl">Paciente</h3>
+                    </div>
+                    <select id="select-patient" onchange="loadPatientInfo()" class="w-full px-6 py-4 bg-slate-100 rounded-3xl"></select>
+                    <button onclick="showPatientForm()" class="mt-4 text-blue-600">+ Nuevo paciente</button>
+                    <div id="patient-info" class="hidden mt-8 p-6 bg-slate-50 rounded-3xl text-sm"></div>
+                </div>
+
+                <div class="bg-white rounded-3xl shadow p-8">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-8 h-8 bg-blue-100 text-blue-700 rounded-2xl flex items-center justify-center font-bold">2</div>
+                        <h3 class="font-semibold text-xl">Medicamentos</h3>
+                    </div>
+                    <div class="flex gap-3">
+                        <input id="barcode-input" placeholder="Código de barras..." class="scan-input flex-1 px-6 py-4 border border-emerald-300 rounded-3xl">
+                        <button onclick="addMedicationByBarcode()" class="bg-emerald-600 text-white px-8 rounded-3xl">Agregar</button>
+                    </div>
+                    <div id="meds-list" class="mt-6 min-h-[200px] bg-slate-50 border border-dashed rounded-3xl p-6"></div>
+                    <div class="mt-4 text-right">Total: <span id="meds-count" class="font-bold text-emerald-600">0</span></div>
+                </div>
+            </div>
+
+            <div class="mt-8 bg-white rounded-3xl shadow p-8">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-8 h-8 bg-blue-100 text-blue-700 rounded-2xl flex items-center justify-center font-bold">3</div>
+                    <h3 class="font-semibold text-xl">Médico que recetó</h3>
+                </div>
+                <select id="select-doctor" class="w-full px-6 py-4 bg-slate-100 rounded-3xl">
+                    <option value="">Seleccionar médico...</option>
+                </select>
+            </div>
+
+            <div class="mt-10 flex justify-end">
+                <button onclick="registerDispensation()" 
+                        class="bg-gradient-to-r from-blue-900 to-blue-700 text-white px-16 py-6 rounded-3xl text-lg font-semibold">
+                    REGISTRAR DISPENSACIÓN
+                </button>
+            </div>
+        </div>
+
+        <!-- PANEL 4: REPORTES -->
+        <div id="panel-4" class="tab-panel hidden">
+            <h2 class="text-2xl font-semibold mb-6">Reportes</h2>
+            <p class="text-slate-500">Los reportes se mostrarán aquí una vez que tengas dispensaciones registradas.</p>
+        </div>
+    </div>
+
+    <!-- Modal Paciente -->
+    <div id="modal-patient" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-[100]">
+        <div class="bg-white rounded-3xl max-w-md w-full mx-4 p-8">
+            <h3 class="text-xl font-semibold mb-6">Nuevo Paciente</h3>
+            <form onsubmit="savePatient(event)">
+                <input id="p-nombre" required placeholder="Nombre completo" class="w-full px-6 py-4 border rounded-3xl mb-4">
+                <input id="p-direccion" required placeholder="Dirección completa" class="w-full px-6 py-4 border rounded-3xl mb-4">
+                <input id="p-whatsapp" required placeholder="WhatsApp" class="w-full px-6 py-4 border rounded-3xl mb-6">
+                <div class="flex gap-3">
+                    <button type="button" onclick="hideModals()" class="flex-1 py-4 border rounded-3xl">Cancelar</button>
+                    <button type="submit" class="flex-1 py-4 bg-blue-900 text-white rounded-3xl">Guardar Paciente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = "https://script.google.com/macros/s/AKfycby7ihnIDQ3hxTeldszc0gdpjUpVQMEZNgNYPjU1yazl6cFzQeVj47Mxyg_DItI06NDe/exec";
+
+        let patients = [], medications = [], currentDispMeds = [];
+
+        async function loadMedicationsFromSheets() {
+            try {
+                const res = await fetch(BASE_URL + "?action=getAllMedications");
+                const data = await res.json();
+                medications = Array.isArray(data) ? data : [];
+                console.log("Medicamentos cargados:", medications.length);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function syncMedications() {
+            await loadMedicationsFromSheets();
+            alert(`✅ Sincronizado correctamente (${medications.length} medicamentos)`);
+        }
+
+        function navigate(tab) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+            const panel = document.getElementById(`panel-${tab}`);
+            if (panel) panel.classList.remove('hidden');
+
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            const activeTab = document.getElementById(`tab-${tab}`);
+            if (activeTab) activeTab.classList.add('active');
+        }
+
+        function hideModals() {
+            document.getElementById('modal-patient').classList.add('hidden');
+        }
+
+        function showPatientForm() {
+            document.getElementById('modal-patient').classList.remove('hidden');
+        }
+
+        function savePatient(e) {
+            e.preventDefault();
+            const p = {
+                id: "P" + Date.now(),
+                nombre: document.getElementById('p-nombre').value.trim(),
+                direccion: document.getElementById('p-direccion').value.trim(),
+                whatsapp: document.getElementById('p-whatsapp').value.trim()
+            };
+            if (!p.nombre || !p.direccion || !p.whatsapp) return alert("Todos los campos son obligatorios");
+            patients.push(p);
+            localStorage.setItem('ibgd_patients', JSON.stringify(patients));
+            renderPatientSelects();
+            hideModals();
+        }
+
+        function renderPatientSelects() {
+            const sel = document.getElementById('select-patient');
+            sel.innerHTML = '<option value="">Seleccionar paciente...</option>' + 
+                patients.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+        }
+
+        function loadPatientInfo() {
+            const id = document.getElementById('select-patient').value;
+            const p = patients.find(x => x.id === id);
+            const div = document.getElementById('patient-info');
+            if (!p) return div.classList.add('hidden');
+            div.innerHTML = `<strong>Nombre:</strong> ${p.nombre}<br><strong>Dirección:</strong> ${p.direccion}<br><strong>WhatsApp:</strong> ${p.whatsapp}`;
+            div.classList.remove('hidden');
+        }
+
+        function addMedicationByBarcode() {
+            const code = document.getElementById('barcode-input').value.trim();
+            const med = medications.find(m => m.codigoBarras === code);
+            if (!med) return alert("Código no encontrado");
+            currentDispMeds.push(med);
+            document.getElementById('barcode-input').value = '';
+            renderCurrentDispMeds();
+        }
+
+        function renderCurrentDispMeds() {
+            const container = document.getElementById('meds-list');
+            container.innerHTML = currentDispMeds.map((m,i) => `
+                <div class="flex justify-between bg-white p-4 rounded-2xl mb-3">
+                    <div>${m.descripcion}</div>
+                    <button onclick="currentDispMeds.splice(${i},1);renderCurrentDispMeds()" class="text-red-500">×</button>
+                </div>
+            `).join('') || `<p class="text-slate-400 text-center py-12">Los medicamentos aparecerán aquí</p>`;
+            document.getElementById('meds-count').textContent = currentDispMeds.length;
+        }
+
+        async function registerDispensation() {
+            const patientId = document.getElementById('select-patient').value;
+            if (!patientId) return alert("Selecciona un paciente");
+            if (currentDispMeds.length === 0) return alert("Agrega al menos un medicamento");
+
+            const patient = patients.find(p => p.id === patientId);
+            const disp = {
+                fecha: new Date().toLocaleString('es-MX'),
+                paciente: patient ? patient.nombre : '',
+                medicamentos: currentDispMeds.map(m => m.descripcion).join(" | "),
+                medico: "Médico colaborador"
+            };
+
+            try {
+                const res = await fetch(BASE_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "saveDispensation", data: disp })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    alert("✅ Dispensación guardada en Google Sheets");
+                    currentDispMeds = [];
+                    renderCurrentDispMeds();
+                } else {
+                    alert("Error al guardar");
+                }
+            } catch (e) {
+                alert("Error de conexión");
+            }
+        }
+
+        // Inicio
+        window.onload = async () => {
+            patients = JSON.parse(localStorage.getItem('ibgd_patients') || '[]');
+            renderPatientSelects();
+            await loadMedicationsFromSheets();
+            navigate(3);
+        };
+    </script>
+</body>
+</html>
