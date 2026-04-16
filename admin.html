@@ -525,6 +525,7 @@ select option { background:var(--bg-2); color:var(--text); }
           </div>
         </div>
       </div>
+
       </div>
 
     </div>
@@ -3729,10 +3730,8 @@ function renderCajaAdmin() {
     var desdeOk = !desde || fecha >= desde;
     var hastaOk = !hasta  || fecha <= hasta;
     var sucOk   = !suc    || r.sucursal === suc;
-    console.log('CAJA FILTER:', fecha, desde, hasta, suc, desdeOk, hastaOk, sucOk);
     return desdeOk && hastaOk && sucOk;
   });
-  console.log('CAJA SRC:', src.length, 'of', (caja||[]).length);
 
   // Group by date+sucursal
   var grupos = {};
