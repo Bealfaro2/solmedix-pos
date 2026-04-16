@@ -3717,19 +3717,22 @@ function inicializarCajaAdmin() {
 }
 
 function renderCajaAdmin() {
-  var desde = document.getElementById('ca-desde').value;
-  var hasta  = document.getElementById('ca-hasta').value;
-  var suc    = document.getElementById('ca-suc').value;
+  var desde = document.getElementById('ca-desde') ? document.getElementById('ca-desde').value : '';
+  var hasta  = document.getElementById('ca-hasta') ? document.getElementById('ca-hasta').value : '';
+  var suc    = document.getElementById('ca-suc')   ? document.getElementById('ca-suc').value   : '';
   // Lock by profile
   if (perfilActual === 'mty') suc = 'MTY';
   if (perfilActual === 'slp') suc = 'SLP';
 
   var src = (caja||[]).filter(function(r) {
-    var fecha = String(r.fecha||'').split('T')[0];
-    var ok = (!desde || fecha >= desde) && (!hasta || fecha <= hasta);
-    if (suc) ok = ok && r.sucursal === suc;
-    return ok;
+    var fecha = String(r.fecha||'').split('T')[0].trim();
+    var desdeOk = !desde || fecha >= desde;
+    var hastaOk = !hasta  || fecha <= hasta;
+    var sucOk   = !suc    || r.sucursal === suc;
+    console.log('CAJA FILTER:', fecha, desde, hasta, suc, desdeOk, hastaOk, sucOk);
+    return desdeOk && hastaOk && sucOk;
   });
+  console.log('CAJA SRC:', src.length, 'of', (caja||[]).length);
 
   // Group by date+sucursal
   var grupos = {};
