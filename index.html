@@ -587,13 +587,14 @@ function confirmarSuc() {
       return;
     }
     sucursal = sucSelected;
-    inicializarCaja();
+    // Configurar chip y ocultar pantalla login ANTES de verificar caja
     var chip = document.getElementById('chip-suc');
     chip.className = 'chip-suc ' + SUCURSALES[sucursal].chipClass;
     chip.textContent = SUCURSALES[sucursal].chipLabel;
     document.getElementById('pantalla-sucursal').style.display = 'none';
-    document.getElementById('sistema').style.display = 'block';
+    // NO mostrar sistema todavía — inicializarCaja decide si mostrar o bloquear
     iniciar();
+    inicializarCaja();
   }
 
   if (configSistema.pwd_mty) {
