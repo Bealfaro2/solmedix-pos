@@ -261,6 +261,21 @@ tbody tr:last-child { border-bottom: none; }
   <div id="configBanner" class="config-banner" style="display:none">
     ⚠️ Configura la URL del Web App de Google Apps Script en la variable <code>APPS_SCRIPT_URL</code> del código JavaScript para conectar con Google Sheets.
   </div>
+
+  <!-- PANEL DE DIAGNÓSTICO -->
+  <div class="card" id="panelDiagnostico" style="border:2px solid var(--gold);margin-bottom:16px">
+    <div class="card-header" style="margin-bottom:12px;padding-bottom:12px">
+      <div class="card-icon icon-gold">🔧</div>
+      <div><h2>Diagnóstico de Conexión</h2><p>Prueba la comunicación con Google Sheets paso a paso</p></div>
+      <button class="btn btn-outline btn-sm no-print" style="margin-left:auto" onclick="document.getElementById('panelDiagnostico').style.display='none'">Ocultar</button>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+      <button class="btn btn-primary" onclick="diagLectura()">1️⃣ Probar Lectura (get_all)</button>
+      <button class="btn btn-gold" onclick="diagEscritura()">2️⃣ Probar Escritura (médico de prueba)</button>
+      <button class="btn btn-outline" onclick="document.getElementById('diagLog').innerHTML=''">🗑 Limpiar</button>
+    </div>
+    <div id="diagLog" style="background:#0d1117;color:#58d68d;font-family:monospace;font-size:0.8rem;padding:16px;border-radius:8px;min-height:80px;max-height:280px;overflow-y:auto;white-space:pre-wrap;"></div>
+  </div>
   <div class="stats-grid" id="statsGrid"></div>
   <div class="card">
     <div class="card-header">
@@ -994,6 +1009,56 @@ function toast(msg, type) {
   el.className = 'show ' + type;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { el.className = ''; }, 3400);
+}
+
+// ─── DIAGNÓSTICO ───
+function diagLog(msg, color) {
+  var el = document.getElementById('diagLog');
+  var ts = new Date().toLocaleTimeString('es-MX');
+  var c = color || '#58d68d';
+  el.innerHTML += '<span style="color:#7f8c8d">[' + ts + ']</span> <span style="color:' + c + '">' + msg + '</span>\n';
+  el.scrollTop = el.scrollHeight;
+}
+
+function diagLectura() {
+  diagLog('Enviando GET ?accion=get_all ...', '#f39c12');
+  var cbName = 'diagCb_' + Date.now();
+  var script = document.createElement('script');
+  var timer = setTimeout(function(){ diagLog('⏱ Timeout — el servidor no respondió en 10s', '#e74c3c'); script.remove(); delete window[cbName]; }, 10000);
+  window[cbName] = function(data) {
+    clearTimeout(timer); delete window[cbName]; script.remove();
+    if (data.error) {
+      diagLog('❌ Servidor respondió con error: ' + data.error, '#e74c3c');
+    } else {
+      diagLog('✅ Lectura OK — Pacientes: ' + (data.pacientes||[]).length + ', Médicos: ' + (data.medicos||[]).length + ', Meds: ' + (data.medicamentos||[]).length, '#2ecc71');
+      diagLog('Respuesta completa: ' + JSON.stringify(data).substring(0, 300), '#85c1e9');
+    }
+  };
+  script.onerror = function() { clearTimeout(timer); delete window[cbName]; script.remove(); diagLog('❌ Error de red en lectura — revisa la URL o el despliegue', '#e74c3c'); };
+  script.src = APPS_SCRIPT_URL + '?accion=get_all&callback=' + cbName;
+  document.head.appendChild(script);
+}
+
+function diagEscritura() {
+  diagLog('Enviando escritura de médico de prueba...', '#f39c12');
+  var cbName = 'diagCb_' + Date.now();
+  var script = document.createElement('script');
+  var timer = setTimeout(function(){ diagLog('⏱ Timeout — el servidor no respondió en 10s', '#e74c3c'); script.remove(); delete window[cbName]; }, 10000);
+  window[cbName] = function(data) {
+    clearTimeout(timer); delete window[cbName]; script.remove();
+    if (data && data.ok) {
+      diagLog('✅ Escritura OK — ID asignado: ' + data.id, '#2ecc71');
+      diagLog('El Apps Script SÍ está procesando escrituras correctamente', '#2ecc71');
+    } else {
+      diagLog('❌ Escritura falló: ' + JSON.stringify(data), '#e74c3c');
+      diagLog('→ El Apps Script NO está procesando el caso guardar_medico', '#e74c3c');
+      diagLog('→ Verifica que redesplegaste con NUEVA VERSIÓN', '#f39c12');
+    }
+  };
+  script.onerror = function() { clearTimeout(timer); delete window[cbName]; script.remove(); diagLog('❌ Error de red en escritura', '#e74c3c'); };
+  var params = 'accion=guardar_medico&nombre=MEDICO_PRUEBA_BORRAR&especialidad=PEDIATR%C3%8DA&cedula=0000000&rfc=&whatsapp=';
+  script.src = APPS_SCRIPT_URL + '?' + params + '&callback=' + cbName;
+  document.head.appendChild(script);
 }
 
 // ─── INIT ───
