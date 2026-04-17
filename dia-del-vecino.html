@@ -520,13 +520,15 @@ function apiGet(accion, cb) {
 }
 
 function apiPost(data, cb) {
-  fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify(data)
-  })
-  .then(r => r.json())
-  .then(d => cb(null, d))
-  .catch(e => cb(e.message));
+  // Usamos JSONP igual que apiGet para evitar el error CORS de Google Apps Script
+  var cbName = 'cb_' + Date.now();
+  var script = document.createElement('script');
+  window[cbName] = function(res){ delete window[cbName]; script.remove(); cb(null, res); };
+  script.onerror = function(){ delete window[cbName]; script.remove(); cb('Error de red'); };
+  // Enviamos los datos como parámetro URL codificado en base64
+  var encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+  script.src = APPS_SCRIPT_URL + '?payload=' + encodeURIComponent(encoded) + '&callback=' + cbName;
+  document.head.appendChild(script);
 }
 
 function urlConfigurada() {
