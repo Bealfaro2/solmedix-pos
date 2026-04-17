@@ -567,21 +567,71 @@ function sincronizar() {
     return;
   }
   setSyncStatus('syncing', 'Sincronizando con Google Sheets…');
-  apiGet('get_all', function(err, data) {
-    if (err || data.error) {
-      setSyncStatus('error', 'Error al conectar: ' + (err || data.error));
-      toast('Error de conexión con Google Sheets', 'error');
-      return;
-    }
-    DB.pacientes      = data.pacientes      || [];
-    DB.medicos        = data.medicos        || [];
-    DB.medicamentos   = data.medicamentos   || [];
-    DB.dispensaciones = data.dispensaciones || [];
-    SYNCED = true;
-    setSyncStatus('ok', 'Sincronizado · ' + new Date().toLocaleTimeString('es-MX'));
-    renderStats();
-    toast('Datos sincronizados correctamente', 'success');
+  // Cargamos cada hoja por separado en paralelo para evitar timeout
+  var resultados = {};
+  var hojas = ['pacientes', 'medicos', 'medicamentos', 'dispensaciones'];
+  var pendientes = hojas.length;
+  var huboError = false;
+
+  hojas.forEach(function(hoja) {
+    apiGetConTimeout(hoja, 30000, function(err, data) {
+      if (huboError) return;
+      if (err || data.error) {
+        huboError = true;
+        setSyncStatus('error', 'Error al cargar ' + hoja + ': ' + (err || data.error));
+        toast('Error sincronizando ' + hoja, 'error');
+        return;
+      }
+      resultados[hoja] = data[hoja] || [];
+      pendientes--;
+      setSyncStatus('syncing', 'Cargando datos… (' + (hojas.length - pendientes) + '/' + hojas.length + ')');
+      if (pendientes === 0) {
+        DB.pacientes      = resultados['pacientes'];
+        DB.medicos        = resultados['medicos'];
+        DB.medicamentos   = resultados['medicamentos'];
+        DB.dispensaciones = resultados['dispensaciones'];
+        SYNCED = true;
+        setSyncStatus('ok', 'Sincronizado · ' + new Date().toLocaleTimeString('es-MX'));
+        renderStats();
+        // Actualizar tablas si están visibles
+        if (document.getElementById('page-pacientes').classList.contains('active'))    renderTablaPacientes();
+        if (document.getElementById('page-medicos').classList.contains('active'))      renderTablaMedicos();
+        if (document.getElementById('page-medicamentos').classList.contains('active')) renderTablaMedicamentos();
+        toast('Datos sincronizados correctamente', 'success');
+      }
+    });
   });
+}
+
+function apiGetConTimeout(accion, timeoutMs, cb) {
+  var cbName = 'cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+  var script = document.createElement('script');
+  var done = false;
+  var timer = setTimeout(function() {
+    if (done) return;
+    done = true;
+    delete window[cbName];
+    script.remove();
+    cb('Timeout (' + timeoutMs/1000 + 's) cargando ' + accion);
+  }, timeoutMs);
+  window[cbName] = function(data) {
+    if (done) return;
+    done = true;
+    clearTimeout(timer);
+    delete window[cbName];
+    script.remove();
+    cb(null, data);
+  };
+  script.onerror = function() {
+    if (done) return;
+    done = true;
+    clearTimeout(timer);
+    delete window[cbName];
+    script.remove();
+    cb('Error de red');
+  };
+  script.src = APPS_SCRIPT_URL + '?accion=' + accion + '&callback=' + cbName;
+  document.head.appendChild(script);
 }
 
 // ─── NAVEGACIÓN ───
@@ -1024,7 +1074,7 @@ function diagLectura() {
   diagLog('Enviando GET ?accion=get_all ...', '#f39c12');
   var cbName = 'diagCb_' + Date.now();
   var script = document.createElement('script');
-  var timer = setTimeout(function(){ diagLog('⏱ Timeout — el servidor no respondió en 10s', '#e74c3c'); script.remove(); delete window[cbName]; }, 10000);
+  var timer = setTimeout(function(){ diagLog('⏱ Timeout — el servidor no respondió en 10s', '#e74c3c'); script.remove(); delete window[cbName]; }, 30000);
   window[cbName] = function(data) {
     clearTimeout(timer); delete window[cbName]; script.remove();
     if (data.error) {
@@ -1043,7 +1093,7 @@ function diagEscritura() {
   diagLog('Enviando escritura de médico de prueba...', '#f39c12');
   var cbName = 'diagCb_' + Date.now();
   var script = document.createElement('script');
-  var timer = setTimeout(function(){ diagLog('⏱ Timeout — el servidor no respondió en 10s', '#e74c3c'); script.remove(); delete window[cbName]; }, 10000);
+  var timer = setTimeout(function(){ diagLog('⏱ Timeout — el servidor no respondió en 10s', '#e74c3c'); script.remove(); delete window[cbName]; }, 30000);
   window[cbName] = function(data) {
     clearTimeout(timer); delete window[cbName]; script.remove();
     if (data && data.ok) {
