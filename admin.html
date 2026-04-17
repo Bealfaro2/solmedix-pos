@@ -997,7 +997,11 @@ select option { background:var(--bg-2); color:var(--text); }
             <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:var(--radius-sm);padding:10px 13px;font-size:12px;color:#fcd34d;margin:12px 0">
               ⚠️ Revisa los datos. Las facturas con RFC receptor diferente a SSM180928AQ7 están marcadas en amarillo.
             </div>
-            <div style="display:flex;gap:8px;justify-content:flex-end">
+            <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap">
+              <div style="display:flex;align-items:center;gap:8px">
+                <label style="font-size:13px;white-space:nowrap">Sucursal *</label>
+                <select id="gf-suc-reg" style="min-width:160px"><option value="">-- Seleccionar --</option><option value="MTY">Monterrey</option><option value="SLP">San Luis Potosí</option></select>
+              </div>
               <button class="btn" onclick="limpiarGfPreview()">Cancelar</button>
               <button class="btn btnp" id="btn-guardar-gastos" onclick="guardarGastosFiscales()">Guardar gastos al sistema</button>
             </div>
@@ -2152,10 +2156,10 @@ function mostrarTabsSegunPerfil(){
   var gnfSucDiv=document.getElementById('gnf-suc-div');
   var utSucDiv=document.getElementById('ut-suc-div');
   if(perfilActual==='mty'){
-    ['gf-suc','gnf-suc','ut-suc'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value='MTY'; });
+    ['gf-suc','gnf-suc','ut-suc','gf-suc-reg','gnf-suc-reg'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value='MTY'; });
     [gfSucDiv,gnfSucDiv,utSucDiv].forEach(function(el){ if(el) el.style.display='none'; });
   } else if(perfilActual==='slp'){
-    ['gf-suc','gnf-suc','ut-suc'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value='SLP'; });
+    ['gf-suc','gnf-suc','ut-suc','gf-suc-reg','gnf-suc-reg'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value='SLP'; });
     [gfSucDiv,gnfSucDiv,utSucDiv].forEach(function(el){ if(el) el.style.display='none'; });
   } else {
     [gfSucDiv,gnfSucDiv,utSucDiv].forEach(function(el){ if(el) el.style.display=''; });
@@ -2623,7 +2627,11 @@ function limpiarGfPreview() {
 }
 
 function guardarGastosFiscales() {
-  var suc = perfilActual==='mty'?'MTY':perfilActual==='slp'?'SLP':(document.getElementById('gf-suc').value||'MTY');
+  var suc = perfilActual==='mty'?'MTY':perfilActual==='slp'?'SLP':(document.getElementById('gf-suc-reg')?document.getElementById('gf-suc-reg').value:'');
+  if(!suc){
+    gfAlrt('Selecciona la sucursal del gasto antes de guardar.','e');
+    return;
+  }
   var aGuardar = gfPendientes.filter(function(g){ return !g._error && !g._duplicate; });
   if (!aGuardar.length) {
     gfAlrt('No hay gastos nuevos para guardar (todos son duplicados o tienen error).','e');
@@ -3887,7 +3895,6 @@ function exportarCajaAdminPDF() {
 
 /* ── Catálogo de Claves SAT ─────────────────────────────────── */
 var CLAVES_SAT = [
-  { clave:'51101500', desc:'Antibióticos' },
   { clave:'51111700', desc:'Antibióticos antineoplásicos' },
   { clave:'51111800', desc:'Hormonas y antihormonas' },
   { clave:'51111900', desc:'Antitumorales naturales' },
