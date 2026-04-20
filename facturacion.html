@@ -530,16 +530,9 @@
 /* ═══════════════════════════════════════════════════════════
    CONFIGURACIÓN
 ═══════════════════════════════════════════════════════════ */
-var SW_USER     = 'aalfaro@solmedix.com.mx';
-var SW_PASS     = '*Xf*8ki3SoLW';
-var SW_URL_TEST = 'https://services.test.sw.com.mx';
-var SW_URL_PROD = 'https://services.sw.com.mx';
-var SW_URL      = SW_URL_PROD; // ✅ Producción
 
 // CSD Solmedix
 var CSD_CER = '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';
-var CSD_KEY = 'MIIFDjBABgkqhkiG9w0BBQ0wMzAbBgkqhkiG9w0BBQwwDgQIAgEAAoIBAQACAggAMBQGCCqGSIb3DQMHBAgwggTAAgEAMASCBMgKwMHMFwcrhRZg6Mpk9BEwCjnpOzSL7fSKtcCgbVA6+R2LTqkCOp1kwXy+KXGo/zC07oy3aVZOLhDLxboMbFWQmXXnS5idB8GT5WAlBtT3pTfkg2TtZJSzCVHgtUvLHTjhlfmviwYQEdPesvk8m4qtuFFJtwLii0Dvinm+oDlgTBNUcoc00qG/O28m0eBxIeiLxOqAYTCO0yIU4G8IToEMtCUJ/J6lnXNDwC9MarNUVkQ9BZAOiBSNTZUUfrKjifSsSfU3T4uvtX3fKL/oGDo4IOD9kboRu8s2Gl6CN4eViNgoWcBhaKAG+wq2w9TOUATtkftLIv6MjEcOO1tZzNChyT/tZCvvE9MBx476BoRbFQRRw8I+f7NDSHDRHaleNWcwMd5XoTCUrr39QcWK3zepiwtQfxAS1YfnQEte7hIUGG+B0LPxHldGMv7+mr4LFiKY/kJ+ZVORn31u5TCTyYDSUJqA5cP3rMNc+qYgfZUpMVu7Q3zrC3dXwHkKi94sD6L7dBECNoCvi4KTxLawHVNexg0+yaY8uCF7fE0S9x/M3lO1AN6cwqAb9k/Gqd819kkZxtr3QrKbXSuVZaYyx119ZEW9vZiS8ZOBAROPHt1W7tsbOOwcHf/VJvVlkljkPnNB3+E9kUaeCx9bhg4wCqloFrPVulqGdhrqi104z8wPTya6oreeQiA0x6TgMJwk2SExgCKIAEwwMkW6aqi5Is8YoCMJGjxWi+ZWFUzw7s3cLIYOPq2VPeZpvgrfuQ9wkhdsXMg5tdNClx7Bv+ZYdnmb4DVCdWjz6SWDR0RvuQfa0iAxEyDy/+YuADp7gqEKikH1xeypCBtyakzSTp4XPLLti8feGlpWtYTxhcDJmKkAj1KvAWG6lUXCKMT689ALsMVCvFpr4U2txN8plWsla7Hqt+uCJJtn3qQj8/tNR0miAcuhvhkrgG3vNhGsj+YKMGEz0g2tvWN0WMuwEn6sz9yoq9T0QezMPF5D7wzT+6OTeSAl3Y2DCK3ktnrLrQ39Y1+SU3GStbhH1+IyvWwzxMBRujzoPf1ceMyavW3ic4uCY2Veh5d8drnysHgmXg576ZSlbaRK96tietYRwvMKKRnsA+Z8bDQCO/H/ne9BRpU3RuIfH0gBNe2yGwkHUiIEWYZE3NMupwwvVb8qT9awPfFosnjvVSmIXM7Vrb3Ndmt+qgUVN9QSNiacthuXMrPv7zKVrGJX+Xf80anMX1zMtFwvV5mKQNu22zj8FuH3Uu5MGLD07abo2S+cuTkdevx3jHkZqWwXkywX8HVn4AlrS5gnBb3St3DbtDqi2f7hzw4N6XhI6cjbfm1Tx+6+AyKMy4CBgQcrUrzenlYQO0sWOWmHICOKsIpBWJohz1d5Tg4LjKj7WTrZwDgOi1d6+t8XItLKK940AXg4JqazOnNmKJ82zryFYTBhq/DnJXzWOVv9J4EKMUpUTqvqK31hW0qL5qxTsrs3gPPxY5nKjLYtCPVRiJDZ33ZCT/HEWl9uVeD2uL3KVNo1BHuo3/n0mR30OgAFD8yqLeVFijRU7IeZ1Br8hZ5iz5oJdLrRb1jr7zfSs8a0M5CKK+lE1NLiHj3qi9Y/iNN5azeDoU6YEHfRPizdeJepVeiHhlc=';
-var CSD_PASS = 'ipgp1420';
 
 var API_URL = 'https://script.google.com/macros/s/AKfycbxk0Bo3PkVdiRoZflMMXUP9XGcduClRHOyxVqWG-EM7m-3I9tWncMWY2kgqfPgbO2jn/exec';
 
@@ -664,32 +657,6 @@ function renderVentaInfo(v) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   SW SAPIEN — OBTENER TOKEN
-═══════════════════════════════════════════════════════════ */
-function obtenerToken(callback) {
-  var ahora = Math.floor(Date.now()/1000);
-  if(_swToken && _swTokenExp > ahora + 60){
-    callback(null, _swToken); return;
-  }
-  fetch(SW_URL + '/v2/security/authenticate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user: SW_USER, password: SW_PASS })
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(d){
-    if(d.status==='success' && d.data && d.data.token){
-      _swToken    = d.data.token;
-      _swTokenExp = d.data.expires_in || (ahora + 7000);
-      callback(null, _swToken);
-    } else {
-      callback(new Error(d.message||'Error de autenticación con SW Sapien'));
-    }
-  })
-  .catch(function(e){ callback(e); });
-}
-
-/* ═══════════════════════════════════════════════════════════
    PASO 2 — GENERAR FACTURA
 ═══════════════════════════════════════════════════════════ */
 function generarFactura() {
@@ -701,129 +668,90 @@ function generarFactura() {
   var correo  = document.getElementById('inp-correo').value.trim();
 
   hideAlrt('alrt2');
-
-  if(!rfc)    { showAlrt('alrt2','Ingresa tu RFC.','e'); return; }
-  if(rfc.length < 12) { showAlrt('alrt2','El RFC debe tener al menos 12 caracteres.','e'); return; }
-  if(!nombre) { showAlrt('alrt2','Ingresa tu nombre o razón social.','e'); return; }
-  if(!regimen){ showAlrt('alrt2','Selecciona tu régimen fiscal.','e'); return; }
-  if(!uso)    { showAlrt('alrt2','Selecciona el uso del CFDI.','e'); return; }
-  if(!cp || cp.length!==5){ showAlrt('alrt2','Ingresa tu código postal fiscal (5 dígitos).','e'); return; }
-  if(!correo || !correo.includes('@')){ showAlrt('alrt2','Ingresa un correo electrónico válido.','e'); return; }
+  if(!rfc)              { showAlrt('alrt2','Ingresa tu RFC.','e'); return; }
+  if(rfc.length < 12)   { showAlrt('alrt2','El RFC debe tener al menos 12 caracteres.','e'); return; }
+  if(!nombre)           { showAlrt('alrt2','Ingresa tu nombre o razón social.','e'); return; }
+  if(!regimen)          { showAlrt('alrt2','Selecciona tu régimen fiscal.','e'); return; }
+  if(!uso)              { showAlrt('alrt2','Selecciona el uso del CFDI.','e'); return; }
+  if(!cp||cp.length!==5){ showAlrt('alrt2','Ingresa tu código postal fiscal (5 dígitos).','e'); return; }
+  if(!correo||!correo.includes('@')){ showAlrt('alrt2','Ingresa un correo electrónico válido.','e'); return; }
 
   var btn = document.getElementById('btn-facturar');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Generando factura...';
 
-  // 1. Obtener token SW Sapien
-  obtenerToken(function(err, token){
-    if(err){
-      btn.disabled=false; btn.textContent='Generar y enviar factura';
-      showAlrt('alrt2','Error al conectar con el servicio de timbrado: '+err.message,'e');
-      return;
-    }
-    // 2. Construir JSON del CFDI
-    var venta = _ventaData;
-    var fecha = new Date().toISOString().slice(0,19);
-    var conceptos = (venta.items||[]).map(function(it){
-      var precio = Number(it.precio||0);
-      var qty    = Number(it.qty||1);
-      var importe= precio * qty;
-      return {
-        ClaveProdServ:  it.clave_sat || '51201500',
-        NoIdentificacion: String(venta.id).padStart(4,'0'),
-        Cantidad: qty,
-        ClaveUnidad: 'H87',
-        Unidad: 'Pieza',
-        Descripcion: it.nombre || 'Medicamento de especialidad',
-        ValorUnitario: precio.toFixed(6),
-        Importe: importe.toFixed(6),
-        ObjetoImp: '01'
-      };
-    });
-    if(!conceptos.length){
-      conceptos = [{
-        ClaveProdServ: '51201500',
-        Cantidad: 1,
-        ClaveUnidad: 'H87',
-        Unidad: 'Pieza',
-        Descripcion: 'Medicamento de especialidad',
-        ValorUnitario: Number(venta.total).toFixed(6),
-        Importe: Number(venta.total).toFixed(6),
-        ObjetoImp: '01'
-      }];
-    }
+  var venta   = _ventaData;
+  var fecha   = new Date().toLocaleString('sv-SE', { timeZone:'America/Monterrey' }).replace(' ','T');
+  var total   = Number(venta.total||0).toFixed(2);
+  var folio   = String(venta.id||'1').padStart(4,'0');
 
-    var cfdiJson = {
-      Version: '4.0',
-      Serie: 'F',
-      Folio: String(venta.id),
-      Fecha: fecha,
-      FormaPago: '99',
-      NoCertificado: '',
-      SubTotal: Number(venta.total).toFixed(2),
-      Moneda: 'MXN',
-      Total: Number(venta.total).toFixed(2),
-      TipoDeComprobante: 'I',
-      Exportacion: '01',
-      MetodoPago: 'PUE',
-      LugarExpedicion: EMISOR.cp_emisor,
-      Emisor: {
-        Rfc:           EMISOR.rfc,
-        Nombre:        EMISOR.nombre,
-        RegimenFiscal: EMISOR.regimen
-      },
-      Receptor: {
-        Rfc:                       rfc,
-        Nombre:                    nombre,
-        DomicilioFiscalReceptor:   cp,
-        RegimenFiscalReceptor:     regimen,
-        UsoCFDI:                   uso
-      },
-      Conceptos: conceptos
-    };
-
-    // 3. Timbrar via SW Sapien (emisión JSON)
-    // Build request with CSD for signing
-    var requestBody = Object.assign({}, cfdiJson, {
-      email: [correo],
-      b64Cer: CSD_CER,
-      b64Key: CSD_KEY,
-      password: CSD_PASS
-    });
-
-    fetch(SW_URL + '/v4/cfdi40/issue/json/v4', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'bearer ' + token
-      },
-      body: JSON.stringify(requestBody)
-    })
-    .then(function(r){ return r.json(); })
-    .then(function(resp){
-      btn.disabled=false; btn.textContent='Generar y enviar factura';
-      if(resp.status==='success' && resp.data){
-        var uuid = (resp.data.uuid || resp.data.UUID || '').toUpperCase();
-        document.getElementById('success-msg').textContent =
-          'Tu CFDI ha sido generado y enviado a ' + correo +
-          '. Revisa también tu carpeta de spam si no lo encuentras en los próximos minutos.';
-        if(uuid){
-          document.getElementById('uuid-text').textContent = uuid;
-          document.getElementById('uuid-box').style.display = 'block';
-        }
-        setStep(3);
-      } else {
-        var msg = resp.message || resp.messageDetail || 'Error al timbrar el CFDI';
-        showAlrt('alrt2','Error al generar la factura: '+msg+'<br><small>Si el problema persiste contáctanos.</small>','e');
-      }
-    })
-    .catch(function(e){
-      btn.disabled=false; btn.textContent='Generar y enviar factura';
-      showAlrt('alrt2','Error de conexión con el servicio de timbrado. Intenta de nuevo.','e');
-    });
+  // Construir conceptos
+  var items = venta.items || [];
+  if (!items.length) {
+    items = [{ nombre:'Medicamento de especialidad', precio: Number(venta.total), qty:1, clave_sat:'51201500' }];
+  }
+  var conceptosXML = '';
+  items.forEach(function(it) {
+    var precio  = Number(it.precio||it.precio_unit||0);
+    var qty     = Number(it.qty||it.cantidad||1);
+    var importe = (precio * qty).toFixed(2);
+    conceptosXML +=
+      '<cfdi:Concepto ClaveProdServ="'+(it.clave_sat||'51201500')+'" '+
+      'Cantidad="'+qty+'" ClaveUnidad="H87" Unidad="Pieza" '+
+      'Descripcion="'+(it.nombre||'Medicamento').replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'" '+
+      'ValorUnitario="'+precio.toFixed(2)+'" Importe="'+importe+'" ObjetoImp="01"/>';
   });
-}
 
+  // XML CFDI 4.0 (Pax sella y timbra en su servidor con nuestro CSD)
+  var xmlCFDI =
+    '<?xml version="1.0" encoding="utf-8"?>' +
+    '<cfdi:Comprobante xmlns:cfdi="http://www.sat.gob.mx/cfd/4" ' +
+    'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ' +
+    'xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd" ' +
+    'Version="4.0" Serie="F" Folio="'+folio+'" Fecha="'+fecha+'" ' +
+    'FormaPago="99" SubTotal="'+total+'" Moneda="MXN" Total="'+total+'" ' +
+    'TipoDeComprobante="I" Exportacion="01" MetodoPago="PUE" ' +
+    'LugarExpedicion="'+EMISOR.cp_emisor+'">' +
+    '<cfdi:Emisor Rfc="'+EMISOR.rfc+'" Nombre="'+EMISOR.nombre+'" RegimenFiscal="'+EMISOR.regimen+'"/>' +
+    '<cfdi:Receptor Rfc="'+rfc+'" Nombre="'+nombre+'" ' +
+    'DomicilioFiscalReceptor="'+cp+'" RegimenFiscalReceptor="'+regimen+'" UsoCFDI="'+uso+'"/>' +
+    '<cfdi:Conceptos>'+conceptosXML+'</cfdi:Conceptos>' +
+    '</cfdi:Comprobante>';
+
+  // Enviar al Apps Script que actúa como proxy hacia Pax Facturación
+  var cbName = 'timbraCb_' + Date.now();
+  window[cbName] = function(resp) {
+    delete window[cbName];
+    btn.disabled = false; btn.textContent = 'Generar y enviar factura';
+    if (resp && resp.ok && resp.uuid) {
+      document.getElementById('success-msg').textContent =
+        'Tu CFDI fue generado exitosamente. Se enviará a ' + correo + ' en breve. ' +
+        'Guarda el UUID para tus registros.';
+      document.getElementById('uuid-text').textContent = resp.uuid.toUpperCase();
+      document.getElementById('uuid-box').style.display = 'block';
+      setStep(3);
+    } else {
+      var msg = (resp && resp.error) ? resp.error : 'Error desconocido al timbrar';
+      showAlrt('alrt2','Error: '+msg+'<br><small>Si persiste contáctanos: MTY 55 1660 9658 | SLP 444 443 3070</small>','e');
+    }
+  };
+
+  // POST via form (no-cors) — pero necesitamos respuesta, así que usamos JSONP workaround
+  // Guardamos el XML en Sheets primero via GET con parámetros encoded, luego lo timbra
+  var params = '?accion=timbrar_cfdi' +
+    '&callback=' + cbName +
+    '&correo=' + encodeURIComponent(correo) +
+    '&xml=' + encodeURIComponent(xmlCFDI);
+
+  var s = document.createElement('script');
+  s.onerror = function() {
+    delete window[cbName];
+    btn.disabled = false; btn.textContent = 'Generar y enviar factura';
+    showAlrt('alrt2','Error de conexión. Intenta de nuevo.','e');
+  };
+  s.src = API_URL + params;
+  document.head.appendChild(s);
+}
 function reiniciar(){
   _ventaData = null;
   document.getElementById('inp-clave').value = '';
