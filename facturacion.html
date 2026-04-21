@@ -729,13 +729,13 @@ function generarFactura() {
   formData.append('xml', xmlCFDI);
   formData.append('correo', correo);
 
-  fetch(API_URL, {
+  fetch(API_URL + '?accion=guardar_cfdi_temp&key=' + tempKey, {
     method: 'POST',
     mode: 'no-cors',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: formData.toString()
   }).then(function() {
-    // Esperar 2 segundos y luego hacer GET para timbrar
+    // Esperar 4 segundos y luego hacer GET para timbrar
     setTimeout(function() {
       var cbName = 'timbraCb_' + Date.now();
       window[cbName] = function(resp) {
