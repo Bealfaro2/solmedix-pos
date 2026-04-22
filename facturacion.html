@@ -666,44 +666,153 @@ function generarFactura() {
   var uso     = document.getElementById('inp-uso').value;
   var cp      = document.getElementById('inp-cp').value.trim();
   var correo  = document.getElementById('inp-correo').value.trim();
-
   hideAlrt('alrt2');
-  if(!rfc)              { showAlrt('alrt2','Ingresa tu RFC.','e'); return; }
-  if(rfc.length < 12)   { showAlrt('alrt2','El RFC debe tener al menos 12 caracteres.','e'); return; }
-  if(!nombre)           { showAlrt('alrt2','Ingresa tu nombre o razón social.','e'); return; }
-  if(!regimen)          { showAlrt('alrt2','Selecciona tu régimen fiscal.','e'); return; }
-  if(!uso)              { showAlrt('alrt2','Selecciona el uso del CFDI.','e'); return; }
-  if(!cp||cp.length!==5){ showAlrt('alrt2','Ingresa tu código postal fiscal (5 dígitos).','e'); return; }
+  if(!rfc)               { showAlrt('alrt2','Ingresa tu RFC.','e'); return; }
+  if(rfc.length < 12)    { showAlrt('alrt2','El RFC debe tener al menos 12 caracteres.','e'); return; }
+  if(!nombre)            { showAlrt('alrt2','Ingresa tu nombre o razón social.','e'); return; }
+  if(!regimen)           { showAlrt('alrt2','Selecciona tu régimen fiscal.','e'); return; }
+  if(!uso)               { showAlrt('alrt2','Selecciona el uso del CFDI.','e'); return; }
+  if(!cp||cp.length!==5) { showAlrt('alrt2','Ingresa tu código postal fiscal (5 dígitos).','e'); return; }
   if(!correo||!correo.includes('@')){ showAlrt('alrt2','Ingresa un correo electrónico válido.','e'); return; }
 
   var btn = document.getElementById('btn-facturar');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Generando factura...';
 
-  var venta   = _ventaData;
-  var fecha   = new Date().toLocaleString('sv-SE', { timeZone:'America/Monterrey' }).replace(' ','T');
-  var total   = Number(venta.total||0).toFixed(2);
-  var folio   = String(venta.id||'1').padStart(4,'0');
+  var venta  = _ventaData;
+  var fecha  = new Date().toLocaleString('sv-SE',{timeZone:'America/Monterrey'}).replace(' ','T');
+  var total  = Number(venta.total||0).toFixed(2);
+  var folio  = String(venta.id||'1').padStart(4,'0');
 
-  // Construir lista de conceptos como JSON simple
   var items = venta.items || [];
   if (!items.length) {
     items = [{ nombre:'Medicamento de especialidad', precio: Number(venta.total), qty:1, clave_sat:'51201500' }];
   }
-  var conceptosJson = JSON.stringify(items.map(function(it){
+  var conceptos = items.map(function(it){
     return {
-      nombre: it.nombre || 'Medicamento',
-      precio: Number(it.precio||it.precio_unit||0),
-      qty:    Number(it.qty||it.cantidad||1),
+      nombre:    it.nombre || 'Medicamento',
+      precio:    Number(it.precio||it.precio_unit||0),
+      qty:       Number(it.qty||it.cantidad||1),
       clave_sat: it.clave_sat||'51201500'
     };
-  }));
+  });
 
-  // Enviar datos al Apps Script via JSONP — el AS construye el XML y llama a Pax
+  // Construir XML y firmar en browser, luego enviar a Apps Script
+  construirYFirmarXML(rfc, nombre, regimen, uso, cp, correo, folio, fecha, total, conceptos)
+    .then(function(xmlSellado) {
+      enviarXMLSellado(xmlSellado, correo, nombre, btn);
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = 'Generar y enviar factura';
+      showAlrt('alrt2','Error al firmar: ' + err.message,'e');
+    });
+}
+
+// ── Construir XML y firmar con Web Crypto ─────────────────────
+async function construirYFirmarXML(rfc, nombre, regimen, uso, cp, correo, folio, fecha, total, conceptos) {
+
+  var subtotal = conceptos.reduce(function(s,c){ return s + c.precio * c.qty; }, 0).toFixed(2);
+
+  var esc = function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+
+  var conceptosXML = conceptos.map(function(c){
+    var imp = (c.precio * c.qty).toFixed(2);
+    return '<cfdi:Concepto ClaveProdServ="'+(c.clave_sat||'51201500')+'" '+
+      'Cantidad="'+c.qty+'" ClaveUnidad="H87" '+
+      'Descripcion="'+esc(c.nombre)+'" '+
+      'ValorUnitario="'+c.precio.toFixed(2)+'" '+
+      'Importe="'+imp+'" ObjetoImp="01"/>';
+  }).join('');
+
+  var xml =
+    '<?xml version="1.0" encoding="UTF-8"?>'+
+    '<cfdi:Comprobante '+
+      'xmlns:cfdi="http://www.sat.gob.mx/cfd/4" '+
+      'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '+
+      'xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd" '+
+      'Version="4.0" Serie="F" Folio="'+folio+'" Fecha="'+fecha+'" '+
+      'Sello="" '+
+      'FormaPago="01" '+
+      'NoCertificado="'+NO_CERTIFICADO+'" '+
+      'Certificado="'+CSD_CER+'" '+
+      'SubTotal="'+subtotal+'" Moneda="MXN" Total="'+subtotal+'" '+
+      'TipoDeComprobante="I" Exportacion="01" MetodoPago="PUE" '+
+      'LugarExpedicion="64010">'+
+    '<cfdi:Emisor Rfc="SSM180928AQ7" Nombre="SOLMEDIX SOLUCIONES MEDICAS SA DE CV" RegimenFiscal="601"/>'+
+    '<cfdi:Receptor '+
+      'Rfc="'+rfc+'" '+
+      'Nombre="'+esc(nombre)+'" '+
+      'DomicilioFiscalReceptor="'+cp+'" '+
+      'RegimenFiscalReceptor="'+regimen+'" '+
+      'UsoCFDI="'+uso+'"/>'+
+    '<cfdi:Conceptos>'+conceptosXML+'</cfdi:Conceptos>'+
+    '</cfdi:Comprobante>';
+
+  // Cadena original
+  var cadena = generarCadenaOriginalJS(xml);
+
+  // Importar llave PKCS8
+  var keyB64 = CSD_KEY;
+  var keyBytes = Uint8Array.from(atob(keyB64), function(c){ return c.charCodeAt(0); });
+  var cryptoKey = await crypto.subtle.importKey(
+    'pkcs8',
+    keyBytes.buffer,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
+  // Firmar
+  var encoder = new TextEncoder();
+  var datos   = encoder.encode(cadena);
+  var firma   = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, datos);
+
+  // Convertir firma a base64
+  var sello = btoa(String.fromCharCode.apply(null, new Uint8Array(firma)));
+
+  // Insertar sello en XML
+  var xmlSellado = xml.replace('Sello=""', 'Sello="'+sello+'"');
+  return xmlSellado;
+}
+
+// ── Cadena original CFDI 4.0 (JavaScript) ────────────────────
+function generarCadenaOriginalJS(xmlStr) {
+  var get = function(tag, attr) {
+    var re = new RegExp('<'+tag+'[^>]*\\s'+attr+'="([^"]*)"');
+    var m  = xmlStr.match(re);
+    return m ? m[1] : '';
+  };
+  var gc = function(a){ return get('cfdi:Comprobante',a); };
+
+  var c = '||'+
+    gc('Version')+'|'+gc('Serie')+'|'+gc('Folio')+'|'+gc('Fecha')+'|'+
+    gc('FormaPago')+'|'+gc('NoCertificado')+'|'+gc('SubTotal')+'|'+
+    gc('Moneda')+'|'+gc('Total')+'|'+gc('TipoDeComprobante')+'|'+
+    gc('Exportacion')+'|'+gc('MetodoPago')+'|'+gc('LugarExpedicion')+'|'+
+    get('cfdi:Emisor','Rfc')+'|'+get('cfdi:Emisor','Nombre')+'|'+get('cfdi:Emisor','RegimenFiscal')+'|'+
+    get('cfdi:Receptor','Rfc')+'|'+get('cfdi:Receptor','Nombre')+'|'+
+    get('cfdi:Receptor','DomicilioFiscalReceptor')+'|'+
+    get('cfdi:Receptor','RegimenFiscalReceptor')+'|'+
+    get('cfdi:Receptor','UsoCFDI')+'|';
+
+  var conceptos = xmlStr.match(/<cfdi:Concepto[^>]*>/g)||[];
+  conceptos.forEach(function(con){
+    var ga = function(a){ var m=con.match(new RegExp('\\s'+a+'="([^"]*)"')); return m?m[1]:''; };
+    c += ga('ClaveProdServ')+'|'+ga('Cantidad')+'|'+ga('ClaveUnidad')+'|'+
+         ga('Descripcion')+'|'+ga('ValorUnitario')+'|'+ga('Importe')+'|'+ga('ObjetoImp')+'|';
+  });
+  c += '|';
+  return c;
+}
+
+// ── Enviar XML sellado al Apps Script ─────────────────────────
+function enviarXMLSellado(xmlSellado, correo, nombre, btn) {
   var cbName = 'timbraCb_' + Date.now();
   window[cbName] = function(resp) {
     delete window[cbName];
-    btn.disabled = false; btn.textContent = 'Generar y enviar factura';
+    btn.disabled = false;
+    btn.textContent = 'Generar y enviar factura';
     if (resp && resp.ok && resp.uuid) {
       document.getElementById('success-msg').textContent =
         'Tu CFDI fue generado exitosamente. Guarda el UUID para tus registros.';
@@ -716,29 +825,22 @@ function generarFactura() {
     }
   };
 
-  var params = '?accion=timbrar_cfdi' +
-    '&callback=' + cbName +
-    '&rfc_receptor=' + encodeURIComponent(rfc) +
-    '&nombre_receptor=' + encodeURIComponent(nombre) +
-    '&regimen_receptor=' + encodeURIComponent(regimen) +
-    '&uso_cfdi=' + encodeURIComponent(uso) +
-    '&cp_receptor=' + encodeURIComponent(cp) +
-    '&correo=' + encodeURIComponent(correo) +
-    '&folio=' + encodeURIComponent(folio) +
-    '&fecha=' + encodeURIComponent(fecha) +
-    '&total=' + encodeURIComponent(total) +
-    '&conceptos=' + encodeURIComponent(conceptosJson);
+  var params = '?accion=timbrar_cfdi_sellado'+
+    '&callback='+cbName+
+    '&correo='+encodeURIComponent(correo)+
+    '&nombre_receptor='+encodeURIComponent(nombre)+
+    '&xml='+encodeURIComponent(xmlSellado);
 
   var s = document.createElement('script');
   s.onerror = function() {
     delete window[cbName];
-    btn.disabled = false; btn.textContent = 'Generar y enviar factura';
+    btn.disabled = false;
+    btn.textContent = 'Generar y enviar factura';
     showAlrt('alrt2','Error de conexión. Intenta de nuevo.','e');
   };
   s.src = API_URL + params;
   document.head.appendChild(s);
 }
-
 function reiniciar(){
   _ventaData = null;
   document.getElementById('inp-clave').value = '';
