@@ -770,6 +770,8 @@ async function construirYFirmarXML(rfc, nombre, regimen, uso, cp, correo, folio,
 
   // Convertir firma a base64
   var sello = btoa(String.fromCharCode.apply(null, new Uint8Array(firma)));
+  console.log('CADENA ORIGINAL:', cadena);
+console.log('SELLO primeros 50:', sello.substring(0, 50));
 
   // Insertar sello en XML
   var xmlSellado = xml.replace('Sello=""', 'Sello="'+sello+'"');
