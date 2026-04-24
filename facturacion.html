@@ -773,14 +773,14 @@ console.log('CADENA longitud:', cadena.length);
   var datos   = encoder.encode(cadena);
   var firma   = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, datos);
 
-  // Convertir firma a base64
+ // Convertir firma a base64
   var sello = btoa(String.fromCharCode.apply(null, new Uint8Array(firma)));
   console.log('CADENA ORIGINAL:', cadena);
-console.log('SELLO primeros 50:', sello.substring(0, 50));
-  console.log('SELLO EN XML:', xmlSellado.match(/Sello="([^"]+)"/)[1].substring(0,50));
+  console.log('SELLO primeros 50:', sello.substring(0, 50));
 
   // Insertar sello en XML
   var xmlSellado = xml.replace('Sello=""', 'Sello="'+sello+'"');
+  console.log('SELLO EN XML:', xmlSellado.match(/Sello="([^"]+)"/)[1].substring(0,50));
   return xmlSellado;
 }
 
