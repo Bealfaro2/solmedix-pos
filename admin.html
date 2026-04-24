@@ -1399,7 +1399,7 @@ select option { background:var(--bg-2); color:var(--text); }
             ondragleave="this.style.borderColor='';this.style.background=''"
             ondrop="onGfDrop(event)">
             <div style="font-size:32px;margin-bottom:8px">📄</div>
-            <div style="font-size:14px;font-weight:600;color:var(--text-2)">Arrastra el XML aquí o haz clic para seleccionar</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text-2)">Arrastra uno o varios XML aquí o haz clic para seleccionar</div>
             <div style="font-size:12px;color:var(--text-3);margin-top:4px">CFDI 4.0 — cualquier tipo de gasto</div>
             <input type="file" id="gf-file-input" accept=".xml" style="display:none" onchange="onGfFile(event)" multiple/>
           </div>
@@ -2150,123 +2150,26 @@ function onXmlFile(e) {
   if (files.length === 1) {
     procesarXML(files[0]);
   } else {
-    // Múltiples archivos: procesar en cola
-    xmlColaPendiente = Array.from(files);
-    xmlColaIndex = 0;
-    procesarSiguienteXML();
+    _xmlCola = Array.from(files);
+    _xmlColaIdx = 0;
+    _procesarSiguienteXML();
   }
   e.target.value = '';
 }
 
-var xmlColaPendiente = [];
-var xmlColaIndex = 0;
+var _xmlCola = [];
+var _xmlColaIdx = 0;
 
-function procesarSiguienteXML() {
-  if (xmlColaIndex >= xmlColaPendiente.length) {
-    alert('✅ Se procesaron ' + xmlColaPendiente.length + ' archivos XML exitosamente.');
-    xmlColaPendiente = [];
-    xmlColaIndex = 0;
+function _procesarSiguienteXML() {
+  if (_xmlColaIdx >= _xmlCola.length) {
+    alert('✅ Se procesaron ' + _xmlCola.length + ' archivos XML.');
+    _xmlCola = []; _xmlColaIdx = 0;
     return;
   }
-  var file = xmlColaPendiente[xmlColaIndex];
-  procesarXMLCola(file, function() {
-    xmlColaIndex++;
-    procesarSiguienteXML();
-  });
+  procesarXML(_xmlCola[_xmlColaIdx]);
+  // El flujo normal continúa — el usuario aplica y luego llama a limpiarXml
+  // que reinicia. Para múltiples archivos el usuario procesa uno a uno.
 }
-
-function procesarXMLCola(file, callback) {
-  if (!file.name.endsWith('.xml')) { callback(); return; }
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      var parser = new DOMParser();
-      var docXml = parser.parseFromString(e.target.result, 'text/xml');
-      var ns = 'http://www.sat.gob.mx/cfd/4';
-      var comp = docXml.getElementsByTagNameNS(ns,'Comprobante')[0] ||
-                 docXml.getElementsByTagName('cfdi:Comprobante')[0] ||
-                 docXml.documentElement;
-      var folio = (comp.getAttribute('Serie')||'') + (comp.getAttribute('Folio')||'');
-      var fecha = comp.getAttribute('Fecha')||'';
-      var total = comp.getAttribute('Total')||'';
-      var emisor = docXml.getElementsByTagNameNS(ns,'Emisor')[0] ||
-                   docXml.getElementsByTagName('cfdi:Emisor')[0];
-      var proveedor = emisor ? (emisor.getAttribute('Nombre')||'') : '';
-      var rfcProv   = emisor ? (emisor.getAttribute('Rfc')||'') : '';
-      var tfd = docXml.getElementsByTagNameNS('http://www.sat.gob.mx/TimbreFiscalDigital','TimbreFiscalDigital')[0] ||
-                docXml.getElementsByTagName('tfd:TimbreFiscalDigital')[0];
-      var uuid = tfd ? (tfd.getAttribute('UUID')||'') : '';
-
-      // Verificar duplicado
-      var folioNorm = String(folio).trim().toUpperCase();
-      var provNorm  = String(proveedor).trim().toUpperCase();
-      var duplicado = compras.some(function(c) {
-        return String(c.folio||'').trim().toUpperCase() === folioNorm &&
-               String(c.proveedor||'').trim().toUpperCase() === provNorm;
-      });
-      if (duplicado) {
-        alert('⚠️ ' + file.name + ': El folio ' + folio + ' de ' + proveedor + ' ya está registrado. Se omite.');
-        callback(); return;
-      }
-
-      var conceptos = docXml.getElementsByTagNameNS(ns,'Concepto');
-      if (!conceptos.length) conceptos = docXml.getElementsByTagName('cfdi:Concepto');
-      var items = [];
-      for (var i=0;i<conceptos.length;i++) {
-        var c = conceptos[i];
-        items.push({ descripcion:c.getAttribute('Descripcion')||'', cantidad:parseFloat(c.getAttribute('Cantidad'))||0,
-          valorUnitario:parseFloat(c.getAttribute('ValorUnitario'))||0, importe:parseFloat(c.getAttribute('Importe'))||0,
-          noIdentificacion:c.getAttribute('NoIdentificacion')||'', lote:'', medId:'' });
-      }
-      if (!items.length) { callback(); return; }
-
-      // Auto-aplicar si todos tienen medicamento auto-matched
-      var aplicados = 0;
-      var pendientes = 0;
-      items.forEach(function(item) { item.medId = autoMatch(item.descripcion); if(item.medId) aplicados++; else pendientes++; });
-
-      if (pendientes > 0) {
-        // Tiene items sin vincular — mostrar UI normal para este archivo
-        xmlFacturaInfo = { folio:folio, fecha:fecha, total:total, proveedor:proveedor, rfcProv:rfcProv, uuid:uuid };
-        xmlConceptos = items;
-        renderXmlResult();
-        // Pausar cola hasta que usuario aplique
-        xmlColaPendiente = [];
-        xmlColaIndex = 0;
-        callback = null;
-      } else {
-        // Todos vinculados — preguntar lotes y aplicar directo
-        var lotePrompts = '';
-        var todosConLote = true;
-        items.forEach(function(item, idx) {
-          var medNombre = '';
-          for(var j=0;j<medicamentos.length;j++){if(medicamentos[j].id===item.medId){medNombre=medicamentos[j].nombre;break;}}
-          var lote = prompt('Archivo: ' + file.name + '\nMedicamento: ' + medNombre + '\nNúmero de lote:', '');
-          if (!lote) { todosConLote = false; } else { item.lote = lote; }
-        });
-        if (!todosConLote) { alert('Se canceló la entrada de ' + file.name + '.'); callback(); return; }
-
-        // Guardar directamente
-        var procesados = 0;
-        items.forEach(function(item) {
-          var medNombre = '';
-          for(var j=0;j<medicamentos.length;j++){if(medicamentos[j].id===item.medId){medNombre=medicamentos[j].nombre;break;}}
-          apiPost({ accion:'registrar_compra', med_id:item.medId, medicamento:medNombre, lote:item.lote,
-            cantidad:item.cantidad, costo_unitario:item.valorUnitario, importe:item.importe,
-            proveedor:proveedor, rfc_proveedor:rfcProv, folio:folio, uuid:uuid,
-            fecha:String(fecha).split('T')[0], sucursal:(perfilActual==='slp'?'SLP':'MTY') },
-            function(err) {
-              procesados++;
-              if (procesados === items.length) { callback(); }
-            }
-          );
-        });
-      }
-    } catch(err) { alert('Error en ' + file.name + ': ' + err.message); callback(); }
-  };
-  reader.readAsText(file, 'UTF-8');
-}
-
 
 function procesarXML(file) {
   if (!file.name.endsWith('.xml')) {
@@ -2410,9 +2313,7 @@ function aplicarEntrada() {
     var provNorm  = String(xmlFacturaInfo.proveedor).trim().toUpperCase();
     var uuidNorm  = String(xmlFacturaInfo.uuid||'').trim().toUpperCase();
     var duplicado = compras.some(function(c) {
-      // Duplicado por UUID (más confiable)
       if (uuidNorm && String(c.uuid||'').trim().toUpperCase() === uuidNorm) return true;
-      // Duplicado por folio + proveedor
       return String(c.folio||'').trim().toUpperCase() === folioNorm &&
              String(c.proveedor||'').trim().toUpperCase() === provNorm;
     });
@@ -2675,64 +2576,32 @@ function exportarComprasPDF() {
 function exportarReportePagos() {
   var src = window._comprasData || compras;
   if (!src.length) { alert('No hay datos para exportar'); return; }
-
-  // Agrupar por folio+proveedor para obtener importe total por factura
   var facturas = {};
   src.forEach(function(c) {
     var key = (c.proveedor||'') + '||' + (c.folio||'');
     if (!facturas[key]) {
-      facturas[key] = {
-        fecha: String(c.fecha).split('T')[0],
-        proveedor: c.proveedor||'',
-        folio: c.folio||'',
-        importe: 0
-      };
+      facturas[key] = { fecha:String(c.fecha).split('T')[0], proveedor:c.proveedor||'', folio:c.folio||'', importe:0 };
     }
     facturas[key].importe += Number(c.importe)||0;
   });
-
   var lista = Object.values(facturas).sort(function(a,b){ return a.proveedor.localeCompare(b.proveedor,'es'); });
   var totalGeneral = lista.reduce(function(s,f){ return s + f.importe; }, 0);
-
-  var filas = lista.map(function(f, i) {
+  var filas = lista.map(function(f,i) {
     var fecha = f.fecha.split('-').reverse().join('/');
-    var bg = i%2===0 ? '' : 'background:#f8f9fa';
-    return '<tr style="' + bg + '">' +
-      '<td>' + fecha + '</td>' +
-      '<td><strong>' + f.proveedor + '</strong></td>' +
-      '<td style="font-family:monospace">' + f.folio + '</td>' +
-      '<td style="text-align:right;font-weight:600;color:#185FA5">$' + f.importe.toLocaleString('es-MX',{minimumFractionDigits:2}) + '</td>' +
-      '</tr>';
+    var bg = i%2===0?'':'background:#f8f9fa';
+    return '<tr style="'+bg+'"><td>'+fecha+'</td><td><strong>'+f.proveedor+'</strong></td><td style="font-family:monospace">'+f.folio+'</td><td style="text-align:right;font-weight:600;color:#185FA5">$'+f.importe.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
   }).join('');
-
-  var w = window.open('','_blank','width=800,height:700');
-  w.document.write('<!DOCTYPE html><html><head><title>Reporte de Pagos Solmedix</title>' +
-    '<style>' +
-      '@page{size:A4;margin:15mm}' +
-      'body{font-family:Arial,sans-serif;font-size:11px;color:#222}' +
-      'h1{font-size:16px;color:#185FA5;margin-bottom:2px}' +
-      'h2{font-size:11px;color:#666;margin-bottom:14px;font-weight:normal}' +
-      'table{width:100%;border-collapse:collapse}' +
-      'th{background:#185FA5;color:#fff;padding:7px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em}' +
-      'th:last-child{text-align:right}' +
-      'td{padding:6px 10px;border-bottom:1px solid #e5e7eb;font-size:11px}' +
-      '.total-row td{background:#0A2D56;color:#fff;font-weight:700;font-size:13px;border:none;padding:9px 10px}' +
-      '.total-row td:last-child{text-align:right}' +
-      '@media print{button{display:none}}' +
-    '</style></head><body>');
-  w.document.write('<h1>Solmedix — Reporte de Pagos Pendientes</h1>');
-  w.document.write('<h2>' + lista.length + ' facturas | Generado: ' + new Date().toLocaleDateString('es-MX') + '</h2>');
-  w.document.write('<table>');
-  w.document.write('<thead><tr><th>Fecha</th><th>Proveedor</th><th>Folio de Factura</th><th style="text-align:right">Importe</th></tr></thead>');
-  w.document.write('<tbody>' + filas + '</tbody>');
-  w.document.write('<tfoot><tr class="total-row"><td colspan="3">TOTAL A PAGAR</td><td>$' + totalGeneral.toLocaleString('es-MX',{minimumFractionDigits:2}) + '</td></tr></tfoot>');
-  w.document.write('</table>');
-  w.document.write('<div style="margin-top:12px;text-align:right"><button onclick="window.print()" style="background:#185FA5;color:#fff;border:none;padding:8px 20px;border-radius:6px;font-size:12px;cursor:pointer">🖨️ Imprimir / Guardar PDF</button></div>');
+  var w = window.open('','_blank','width=800,height=700');
+  w.document.write('<!DOCTYPE html><html><head><title>Reporte de Pagos Solmedix</title><style>@page{size:A4;margin:15mm}body{font-family:Arial,sans-serif;font-size:11px;color:#222}h1{font-size:16px;color:#185FA5;margin-bottom:2px}h2{font-size:11px;color:#666;margin-bottom:14px;font-weight:normal}table{width:100%;border-collapse:collapse}th{background:#185FA5;color:#fff;padding:7px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em}th:last-child{text-align:right}td{padding:6px 10px;border-bottom:1px solid #e5e7eb;font-size:11px}.total-row td{background:#0A2D56;color:#fff;font-weight:700;font-size:13px;border:none;padding:9px 10px}.total-row td:last-child{text-align:right}@media print{button{display:none}}</style></head><body>');
+  w.document.write('<h1>Solmedix — Reporte de Pagos Pendientes</h1><h2>'+lista.length+' facturas | Generado: '+new Date().toLocaleDateString('es-MX')+'</h2>');
+  w.document.write('<table><thead><tr><th>Fecha</th><th>Proveedor</th><th>Folio de Factura</th><th style="text-align:right">Importe</th></tr></thead><tbody>'+filas+'</tbody><tfoot><tr class="total-row"><td colspan="3">TOTAL A PAGAR</td><td>$'+totalGeneral.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr></tfoot></table>');
+  w.document.write('<div style="margin-top:12px;text-align:right"><button onclick="window.print()" style="background:#185FA5;color:#fff;border:none;padding:8px 20px;border-radius:6px;font-size:12px;cursor:pointer">Imprimir / Guardar PDF</button></div>');
   w.document.write('</body></html>');
   w.document.close();
 }
 
-var inp=document.getElementById(inputId);if(inp.type==="password"){inp.type="text";btn.textContent="🙈";}else{inp.type="password";btn.textContent="👁";}}
+
+function toggleOjo(inputId,btn){var inp=document.getElementById(inputId);if(inp.type==="password"){inp.type="text";btn.textContent="🙈";}else{inp.type="password";btn.textContent="👁";}}
 
 function cambiarPwd(perfil) {
   if(perfilActual!=='admin'){alert('Solo el administrador puede cambiar contrasenas');return;}
