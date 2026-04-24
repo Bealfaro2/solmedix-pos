@@ -541,7 +541,7 @@ var EMISOR = {
   rfc:         'SSM180928AQ7',
   nombre:      'SOLMEDIX SOLUCIONES MEDICAS SA DE CV',
   regimen:     '601',
-  cp_emisor:   '64010'
+  cp_emisor:   '64610'
 };
 
 var _ventaData   = null;
@@ -738,7 +738,7 @@ async function construirYFirmarXML(rfc, nombre, regimen, uso, cp, correo, folio,
       'Certificado="'+CSD_CER+'" '+
       'SubTotal="'+subtotal+'" Moneda="MXN" Total="'+subtotal+'" '+
       'TipoDeComprobante="I" Exportacion="01" MetodoPago="PUE" '+
-      'LugarExpedicion="64010">'+
+      'LugarExpedicion="64610">'+
     '<cfdi:Emisor Rfc="SSM180928AQ7" Nombre="SOLMEDIX SOLUCIONES MEDICAS" RegimenFiscal="601"/>'+
     '<cfdi:Receptor '+
       'Rfc="'+rfc+'" '+
