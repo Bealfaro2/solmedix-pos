@@ -782,30 +782,55 @@ console.log('SELLO primeros 50:', sello.substring(0, 50));
 
 // ── Cadena original CFDI 4.0 (JavaScript) ────────────────────
 function generarCadenaOriginalJS(xmlStr) {
-  var get = function(tag, attr) {
-    var re = new RegExp('<'+tag+'[^>]*\\s'+attr+'="([^"]*)"');
-    var m  = xmlStr.match(re);
+  // Extraer bloques específicos
+  var comprobante = xmlStr.match(/<cfdi:Comprobante[^>]*>/);
+  var emisor = xmlStr.match(/<cfdi:Emisor[^>]*>/);
+  var receptor = xmlStr.match(/<cfdi:Receptor[^>]*>/);
+
+  var ga = function(block, attr) {
+    if (!block) return '';
+    var m = block[0].match(new RegExp('\\s' + attr + '="([^"]*)"'));
     return m ? m[1] : '';
   };
-  var gc = function(a){ return get('cfdi:Comprobante',a); };
 
-  var c = '||'+
-    gc('Version')+'|'+gc('Serie')+'|'+gc('Folio')+'|'+gc('Fecha')+'|'+
-    gc('FormaPago')+'|'+gc('NoCertificado')+'|'+gc('SubTotal')+'|'+
-    gc('Moneda')+'|'+gc('Total')+'|'+gc('TipoDeComprobante')+'|'+
-    gc('Exportacion')+'|'+gc('MetodoPago')+'|'+gc('LugarExpedicion')+'|'+
-    get('cfdi:Emisor','Rfc')+'|'+get('cfdi:Emisor','Nombre')+'|'+get('cfdi:Emisor','RegimenFiscal')+'|'+
-    get('cfdi:Receptor','Rfc')+'|'+get('cfdi:Receptor','Nombre')+'|'+
-    get('cfdi:Receptor','DomicilioFiscalReceptor')+'|'+
-    get('cfdi:Receptor','RegimenFiscalReceptor')+'|'+
-    get('cfdi:Receptor','UsoCFDI')+'|';
+  var c = '||' +
+    ga(comprobante,'Version') + '|' +
+    ga(comprobante,'Serie') + '|' +
+    ga(comprobante,'Folio') + '|' +
+    ga(comprobante,'Fecha') + '|' +
+    ga(comprobante,'FormaPago') + '|' +
+    ga(comprobante,'NoCertificado') + '|' +
+    ga(comprobante,'SubTotal') + '|' +
+    ga(comprobante,'Moneda') + '|' +
+    ga(comprobante,'Total') + '|' +
+    ga(comprobante,'TipoDeComprobante') + '|' +
+    ga(comprobante,'Exportacion') + '|' +
+    ga(comprobante,'MetodoPago') + '|' +
+    ga(comprobante,'LugarExpedicion') + '|' +
+    ga(emisor,'Rfc') + '|' +
+    ga(emisor,'Nombre') + '|' +
+    ga(emisor,'RegimenFiscal') + '|' +
+    ga(receptor,'Rfc') + '|' +
+    ga(receptor,'Nombre') + '|' +
+    ga(receptor,'DomicilioFiscalReceptor') + '|' +
+    ga(receptor,'RegimenFiscalReceptor') + '|' +
+    ga(receptor,'UsoCFDI') + '|';
 
-  var conceptos = xmlStr.match(/<cfdi:Concepto[^>]*>/g)||[];
-  conceptos.forEach(function(con){
-    var ga = function(a){ var m=con.match(new RegExp('\\s'+a+'="([^"]*)"')); return m?m[1]:''; };
-    c += ga('ClaveProdServ')+'|'+ga('Cantidad')+'|'+ga('ClaveUnidad')+'|'+
-         ga('Descripcion')+'|'+ga('ValorUnitario')+'|'+ga('Importe')+'|'+ga('ObjetoImp')+'|';
+  var conceptos = xmlStr.match(/<cfdi:Concepto[^>]*>/g) || [];
+  conceptos.forEach(function(con) {
+    var gc = function(a) {
+      var m = con.match(new RegExp('\\s' + a + '="([^"]*)"'));
+      return m ? m[1] : '';
+    };
+    c += gc('ClaveProdServ') + '|' +
+         gc('Cantidad') + '|' +
+         gc('ClaveUnidad') + '|' +
+         gc('Descripcion') + '|' +
+         gc('ValorUnitario') + '|' +
+         gc('Importe') + '|' +
+         gc('ObjetoImp') + '|';
   });
+
   c += '|';
   return c;
 }
