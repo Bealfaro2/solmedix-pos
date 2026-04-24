@@ -739,7 +739,8 @@ async function construirYFirmarXML(rfc, nombre, regimen, uso, cp, correo, folio,
       'SubTotal="'+subtotal+'" Moneda="MXN" Total="'+subtotal+'" '+
       'TipoDeComprobante="I" Exportacion="01" MetodoPago="PUE" '+
       'LugarExpedicion="64610">'+
-    '<cfdi:Emisor Rfc="SSM180928AQ7" Nombre="SOLMEDIX SOLUCIONES MEDICAS" RegimenFiscal="601"/>'+
+    (rfc === 'XAXX010101000' ? '<cfdi:InformacionGlobal Periodicidad="04" Meses="' + (new Date().getMonth()+1).toString().padStart(2,'0') + '" Año="' + new Date().getFullYear() + '"/>' : '') +
+'<cfdi:Emisor Rfc="SSM180928AQ7" Nombre="SOLMEDIX SOLUCIONES MEDICAS" RegimenFiscal="601"/>'+
     '<cfdi:Receptor '+
       'Rfc="'+rfc+'" '+
       'Nombre="'+esc(nombre)+'" '+
