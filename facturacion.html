@@ -860,48 +860,43 @@ function enviarXMLSellado(xmlSellado, correo, nombre, btn) {
     }
   };
 
-  // Extraer solo el sello del XML sellado (evita mandar XML completo por URL)
-  var selMatch = xmlSellado.match(/Sello="([^"]+)"/);
-  var sello = selMatch ? selMatch[1] : '';
-  var folioM = xmlSellado.match(/Folio="([^"]+)"/);
-  var folio = folioM ? folioM[1] : '';
-  var fechaM = xmlSellado.match(/Fecha="([^"]+)"/);
-  var fecha = fechaM ? fechaM[1] : '';
-  var rfcM = xmlSellado.match(/Receptor[^>]*Rfc="([^"]+)"/);
-  var rfc = rfcM ? rfcM[1] : '';
-  var regimenM = xmlSellado.match(/RegimenFiscalReceptor="([^"]+)"/);
-  var regimen = regimenM ? regimenM[1] : '';
-  var cpM = xmlSellado.match(/DomicilioFiscalReceptor="([^"]+)"/);
-  var cp = cpM ? cpM[1] : '';
-  var usoM = xmlSellado.match(/UsoCFDI="([^"]+)"/);
-  var uso = usoM ? usoM[1] : '';
+  // Guardar XML en Sheets via POST, luego timbrar via GET
+  var tempKey = 'xml_temp_' + Date.now();
 
-  // Extraer conceptos del XML
-  var conceptosMatch = xmlSellado.match(/<cfdi:Conceptos>(.+)<\/cfdi:Conceptos>/);
-  var conceptosXML = conceptosMatch ? conceptosMatch[1] : '';
-
-  var params = '?accion=timbrar_cfdi_sellado' +
-    '&callback=' + cbName +
-    '&correo=' + encodeURIComponent(correo) +
-    '&nombre_receptor=' + encodeURIComponent(nombre) +
-    '&rfc_receptor=' + encodeURIComponent(rfc) +
-    '&regimen_receptor=' + encodeURIComponent(regimen) +
-    '&cp_receptor=' + encodeURIComponent(cp) +
-    '&uso_cfdi=' + encodeURIComponent(uso) +
-    '&folio=' + encodeURIComponent(folio) +
-    '&fecha=' + encodeURIComponent(fecha) +
-    '&sello=' + encodeURIComponent(sello) +
-    '&conceptos_xml=' + encodeURIComponent(conceptosXML);
-
-  var s = document.createElement('script');
-  s.onerror = function() {
+  // Primero guardar XML completo via POST
+  fetch(API_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      accion: 'guardar_xml_temp',
+      key: tempKey,
+      xml: xmlSellado,
+      correo: correo,
+      nombre_receptor: nombre
+    })
+  }).then(function() {
+    // Esperar 1 segundo y luego llamar a timbrar con la key
+    setTimeout(function() {
+      var params = '?accion=timbrar_cfdi_sellado' +
+        '&callback=' + cbName +
+        '&xml_key=' + encodeURIComponent(tempKey);
+      var s = document.createElement('script');
+      s.onerror = function() {
+        delete window[cbName];
+        btn.disabled = false;
+        btn.textContent = 'Generar y enviar factura';
+        showAlrt('alrt2','Error de conexión. Intenta de nuevo.','e');
+      };
+      s.src = API_URL + params;
+      document.head.appendChild(s);
+    }, 1500);
+  }).catch(function(err) {
     delete window[cbName];
     btn.disabled = false;
     btn.textContent = 'Generar y enviar factura';
-    showAlrt('alrt2','Error de conexión. Intenta de nuevo.','e');
-  };
-  s.src = API_URL + params;
-  document.head.appendChild(s);
+    showAlrt('alrt2','Error de conexión: ' + err.message,'e');
+  });
 }
 function reiniciar(){
   _ventaData = null;
