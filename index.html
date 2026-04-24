@@ -325,6 +325,7 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
       <div style="position:relative;display:inline-block">
         <button id="btn-caja-menu" onclick="toggleMenuCaja()" style="padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.15);color:#fcd34d">💰 Caja</button>
         <div id="caja-menu-dropdown" style="display:none;position:absolute;top:110%;right:0;background:#1e293b;border:1px solid rgba(148,163,184,.15);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.4);min-width:160px;z-index:300;overflow:hidden">
+          <button onclick="abrirModalAbono();document.getElementById('caja-menu-dropdown').style.display='none'" style="display:block;width:100%;padding:10px 14px;text-align:left;background:none;border:none;color:#f1f5f9;font-size:13px;cursor:pointer;border-bottom:1px solid rgba(148,163,184,.1)">💵 Abonar Caja</button>
           <button onclick="abrirModalRetiro();document.getElementById('caja-menu-dropdown').style.display='none'" style="display:block;width:100%;padding:10px 14px;text-align:left;background:none;border:none;color:#f1f5f9;font-size:13px;cursor:pointer;border-bottom:1px solid rgba(148,163,184,.1)">💸 Retiro</button>
           <button onclick="abrirModalCorte();document.getElementById('caja-menu-dropdown').style.display='none'" style="display:block;width:100%;padding:10px 14px;text-align:left;background:none;border:none;color:#f1f5f9;font-size:13px;cursor:pointer">🔒 Corte</button>
         </div>
@@ -1625,6 +1626,24 @@ function guardarApertura() {
 }
 
 /* ── MODAL RETIRO ────────────────────────────────────────────── */
+function abrirModalAbono() {
+  var monto = parseFloat(prompt('Monto a abonar a caja ($):', ''));
+  if (isNaN(monto) || monto <= 0) { alert('Ingresa un monto válido.'); return; }
+  var motivo = prompt('Motivo del abono:', 'Abono de efectivo') || 'Abono de efectivo';
+  var hoy = fechaHoy();
+  var hora = new Date().toLocaleTimeString('es-MX', { hour12: false });
+  apiPost({ accion: 'guardar_caja', fecha: hoy, hora: hora, sucursal: sucursal,
+    tipo: 'abono', retiro_monto: -monto, retiro_nombre: motivo, notas: motivo },
+    function(err) {
+      if (err) { alert('Error al registrar el abono: ' + err); return; }
+      cajaDia.push({ fecha: hoy, sucursal: sucursal, tipo: 'abono',
+        retiro_monto: -monto, retiro_nombre: motivo, notas: motivo });
+      actualizarBtnCaja();
+      alert('✅ Abono de $' + monto.toLocaleString('es-MX', { minimumFractionDigits: 2 }) + ' registrado correctamente.');
+    }
+  );
+}
+
 function abrirModalRetiro() {
   document.getElementById('ret-monto').value = '';
   document.getElementById('ret-nombre').value = '';
