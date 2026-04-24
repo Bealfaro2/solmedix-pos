@@ -784,17 +784,14 @@ console.log('SELLO primeros 50:', sello.substring(0, 50));
 
 // ── Cadena original CFDI 4.0 (JavaScript) ────────────────────
 function generarCadenaOriginalJS(xmlStr) {
-  // Extraer bloques específicos
   var comprobante = xmlStr.match(/<cfdi:Comprobante[^>]*>/);
   var emisor = xmlStr.match(/<cfdi:Emisor[^>]*>/);
   var receptor = xmlStr.match(/<cfdi:Receptor[^>]*>/);
-
   var ga = function(block, attr) {
     if (!block) return '';
     var m = block[0].match(new RegExp('\\s' + attr + '="([^"]*)"'));
     return m ? m[1] : '';
   };
-
   var c = '||' +
     ga(comprobante,'Version') + '|' +
     ga(comprobante,'Serie') + '|' +
@@ -818,10 +815,15 @@ function generarCadenaOriginalJS(xmlStr) {
     ga(receptor,'RegimenFiscalReceptor') + '|' +
     ga(receptor,'UsoCFDI') + '|';
 
+  // InformacionGlobal para RFC genérico
+  var infoGlobal = xmlStr.match(/<cfdi:InformacionGlobal\s[^>]*>/);
+  if (infoGlobal) {
+    var gi = function(a){ var m=infoGlobal[0].match(new RegExp('\\s'+a+'="([^"]*)"')); return m?m[1]:''; };
+    c += gi('Periodicidad')+'|'+gi('Meses')+'|'+gi('Año')+'|';
+    console.log('InformacionGlobal en cadena:', gi('Periodicidad'), gi('Meses'), gi('Año'));
+  }
+
   var conceptos = xmlStr.match(/<cfdi:Concepto\s[^>]*>/g) || [];
-  console.log('Antes conceptos:', c);
-console.log('Conceptos encontrados:', conceptos.length);
-console.log('Primer concepto raw:', conceptos[0]);
   conceptos.forEach(function(con) {
     var gc = function(a) {
       var m = con.match(new RegExp('\\s' + a + '="([^"]*)"'));
@@ -835,7 +837,6 @@ console.log('Primer concepto raw:', conceptos[0]);
          gc('Importe') + '|' +
          gc('ObjetoImp') + '|';
   });
-
   c += '|';
   return c;
 }
