@@ -752,6 +752,7 @@ async function construirYFirmarXML(rfc, nombre, regimen, uso, cp, correo, folio,
 
   // Cadena original
   console.log('Tiene InformacionGlobal:', xml.includes('InformacionGlobal'));
+  console.log('XML A FIRMAR PRIMEROS 500:', xml.substring(0, 500));
   var cadena = generarCadenaOriginalJS(xml);
 
   // Importar llave PKCS8
