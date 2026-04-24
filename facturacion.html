@@ -880,11 +880,15 @@ function enviarXMLSellado(xmlSellado, correo, nombre, btn) {
     if (idx >= totalChunks) {
       // Todos los chunks enviados, llamar a timbrar
       setTimeout(function() {
+        // Extraer sucursal de la clave del ticket
+      var clave = (_ventaData && _ventaData.clave) ? _ventaData.clave : '';
+      var sucursal = 'MTY';
+      if (clave.indexOf('-SLP-') !== -1) sucursal = 'SLP';
         var params = '?accion=timbrar_cfdi_sellado' +
-          '&callback=' + cbName +
-          '&xml_key=' + encodeURIComponent(tempKey) +
-          '&correo=' + encodeURIComponent(correo) +
-          '&nombre_receptor=' + encodeURIComponent(nombre);
+        '&callback=' + cbName +
+        '&correo=' + encodeURIComponent(correo) +
+        '&nombre_receptor=' + encodeURIComponent(nombre) +
+        '&sucursal=' + sucursal;
         var s = document.createElement('script');
         s.onerror = function() {
           delete window[cbName];
