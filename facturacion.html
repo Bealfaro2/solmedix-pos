@@ -804,8 +804,7 @@ function generarCadenaOriginalJS(xmlStr) {
     c += ga('ClaveProdServ')+'|'+ga('Cantidad')+'|'+ga('ClaveUnidad')+'|'+
          ga('Descripcion')+'|'+ga('ValorUnitario')+'|'+ga('Importe')+'|'+ga('ObjetoImp')+'|';
   });
-  c += '|';
-  return c;
+  return c + '|';
 }
 
 // ── Enviar XML sellado al Apps Script ─────────────────────────
