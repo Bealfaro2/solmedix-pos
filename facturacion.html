@@ -751,6 +751,7 @@ async function construirYFirmarXML(rfc, nombre, regimen, uso, cp, correo, folio,
     '</cfdi:Comprobante>';
 
   // Cadena original
+  console.log('Tiene InformacionGlobal:', xml.includes('InformacionGlobal'));
   var cadena = generarCadenaOriginalJS(xml);
 
   // Importar llave PKCS8
