@@ -777,6 +777,7 @@ console.log('CADENA longitud:', cadena.length);
   var sello = btoa(String.fromCharCode.apply(null, new Uint8Array(firma)));
   console.log('CADENA ORIGINAL:', cadena);
 console.log('SELLO primeros 50:', sello.substring(0, 50));
+  console.log('SELLO EN XML:', xmlSellado.match(/Sello="([^"]+)"/)[1].substring(0,50));
 
   // Insertar sello en XML
   var xmlSellado = xml.replace('Sello=""', 'Sello="'+sello+'"');
