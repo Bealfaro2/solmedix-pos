@@ -764,6 +764,8 @@ async function construirYFirmarXML(rfc, nombre, regimen, uso, cp, correo, folio,
   );
 
   // Firmar
+  console.log('CADENA BYTES inicio:', Array.from(new TextEncoder().encode(cadena.substring(0,20))));
+console.log('CADENA longitud:', cadena.length);
   var encoder = new TextEncoder();
   var datos   = encoder.encode(cadena);
   var firma   = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, datos);
@@ -804,7 +806,8 @@ function generarCadenaOriginalJS(xmlStr) {
     c += ga('ClaveProdServ')+'|'+ga('Cantidad')+'|'+ga('ClaveUnidad')+'|'+
          ga('Descripcion')+'|'+ga('ValorUnitario')+'|'+ga('Importe')+'|'+ga('ObjetoImp')+'|';
   });
-  return c + '|';
+  c += '|';
+  return c;
 }
 
 // ── Enviar XML sellado al Apps Script ─────────────────────────
