@@ -816,7 +816,7 @@ function generarCadenaOriginalJS(xmlStr) {
     ga(receptor,'RegimenFiscalReceptor') + '|' +
     ga(receptor,'UsoCFDI') + '|';
 
-  var conceptos = xmlStr.match(/<cfdi:Concepto[^>]*>/g) || [];
+  var conceptos = xmlStr.match(/<cfdi:Concepto\s[^>]*>/g) || [];
   console.log('Antes conceptos:', c);
 console.log('Conceptos encontrados:', conceptos.length);
 console.log('Primer concepto raw:', conceptos[0]);
