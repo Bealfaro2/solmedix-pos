@@ -862,7 +862,7 @@ function enviarXMLSellado(xmlSellado, correo, nombre, btn) {
   };
 
   // Codificar XML en base64 y partir en chunks de 1500 chars
-  var xmlB64 = btoa(unescape(encodeURIComponent(xmlSellado)));
+  var xmlB64 = btoa(unescape(encodeURIComponent(xmlSellado))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
   var chunkSize = 800;
   var chunks = [];
   for (var i = 0; i < xmlB64.length; i += chunkSize) {
