@@ -861,43 +861,72 @@ function enviarXMLSellado(xmlSellado, correo, nombre, btn) {
     }
   };
 
-  // Guardar XML en Sheets via POST, luego timbrar via GET
-  var tempKey = 'xml_temp_' + Date.now();
+  // Codificar XML en base64 y partir en chunks de 1500 chars
+  var xmlB64 = btoa(unescape(encodeURIComponent(xmlSellado)));
+  var chunkSize = 1500;
+  var chunks = [];
+  for (var i = 0; i < xmlB64.length; i += chunkSize) {
+    chunks.push(xmlB64.substring(i, i + chunkSize));
+  }
+  var totalChunks = chunks.length;
+  var tempKey = 'xml_' + Date.now();
 
-  // Primero guardar XML completo via POST
-  fetch(API_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      accion: 'guardar_xml_temp',
-      key: tempKey,
-      xml: xmlSellado,
-      correo: correo,
-      nombre_receptor: nombre
-    })
-  }).then(function() {
-    // Esperar 1 segundo y luego llamar a timbrar con la key
-    setTimeout(function() {
-      var params = '?accion=timbrar_cfdi_sellado' +
-        '&callback=' + cbName +
-        '&xml_key=' + encodeURIComponent(tempKey);
-      var s = document.createElement('script');
-      s.onerror = function() {
-        delete window[cbName];
+  console.log('XML base64 longitud:', xmlB64.length, 'chunks:', totalChunks);
+
+  // Enviar chunks secuencialmente
+  function enviarChunk(idx) {
+    if (idx >= totalChunks) {
+      // Todos los chunks enviados, llamar a timbrar
+      setTimeout(function() {
+        var params = '?accion=timbrar_cfdi_sellado' +
+          '&callback=' + cbName +
+          '&xml_key=' + encodeURIComponent(tempKey) +
+          '&correo=' + encodeURIComponent(correo) +
+          '&nombre_receptor=' + encodeURIComponent(nombre);
+        var s = document.createElement('script');
+        s.onerror = function() {
+          delete window[cbName];
+          btn.disabled = false;
+          btn.textContent = 'Generar y enviar factura';
+          showAlrt('alrt2','Error de conexión. Intenta de nuevo.','e');
+        };
+        s.src = API_URL + params;
+        document.head.appendChild(s);
+      }, 500);
+      return;
+    }
+
+    var cbChunk = 'chunk_' + Date.now() + '_' + idx;
+    window[cbChunk] = function(resp) {
+      delete window[cbChunk];
+      if (resp && resp.ok) {
+        enviarChunk(idx + 1);
+      } else {
         btn.disabled = false;
         btn.textContent = 'Generar y enviar factura';
-        showAlrt('alrt2','Error de conexión. Intenta de nuevo.','e');
-      };
-      s.src = API_URL + params;
-      document.head.appendChild(s);
-    }, 1500);
-  }).catch(function(err) {
-    delete window[cbName];
-    btn.disabled = false;
-    btn.textContent = 'Generar y enviar factura';
-    showAlrt('alrt2','Error de conexión: ' + err.message,'e');
-  });
+        showAlrt('alrt2','Error enviando chunk ' + idx,'e');
+      }
+    };
+
+    var params = '?accion=guardar_xml_chunk' +
+      '&callback=' + cbChunk +
+      '&key=' + encodeURIComponent(tempKey) +
+      '&idx=' + idx +
+      '&total=' + totalChunks +
+      '&chunk=' + encodeURIComponent(chunks[idx]);
+
+    var s = document.createElement('script');
+    s.onerror = function() {
+      delete window[cbChunk];
+      btn.disabled = false;
+      btn.textContent = 'Generar y enviar factura';
+      showAlrt('alrt2','Error de conexión en chunk ' + idx,'e');
+    };
+    s.src = API_URL + params;
+    document.head.appendChild(s);
+  }
+
+  enviarChunk(0);
 }
 function reiniciar(){
   _ventaData = null;
