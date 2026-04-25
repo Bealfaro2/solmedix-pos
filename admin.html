@@ -1045,6 +1045,30 @@ select option { background:var(--bg-2); color:var(--text); }
             cada medicamento por nombre. Podrás revisar y corregir antes de aplicar.
           </p>
 
+          <!-- ADVERTENCIA inicial -->
+          <div style="background:rgba(239,68,68,.1);border:1.5px solid rgba(239,68,68,.3);border-radius:var(--radius);padding:14px 16px;margin-bottom:20px;display:flex;gap:12px;align-items:flex-start">
+            <div style="font-size:22px;flex-shrink:0">⚠️</div>
+            <div>
+              <div style="font-weight:700;color:#fca5a5;font-size:13px;margin-bottom:4px">Solo usar cuando NO existe catálogo inicial</div>
+              <div style="font-size:12px;color:var(--text-2);line-height:1.6">
+                Esta función es para la <strong>carga inicial de inventario</strong> cuando el sistema está vacío.
+                Si ya existen lotes registrados, usa la entrada por XML o agrega lotes individualmente
+                para evitar duplicados.
+              </div>
+            </div>
+          </div>
+
+          <!-- Botón descargar plantilla -->
+          <div style="background:rgba(24,95,165,.1);border:1px solid rgba(24,95,165,.25);border-radius:var(--radius);padding:14px 16px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-weight:600;font-size:13px;color:var(--text-1);margin-bottom:3px">📥 Plantilla Excel</div>
+              <div style="font-size:12px;color:var(--text-2)">Descarga la plantilla con las columnas correctas y llénala con tu inventario.</div>
+            </div>
+            <button class="btn btnp" onclick="descargarPlantillaExcel()" style="white-space:nowrap;flex-shrink:0">
+              ⬇ Descargar plantilla
+            </button>
+          </div>
+
           <!-- Upload zone -->
           <div id="xlsx-upload-zone"
             style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:2.5rem;text-align:center;cursor:pointer;transition:all .2s;background:rgba(15,23,42,.3);margin-bottom:16px"
@@ -1717,7 +1741,7 @@ function horaAhora() {
 function fechaLocal(dateObj) {
   return dateObj.toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' });
 }
-var API_URL = 'https://script.google.com/macros/s/AKfycbw2HxkVPkjo5WIkjWVtW9AJx_B3iqyt09OupA5wyNi1LnRfIICs5LhrCZsZvLOnuSiT/exec';
+var API_URL = 'https://script.google.com/macros/s/AKfycbzgFnMa34n_8k4Tn3c7GTqjYy713ckI-ZaPWLAMPSOD3uLC9saSINZrPeMn99oA9VrF/exec';
 var APPS_SCRIPT_URL = API_URL; // alias para módulo fiscal — misma URL que API_URL (v40)
 var PWD_HASH = btoa('Suzuki18&');
 var ventas=[], clientes=[], medicamentos=[], lotes=[], compras=[], caja=[];
@@ -4027,6 +4051,59 @@ function onXlsxDrop(e) {
   document.getElementById('xlsx-upload-zone').style.borderColor = '';
   document.getElementById('xlsx-upload-zone').style.background  = '';
 }
+function descargarPlantillaExcel() {
+  // Crear workbook con SheetJS
+  if (typeof XLSX === 'undefined') {
+    alert('Cargando librería Excel, intenta de nuevo en un momento.');
+    return;
+  }
+  var wb = XLSX.utils.book_new();
+
+  // Hoja "lotes" con columnas requeridas
+  var headers = [['medicamento', 'lote', 'existencias', 'costo_unitario', 'precio_venta']];
+  // Agregar filas de ejemplo
+  var ejemplos = [
+    ['Ejemplo: Metotrexato 50mg/2ml', 'M2024001', 10, 350.00, 500.00],
+    ['Ejemplo: Sirolimus 1mg', 'S2024001', 5, 1200.00, 1800.00],
+  ];
+  var data = headers.concat(ejemplos);
+  var ws = XLSX.utils.aoa_to_sheet(data);
+
+  // Ancho de columnas
+  ws['!cols'] = [
+    {wch:40}, // medicamento
+    {wch:15}, // lote
+    {wch:12}, // existencias
+    {wch:15}, // costo_unitario
+    {wch:15}  // precio_venta
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, 'lotes');
+
+  // Hoja de instrucciones
+  var instrData = [
+    ['INSTRUCCIONES DE USO'],
+    [''],
+    ['1. No modifiques los nombres de las columnas en la hoja "lotes"'],
+    ['2. Columna "medicamento": escribe el nombre EXACTO como aparece en el sistema'],
+    ['3. Columna "lote": número de lote del producto (obligatorio)'],
+    ['4. Columna "existencias": cantidad de piezas en inventario'],
+    ['5. Columna "costo_unitario": costo de compra por pieza (sin IVA)'],
+    ['6. Columna "precio_venta": precio de venta al público (puede dejarse en 0)'],
+    [''],
+    ['IMPORTANTE: Elimina las filas de ejemplo antes de cargar el archivo'],
+    [''],
+    ['Esta plantilla es para carga INICIAL cuando el sistema está vacío.'],
+    ['Si ya existen registros, usa la entrada por XML o agrega lotes individualmente.'],
+  ];
+  var wsI = XLSX.utils.aoa_to_sheet(instrData);
+  wsI['!cols'] = [{wch:60}];
+  XLSX.utils.book_append_sheet(wb, wsI, 'Instrucciones');
+
+  XLSX.writeFile(wb, 'Plantilla_Inventario_Solmedix.xlsx');
+}
+
+
 function onXlsxFile(e) {
   var file = e.target.files[0];
   if (file) procesarXlsx(file);
