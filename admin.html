@@ -1168,6 +1168,7 @@ select option { background:var(--bg-2); color:var(--text); }
           <div class="ptitle" style="margin:0">Reporte de compras</div>
           <div style="display:flex;gap:6px">
             <button class="btn btns btno" onclick="exportarComprasCSV()">Exportar CSV</button>
+            <button class="btn btns btno" onclick="exportarReporteFacturas()">📋 Por Factura</button>
             <button class="btn btns btno" onclick="exportarComprasPDF()">Exportar PDF</button>
             <button class="btn btns" style="background:rgba(245,158,11,.2);color:#fcd34d;border-color:rgba(245,158,11,.4)" onclick="exportarReportePagos()">💳 Reporte Pagos</button>
           </div>
@@ -1562,8 +1563,12 @@ select option { background:var(--bg-2); color:var(--text); }
     <h2 id="modal-med-titulo">Nuevo medicamento</h2>
     <div class="fr"><label>Nombre completo *</label><input type="text" id="med-nombre" placeholder="Nombre del medicamento"/></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div class="fr"><label>Precio de venta ($) *</label><input type="number" id="med-precio" placeholder="0.00"/></div>
+      <div class="fr"><label>Precio base ($) *</label><input type="number" id="med-precio" placeholder="0.00"/></div>
       <div class="fr"><label>Costo de compra ($)</label><input type="number" id="med-costo" placeholder="0.00"/></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+      <div class="fr"><label>Precio MTY ($)</label><input type="number" id="med-precio-mty" placeholder="Usa precio base si vacío"/></div>
+      <div class="fr"><label>Precio SLP ($)</label><input type="number" id="med-precio-slp" placeholder="Usa precio base si vacío"/></div>
     </div>
     <div class="fr"><label>Categoría</label>
       <select id="med-cat">
@@ -1712,7 +1717,7 @@ function horaAhora() {
 function fechaLocal(dateObj) {
   return dateObj.toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' });
 }
-var API_URL = 'https://script.google.com/macros/s/AKfycbzgFnMa34n_8k4Tn3c7GTqjYy713ckI-ZaPWLAMPSOD3uLC9saSINZrPeMn99oA9VrF/exec';
+var API_URL = 'https://script.google.com/macros/s/AKfycbw2HxkVPkjo5WIkjWVtW9AJx_B3iqyt09OupA5wyNi1LnRfIICs5LhrCZsZvLOnuSiT/exec';
 var APPS_SCRIPT_URL = API_URL; // alias para módulo fiscal — misma URL que API_URL (v40)
 var PWD_HASH = btoa('Suzuki18&');
 var ventas=[], clientes=[], medicamentos=[], lotes=[], compras=[], caja=[];
@@ -2601,6 +2606,72 @@ function exportarReportePagos() {
 }
 
 
+function exportarReporteFacturas() {
+  var src = window._comprasData || compras;
+  if (!src.length) { alert('No hay datos para exportar'); return; }
+
+  // Agrupar por folio+proveedor+fecha
+  var facturas = {};
+  src.forEach(function(c) {
+    var key = (c.proveedor||'') + '||' + (c.folio||'') + '||' + String(c.fecha).split('T')[0];
+    if (!facturas[key]) {
+      facturas[key] = {
+        fecha: String(c.fecha).split('T')[0],
+        proveedor: c.proveedor||'',
+        rfc: c.rfc_proveedor||'',
+        folio: c.folio||'',
+        uuid: c.uuid||'',
+        importe: 0,
+        medicamentos: []
+      };
+    }
+    facturas[key].importe += Number(c.importe)||0;
+    facturas[key].medicamentos.push((c.medicamento||'') + ' x' + (c.cantidad||1));
+  });
+
+  var lista = Object.values(facturas).sort(function(a,b){
+    if (a.fecha < b.fecha) return 1;
+    if (a.fecha > b.fecha) return -1;
+    return a.proveedor.localeCompare(b.proveedor,'es');
+  });
+  var totalGeneral = lista.reduce(function(s,f){ return s + f.importe; }, 0);
+
+  var filas = lista.map(function(f,i) {
+    var fecha = f.fecha.split('-').reverse().join('/');
+    var bg = i%2===0?'':'background:#f5f8fc';
+    var meds = f.medicamentos.join(', ');
+    return '<tr style="'+bg+'">'+
+      '<td>'+fecha+'</td>'+
+      '<td><strong>'+f.proveedor+'</strong><br><span style="font-size:9px;color:#888">'+f.rfc+'</span></td>'+
+      '<td style="font-family:monospace;font-size:10px">'+f.folio+'</td>'+
+      '<td style="font-size:9px;color:#555">'+meds+'</td>'+
+      '<td style="text-align:right;font-weight:600;color:#185FA5">$'+f.importe.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>'+
+      '</tr>';
+  }).join('');
+
+  var w = window.open('','_blank','width=1000,height=700');
+  w.document.write('<!DOCTYPE html><html><head><title>Reporte de Compras por Factura</title>'+
+    '<style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;font-size:10px;color:#222}'+
+    'h1{font-size:15px;color:#185FA5;margin-bottom:2px}h2{font-size:10px;color:#666;margin-bottom:12px;font-weight:normal}'+
+    'table{width:100%;border-collapse:collapse}'+
+    'th{background:#185FA5;color:#fff;padding:6px 8px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.04em}'+
+    'th:last-child{text-align:right}'+
+    'td{padding:5px 8px;border-bottom:1px solid #e5e7eb;font-size:9px;vertical-align:top}'+
+    '.total-row td{background:#0A2D56;color:#fff;font-weight:700;font-size:11px;border:none;padding:7px 8px}'+
+    '.total-row td:last-child{text-align:right}'+
+    '@media print{button{display:none}}</style></head><body>');
+  w.document.write('<h1>Solmedix — Reporte de Compras por Factura</h1>');
+  w.document.write('<h2>'+lista.length+' facturas | Total: $'+totalGeneral.toLocaleString('es-MX',{minimumFractionDigits:2})+' | Generado: '+new Date().toLocaleDateString('es-MX')+'</h2>');
+  w.document.write('<table><thead><tr><th>Fecha</th><th>Proveedor</th><th>Folio</th><th>Medicamentos</th><th style="text-align:right">Importe</th></tr></thead>');
+  w.document.write('<tbody>'+filas+'</tbody>');
+  w.document.write('<tfoot><tr class="total-row"><td colspan="4">TOTAL</td><td>$'+totalGeneral.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr></tfoot>');
+  w.document.write('</table>');
+  w.document.write('<div style="margin-top:12px;text-align:right"><button onclick="window.print()" style="background:#185FA5;color:#fff;border:none;padding:7px 18px;border-radius:6px;font-size:11px;cursor:pointer">🖨️ Imprimir / PDF</button></div>');
+  w.document.write('</body></html>');
+  w.document.close();
+}
+
+
 function toggleOjo(inputId,btn){var inp=document.getElementById(inputId);if(inp.type==="password"){inp.type="text";btn.textContent="🙈";}else{inp.type="password";btn.textContent="👁";}}
 
 function cambiarPwd(perfil) {
@@ -2674,7 +2745,14 @@ function renderMeds(lista){
     var m=src[i];
     html+='<div class="med-card"><div class="med-cat">'+(m.categoria||'Sin categoria')+'</div>';
     html+='<div class="med-nombre">'+m.nombre+'</div>';
-    html+='<div class="med-precio">$'+Number(m.precio).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
+    var precioMostrar = perfilActual==='mty' ? (m.precio_mty||m.precio) : perfilActual==='slp' ? (m.precio_slp||m.precio) : m.precio;
+    html+='<div class="med-precio">$'+Number(precioMostrar).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
+    if(perfilActual==='admin' && (m.precio_mty||m.precio_slp)){
+      html+='<div style="font-size:10px;color:#888;margin-top:2px">';
+      if(m.precio_mty) html+='MTY:$'+Number(m.precio_mty).toLocaleString('es-MX',{minimumFractionDigits:2})+' ';
+      if(m.precio_slp) html+='SLP:$'+Number(m.precio_slp).toLocaleString('es-MX',{minimumFractionDigits:2});
+      html+='</div>';
+    }
     if(m.costo)html+='<div style="font-size:11px;color:#888;margin-top:2px">Costo: $'+Number(m.costo).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
     if(m.notas)html+='<div style="font-size:11px;color:#888;margin-top:2px">'+m.notas+'</div>';
     if(m.codigo_barras)html+='<div style="font-size:11px;color:#888;margin-top:2px;font-family:monospace">CB: '+m.codigo_barras+'</div>';
@@ -2697,12 +2775,21 @@ function abrirModalMed(med){
   document.getElementById('med-nombre').value=med?med.nombre:'';
   document.getElementById('med-precio').value=med?med.precio:'';
   document.getElementById('med-costo').value=med?med.costo:'';
-  // Solo Admin puede modificar precio y costo
+  document.getElementById('med-precio-mty').value=med?(med.precio_mty||''):'';
+  document.getElementById('med-precio-slp').value=med?(med.precio_slp||''):'';
+  // Costo solo Admin; precios puede editarlos cada sucursal
   var soloAdmin = perfilActual==='mty' || perfilActual==='slp';
+  // Precio base: solo admin
   document.getElementById('med-precio').disabled = soloAdmin;
+  document.getElementById('med-precio').title = soloAdmin ? 'Solo el Administrador puede modificar el precio base' : '';
   document.getElementById('med-costo').disabled  = soloAdmin;
-  document.getElementById('med-precio').title = soloAdmin ? 'Solo el Administrador puede modificar precios' : '';
-  document.getElementById('med-costo').title  = soloAdmin ? 'Solo el Administrador puede modificar precios' : '';
+  document.getElementById('med-costo').title  = soloAdmin ? 'Solo el Administrador puede modificar el costo' : '';
+  // Precio MTY: solo admin y MTY pueden editar
+  document.getElementById('med-precio-mty').disabled = perfilActual==='slp';
+  document.getElementById('med-precio-mty').title = perfilActual==='slp' ? 'Solo MTY o Admin pueden editar' : '';
+  // Precio SLP: solo admin y SLP pueden editar
+  document.getElementById('med-precio-slp').disabled = perfilActual==='mty';
+  document.getElementById('med-precio-slp').title = perfilActual==='mty' ? 'Solo SLP o Admin pueden editar' : '';
   document.getElementById('med-cat').value=med?med.categoria:'Alta especialidad';
   document.getElementById('med-notas').value=med?med.notas:'';
   // Campos SAT
@@ -2728,6 +2815,8 @@ function guardarMedicamento(){
   var nombre=document.getElementById('med-nombre').value.trim();
   var precio=parseFloat(document.getElementById('med-precio').value)||0;
   var costo=parseFloat(document.getElementById('med-costo').value)||0;
+  var precio_mty=parseFloat(document.getElementById('med-precio-mty').value)||0;
+  var precio_slp=parseFloat(document.getElementById('med-precio-slp').value)||0;
   var categoria=document.getElementById('med-cat').value;
   var notas=document.getElementById('med-notas').value.trim();
   var tipo=document.getElementById('med-tipo').value;
@@ -2738,9 +2827,9 @@ function guardarMedicamento(){
   if(!nombre||!precio){medAlrt('Nombre y precio son obligatorios','e');return;}
   var btn=document.getElementById('btn-guardar-med');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
-  apiPost({accion:editId?'editar_medicamento':'guardar_medicamento',id:editId,nombre:nombre,precio:precio,costo:costo,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad},function(err){
-    if(editId){for(var i=0;i<medicamentos.length;i++){if(String(medicamentos[i].id)===String(editId)){Object.assign(medicamentos[i],{nombre:nombre,precio:precio,costo:costo,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad});break;}}}
-    else{medicamentos.push({id:'m'+Date.now(),nombre:nombre,precio:precio,costo:costo,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad});}
+  apiPost({accion:editId?'editar_medicamento':'guardar_medicamento',id:editId,nombre:nombre,precio:precio,costo:costo,precio_mty:precio_mty,precio_slp:precio_slp,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad},function(err){
+    if(editId){for(var i=0;i<medicamentos.length;i++){if(String(medicamentos[i].id)===String(editId)){Object.assign(medicamentos[i],{nombre:nombre,precio:precio,costo:costo,precio_mty:precio_mty,precio_slp:precio_slp,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad});break;}}}
+    else{medicamentos.push({id:'m'+Date.now(),nombre:nombre,precio:precio,costo:costo,precio_mty:precio_mty,precio_slp:precio_slp,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad});}
     renderMeds(); cerrarModalMedBtn();
     btn.disabled=false; btn.textContent='Guardar';
   });
