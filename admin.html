@@ -5093,43 +5093,88 @@ const FiscalModule = (function() {
     if (files.length) cargarXML(files, tipo);
   }
 
-  function _parsearXML(nombre, xmlStr, modo) {
-    try {
-      var doc = new DOMParser().parseFromString(xmlStr,'text/xml');
-      function find(tag){ return doc.getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4',tag)[0]||doc.getElementsByTagName('cfdi:'+tag)[0]||doc.getElementsByTagName(tag)[0]; }
-      var comp   = find('Comprobante') || doc.documentElement;
-      var emisor = find('Emisor'); var recep = find('Receptor');
-      var tfd    = doc.getElementsByTagNameNS('http://www.sat.gob.mx/TimbreFiscalDigital','TimbreFiscalDigital')[0]||doc.getElementsByTagName('tfd:TimbreFiscalDigital')[0];
-      var traslados = doc.getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4','Traslado');
-      if (!traslados.length) traslados = doc.getElementsByTagName('cfdi:Traslado');
-      var iva = 0;
-      for (var i=0;i<traslados.length;i++) { if(traslados[i].getAttribute('Impuesto')==='002') iva+=parseFloat(traslados[i].getAttribute('Importe')||0); }
-      var rfcEmis = emisor ? (emisor.getAttribute('Rfc')||'') : '';
-      var rfcRec  = recep  ? (recep.getAttribute('Rfc')||'')  : '';
-      var tipoComp = comp.getAttribute('TipoDeComprobante')||'';
-      if (modo === 'ing' && rfcEmis !== RFC_EMPRESA) return { archivo:nombre, error:'RFC emisor incorrecto: '+rfcEmis };
-      if (modo === 'ing' && tipoComp !== 'I') return { archivo:nombre, error:'No es CFDI tipo Ingreso (es '+tipoComp+')' };
-      if (modo === 'egr' && rfcRec !== RFC_EMPRESA) return { archivo:nombre, error:'RFC receptor no es '+RFC_EMPRESA+': '+rfcRec };
-      return {
-        archivo:nombre, error:null, modo:modo,
-        uuid:        tfd ? (tfd.getAttribute('UUID')||'')              : '',
-        fecha:       (comp.getAttribute('Fecha')||'').substring(0,10),
-        folio:       (comp.getAttribute('Serie')||'')+(comp.getAttribute('Folio')||''),
-        rfc_emisor:  rfcEmis, emisor_nom:  emisor ? (emisor.getAttribute('Nombre')||'') : '',
-        rfc_receptor:rfcRec,  receptor_nom:recep  ? (recep.getAttribute('Nombre')||'')  : '',
-        subtotal:    parseFloat(comp.getAttribute('SubTotal')||0),
-        descuento:   parseFloat(comp.getAttribute('Descuento')||0),
-        iva:         iva,
-        total:       parseFloat(comp.getAttribute('Total')||0),
-        metodo_pago: comp.getAttribute('MetodoPago')||'',
-        forma_pago:  comp.getAttribute('FormaPago')||'',
-        uso_cfdi:    recep ? (recep.getAttribute('UsoCFDI')||'') : '',
-        tipo_factura:rfcRec==='XAXX010101000'?'Global':'Individual',
-        clasificacion:'nuevo'
-      };
-    } catch(e) { return { archivo:nombre, error:'Error al parsear: '+e.message }; }
-  }
+ function _parsearXML(nombre, xmlStr, modo) {
+  try {
+    var doc = new DOMParser().parseFromString(xmlStr, 'text/xml');
+    function find(tag) {
+      return doc.getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4', tag)[0]
+          || doc.getElementsByTagName('cfdi:' + tag)[0]
+          || doc.getElementsByTagName(tag)[0];
+    }
+    var comp   = find('Comprobante') || doc.documentElement;
+    var emisor = find('Emisor');
+    var recep  = find('Receptor');
+    var tfd    = doc.getElementsByTagNameNS('http://www.sat.gob.mx/TimbreFiscalDigital', 'TimbreFiscalDigital')[0]
+              || doc.getElementsByTagName('tfd:TimbreFiscalDigital')[0];
+    var traslados = doc.getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4', 'Traslado');
+    if (!traslados.length) traslados = doc.getElementsByTagName('cfdi:Traslado');
+    var iva = 0;
+    for (var i = 0; i < traslados.length; i++) {
+      if (traslados[i].getAttribute('Impuesto') === '002')
+        iva += parseFloat(traslados[i].getAttribute('Importe') || 0);
+    }
+    var rfcEmis  = emisor ? (emisor.getAttribute('Rfc') || '') : '';
+    var rfcRec   = recep  ? (recep.getAttribute('Rfc')  || '') : '';
+    var tipoComp = comp.getAttribute('TipoDeComprobante') || '';
 
+    if (modo === 'ing' && rfcEmis !== RFC_EMPRESA) return { archivo:nombre, error:'RFC emisor incorrecto: ' + rfcEmis };
+    if (modo === 'ing' && tipoComp !== 'I')        return { archivo:nombre, error:'No es CFDI tipo Ingreso (es ' + tipoComp + ')' };
+    if (modo === 'egr' && rfcRec  !== RFC_EMPRESA) return { archivo:nombre, error:'RFC receptor no es ' + RFC_EMPRESA + ': ' + rfcRec };
+
+    // Detectar si es complemento de pago (TipoDeComprobante="P")
+    var esComplemento      = tipoComp === 'P';
+    var uuidFacturaOriginal = '';
+    var montoPagado        = 0;
+    var saldoInsoluto      = 0;
+
+    if (esComplemento) {
+      var nsPago = 'http://www.sat.gob.mx/Pagos20';
+      var pagoEl = doc.getElementsByTagNameNS(nsPago, 'Pago')[0]
+                || doc.getElementsByTagName('pago20:Pago')[0]
+                || doc.getElementsByTagName('pago10:Pago')[0]
+                || doc.getElementsByTagName('Pago')[0];
+      if (pagoEl) {
+        montoPagado = parseFloat(pagoEl.getAttribute('Monto') || 0);
+        var docto = pagoEl.getElementsByTagNameNS(nsPago, 'DoctoRelacionado')[0]
+                 || pagoEl.getElementsByTagName('pago20:DoctoRelacionado')[0]
+                 || pagoEl.getElementsByTagName('pago10:DoctoRelacionado')[0]
+                 || pagoEl.getElementsByTagName('DoctoRelacionado')[0];
+        if (docto) {
+          uuidFacturaOriginal = docto.getAttribute('IdDocumento')       || '';
+          montoPagado         = parseFloat(docto.getAttribute('ImpPagado')        || montoPagado);
+          saldoInsoluto       = parseFloat(docto.getAttribute('ImpSaldoInsoluto') || 0);
+        }
+      }
+    }
+
+    return {
+      archivo:      nombre,
+      error:        null,
+      modo:         modo,
+      uuid:         tfd ? (tfd.getAttribute('UUID') || '') : '',
+      fecha:        (comp.getAttribute('Fecha') || '').substring(0, 10),
+      folio:        (comp.getAttribute('Serie') || '') + (comp.getAttribute('Folio') || ''),
+      rfc_emisor:   rfcEmis,
+      emisor_nom:   emisor ? (emisor.getAttribute('Nombre') || '') : '',
+      rfc_receptor: rfcRec,
+      receptor_nom: recep  ? (recep.getAttribute('Nombre')  || '') : '',
+      subtotal:     parseFloat(comp.getAttribute('SubTotal')  || 0),
+      descuento:    parseFloat(comp.getAttribute('Descuento') || 0),
+      iva:          iva,
+      total:        parseFloat(comp.getAttribute('Total') || 0),
+      metodo_pago:  comp.getAttribute('MetodoPago') || '',
+      forma_pago:   comp.getAttribute('FormaPago')  || '',
+      uso_cfdi:     recep ? (recep.getAttribute('UsoCFDI') || '') : '',
+      tipo_factura: rfcRec === 'XAXX010101000' ? 'Global' : 'Individual',
+      clasificacion:          'nuevo',
+      es_complemento:         esComplemento,
+      uuid_factura_original:  uuidFacturaOriginal,
+      monto_pagado:           montoPagado,
+      saldo_insoluto:         saldoInsoluto
+    };
+
+  } catch(e) { return { archivo:nombre, error:'Error al parsear: ' + e.message }; }
+}
   function _mostrarPreview(tipo) {
     var isIng  = tipo === 'ing';
     var buffer = isIng ? st.bufferIng : st.bufferEgr;
