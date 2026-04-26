@@ -5391,7 +5391,7 @@ const FiscalModule = (function() {
     .map(function(k){ return k + '=' + encodeURIComponent(params[k]); })
     .join('&');
   var url = API_URL + '?accion=' + accion + (qs ? '&' + qs : '');
-  var cbName = '_fis_' + Date.now();
+  var cbName = '_fis_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   var timeout = setTimeout(function() {
     delete window[cbName];
     var sc = document.getElementById('sc_' + cbName);
