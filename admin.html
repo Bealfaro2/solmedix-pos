@@ -3364,11 +3364,11 @@ function exportarGastosFiscalesCSV() {
   var lines=['Fecha,Proveedor,RFC Emisor,Concepto,Subtotal,Descuento,IVA,Total,Método,Forma,UUID,Sucursal'];
   for(var i=0;i<src.length;i++){
     var g=src[i];
-    lines.push([g.fecha,q(g.proveedor),g.rfc_emisor,q(g.concepto),g.subtotal,g.descuento,g.iva,g.total,g.metodo_pago,g.forma_pago,g.uuid,g.sucursal].join(','));
+    lines.push([g.fecha,q(g.proveedor),g.rfc_emisor,q(g.concepto),g.subtotal,g.descuento,g.iva,g.total,g.metodo_pago,g.forma_pago,g.uuid,g.sucursal].join(','));lines.push([g.fecha,q(g.proveedor),g.rfc_emisor,q(g.concepto),g.subtotal,g.descuento,g.iva,g.total,g.metodo_pago,g.forma_pago,g.uuid,g.sucursal].join(','));
   }
   var blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8'});
   var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download='Solmedix_GastosFiscales_'+fechaHoy()+'.csv'; a.click();
+ a.download='Solmedix_GastosFiscales_'+fechaHoy()+'.csv'; a.click();
 }
 
 function exportarGastosFiscalesPDF() {
