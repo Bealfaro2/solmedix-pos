@@ -5665,7 +5665,7 @@ const FiscalModule = (function() {
   var _mxn = function(n){ return isNaN(n)?'—':'$'+Number(n).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}); };
   var _n   = function(v){ return parseFloat(v)||0; };
   var _set = function(id,val){ var el=document.getElementById(id); if(el) el.textContent=val; };
-  function _diasDesde(f){ return Math.floor((new Date()-new Date(f+'T00:00:00'))/86400000); }
+  function _diasDesde(f){ var d = new Date(String(f||'').substring(0,10)+'T12:00:00'); return isNaN(d)?0:Math.floor((new Date()-d)/86400000); }
   function _antiguedadBadge(dias){ var cls=dias>60?'fb-err':dias>30?'fb-pend':'fb-info'; return '<span class="fis-badge '+cls+'">'+dias+' días</span>'; }
   function _descargar(contenido,nombre,tipo){ var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([contenido],{type:tipo})); a.download=nombre; a.click(); }
 
