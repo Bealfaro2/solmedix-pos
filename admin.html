@@ -5255,12 +5255,10 @@ const FiscalModule = (function() {
   }
 
   function guardarLote(tipo) {
-  var isIng  = tipo === 'ing';
+  var isIng = tipo === 'ing';
   var buffer = isIng ? st.bufferIng : st.bufferEgr;
   var sucursal = st.sucursal === 'TODAS' ? 'MTY' : st.sucursal;
-
   if (isIng) {
-    // ── Flujo ingresos — sin cambios ──────────────────────────────
     var validos = buffer.filter(function(r){ return !r.error; });
     if (!validos.length) { alert('No hay registros válidos para guardar.'); return; }
     var btn = document.getElementById('fis-btn-guardar-ing');
@@ -5283,19 +5281,80 @@ const FiscalModule = (function() {
     });
     return;
   }
-
-  // ── Flujo egresos — separar complementos de facturas normales ──
   var complementos = buffer.filter(function(r){ return !r.error && r.es_complemento; });
-  var normales     = buffer.filter(function(r){ return !r.error && !r.es_complemento && r.clasificacion !== 'gasto'; });
-
-  if (!normales.length && !complementos.length) {
-    alert('No hay registros válidos para guardar.'); return;
-  }
-
-  var btn = document.getElementById('fis-btn-guardar-egr');
-  if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
-
+  var normales = buffer.filter(function(r){ return !r.error && !r.es_complemento && r.clasificacion !== 'gasto'; });
+  if (!normales.length && !complementos.length) { alert('No hay registros válidos para guardar.'); return; }
+  var btn2 = document.getElementById('fis-btn-guardar-egr');
+  if (btn2) { btn2.disabled = true; btn2.textContent = 'Guardando...'; }
   var resumen = { guardados:0, duplicados:0, complementos_ok:0, complementos_no_encontrados:[] };
+  function terminar() {
+    if (btn2) { btn2.disabled = false; btn2.textContent = '💾 Guardar gastos nuevos'; }
+    cancelarPreview(tipo);
+    cargarDatos();
+    var msg = '✅ Egresos guardados: ' + resumen.guardados + '\nDuplicados omitidos: ' + resumen.duplicados;
+    if (complementos.length) {
+      msg += '\n\n💳 Complementos procesados: ' + resumen.complementos_ok + ' de ' + complementos.length;
+      if (resumen.complementos_no_encontrados.length) {
+        msg += '\n⚠️ No conciliados: ' + resumen.complementos_no_encontrados.join(', ');
+      }
+    }
+    alert(msg);
+  }
+  function procesarComplementos(cb) {
+    if (!complementos.length) { cb(); return; }
+    var idx = 0;
+    function siguiente() {
+      if (idx >= complementos.length) { cb(); return; }
+      var c = complementos[idx++];
+      var factura = st.ppd.filter(function(p){
+        return (p.uuid||'').toUpperCase() === (c.uuid_factura_original||'').toUpperCase();
+      });
+      if (!factura.length) {
+        factura = st.egresos.filter(function(p){
+          return (p.uuid||'').toUpperCase() === (c.uuid_factura_original||'').toUpperCase();
+        });
+      }
+      if (factura.length) {
+        apiPost({
+          accion:'guardar_complemento_ppd',
+          gasto_fiscal_id: factura[0].id,
+          uuid_factura:    c.uuid_factura_original,
+          uuid_complemento:c.uuid,
+          fecha_complemento:c.fecha,
+          monto_pagado:    c.monto_pagado
+        }, function(e){
+          if (!e) resumen.complementos_ok++;
+          else resumen.complementos_no_encontrados.push(c.uuid_factura_original||c.archivo);
+          siguiente();
+        });
+      } else {
+        resumen.complementos_no_encontrados.push(c.uuid_factura_original||c.archivo);
+        siguiente();
+      }
+    }
+    siguiente();
+  }
+  function guardarNormales(cb) {
+    if (!normales.length) { cb(); return; }
+    var payload = normales.map(function(r){
+      return {
+        uuid:r.uuid, fecha:r.fecha, folio:r.folio,
+        rfc_emisor:r.rfc_emisor, proveedor:r.emisor_nom, concepto:r.emisor_nom,
+        subtotal:r.subtotal, descuento:r.descuento, iva:r.iva, total:r.total,
+        metodo_pago:r.metodo_pago, forma_pago:r.forma_pago,
+        uso_cfdi:r.uso_cfdi, sucursal:sucursal
+      };
+    });
+    apiPost({ accion:'guardar_gasto_fiscal_lote', registros:JSON.stringify(payload) }, function(e,d){
+      if (!e) {
+        resumen.guardados  = d&&d.guardados || payload.length;
+        resumen.duplicados = d&&(d.duplicados_gasto||0) || 0;
+      }
+      cb();
+    });
+  }
+  guardarNormales(function(){ procesarComplementos(terminar); });
+}
 
   function terminar() {
     if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar gastos nuevos'; }
