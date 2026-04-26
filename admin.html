@@ -5576,7 +5576,7 @@ const FiscalModule = (function() {
   }
 
   /* ── Exportaciones ── */
-  function exportDIOT() {
+ function exportDIOT() {
     var map = {};
     st.egresos.forEach(function(g){ var rfc=g.rfc_emisor||g.rfc_proveedor||'?'; if(!map[rfc]) map[rfc]={rfc:rfc,iva:0,base:0,total:0}; map[rfc].iva+=_n(g.iva); map[rfc].base+=_n(g.subtotal); map[rfc].total+=_n(g.total); });
     var rows = Object.keys(map).map(function(k){ return map[k]; });
