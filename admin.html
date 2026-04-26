@@ -5355,12 +5355,7 @@ const FiscalModule = (function() {
   }
   guardarNormales(function(){ procesarComplementos(terminar); });
 }
-
-    // Primero guardar normales, luego conciliar complementos
-  guardarNormales(function() {
-    procesarComplementos(terminar);
-  });
-}
+    
   function abrirModalComp(id, proveedor, folio, total, iva) {
     st.ppdIdActivo = id;
     var fi = document.getElementById('fis-comp-uuid'); if(fi) fi.value='';
