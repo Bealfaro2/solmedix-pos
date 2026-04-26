@@ -476,6 +476,14 @@
             <option value="S01">S01 - Sin efectos fiscales</option>
             <option value="CP01">CP01 - Pagos</option>
           </select>
+          <label>Forma de Pago *</label>
+<select id="inp-forma-pago">
+  <option value="01">01 - Efectivo</option>
+  <option value="03">03 - Transferencia electrónica</option>
+  <option value="04">04 - Tarjeta de crédito</option>
+  <option value="28">28 - Tarjeta de débito</option>
+  <option value="99">99 - Por definir</option>
+</select>
         </div>
       </div>
       <div class="field-row">
@@ -666,6 +674,7 @@ function generarFactura() {
   var uso     = document.getElementById('inp-uso').value;
   var cp      = document.getElementById('inp-cp').value.trim();
   var correo  = document.getElementById('inp-correo').value.trim();
+  var formaPago = document.getElementById('inp-forma-pago').value || '01';
   hideAlrt('alrt2');
   if(!rfc)               { showAlrt('alrt2','Ingresa tu RFC.','e'); return; }
   if(rfc.length < 12)    { showAlrt('alrt2','El RFC debe tener al menos 12 caracteres.','e'); return; }
@@ -733,7 +742,7 @@ async function construirYFirmarXML(rfc, nombre, regimen, uso, cp, correo, folio,
       'xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd" '+
       'Version="4.0" Serie="F" Folio="'+folio+'" Fecha="'+fecha+'" '+
       'Sello="" '+
-      'FormaPago="01" '+
+      'FormaPago="'+formaPago+'" '+
       'NoCertificado="'+NO_CERTIFICADO+'" '+
       'Certificado="'+CSD_CER+'" '+
       'SubTotal="'+subtotal+'" Moneda="MXN" Total="'+subtotal+'" '+
@@ -944,6 +953,7 @@ function reiniciar(){
   document.getElementById('inp-uso').value = '';
   document.getElementById('inp-cp').value = '';
   document.getElementById('inp-correo').value = '';
+  document.getElementById('inp-forma-pago').value = '01';
   document.getElementById('venta-preview').style.display = 'none';
   document.getElementById('uuid-box').style.display = 'none';
   hideAlrt('alrt1'); hideAlrt('alrt2');
