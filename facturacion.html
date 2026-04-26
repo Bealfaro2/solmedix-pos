@@ -720,7 +720,7 @@ function generarFactura() {
 
 // ── Construir XML y firmar con Web Crypto ─────────────────────
 async function construirYFirmarXML(rfc, nombre, regimen, uso, cp, correo, folio, fecha, total, conceptos, formaPago) {
-
+formaPago = String(formaPago || '01').padStart(2, '0');
   var subtotal = conceptos.reduce(function(s,c){ return s + c.precio * c.qty; }, 0).toFixed(2);
 
   var esc = function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
