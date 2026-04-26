@@ -5255,33 +5255,127 @@ const FiscalModule = (function() {
   }
 
   function guardarLote(tipo) {
-    var isIng  = tipo === 'ing';
-    var buffer = isIng ? st.bufferIng : st.bufferEgr;
-    var validos = buffer.filter(function(r){ return !r.error && (isIng || r.clasificacion !== 'gasto'); });
+  var isIng  = tipo === 'ing';
+  var buffer = isIng ? st.bufferIng : st.bufferEgr;
+  var sucursal = st.sucursal === 'TODAS' ? 'MTY' : st.sucursal;
+
+  if (isIng) {
+    // ── Flujo ingresos — sin cambios ──────────────────────────────
+    var validos = buffer.filter(function(r){ return !r.error; });
     if (!validos.length) { alert('No hay registros válidos para guardar.'); return; }
-    var btn = document.getElementById(isIng?'fis-btn-guardar-ing':'fis-btn-guardar-egr');
-    if (btn) { btn.disabled=true; btn.textContent='Guardando...'; }
-    var action  = isIng ? 'guardar_ingreso_cfdi_lote' : 'guardar_gasto_fiscal_lote';
-    var sucursal = st.sucursal === 'TODAS' ? 'MTY' : st.sucursal;
-    var payload = validos.map(function(r){ return isIng ? {
-      uuid:r.uuid, fecha:r.fecha, folio:r.folio, serie:'', rfc_receptor:r.rfc_receptor, receptor:r.receptor_nom,
-      subtotal:r.subtotal, descuento:r.descuento, iva:r.iva, total:r.total,
-      metodo_pago:r.metodo_pago, forma_pago:r.forma_pago, uso_cfdi:r.uso_cfdi, tipo_factura:r.tipo_factura, sucursal:sucursal
-    } : {
-      uuid:r.uuid, fecha:r.fecha, folio:r.folio, rfc_emisor:r.rfc_emisor, proveedor:r.emisor_nom,
-      concepto:r.emisor_nom, subtotal:r.subtotal, descuento:r.descuento, iva:r.iva, total:r.total,
-      metodo_pago:r.metodo_pago, forma_pago:r.forma_pago, uso_cfdi:r.uso_cfdi, sucursal:sucursal
-    }; });
-    apiPost({ accion:action, registros:JSON.stringify(payload) }, function(e,d){
-      if (btn) { btn.disabled=false; btn.textContent='💾 ' + (isIng?'Guardar todos':' Guardar gastos nuevos'); }
+    var btn = document.getElementById('fis-btn-guardar-ing');
+    if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
+    var payload = validos.map(function(r) {
+      return {
+        uuid:r.uuid, fecha:r.fecha, folio:r.folio, serie:'',
+        rfc_receptor:r.rfc_receptor, receptor:r.receptor_nom,
+        subtotal:r.subtotal, descuento:r.descuento, iva:r.iva, total:r.total,
+        metodo_pago:r.metodo_pago, forma_pago:r.forma_pago,
+        uso_cfdi:r.uso_cfdi, tipo_factura:r.tipo_factura, sucursal:sucursal
+      };
+    });
+    apiPost({ accion:'guardar_ingreso_cfdi_lote', registros:JSON.stringify(payload) }, function(e,d){
+      if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar todos'; }
       cancelarPreview(tipo);
       cargarDatos();
-      if (!e) alert('✅ Guardado: ' + (d&&d.guardados||payload.length) + ' registros. Duplicados omitidos: ' + (d&&(d.duplicados||0)+(d.duplicados_gasto||0)||0));
+      if (!e) alert('✅ Guardado: ' + (d&&d.guardados||payload.length) + ' registros. Duplicados omitidos: ' + (d&&d.duplicados||0));
       else alert('Error al guardar: ' + e.message);
+    });
+    return;
+  }
+
+  // ── Flujo egresos — separar complementos de facturas normales ──
+  var complementos = buffer.filter(function(r){ return !r.error && r.es_complemento; });
+  var normales     = buffer.filter(function(r){ return !r.error && !r.es_complemento && r.clasificacion !== 'gasto'; });
+
+  if (!normales.length && !complementos.length) {
+    alert('No hay registros válidos para guardar.'); return;
+  }
+
+  var btn = document.getElementById('fis-btn-guardar-egr');
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
+
+  var resumen = { guardados:0, duplicados:0, complementos_ok:0, complementos_no_encontrados:[] };
+
+  function terminar() {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar gastos nuevos'; }
+    cancelarPreview(tipo);
+    cargarDatos();
+    var msg = '✅ Egresos guardados: ' + resumen.guardados +
+              '\nDuplicados omitidos: ' + resumen.duplicados;
+    if (complementos.length) {
+      msg += '\n\n💳 Complementos procesados: ' + resumen.complementos_ok + ' de ' + complementos.length;
+      if (resumen.complementos_no_encontrados.length) {
+        msg += '\n⚠️ No conciliados (factura no encontrada): ' + resumen.complementos_no_encontrados.join(', ');
+      }
+    }
+    alert(msg);
+  }
+
+  function procesarComplementos(cb) {
+    if (!complementos.length) { cb(); return; }
+    var pendientes = complementos.slice();
+    var idx = 0;
+    function siguiente() {
+      if (idx >= pendientes.length) { cb(); return; }
+      var c = pendientes[idx++];
+      // Buscar factura PPD en st.ppd por UUID de factura original
+      var factura = st.ppd.filter(function(p) {
+        return (p.uuid || '').toUpperCase() === (c.uuid_factura_original || '').toUpperCase();
+      });
+      // También buscar en st.egresos por si ya estaba como ref_compra
+      if (!factura.length) {
+        factura = st.egresos.filter(function(p) {
+          return (p.uuid || '').toUpperCase() === (c.uuid_factura_original || '').toUpperCase();
+        });
+      }
+      if (factura.length) {
+        apiPost({
+          accion:           'guardar_complemento_ppd',
+          gasto_fiscal_id:  factura[0].id,
+          uuid_factura:     c.uuid_factura_original,
+          uuid_complemento: c.uuid,
+          fecha_complemento:c.fecha,
+          monto_pagado:     c.monto_pagado
+        }, function(e) {
+          if (!e) resumen.complementos_ok++;
+          else resumen.complementos_no_encontrados.push(c.uuid_factura_original || c.archivo);
+          siguiente();
+        });
+      } else {
+        resumen.complementos_no_encontrados.push(c.uuid_factura_original || c.archivo);
+        siguiente();
+      }
+    }
+    siguiente();
+  }
+
+  function guardarNormales(cb) {
+    if (!normales.length) { cb(); return; }
+    var payload = normales.map(function(r) {
+      return {
+        uuid:r.uuid, fecha:r.fecha, folio:r.folio,
+        rfc_emisor:r.rfc_emisor, proveedor:r.emisor_nom,
+        concepto:r.emisor_nom, subtotal:r.subtotal,
+        descuento:r.descuento, iva:r.iva, total:r.total,
+        metodo_pago:r.metodo_pago, forma_pago:r.forma_pago,
+        uso_cfdi:r.uso_cfdi, sucursal:sucursal
+      };
+    });
+    apiPost({ accion:'guardar_gasto_fiscal_lote', registros:JSON.stringify(payload) }, function(e,d){
+      if (!e) {
+        resumen.guardados   = d&&d.guardados   || payload.length;
+        resumen.duplicados  = d&&(d.duplicados_gasto||0) || 0;
+      }
+      cb();
     });
   }
 
-  /* ── Complemento PPD ── */
+  // Primero guardar normales, luego conciliar complementos
+  guardarNormales(function() {
+    procesarComplementos(terminar);
+  });
+}
   function abrirModalComp(id, proveedor, folio, total, iva) {
     st.ppdIdActivo = id;
     var fi = document.getElementById('fis-comp-uuid'); if(fi) fi.value='';
