@@ -707,7 +707,7 @@ function generarFactura() {
   });
 
   // Construir XML y firmar en browser, luego enviar a Apps Script
-  construirYFirmarXML(rfc, nombre, regimen, uso, cp, correo, folio, fecha, total, conceptos)
+  construirYFirmarXML(rfc, nombre, regimen, uso, cp, correo, folio, fecha, total, conceptos, formaPago)
     .then(function(xmlSellado) {
       enviarXMLSellado(xmlSellado, correo, nombre, btn);
     })
@@ -719,7 +719,7 @@ function generarFactura() {
 }
 
 // ── Construir XML y firmar con Web Crypto ─────────────────────
-async function construirYFirmarXML(rfc, nombre, regimen, uso, cp, correo, folio, fecha, total, conceptos) {
+async function construirYFirmarXML(rfc, nombre, regimen, uso, cp, correo, folio, fecha, total, conceptos, formaPago) {
 
   var subtotal = conceptos.reduce(function(s,c){ return s + c.precio * c.qty; }, 0).toFixed(2);
 
