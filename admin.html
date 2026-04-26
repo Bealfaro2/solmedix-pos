@@ -5248,78 +5248,65 @@ const FiscalModule = (function() {
   }
 
   function leerXMLComp(input) {
-    if (!input.files[0]) return;
-    var reader = new FileReader();
-    reader.onload = function(e){
-      try {
-        var doc = new DOMParser().parseFromString(e.target.result,'text/xml');
-        var tfd  = doc.getElementsByTagNameNS('http://www.sat.gob.mx/TimbreFiscalDigital','TimbreFiscalDigital')[0]||doc.getElementsByTagName('tfd:TimbreFiscalDigital')[0];
-        var comp = doc.documentElement;
-        var pago = doc.getElementsByTagName('pago10:Pago')[0]||doc.getElementsByTagName('Pago')[0];
-        function leerXMLComp(input) {
   if (!input.files[0]) return;
   var reader = new FileReader();
   reader.onload = function(e) {
     try {
       var txt = e.target.result;
       var doc = new DOMParser().parseFromString(txt, 'text/xml');
-
-      // UUID del complemento (TimbreFiscalDigital)
       var tfd = doc.getElementsByTagNameNS('http://www.sat.gob.mx/TimbreFiscalDigital','TimbreFiscalDigital')[0]
              || doc.getElementsByTagName('tfd:TimbreFiscalDigital')[0];
       var uuidComp = tfd ? (tfd.getAttribute('UUID') || '') : '';
-
-      // Fecha del comprobante
       var comp  = doc.documentElement;
       var fecha = (comp.getAttribute('Fecha') || '').substring(0, 10);
-
-      // Nodo Pago — monto y DoctoRelacionado
       var pago = doc.getElementsByTagNameNS('http://www.sat.gob.mx/Pagos20','Pago')[0]
               || doc.getElementsByTagName('pago20:Pago')[0]
               || doc.getElementsByTagName('pago10:Pago')[0]
               || doc.getElementsByTagName('Pago')[0];
-
       var monto = pago ? (pago.getAttribute('Monto') || '') : '';
-
-      // DoctoRelacionado — UUID de la factura original que se está pagando
       var docto = pago ? (
         pago.getElementsByTagNameNS('http://www.sat.gob.mx/Pagos20','DoctoRelacionado')[0]
         || pago.getElementsByTagName('pago20:DoctoRelacionado')[0]
         || pago.getElementsByTagName('pago10:DoctoRelacionado')[0]
         || pago.getElementsByTagName('DoctoRelacionado')[0]
       ) : null;
-
       var uuidFacturaOriginal = docto ? (docto.getAttribute('IdDocumento') || '') : '';
-      var montoPagado         = docto ? (docto.getAttribute('ImpPagado')   || monto) : monto;
-      var saldoInsoluto       = docto ? (docto.getAttribute('ImpSaldoInsoluto') || '') : '';
-
-      // Llenar campos del modal
+      var montoPagado   = docto ? (docto.getAttribute('ImpPagado') || monto) : monto;
+      var saldoInsoluto = docto ? (docto.getAttribute('ImpSaldoInsoluto') || '') : '';
       var uu = document.getElementById('fis-comp-uuid');
       if (uu) uu.value = uuidComp;
-
       var fd = document.getElementById('fis-comp-fecha');
       if (fd) fd.value = fecha;
-
       var fm = document.getElementById('fis-comp-monto');
       if (fm) fm.value = montoPagado;
-
-      // Buscar automáticamente la factura PPD que corresponde
       if (uuidFacturaOriginal) {
-        var facturaEncontrada = st.ppd.filter(function(p) {
+        var encontrada = st.ppd.filter(function(p) {
           return (p.uuid || '').toUpperCase() === uuidFacturaOriginal.toUpperCase();
         });
-
-        var infoExtra = document.getElementById('fis-comp-info');
-        if (facturaEncontrada.length) {
-          var f = facturaEncontrada[0];
+        var infoEl = document.getElementById('fis-comp-info');
+        if (encontrada.length) {
+          var f = encontrada[0];
           st.ppdIdActivo = f.id;
-          if (infoExtra) infoExtra.innerHTML =
-        var fd = document.getElementById('fis-comp-fecha'); if(fd&&comp) fd.value=(comp.getAttribute('Fecha')||'').substring(0,10);
-        var fm = document.getElementById('fis-comp-monto'); if(fm&&pago) fm.value=pago.getAttribute('Monto')||'';
-      } catch(err) { alert('Error leyendo XML: '+err.message); }
-    };
-    reader.readAsText(input.files[0]);
-  }
+          if (infoEl) infoEl.innerHTML =
+            '<div style="background:rgba(16,185,129,.1);border:1px solid var(--green);border-radius:6px;padding:10px;margin-bottom:8px">' +
+            '✅ Factura original identificada:<br>' +
+            '<strong>' + (f.proveedor||'') + '</strong> — Folio ' + (f.folio||'') + '<br>' +
+            'Total factura: <strong>' + _mxn(_n(f.total)) + '</strong> | ' +
+            'Monto pagado: <strong style="color:var(--green)">' + _mxn(_n(montoPagado)) + '</strong>' +
+            (saldoInsoluto ? ' | Saldo pendiente: <strong style="color:var(--amber)">' + _mxn(_n(saldoInsoluto)) + '</strong>' : '') +
+            '</div>';
+        } else {
+          if (infoEl) infoEl.innerHTML =
+            '<div style="background:rgba(239,68,68,.1);border:1px solid var(--red);border-radius:6px;padding:10px;margin-bottom:8px">' +
+            '⚠️ UUID factura original: <span style="font-family:monospace;font-size:11px">' + uuidFacturaOriginal + '</span><br>' +
+            'No encontrada en PPD pendientes de este período.' +
+            '</div>';
+        }
+      }
+    } catch(err) { alert('Error leyendo XML: ' + err.message); }
+  };
+  reader.readAsText(input.files[0]);
+}
 
   function guardarComplemento() {
     var uuid  = (document.getElementById('fis-comp-uuid')||{}).value||'';
