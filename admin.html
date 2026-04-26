@@ -4933,7 +4933,9 @@ const FiscalModule = (function() {
                     esComp ? '<span class="fis-badge fb-ok">PPD + complemento</span>' :
                              '<span class="fis-badge fb-ok">Acreditable</span>';
       return '<tr><td class="fis-mono" style="max-width:110px;overflow:hidden;text-overflow:ellipsis">' + (g.uuid||'') + '</td>' +
-        '<td><div style="font-size:11px">' + (g.proveedor||'') + '</div><div class="fis-mono" style="font-size:10px">' + (g.rfc_emisor||g.rfc_proveedor||'') + '</div></td>' +
+        '<td><div style="font-size:11px">' + (g.proveedor||'') + '</div>' +
+'<div class="fis-mono" style="font-size:10px">' + (g.rfc_emisor||g.rfc_proveedor||'') + '</div>' +
+'<div style="margin-top:2px">' + (g.tipo === 'compra_medicamento' ? '<span class="fis-badge" style="background:rgba(16,185,129,.15);color:#10b981;font-size:9px">💊 Compra medicamento</span>' : '<span class="fis-badge" style="background:rgba(148,163,184,.1);color:var(--text-3);font-size:9px">⚙️ Gasto operativo</span>') + '</div></td>' +
         '<td class="fis-mono">' + (g.fecha||'') + '</td><td class="fis-mono">' + (g.folio||'') + '</td>' +
         '<td class="fis-tr fis-mono">' + _mxn(g.subtotal) + '</td>' +
         '<td class="fis-tr fis-mono" style="color:' + (esPPD ? 'var(--amber)' : 'var(--green)') + '">' + _mxn(g.iva) + '</td>' +
