@@ -2849,7 +2849,7 @@ function abrirModalMed(med){
   // Costo solo Admin; precios puede editarlos cada sucursal
   var soloAdmin = perfilActual==='mty' || perfilActual==='slp';
   // Precio base: solo admin
-  document.getElementById('med-precio').disabled = soloAdmin;
+  document.getElementById('med-precio').disabled = soloAdmin && !!med;
   document.getElementById('med-precio').title = soloAdmin ? 'Solo el Administrador puede modificar el precio base' : '';
   document.getElementById('med-costo').disabled  = soloAdmin;
   document.getElementById('med-costo').title  = soloAdmin ? 'Solo el Administrador puede modificar el costo' : '';
@@ -2893,7 +2893,7 @@ function guardarMedicamento(){
   var clave_unidad=document.getElementById('med-clave-unidad').value.trim().toUpperCase();
   var codigo_barras=document.getElementById('med-codigo-barras').value.trim();
   var editId=document.getElementById('med-editando-id').value;
-  if(!nombre||!precio){medAlrt('Nombre y precio son obligatorios','e');return;}
+  if(!nombre||(!precio&&!precio_mty&&!precio_slp)){medAlrt('Nombre y precio son obligatorios','e');return;}
   var btn=document.getElementById('btn-guardar-med');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
   apiPost({accion:editId?'editar_medicamento':'guardar_medicamento',id:editId,nombre:nombre,precio:precio,costo:costo,precio_mty:precio_mty,precio_slp:precio_slp,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad},function(err){
