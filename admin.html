@@ -588,6 +588,7 @@ select option { background:var(--bg-2); color:var(--text); }
           </button>
           <button class="fis-nav-btn" onclick="FIS.showSub('diot',this)">📋 DIOT</button>
           <button class="fis-nav-btn" onclick="FIS.showSub('reporte',this)">📄 Reporte Contador</button>
+          <button class="fis-nav-btn" onclick="FIS.showSub('banco',this)">🏦 Banco Albo</button>
         </div>
 
         <!-- ── RESUMEN ── -->
@@ -775,7 +776,51 @@ select option { background:var(--bg-2); color:var(--text); }
             <span>Total operaciones: <strong id="fis-diot-ops" style="color:var(--text)">$0.00</strong></span>
           </div>
         </div>
+<!-- ── BANCO ALBO ── -->
+        <div class="fis-section" id="fis-sub-banco">
+          <div class="fis-alert fa-info">
+            <span>ℹ️</span>
+            <span>Sube el CSV de movimientos de <strong>Albo</strong> del período. El sistema concilia automáticamente contra ingresos CFDI y egresos fiscales.</span>
+          </div>
+          <div class="fis-upload" id="fis-uz-banco"
+               ondragover="event.preventDefault();this.classList.add('drag')"
+               ondragleave="this.classList.remove('drag')"
+               ondrop="FIS.dropCSVBanco(event)"
+               onclick="document.getElementById('fis-file-banco').click()">
+            <input type="file" id="fis-file-banco" accept=".csv" onchange="FIS.cargarCSVBanco(this.files[0])">
+            <div style="font-size:26px;margin-bottom:8px">🏦</div>
+            <h4>Arrastra CSV de Albo aquí</h4>
+            <p>Formato: ConsultaMovimientos-YYYYMMDD-YYYYMMDD.csv</p>
+          </div>
 
+          <div id="fis-banco-resumen" style="display:none;margin:16px 0">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+              <div class="fis-kpi fk-ok"><div class="fk-label">Entradas</div><div class="fk-val" id="fis-b-entradas">—</div><div class="fk-sub" id="fis-b-entradas-n">—</div></div>
+              <div class="fis-kpi fk-err"><div class="fk-label">Salidas</div><div class="fk-val" id="fis-b-salidas">—</div><div class="fk-sub" id="fis-b-salidas-n">—</div></div>
+              <div class="fis-kpi fk-accent"><div class="fk-label">Conciliados</div><div class="fk-val" id="fis-b-conc">—</div><div class="fk-sub" id="fis-b-conc-n">—</div></div>
+              <div class="fis-kpi fk-warn"><div class="fk-label">Sin match</div><div class="fk-val" id="fis-b-sinmatch">—</div><div class="fk-sub" id="fis-b-sinmatch-n">—</div></div>
+            </div>
+          </div>
+
+          <div id="fis-banco-tabla" style="display:none">
+            <div class="fis-sec-header">
+              <h3>Movimientos Albo</h3>
+              <div class="fis-spacer"></div>
+              <select id="fis-banco-filtro" onchange="FIS.filtrarBanco(this.value)" class="fis-btn fb-sm" style="cursor:pointer">
+                <option value="todos">Todos</option>
+                <option value="conciliado">✅ Conciliados</option>
+                <option value="parcial">⚠️ Diferencia</option>
+                <option value="sin_match">❌ Sin match</option>
+              </select>
+            </div>
+            <div class="fis-tbl-wrap">
+              <table><thead><tr>
+                <th>Fecha</th><th>Tipo</th><th>Nombre / Alias</th><th>Concepto</th>
+                <th class="fis-tr">Monto</th><th>Estado</th><th>Factura relacionada</th>
+              </tr></thead><tbody id="fis-tbl-banco"></tbody></table>
+            </div>
+          </div>
+        </div>
         <!-- ── REPORTE CONTADOR ── -->
         <div class="fis-section" id="fis-sub-reporte">
           <div class="fis-sec-header">
@@ -5549,6 +5594,155 @@ const FiscalModule = (function() {
   });
 
   /* ── Helpers HTTP — reutiliza apiGet/apiPost del sistema ── */
+  /* ── Banco Albo ── */
+  var _bancoData = [];
+
+  function dropCSVBanco(event) {
+    event.preventDefault();
+    var file = event.dataTransfer.files[0];
+    if (file) cargarCSVBanco(file);
+  }
+
+  function cargarCSVBanco(file) {
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var lines = e.target.result.split('\n');
+      var headers = lines[0].split(',').map(function(h){ return h.trim().replace(/"/g,''); });
+      var movimientos = [];
+      for (var i = 1; i < lines.length; i++) {
+        var cols = lines[i].split(',').map(function(c){ return c.trim().replace(/"/g,''); });
+        if (!cols[0] || !cols[1]) continue;
+        var monto = parseFloat((cols[2]||'').replace(/[$\s,]/g,'')) || 0;
+        movimientos.push({
+          id:        cols[0] || '',
+          fecha:     _parseFechaAlbo(cols[1] || ''),
+          monto:     monto,
+          clabe:     cols[3] || '',
+          nombre:    cols[4] || '',
+          estatus:   cols[5] || '',
+          tipo:      (cols[6]||'').trim(),
+          referencia:cols[7] || '',
+          concepto:  cols[8] || '',
+          saldo:     parseFloat((cols[9]||'').replace(/[$\s,]/g,'')) || 0,
+          estado:    'pendiente',
+          match:     null
+        });
+      }
+      _bancoData = movimientos;
+      _conciliarBanco();
+      _renderBanco();
+    };
+    reader.readAsText(file, 'UTF-8');
+  }
+
+  function _parseFechaAlbo(str) {
+    var meses = { 'Ene':'01','Feb':'02','Mar':'03','Abr':'04','May':'05','Jun':'06',
+                  'Jul':'07','Ago':'08','Sep':'09','Oct':'10','Nov':'11','Dic':'12' };
+    var m = str.match(/(\d+)\s+(\w+)\s+(\d+)/);
+    if (!m) return str;
+    return m[3] + '-' + (meses[m[2]]||'00') + '-' + m[1].padStart(2,'0');
+  }
+
+  function _conciliarBanco() {
+    var tolerancia = 1.0; // diferencia maxima aceptable en pesos
+    _bancoData.forEach(function(mov) {
+      mov.estado = 'sin_match';
+      mov.match  = null;
+      if (mov.tipo === 'Entrada') {
+        // Buscar en ingresos CFDI por monto y fecha cercana
+        var candidatos = st.ingresos.filter(function(ing) {
+          return Math.abs(_n(ing.total) - mov.monto) <= tolerancia &&
+                 Math.abs(_diffDias(ing.fecha, mov.fecha)) <= 3;
+        });
+        if (candidatos.length) {
+          mov.estado = 'conciliado';
+          mov.match  = candidatos[0];
+        } else {
+          // Diferencia de monto mayor
+          var aprox = st.ingresos.filter(function(ing) {
+            return Math.abs(_diffDias(ing.fecha, mov.fecha)) <= 5 &&
+                   Math.abs(_n(ing.total) - mov.monto) / Math.max(mov.monto,1) < 0.15;
+          });
+          if (aprox.length) { mov.estado = 'parcial'; mov.match = aprox[0]; }
+        }
+      } else {
+        // Buscar en egresos por monto y fecha cercana
+        var todos = st.egresos.concat(st.ppd);
+        var candidatos = todos.filter(function(egr) {
+          return Math.abs(_n(egr.total) - mov.monto) <= tolerancia &&
+                 Math.abs(_diffDias(egr.fecha, mov.fecha)) <= 3;
+        });
+        if (candidatos.length) {
+          mov.estado = 'conciliado';
+          mov.match  = candidatos[0];
+        } else {
+          var aprox = todos.filter(function(egr) {
+            return Math.abs(_diffDias(egr.fecha, mov.fecha)) <= 5 &&
+                   Math.abs(_n(egr.total) - mov.monto) / Math.max(mov.monto,1) < 0.15;
+          });
+          if (aprox.length) { mov.estado = 'parcial'; mov.match = aprox[0]; }
+        }
+      }
+    });
+  }
+
+  function _diffDias(fecha1, fecha2) {
+    var d1 = new Date(String(fecha1||'').substring(0,10)+'T12:00:00');
+    var d2 = new Date(String(fecha2||'').substring(0,10)+'T12:00:00');
+    return Math.round((d1 - d2) / 86400000);
+  }
+
+  function _renderBanco(filtro) {
+    filtro = filtro || 'todos';
+    var datos = filtro === 'todos' ? _bancoData :
+                _bancoData.filter(function(m){ return m.estado === filtro; });
+
+    var entradas  = _bancoData.filter(function(m){ return m.tipo === 'Entrada'; });
+    var salidas   = _bancoData.filter(function(m){ return m.tipo === 'Salida'; });
+    var conc      = _bancoData.filter(function(m){ return m.estado === 'conciliado'; });
+    var sinMatch  = _bancoData.filter(function(m){ return m.estado === 'sin_match'; });
+
+    var sumEnt = entradas.reduce(function(s,m){ return s+m.monto; },0);
+    var sumSal = salidas.reduce(function(s,m){ return s+m.monto; },0);
+    var sumConc = conc.reduce(function(s,m){ return s+m.monto; },0);
+    var sumSin  = sinMatch.reduce(function(s,m){ return s+m.monto; },0);
+
+    _set('fis-b-entradas',   _mxn(sumEnt));
+    _set('fis-b-entradas-n', entradas.length + ' movimientos');
+    _set('fis-b-salidas',    _mxn(sumSal));
+    _set('fis-b-salidas-n',  salidas.length + ' movimientos');
+    _set('fis-b-conc',       conc.length + ' / ' + _bancoData.length);
+    _set('fis-b-conc-n',     _mxn(sumConc));
+    _set('fis-b-sinmatch',   sinMatch.length + ' movimientos');
+    _set('fis-b-sinmatch-n', _mxn(sumSin));
+
+    document.getElementById('fis-banco-resumen').style.display = 'block';
+    document.getElementById('fis-banco-tabla').style.display   = 'block';
+
+    var tbody = document.getElementById('fis-tbl-banco');
+    if (!tbody) return;
+    tbody.innerHTML = datos.map(function(m) {
+      var badge = m.estado === 'conciliado' ? '<span class="fis-badge fb-ok">✅ Conciliado</span>' :
+                  m.estado === 'parcial'    ? '<span class="fis-badge fb-pend">⚠️ Diferencia</span>' :
+                                             '<span class="fis-badge fb-err">❌ Sin match</span>';
+      var matchInfo = m.match ?
+        '<div style="font-size:10px;color:var(--text-2)">' + (m.match.proveedor||m.match.receptor||'') + '<br>' +
+        'Folio: ' + (m.match.folio||'') + ' — ' + _mxn(_n(m.match.total)) + '</div>' : '—';
+      var tipoColor = m.tipo === 'Entrada' ? 'var(--fis-green)' : 'var(--fis-red,#ef4444)';
+      return '<tr>' +
+        '<td class="fis-mono">' + m.fecha + '</td>' +
+        '<td><span style="color:' + tipoColor + ';font-weight:500">' + m.tipo + '</span></td>' +
+        '<td><div style="font-size:12px">' + (m.nombre||'') + '</div></td>' +
+        '<td style="font-size:11px;color:var(--text-2)">' + (m.concepto||'') + '</td>' +
+        '<td class="fis-tr fis-mono" style="color:' + tipoColor + '">' + _mxn(m.monto) + '</td>' +
+        '<td>' + badge + '</td>' +
+        '<td>' + matchInfo + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function filtrarBanco(val) { _renderBanco(val); }
   function _get(params, cb) {
   var accion = params.accion;
   var qs = Object.keys(params)
@@ -5598,7 +5792,8 @@ const FiscalModule = (function() {
     abrirModalGastoEsperado:abrirModalGastoEsperado, guardarGastoEsperado:guardarGastoEsperado,
     cargarXML:cargarXML, dropXML:dropXML, cancelarPreview:cancelarPreview, guardarLote:guardarLote,
     exportDIOT:exportDIOT, exportCSV:exportCSV, exportReporteExcel:exportReporteExcel, imprimirReporte:imprimirReporte,
-    guardarDeclaracion:guardarDeclaracion, abrirModal:abrirModal, cerrarModal:cerrarModal
+    guardarDeclaracion:guardarDeclaracion, abrirModal:abrirModal, cerrarModal:cerrarModal,
+    dropCSVBanco:dropCSVBanco, cargarCSVBanco:cargarCSVBanco, filtrarBanco:filtrarBanco
   };
 })();
 
