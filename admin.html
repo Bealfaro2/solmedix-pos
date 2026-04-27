@@ -5665,22 +5665,28 @@ const FiscalModule = (function() {
     _bancoData.forEach(function(mov) {
       mov.estado = 'sin_match';
       mov.match  = null;
+
       if (mov.tipo === 'Entrada') {
-        var candidatos = st.ingresos.filter(function(ing) {
-          return Math.abs(_n(ing.total) - mov.monto) <= tolerancia &&
-                 Math.abs(_diffDias(ing.fecha, mov.fecha)) <= 3 &&
-                 (ing.fecha||'').substring(0,7) === periodoActivo;
-        });
-        if (candidatos.length) {
-          mov.estado = 'conciliado'; mov.match = candidatos[0];
+        // Entradas = traspasos de Mercado Pago, no se concilian contra facturas individuales
+        if ((mov.nombre||'').toUpperCase().includes('MERCADO') ||
+            (mov.concepto||'').toUpperCase().includes('MERCADO')) {
+          mov.estado = 'conciliado';
+          mov.match  = { proveedor: 'Traspaso Mercado Pago', folio: '—', total: mov.monto };
         } else {
-          var aprox = st.ingresos.filter(function(ing) {
-            return Math.abs(_diffDias(ing.fecha, mov.fecha)) <= 5 &&
-                   Math.abs(_n(ing.total) - mov.monto) / Math.max(mov.monto,1) < 0.15 &&
+          // Entrada directa SPEI — buscar en ingresos por monto y fecha
+          var candidatos = st.ingresos.filter(function(ing) {
+            return Math.abs(_n(ing.total) - mov.monto) <= tolerancia &&
+                   Math.abs(_diffDias(ing.fecha, mov.fecha)) <= 3 &&
                    (ing.fecha||'').substring(0,7) === periodoActivo;
           });
-          if (aprox.length) { mov.estado = 'parcial'; mov.match = aprox[0]; }
+          if (candidatos.length) {
+            mov.estado = 'conciliado'; mov.match = candidatos[0];
+          } else {
+            mov.estado = 'parcial';
+            mov.match  = { proveedor: 'Entrada sin factura identificada', folio: '—', total: mov.monto };
+          }
         }
+
       } else {
         var todos = st.egresos.concat(st.ppd);
         // Match exacto
@@ -5700,7 +5706,7 @@ const FiscalModule = (function() {
           });
           if (aprox.length) { mov.estado = 'parcial'; mov.match = aprox[0]; }
           else {
-            // Match por complemento PPD — el monto pagado puede diferir del total de factura
+            // Match por complemento PPD
             var ppdMatch = st.ppd.filter(function(p) {
               return p.uuid_complemento &&
                      Math.abs(_n(p.monto_pagado||p.total) - mov.monto) <= tolerancia &&
@@ -5719,7 +5725,7 @@ const FiscalModule = (function() {
               if (combo.length) {
                 mov.estado = 'conciliado';
                 mov.match  = { proveedor: combo[0].proveedor||combo[0].emisor_nom, folio: combo.map(function(f){ return f.folio; }).join(', '), total: mov.monto, esCombo: true, facturas: combo };
-                 }
+              }
             }
           }
         }
