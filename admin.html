@@ -5683,6 +5683,7 @@ const FiscalModule = (function() {
         }
       } else {
         var todos = st.egresos.concat(st.ppd);
+        // Match exacto
         var candidatos = todos.filter(function(egr) {
           return Math.abs(_n(egr.total) - mov.monto) <= tolerancia &&
                  Math.abs(_diffDias(egr.fecha, mov.fecha)) <= 3 &&
@@ -5691,6 +5692,7 @@ const FiscalModule = (function() {
         if (candidatos.length) {
           mov.estado = 'conciliado'; mov.match = candidatos[0];
         } else {
+          // Match aproximado
           var aprox = todos.filter(function(egr) {
             return Math.abs(_diffDias(egr.fecha, mov.fecha)) <= 5 &&
                    Math.abs(_n(egr.total) - mov.monto) / Math.max(mov.monto,1) < 0.15 &&
@@ -5698,21 +5700,30 @@ const FiscalModule = (function() {
           });
           if (aprox.length) { mov.estado = 'parcial'; mov.match = aprox[0]; }
           else {
-            // Buscar combinacion de facturas del mismo proveedor que sumen el monto
-            var todosProveedor = todos.filter(function(egr) {
-              return (egr.rfc_emisor||'').toUpperCase() === (mov.nombre||'').toUpperCase() ||
-                     (egr.proveedor||'').toUpperCase().indexOf((mov.nombre||'').split(' ')[0].toUpperCase()) !== -1;
+            // Match por complemento PPD — el monto pagado puede diferir del total de factura
+            var ppdMatch = st.ppd.filter(function(p) {
+              return p.uuid_complemento &&
+                     Math.abs(_n(p.monto_pagado||p.total) - mov.monto) <= tolerancia &&
+                     Math.abs(_diffDias(p.fecha_complemento||p.fecha, mov.fecha)) <= 3;
             });
-            var combo = _buscarCombo(todosProveedor, mov.monto, tolerancia);
-            if (combo.length) {
+            if (ppdMatch.length) {
               mov.estado = 'conciliado';
-              mov.match  = { proveedor: combo[0].proveedor||combo[0].emisor_nom, folio: combo.map(function(f){ return f.folio; }).join(', '), total: mov.monto, esCombo: true, facturas: combo };
+              mov.match  = ppdMatch[0];
+            } else {
+              // Match por combo de facturas del mismo proveedor
+              var todosProveedor = todos.filter(function(egr) {
+                return (egr.rfc_emisor||'').toUpperCase() === (mov.nombre||'').toUpperCase() ||
+                       (egr.proveedor||'').toUpperCase().indexOf((mov.nombre||'').split(' ')[0].toUpperCase()) !== -1;
+              });
+              var combo = _buscarCombo(todosProveedor, mov.monto, tolerancia);
+              if (combo.length) {
+                mov.estado = 'conciliado';
+                mov.match  = { proveedor: combo[0].proveedor||combo[0].emisor_nom, folio: combo.map(function(f){ return f.folio; }).join(', '), total: mov.monto, esCombo: true, facturas: combo };
+              }
             }
           }
         }
       }
-    });
-  }
 
   function _buscarCombo(facturas, monto, tolerancia) {
     // Buscar subconjunto de facturas cuya suma == monto (max 8 facturas)
