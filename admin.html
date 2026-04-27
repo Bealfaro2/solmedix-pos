@@ -5719,11 +5719,11 @@ const FiscalModule = (function() {
               if (combo.length) {
                 mov.estado = 'conciliado';
                 mov.match  = { proveedor: combo[0].proveedor||combo[0].emisor_nom, folio: combo.map(function(f){ return f.folio; }).join(', '), total: mov.monto, esCombo: true, facturas: combo };
-              }
-            }
-          }
+               }
         }
       }
+    });
+  }
 
   function _buscarCombo(facturas, monto, tolerancia) {
     // Buscar subconjunto de facturas cuya suma == monto (max 8 facturas)
