@@ -5630,6 +5630,21 @@ const FiscalModule = (function() {
         });
       }
       _bancoData = movimientos;
+
+      // Detectar período del CSV y alertar si no coincide
+      if (movimientos.length) {
+        var fechaCSV = movimientos[movimientos.length-1].fecha.substring(0,7);
+        if (st.periodo && fechaCSV !== st.periodo) {
+          var ok = confirm('⚠️ El CSV es de ' + fechaCSV + ' pero el período seleccionado es ' + st.periodo + '.\n\n¿Deseas cambiar el período a ' + fechaCSV + ' para conciliar correctamente?');
+          if (ok) {
+            st.periodo = fechaCSV;
+            cargarDatos();
+            setTimeout(function(){ _conciliarBanco(); _renderBanco(); }, 3000);
+            return;
+          }
+        }
+      }
+
       _conciliarBanco();
       _renderBanco();
     };
