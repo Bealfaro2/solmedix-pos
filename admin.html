@@ -5697,9 +5697,48 @@ const FiscalModule = (function() {
                    (egr.fecha||'').substring(0,7) === periodoActivo;
           });
           if (aprox.length) { mov.estado = 'parcial'; mov.match = aprox[0]; }
+          else {
+            // Buscar combinacion de facturas del mismo proveedor que sumen el monto
+            var todosProveedor = todos.filter(function(egr) {
+              return (egr.rfc_emisor||'').toUpperCase() === (mov.nombre||'').toUpperCase() ||
+                     (egr.proveedor||'').toUpperCase().indexOf((mov.nombre||'').split(' ')[0].toUpperCase()) !== -1;
+            });
+            var combo = _buscarCombo(todosProveedor, mov.monto, tolerancia);
+            if (combo.length) {
+              mov.estado = 'conciliado';
+              mov.match  = { proveedor: combo[0].proveedor||combo[0].emisor_nom, folio: combo.map(function(f){ return f.folio; }).join(', '), total: mov.monto, esCombo: true, facturas: combo };
+            }
+          }
         }
       }
     });
+  }
+
+  function _buscarCombo(facturas, monto, tolerancia) {
+    // Buscar subconjunto de facturas cuya suma == monto (max 8 facturas)
+    tolerancia = tolerancia || 1.0;
+    var n = Math.min(facturas.length, 12);
+    for (var size = 2; size <= Math.min(n, 8); size++) {
+      var result = _combinar(facturas, size, monto, tolerancia);
+      if (result.length) return result;
+    }
+    return [];
+  }
+
+  function _combinar(arr, size, objetivo, tolerancia) {
+    function combine(start, combo) {
+      if (combo.length === size) {
+        var suma = combo.reduce(function(s,f){ return s+_n(f.total); },0);
+        if (Math.abs(suma - objetivo) <= tolerancia) return combo.slice();
+        return null;
+      }
+      for (var i = start; i < arr.length; i++) {
+        var result = combine(i+1, combo.concat(arr[i]));
+        if (result) return result;
+      }
+      return null;
+    }
+    return combine(0, []) || [];
   }
 
   function _diffDias(fecha1, fecha2) {
