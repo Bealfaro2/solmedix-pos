@@ -5660,41 +5660,41 @@ const FiscalModule = (function() {
   }
 
   function _conciliarBanco() {
-    var tolerancia = 1.0; // diferencia maxima aceptable en pesos
+    var tolerancia = 1.0;
+    var periodoActivo = st.periodo;
     _bancoData.forEach(function(mov) {
       mov.estado = 'sin_match';
       mov.match  = null;
       if (mov.tipo === 'Entrada') {
-        // Buscar en ingresos CFDI por monto y fecha cercana
         var candidatos = st.ingresos.filter(function(ing) {
           return Math.abs(_n(ing.total) - mov.monto) <= tolerancia &&
-                 Math.abs(_diffDias(ing.fecha, mov.fecha)) <= 3;
+                 Math.abs(_diffDias(ing.fecha, mov.fecha)) <= 3 &&
+                 (ing.fecha||'').substring(0,7) === periodoActivo;
         });
         if (candidatos.length) {
-          mov.estado = 'conciliado';
-          mov.match  = candidatos[0];
+          mov.estado = 'conciliado'; mov.match = candidatos[0];
         } else {
-          // Diferencia de monto mayor
           var aprox = st.ingresos.filter(function(ing) {
             return Math.abs(_diffDias(ing.fecha, mov.fecha)) <= 5 &&
-                   Math.abs(_n(ing.total) - mov.monto) / Math.max(mov.monto,1) < 0.15;
+                   Math.abs(_n(ing.total) - mov.monto) / Math.max(mov.monto,1) < 0.15 &&
+                   (ing.fecha||'').substring(0,7) === periodoActivo;
           });
           if (aprox.length) { mov.estado = 'parcial'; mov.match = aprox[0]; }
         }
       } else {
-        // Buscar en egresos por monto y fecha cercana
         var todos = st.egresos.concat(st.ppd);
         var candidatos = todos.filter(function(egr) {
           return Math.abs(_n(egr.total) - mov.monto) <= tolerancia &&
-                 Math.abs(_diffDias(egr.fecha, mov.fecha)) <= 3;
+                 Math.abs(_diffDias(egr.fecha, mov.fecha)) <= 3 &&
+                 (egr.fecha||'').substring(0,7) === periodoActivo;
         });
         if (candidatos.length) {
-          mov.estado = 'conciliado';
-          mov.match  = candidatos[0];
+          mov.estado = 'conciliado'; mov.match = candidatos[0];
         } else {
           var aprox = todos.filter(function(egr) {
             return Math.abs(_diffDias(egr.fecha, mov.fecha)) <= 5 &&
-                   Math.abs(_n(egr.total) - mov.monto) / Math.max(mov.monto,1) < 0.15;
+                   Math.abs(_n(egr.total) - mov.monto) / Math.max(mov.monto,1) < 0.15 &&
+                   (egr.fecha||'').substring(0,7) === periodoActivo;
           });
           if (aprox.length) { mov.estado = 'parcial'; mov.match = aprox[0]; }
         }
