@@ -2514,7 +2514,81 @@ function aplicarEntrada() {
     }
   }
 
-  procesarSiguiente(0);
+  // Si hay comprobante PDF, procesarlo antes de aplicar lotes
+  if (window._pdfComprobanteData) {
+    _parsearPdfAlbo(window._pdfComprobanteData.data, function(datoPago) {
+      if (datoPago) {
+        // Guardar comprobante ligado a esta factura en Sheets
+        apiPost({
+          accion:          'guardar_comprobante_albo',
+          uuid_factura:    xmlFacturaInfo.uuid,
+          folio_factura:   xmlFacturaInfo.folio,
+          proveedor:       xmlFacturaInfo.proveedor,
+          monto_pagado:    datoPago.monto,
+          fecha_pago:      datoPago.fecha,
+          concepto:        datoPago.concepto,
+          clave_rastreo:   datoPago.claveRastreo,
+          beneficiario:    datoPago.beneficiario
+        }, function(){ });
+      }
+      procesarSiguiente(0);
+    });
+  } else {
+    procesarSiguiente(0);
+  }
+}
+
+function _parsearPdfAlbo(dataUrl, cb) {
+  try {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    var base64 = dataUrl.split(',')[1];
+    var binary = atob(base64);
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    pdfjsLib.getDocument({ data: bytes }).promise.then(function(pdf) {
+      pdf.getPage(1).then(function(page) {
+        page.getTextContent().then(function(content) {
+          var lines = content.items.map(function(item) { return item.str.trim(); }).filter(Boolean);
+          var texto = lines.join('\n');
+          // Extraer campos del comprobante Albo
+          var monto = 0, fecha = '', concepto = '', claveRastreo = '', beneficiario = '';
+          for (var i = 0; i < lines.length; i++) {
+            var l = lines[i];
+            if (/Monto total/i.test(l) && lines[i+1]) {
+              monto = parseFloat(lines[i+1].replace(/[$,\s]/g,'')) || 0;
+            }
+            if (/Fecha y hora de ejecuci/i.test(l) && lines[i+1]) {
+              fecha = _parseFechaAlboTexto(lines[i+1]);
+            }
+            if (/^Concepto$/i.test(l) && lines[i+1]) {
+              concepto = lines[i+1];
+            }
+            if (/Clave de rastreo/i.test(l) && lines[i+1]) {
+              claveRastreo = lines[i+1];
+            }
+            if (/Nombre del beneficiario/i.test(l) && lines[i+1]) {
+              beneficiario = lines[i+1];
+            }
+          }
+          cb({ monto: monto, fecha: fecha, concepto: concepto, claveRastreo: claveRastreo, beneficiario: beneficiario });
+        });
+      });
+    }).catch(function(e) {
+      console.error('PDF parse error:', e);
+      cb(null);
+    });
+  } catch(e) {
+    console.error('PDF init error:', e);
+    cb(null);
+  }
+}
+
+function _parseFechaAlboTexto(str) {
+  var meses = {'enero':'01','febrero':'02','marzo':'03','abril':'04','mayo':'05','junio':'06',
+               'julio':'07','agosto':'08','septiembre':'09','octubre':'10','noviembre':'11','diciembre':'12'};
+  var m = str.match(/(\d+)\s+de\s+(\w+)\s+de\s+(\d{4})/i);
+  if (!m) return str;
+  return m[3] + '-' + (meses[m[2].toLowerCase()]||'00') + '-' + m[1].padStart(2,'0');
 }
 
 function entradaAlrt(msg, tipo) {
