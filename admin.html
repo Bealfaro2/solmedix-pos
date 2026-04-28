@@ -5072,7 +5072,75 @@ const FiscalModule = (function() {
                '<td><span class="fis-badge ' + (ivaTras > 0 ? 'fb-ok' : 'fb-pend') + '">' + (ivaTras > 0 ? 'Sistema listo' : 'Requiere carga XML') + '</span></td>' +
                '<td><span class="fis-badge ' + cls + '">' + (f[2] === 'ok' ? 'Listo' : 'Pendiente') + '</span></td></tr>';
       }).join('');
+      _renderIVA();
     }
+  }
+  function _renderIVA() {
+    // ── Calcular IVA ──────────────────────────────────────────────
+    var ivaTrasladado  = st.ingresos.reduce(function(s,i){ return s+_n(i.iva); },0);
+    var ivaAcreditable = st.egresos.reduce(function(s,g){ return s+_n(g.iva); },0);
+    var ivaRetIVA      = 0; // IVA retenido (impuesto 002)
+    var isrRetenido    = 0; // ISR retenido (impuesto 001)
+
+    // Extraer retenciones de egresos — buscar en gastos operativos con retención
+    st.egresos.forEach(function(g) {
+      if (_n(g.iva_retenido)) ivaRetIVA += _n(g.iva_retenido);
+      if (_n(g.isr_retenido)) isrRetenido += _n(g.isr_retenido);
+    });
+    // Usar valores externos si están capturados
+    if (st.externos.iva_retenido) ivaRetIVA  = _n(st.externos.iva_retenido);
+    if (st.externos.isr_retenido) isrRetenido = _n(st.externos.isr_retenido);
+
+    var saldoFavor  = Math.max(0, ivaAcreditable - ivaTrasladado);
+    var ivaAPagar   = Math.max(0, ivaTrasladado - ivaAcreditable);
+    var ivaNetoFinal = ivaRetIVA - saldoFavor;
+
+    // ── Tabla IVA ─────────────────────────────────────────────────
+    var tbodyIVA = document.getElementById('fis-tbl-iva');
+    if (tbodyIVA) {
+      tbodyIVA.innerHTML = [
+        ['IVA trasladado (ingresos)', ivaTrasladado, ivaTrasladado === 0 ? 'Medicamentos exentos' : st.ingresos.length + ' CFDIs'],
+        ['IVA acreditable (egresos operativos)', ivaAcreditable, st.egresos.length + ' gastos confirmados'],
+        ['Saldo a favor', saldoFavor, saldoFavor > 0 ? 'Acreditable contra retenciones' : '—'],
+      ].map(function(r) {
+        var colorVal = r[0].includes('Saldo') ? 'color:var(--green)' : '';
+        return '<tr><td>' + r[0] + '</td>' +
+               '<td class="fis-tr fis-mono" style="' + colorVal + '">' + _mxn(r[1]) + '</td>' +
+               '<td style="font-size:11px;color:var(--text-2)">' + r[2] + '</td></tr>';
+      }).join('');
+    }
+
+    // ── Resultado IVA ─────────────────────────────────────────────
+    var resEl = document.getElementById('fis-iva-resultado');
+    if (resEl) {
+      if (ivaNetoFinal > 0) {
+        resEl.textContent = _mxn(ivaNetoFinal) + ' a pagar';
+        resEl.style.color = '#ef4444';
+      } else if (ivaNetoFinal < 0) {
+        resEl.textContent = _mxn(Math.abs(ivaNetoFinal)) + ' saldo a favor';
+        resEl.style.color = 'var(--green)';
+      } else {
+        resEl.textContent = '$0.00 — Neutral';
+        resEl.style.color = 'var(--text-2)';
+      }
+    }
+
+    // ── Tabla Retenciones ─────────────────────────────────────────
+    var tbodyRet = document.getElementById('fis-tbl-retenciones');
+    if (tbodyRet) {
+      tbodyRet.innerHTML = [
+        ['IVA retenido (arrendamiento 10.67%)', ivaRetIVA, 'Impuesto 002 retenido'],
+        ['ISR retenido (arrendamiento 1.25%)', isrRetenido, 'Impuesto 001 retenido'],
+      ].map(function(r) {
+        return '<tr><td>' + r[0] + '</td>' +
+               '<td class="fis-tr fis-mono" style="color:#ef4444">' + _mxn(r[1]) + '</td>' +
+               '<td style="font-size:11px;color:var(--text-2)">' + r[2] + '</td></tr>';
+      }).join('');
+    }
+
+    // ── Resultado Retenciones ─────────────────────────────────────
+    var retEl = document.getElementById('fis-ret-resultado');
+    if (retEl) retEl.textContent = _mxn(ivaRetIVA + isrRetenido);
   }
 
   function _renderExternos() {
@@ -6016,6 +6084,7 @@ const FiscalModule = (function() {
     exportDIOT:exportDIOT, exportCSV:exportCSV, exportReporteExcel:exportReporteExcel, imprimirReporte:imprimirReporte,
     guardarDeclaracion:guardarDeclaracion, abrirModal:abrirModal, cerrarModal:cerrarModal,
     dropCSVBanco:dropCSVBanco, cargarCSVBanco:cargarCSVBanco, filtrarBanco:filtrarBanco
+    filtrarBanco:filtrarBanco
   };
 })();
 
