@@ -5407,9 +5407,10 @@ const FiscalModule = (function() {
      var iva = 0;
     var impuestosComp = null;
     var compChildren = comp.childNodes;
-    for (var ci = 0; ci < compChildren.length; ci++) {
+     for (var ci = 0; ci < compChildren.length; ci++) {
       var ln = compChildren[ci].localName || compChildren[ci].nodeName || '';
-if (ln === 'Impuestos' || ln === 'cfdi:Impuestos') { impuestosComp = compChildren[ci]; break; }
+      if (ln === 'Impuestos' || ln === 'cfdi:Impuestos') { impuestosComp = compChildren[ci]; break; }
+    }
     if (impuestosComp) {
       var traslados = impuestosComp.getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4', 'Traslado');
       if (!traslados.length) traslados = impuestosComp.getElementsByTagName('cfdi:Traslado');
