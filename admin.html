@@ -2405,7 +2405,6 @@ function onPdfComprobanteFile(input) {
   var file = input.files[0];
   var reader = new FileReader();
   reader.onload = function(e) {
-    // Guardar datos del PDF para procesarlo al aplicar entrada
     window._pdfComprobanteData = {
       nombre: file.name,
       data:   e.target.result
