@@ -5418,14 +5418,16 @@ const FiscalModule = (function() {
           iva += parseFloat(traslados[i].getAttribute('Importe') || 0);
       }
     }
-    var retenciones = doc.getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4', 'Retencion');
-    if (!retenciones.length) retenciones = doc.getElementsByTagName('cfdi:Retencion');
     var iva_retenido = 0, isr_retenido = 0;
-    for (var j = 0; j < retenciones.length; j++) {
-      var imp = retenciones[j].getAttribute('Impuesto');
-      var impVal = parseFloat(retenciones[j].getAttribute('Importe') || 0);
-      if (imp === '002') iva_retenido += impVal;
-      if (imp === '001') isr_retenido += impVal;
+    if (impuestosComp) {
+      var retNodos = impuestosComp.getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4', 'Retencion');
+      if (!retNodos.length) retNodos = impuestosComp.getElementsByTagName('cfdi:Retencion');
+      for (var j = 0; j < retNodos.length; j++) {
+        var retImp = retNodos[j].getAttribute('Impuesto');
+        var retVal = parseFloat(retNodos[j].getAttribute('Importe') || 0);
+        if (retImp === '002') iva_retenido += retVal;
+        if (retImp === '001') isr_retenido += retVal;
+      }
     }
     var rfcEmis  = emisor ? (emisor.getAttribute('Rfc') || '') : '';
     var rfcRec   = recep  ? (recep.getAttribute('Rfc')  || '') : '';
