@@ -2399,7 +2399,32 @@ function limpiarXml() {
   document.getElementById('xml-upload-zone').style.display = 'block';
   document.getElementById('entrada-alrt').style.display = 'none';
 }
+function onPdfComprobanteFile(input) {
+  if (!input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    // Guardar datos del PDF para procesarlo al aplicar entrada
+    window._pdfComprobanteData = {
+      nombre: file.name,
+      data:   e.target.result
+    };
+    document.getElementById('pdf-preview').style.display = 'block';
+    document.getElementById('pdf-preview-texto').textContent = '✅ ' + file.name;
+    document.getElementById('pdf-upload-label').textContent = file.name;
+    document.getElementById('pdf-upload-icon').textContent = '✅';
+  };
+  reader.readAsDataURL(file);
+}
 
+function limpiarPdf() {
+  window._pdfComprobanteData = null;
+  document.getElementById('pdf-file-input').value = '';
+  document.getElementById('pdf-preview').style.display = 'none';
+  document.getElementById('pdf-upload-label').textContent = 'Haz clic para seleccionar PDF de comprobante Albo';
+  document.getElementById('pdf-upload-icon').textContent = '📎';
+}
+  
 function aplicarEntrada() {
   // ── Verificar duplicado: mismo folio + mismo proveedor ──────────
   if (xmlFacturaInfo && xmlFacturaInfo.folio && xmlFacturaInfo.proveedor) {
