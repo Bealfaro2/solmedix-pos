@@ -5443,7 +5443,9 @@ const FiscalModule = (function() {
       es_complemento:         esComplemento,
       uuid_factura_original:  uuidFacturaOriginal,
       monto_pagado:           montoPagado,
-      saldo_insoluto:         saldoInsoluto
+      saldo_insoluto:         saldoInsoluto,
+      iva_retenido:           iva_retenido,
+      isr_retenido:           isr_retenido
     };
 
   } catch(e) { return { archivo:nombre, error:'Error al parsear: ' + e.message }; }
