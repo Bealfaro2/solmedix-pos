@@ -618,6 +618,34 @@ select option { background:var(--bg-2); color:var(--text); }
               <thead><tr><th>Concepto</th><th class="fis-tr">Monto</th><th>Estado</th></tr></thead>
               <tbody id="fis-tbl-externos"></tbody>
             </table>
+            <div class="fis-sec-header" style="margin-top:18px">
+            <h3>💰 Cálculo de IVA mensual</h3>
+            <div class="fis-spacer"></div>
+          </div>
+          <div class="fis-tbl-wrap">
+            <table>
+              <thead><tr><th>Concepto</th><th class="fis-tr">Monto</th><th>Detalle</th></tr></thead>
+              <tbody id="fis-tbl-iva"></tbody>
+            </table>
+          </div>
+          <div class="fis-tbl-foot" id="fis-iva-foot" style="margin-top:8px;padding:12px;background:rgba(24,95,165,.08);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:600;color:var(--text)">Resultado IVA del período:</span>
+            <span id="fis-iva-resultado" style="font-size:18px;font-weight:700">—</span>
+          </div>
+          <div class="fis-sec-header" style="margin-top:18px">
+            <h3>🧾 Retenciones a pagar</h3>
+            <div class="fis-spacer"></div>
+          </div>
+          <div class="fis-tbl-wrap">
+            <table>
+              <thead><tr><th>Concepto</th><th class="fis-tr">Monto</th><th>Detalle</th></tr></thead>
+              <tbody id="fis-tbl-retenciones"></tbody>
+            </table>
+          </div>
+          <div class="fis-tbl-foot" id="fis-ret-foot" style="margin-top:8px;padding:12px;background:rgba(239,68,68,.06);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:600;color:var(--text)">Total retenciones a pagar:</span>
+            <span id="fis-ret-resultado" style="font-size:18px;font-weight:700;color:#ef4444">—</span>
+          </div>
           </div>
         </div>
 
