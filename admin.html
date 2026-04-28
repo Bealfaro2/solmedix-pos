@@ -3480,12 +3480,13 @@ function guardarGastosFiscales() {
     }
     var g = aGuardar[idx];
     apiPost({
-      accion:'guardar_gasto_fiscal',
+     accion:'guardar_gasto_fiscal',
       uuid:g.uuid, fecha:g.fecha, folio:g.folio,
       rfc_emisor:g.rfc_emisor, proveedor:g.proveedor,
       concepto:g.concepto, subtotal:g.subtotal, descuento:g.descuento,
       iva:g.iva, total:g.total, metodo_pago:g.metodo_pago,
-      forma_pago:g.forma_pago, uso_cfdi:g.uso_cfdi, sucursal:suc
+      forma_pago:g.forma_pago, uso_cfdi:g.uso_cfdi, sucursal:suc,
+      iva_retenido:g.iva_retenido||0, isr_retenido:g.isr_retenido||0
     }, function(err){ if(!err) done++; else errors++; next(idx+1); });
   }
   next(0);
