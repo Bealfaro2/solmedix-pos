@@ -6074,7 +6074,7 @@ const FiscalModule = (function() {
   function _antiguedadBadge(dias){ var cls=dias>60?'fb-err':dias>30?'fb-pend':'fb-info'; return '<span class="fis-badge '+cls+'">'+dias+' días</span>'; }
   function _descargar(contenido,nombre,tipo){ var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([contenido],{type:tipo})); a.download=nombre; a.click(); }
 
-  return {
+ return {
     onLogin:onLogin, onLogout:onLogout, cargarDatos:cargarDatos,
     showSub:showSub, cambiarPeriodo:cambiarPeriodo, cambiarSuc:cambiarSuc,
     abrirModalComp:abrirModalComp, leerXMLComp:leerXMLComp, guardarComplemento:guardarComplemento,
@@ -6084,7 +6084,6 @@ const FiscalModule = (function() {
     exportDIOT:exportDIOT, exportCSV:exportCSV, exportReporteExcel:exportReporteExcel, imprimirReporte:imprimirReporte,
     guardarDeclaracion:guardarDeclaracion, abrirModal:abrirModal, cerrarModal:cerrarModal,
     dropCSVBanco:dropCSVBanco, cargarCSVBanco:cargarCSVBanco, filtrarBanco:filtrarBanco
-    filtrarBanco:filtrarBanco
   };
 })();
 
