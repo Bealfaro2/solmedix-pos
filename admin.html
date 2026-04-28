@@ -5379,12 +5379,16 @@ const FiscalModule = (function() {
     var recep  = find('Receptor');
     var tfd    = doc.getElementsByTagNameNS('http://www.sat.gob.mx/TimbreFiscalDigital', 'TimbreFiscalDigital')[0]
               || doc.getElementsByTagName('tfd:TimbreFiscalDigital')[0];
-    var traslados = doc.getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4', 'Traslado');
-    if (!traslados.length) traslados = doc.getElementsByTagName('cfdi:Traslado');
-    var iva = 0;
-    for (var i = 0; i < traslados.length; i++) {
-      if (traslados[i].getAttribute('Impuesto') === '002')
-        iva += parseFloat(traslados[i].getAttribute('Importe') || 0);
+     var iva = 0;
+    var impuestosComp = doc.getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4','Impuestos')[0]
+                     || doc.getElementsByTagName('cfdi:Impuestos')[0];
+    if (impuestosComp) {
+      var traslados = impuestosComp.getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4','Traslado');
+      if (!traslados.length) traslados = impuestosComp.getElementsByTagName('cfdi:Traslado');
+      for (var i = 0; i < traslados.length; i++) {
+        if (traslados[i].getAttribute('Impuesto') === '002')
+          iva += parseFloat(traslados[i].getAttribute('Importe') || 0);
+      }
     }
     var retenciones = doc.getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4', 'Retencion');
     if (!retenciones.length) retenciones = doc.getElementsByTagName('cfdi:Retencion');
