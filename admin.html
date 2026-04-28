@@ -5601,8 +5601,10 @@ console.log('IVA_RET:', iva_retenido, 'ISR_RET:', isr_retenido);
     });
     return;
   }
-  var complementos = buffer.filter(function(r){ return !r.error && r.es_complemento; });
-  var normales = buffer.filter(function(r){ return !r.error && !r.es_complemento && r.clasificacion !== 'gasto'; });
+var complementos = buffer.filter(function(r){ return !r.error && r.es_complemento; });
+var normales = buffer.filter(function(r){ return !r.error && !r.es_complemento && r.clasificacion !== 'gasto'; });
+console.log('BUFFER:', buffer.length, 'NORMALES:', normales.length, 'COMPLEMENTOS:', complementos.length);
+console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
   if (!normales.length && !complementos.length) { alert('No hay registros válidos para guardar.'); return; }
   var btn2 = document.getElementById('fis-btn-guardar-egr');
   if (btn2) { btn2.disabled = true; btn2.textContent = 'Guardando...'; }
