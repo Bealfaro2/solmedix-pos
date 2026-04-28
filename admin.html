@@ -6107,7 +6107,7 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
       var sc = document.getElementById('sc_' + cbName);
       if (sc) sc.remove();
       cb(new Error('Timeout'), null);
-    }, 15000);
+    }, 30000);
     window[cbName] = function(data) {
       clearTimeout(timeout);
       delete window[cbName];
