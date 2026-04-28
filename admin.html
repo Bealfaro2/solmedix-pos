@@ -3309,7 +3309,6 @@ function parsearCFDI(xmlText) {
 
   // IVA: suma todos los Traslado donde Impuesto=002
   var iva = 0;
-  var iva = 0;
   var impuestosComp = doc.getElementsByTagNameNS(ns,'Impuestos')[0]
                    || doc.getElementsByTagName('cfdi:Impuestos')[0];
   if (impuestosComp) {
@@ -3322,7 +3321,6 @@ function parsearCFDI(xmlText) {
   }
   // Retenciones: IVA retenido (002) e ISR retenido (001)
   var iva_retenido = 0, isr_retenido = 0;
-  var iva_retenido = 0, isr_retenido = 0;
   if (impuestosComp) {
     var retenciones = impuestosComp.getElementsByTagNameNS(ns,'Retencion');
     if (!retenciones.length) retenciones = impuestosComp.getElementsByTagName('cfdi:Retencion');
@@ -3332,11 +3330,6 @@ function parsearCFDI(xmlText) {
       if (imp==='002') iva_retenido += impVal;
       if (imp==='001') isr_retenido += impVal;
     }
-  }
-    var imp = retenciones[i].getAttribute('Impuesto');
-    var impVal = parseFloat(retenciones[i].getAttribute('Importe')||'0');
-    if (imp==='002') iva_retenido += impVal;
-    if (imp==='001') isr_retenido += impVal;
   }
 
   // Conceptos → descripción concatenada
