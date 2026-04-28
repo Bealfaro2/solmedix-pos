@@ -5386,6 +5386,15 @@ const FiscalModule = (function() {
       if (traslados[i].getAttribute('Impuesto') === '002')
         iva += parseFloat(traslados[i].getAttribute('Importe') || 0);
     }
+    var retenciones = doc.getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4', 'Retencion');
+    if (!retenciones.length) retenciones = doc.getElementsByTagName('cfdi:Retencion');
+    var iva_retenido = 0, isr_retenido = 0;
+    for (var j = 0; j < retenciones.length; j++) {
+      var imp = retenciones[j].getAttribute('Impuesto');
+      var impVal = parseFloat(retenciones[j].getAttribute('Importe') || 0);
+      if (imp === '002') iva_retenido += impVal;
+      if (imp === '001') isr_retenido += impVal;
+    }
     var rfcEmis  = emisor ? (emisor.getAttribute('Rfc') || '') : '';
     var rfcRec   = recep  ? (recep.getAttribute('Rfc')  || '') : '';
     var tipoComp = comp.getAttribute('TipoDeComprobante') || '';
@@ -5399,6 +5408,8 @@ const FiscalModule = (function() {
     var uuidFacturaOriginal = '';
     var montoPagado        = 0;
     var saldoInsoluto      = 0;
+    var iva_retenido       = iva_retenido || 0;
+    var isr_retenido       = isr_retenido || 0;
 
     if (esComplemento) {
       var nsPago = 'http://www.sat.gob.mx/Pagos20';
