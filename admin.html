@@ -5491,7 +5491,7 @@ console.log('IVA_RET:', iva_retenido, 'ISR_RET:', isr_retenido);
       isr_retenido:           isr_retenido
     };
 
-  } catch(e) { return { archivo:nombre, error:'Error al parsear: ' + e.message };
+  } catch(e) { return { archivo:nombre, error:'Error al parsear: ' + e.message }; }
 }
   function _mostrarPreview(tipo) {
     var isIng  = tipo === 'ing';
