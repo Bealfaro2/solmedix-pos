@@ -3309,11 +3309,15 @@ function parsearCFDI(xmlText) {
 
   // IVA: suma todos los Traslado donde Impuesto=002
   var iva = 0;
-  var traslados = doc.getElementsByTagNameNS(ns,'Traslado');
-  if (!traslados.length) traslados = doc.getElementsByTagName('cfdi:Traslado');
-  for (var i=0;i<traslados.length;i++) {
-    if (traslados[i].getAttribute('Impuesto')==='002') {
-      iva += parseFloat(traslados[i].getAttribute('Importe')||'0');
+  var iva = 0;
+  var impuestosComp = doc.getElementsByTagNameNS(ns,'Impuestos')[0]
+                   || doc.getElementsByTagName('cfdi:Impuestos')[0];
+  if (impuestosComp) {
+    var traslados = impuestosComp.getElementsByTagNameNS(ns,'Traslado');
+    if (!traslados.length) traslados = impuestosComp.getElementsByTagName('cfdi:Traslado');
+    for (var i=0;i<traslados.length;i++) {
+      if (traslados[i].getAttribute('Impuesto')==='002')
+        iva += parseFloat(traslados[i].getAttribute('Importe')||'0');
     }
   }
   // Retenciones: IVA retenido (002) e ISR retenido (001)
