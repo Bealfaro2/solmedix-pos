@@ -1944,16 +1944,27 @@ function apiGet(accion, callback) {
 }
 
 function apiPost(data, callback) {
-  fetch(API_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(data)
-  })
-  .then(function(){ 
-    setTimeout(function(){ callback(null, {ok:true}); }, 1500);
-  })
-  .catch(function(err){ callback(err); });
+  var cbName = 'cb_' + Math.random().toString(36).slice(2);
+  var script = document.createElement('script');
+  window[cbName] = function(res) {
+    delete window[cbName];
+    script.remove();
+    callback(null, res);
+  };
+  script.onerror = function() {
+    delete window[cbName];
+    script.remove();
+    callback(new Error('Error de red en apiPost'));
+  };
+  setTimeout(function() {
+    if (window[cbName]) {
+      delete window[cbName];
+      script.remove();
+      callback(new Error('Timeout apiPost'));
+    }
+  }, 30000);
+  script.src = API_URL + '?callback=' + cbName + '&_data=' + encodeURIComponent(JSON.stringify(data));
+  document.head.appendChild(script);
 }
 
 /* CARGAR DATOS */
