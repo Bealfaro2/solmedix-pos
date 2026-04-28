@@ -6090,39 +6090,39 @@ console.log('IVA_RET:', iva_retenido, 'ISR_RET:', isr_retenido);
     }).join('');
   }
 
-  function filtrarBanco(val) { _renderBanco(val); }
-  function _get(params, cb) {
-  var accion = params.accion;
-  var qs = Object.keys(params)
-    .filter(function(k){ return k !== 'accion'; })
-    .map(function(k){ return k + '=' + encodeURIComponent(params[k]); })
-    .join('&');
-  var url = API_URL + '?accion=' + accion + (qs ? '&' + qs : '');
-  var cbName = '_fis_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-  var timeout = setTimeout(function() {
-    delete window[cbName];
-    var sc = document.getElementById('sc_' + cbName);
-    if (sc) sc.remove();
-    cb(new Error('Timeout'), null);
-  }, 15000);
-  window[cbName] = function(data) {
-    clearTimeout(timeout);
-    delete window[cbName];
-    var sc = document.getElementById('sc_' + cbName);
-    if (sc) sc.remove();
-    cb(null, data);
-  };
-  var s = document.createElement('script');
-  s.id = 'sc_' + cbName;
-  s.src = url + '&callback=' + cbName;
-  s.onerror = function() {
-    clearTimeout(timeout);
-    delete window[cbName];
-    s.remove();
-    cb(new Error('Error de red'), null);
-  };
-  document.head.appendChild(s);
-}
+    function filtrarBanco(val) { _renderBanco(val); }
+    function _get(params, cb) {
+    var accion = params.accion;
+    var qs = Object.keys(params)
+      .filter(function(k){ return k !== 'accion'; })
+      .map(function(k){ return k + '=' + encodeURIComponent(params[k]); })
+      .join('&');
+    var url = API_URL + '?accion=' + accion + (qs ? '&' + qs : '');
+    var cbName = '_fis_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    var timeout = setTimeout(function() {
+      delete window[cbName];
+      var sc = document.getElementById('sc_' + cbName);
+      if (sc) sc.remove();
+      cb(new Error('Timeout'), null);
+    }, 15000);
+    window[cbName] = function(data) {
+      clearTimeout(timeout);
+      delete window[cbName];
+      var sc = document.getElementById('sc_' + cbName);
+      if (sc) sc.remove();
+      cb(null, data);
+    };
+    var s = document.createElement('script');
+    s.id = 'sc_' + cbName;
+    s.src = url + '&callback=' + cbName;
+    s.onerror = function() {
+      clearTimeout(timeout);
+      delete window[cbName];
+      s.remove();
+      cb(new Error('Error de red'), null);
+    };
+    document.head.appendChild(s);
+  }
 
   /* ── Helpers ── */
   var _mxn = function(n){ return isNaN(n)?'—':'$'+Number(n).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}); };
