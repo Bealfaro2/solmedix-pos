@@ -2398,6 +2398,7 @@ function limpiarXml() {
   document.getElementById('xml-result').style.display = 'none';
   document.getElementById('xml-upload-zone').style.display = 'block';
   document.getElementById('entrada-alrt').style.display = 'none';
+  limpiarPdf();
 }
 function onPdfComprobanteFile(input) {
   if (!input.files[0]) return;
