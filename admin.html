@@ -1946,11 +1946,13 @@ function apiGet(accion, callback) {
 function apiPost(data, callback) {
   fetch(API_URL, {
     method: 'POST',
+    mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify(data)
   })
-  .then(function(r){ return r.json(); })
-  .then(function(res){ callback(null, res); })
+  .then(function(){ 
+    setTimeout(function(){ callback(null, {ok:true}); }, 1500);
+  })
   .catch(function(err){ callback(err); });
 }
 
