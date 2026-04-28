@@ -3353,7 +3353,9 @@ function parsearCFDI(xmlText) {
     iva: Math.round(iva*100)/100,
     total: Math.round(total*100)/100,
     metodo_pago: metodo, forma_pago: forma,
-    uso_cfdi: uso_cfdi, rfc_receptor: rfc_rec
+    uso_cfdi: uso_cfdi, rfc_receptor: rfc_rec,
+    iva_retenido: Math.round(iva_retenido*100)/100,
+    isr_retenido: Math.round(isr_retenido*100)/100
   };
 }
 
