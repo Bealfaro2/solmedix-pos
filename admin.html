@@ -5664,7 +5664,8 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
         rfc_emisor:r.rfc_emisor, proveedor:r.emisor_nom, concepto:r.emisor_nom,
         subtotal:r.subtotal, descuento:r.descuento, iva:r.iva, total:r.total,
         metodo_pago:r.metodo_pago, forma_pago:r.forma_pago,
-        uso_cfdi:r.uso_cfdi, sucursal:sucursal
+        uso_cfdi:r.uso_cfdi, sucursal:sucursal,
+        iva_retenido:r.iva_retenido||0, isr_retenido:r.isr_retenido||0
       };
     });
     apiPost({ accion:'guardar_gasto_fiscal_lote', registros:JSON.stringify(payload) }, function(e,d){
