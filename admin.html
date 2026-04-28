@@ -3316,6 +3316,16 @@ function parsearCFDI(xmlText) {
       iva += parseFloat(traslados[i].getAttribute('Importe')||'0');
     }
   }
+  // Retenciones: IVA retenido (002) e ISR retenido (001)
+  var iva_retenido = 0, isr_retenido = 0;
+  var retenciones = doc.getElementsByTagNameNS(ns,'Retencion');
+  if (!retenciones.length) retenciones = doc.getElementsByTagName('cfdi:Retencion');
+  for (var i=0;i<retenciones.length;i++) {
+    var imp = retenciones[i].getAttribute('Impuesto');
+    var impVal = parseFloat(retenciones[i].getAttribute('Importe')||'0');
+    if (imp==='002') iva_retenido += impVal;
+    if (imp==='001') isr_retenido += impVal;
+  }
 
   // Conceptos → descripción concatenada
   var conceptos = doc.getElementsByTagNameNS(ns,'Concepto');
