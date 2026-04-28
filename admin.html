@@ -5553,11 +5553,12 @@ const FiscalModule = (function() {
     if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
     var payload = validos.map(function(r) {
       return {
-        uuid:r.uuid, fecha:r.fecha, folio:r.folio, serie:'',
-        rfc_receptor:r.rfc_receptor, receptor:r.receptor_nom,
+        uuid:r.uuid, fecha:r.fecha, folio:r.folio,
+        rfc_emisor:r.rfc_emisor, proveedor:r.emisor_nom, concepto:r.emisor_nom,
         subtotal:r.subtotal, descuento:r.descuento, iva:r.iva, total:r.total,
         metodo_pago:r.metodo_pago, forma_pago:r.forma_pago,
-        uso_cfdi:r.uso_cfdi, tipo_factura:r.tipo_factura, sucursal:sucursal
+        uso_cfdi:r.uso_cfdi, sucursal:sucursal,
+        iva_retenido:r.iva_retenido||0, isr_retenido:r.isr_retenido||0
       };
     });
     apiPost({ accion:'guardar_ingreso_cfdi_lote', registros:JSON.stringify(payload) }, function(e,d){
