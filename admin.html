@@ -5405,10 +5405,13 @@ const FiscalModule = (function() {
     var tfd    = doc.getElementsByTagNameNS('http://www.sat.gob.mx/TimbreFiscalDigital', 'TimbreFiscalDigital')[0]
               || doc.getElementsByTagName('tfd:TimbreFiscalDigital')[0];
      var iva = 0;
-    var impuestosComp = doc.getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4','Impuestos')[0]
-                     || doc.getElementsByTagName('cfdi:Impuestos')[0];
+    var impuestosComp = null;
+    var compChildren = comp.childNodes;
+    for (var ci = 0; ci < compChildren.length; ci++) {
+      if (compChildren[ci].localName === 'Impuestos') { impuestosComp = compChildren[ci]; break; }
+    }
     if (impuestosComp) {
-      var traslados = impuestosComp.getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4','Traslado');
+      var traslados = impuestosComp.getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4', 'Traslado');
       if (!traslados.length) traslados = impuestosComp.getElementsByTagName('cfdi:Traslado');
       for (var i = 0; i < traslados.length; i++) {
         if (traslados[i].getAttribute('Impuesto') === '002')
