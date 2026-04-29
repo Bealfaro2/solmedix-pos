@@ -3009,8 +3009,10 @@ function abrirModalMed(med){
   // Precio base: solo admin
   document.getElementById('med-precio').disabled = soloAdmin && !!med;
   document.getElementById('med-precio').title = soloAdmin ? 'Solo el Administrador puede modificar el precio base' : '';
-  document.getElementById('med-costo').disabled  = soloAdmin;
-  document.getElementById('med-costo').title  = soloAdmin ? 'Solo el Administrador puede modificar el costo' : '';
+  // Costo: bloqueado solo si es perfil no-admin Y es edición de med existente
+  var costoDisabled = soloAdmin && !!med;
+  document.getElementById('med-costo').disabled  = costoDisabled;
+  document.getElementById('med-costo').title  = costoDisabled ? 'Solo el Administrador puede modificar el costo de un medicamento existente' : '';
   // Precio MTY: solo admin y MTY pueden editar
   document.getElementById('med-precio-mty').disabled = perfilActual==='slp';
   document.getElementById('med-precio-mty').title = perfilActual==='slp' ? 'Solo MTY o Admin pueden editar' : '';
@@ -3196,11 +3198,9 @@ function calcularOptimo(medId) {
 
 function renderLotesAdmin(lista){
   var src=(lista||lotes).slice();
-  // Filtrar por sucursal según perfil
-  if(!lista) {
-    if(perfilActual==='mty') src=src.filter(function(l){ return l.sucursal==='MTY'||!l.sucursal; });
-    if(perfilActual==='slp') src=src.filter(function(l){ return l.sucursal==='SLP'; });
-  }
+  // Filtrar por sucursal según perfil — SIEMPRE, no solo en carga inicial
+  if(perfilActual==='mty') src=src.filter(function(l){ return l.sucursal==='MTY'||!l.sucursal; });
+  if(perfilActual==='slp') src=src.filter(function(l){ return l.sucursal==='SLP'; });
   src.sort(function(a,b){ return a.medicamento.localeCompare(b.medicamento,'es'); });
   var tbody=document.getElementById('lotes-body');
   if(!src.length){tbody.innerHTML='<tr><td colspan="6" class="es">Sin lotes</td></tr>';return;}
