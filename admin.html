@@ -1209,7 +1209,8 @@ select option { background:var(--bg-2); color:var(--text); }
 
       <!-- Sub-tabs -->
       <div style="display:flex;gap:4px;margin-bottom:18px">
-        <button class="nav-tab" id="ct-entrada" onclick="comprasTab('entrada')" style="border-radius:var(--radius-sm)">📥 Entrada XML</button>
+        <button class="nav-tab on" id="ct-entrada" onclick="comprasTab('entrada')" style="border-radius:var(--radius-sm)">📥 Entrada XML</button>
+        <button class="nav-tab" id="ct-credito" onclick="comprasTab('credito')" style="border-radius:var(--radius-sm)">💳 Pagos Crédito</button>
         <button class="nav-tab" id="ct-reporte" onclick="comprasTab('reporte')" style="border-radius:var(--radius-sm)">🧾 Reporte de Compras</button>
       </div>
 
@@ -1221,6 +1222,7 @@ select option { background:var(--bg-2); color:var(--text); }
           Sube el archivo XML de la factura de tu proveedor. El sistema leerá automáticamente
           el proveedor, medicamentos, cantidades y costos. Solo necesitas agregar el número de lote.
         </p>
+        <!-- Zona de carga XML — acepta múltiples archivos que se acumulan -->
         <div id="xml-upload-zone"
           onclick="document.getElementById('xml-file-input').click()"
           ondragover="event.preventDefault();this.style.borderColor='var(--blue-bright)';this.style.background='rgba(24,95,165,.1)'"
@@ -1228,20 +1230,70 @@ select option { background:var(--bg-2); color:var(--text); }
           ondrop="onXmlDrop(event)">
           <div style="font-size:36px;margin-bottom:10px">📄</div>
           <div style="font-size:14px;font-weight:600;color:var(--text-2)">Arrastra uno o varios XML aquí o haz clic para seleccionar</div>
-          <div style="font-size:12px;color:var(--text-3);margin-top:5px">Archivos .xml del SAT (CFDI 4.0) — puedes seleccionar varios a la vez</div>
+          <div style="font-size:12px;color:var(--text-3);margin-top:5px">Archivos .xml del SAT (CFDI 4.0) — puedes agregar más facturas en cualquier momento</div>
           <input type="file" id="xml-file-input" accept=".xml" multiple style="display:none" onchange="onXmlFile(event)"/>
         </div>
 
-        <!-- Comprobante de pago Albo (opcional) -->
-        <div style="margin-top:12px;padding:12px;background:rgba(24,95,165,.06);border:1px dashed rgba(24,95,165,.3);border-radius:var(--radius)">
+        <!-- Lista acumulada de facturas XML cargadas -->
+        <div id="xml-facturas-acumuladas" style="display:none;margin-top:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em">
+              Facturas cargadas — <span id="xml-facturas-count">0</span> XML
+            </div>
+            <button class="btn btns" onclick="agregarMasXML()" style="font-size:11px;padding:4px 10px">+ Agregar más XML</button>
+          </div>
+          <div style="overflow-x:auto;margin-bottom:10px">
+            <table class="tbl" id="xml-facturas-lista">
+              <thead><tr>
+                <th>Proveedor</th><th>Folio</th><th>Fecha</th>
+                <th style="text-align:right">Total factura</th><th>Estado</th><th></th>
+              </tr></thead>
+              <tbody id="xml-facturas-body"></tbody>
+              <tfoot id="xml-facturas-foot"></tfoot>
+            </table>
+          </div>
+          <!-- Conceptos de la factura seleccionada / en proceso -->
+          <div id="xml-result" style="display:none">
+            <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:8px">Medicamentos en la factura seleccionada — asigna número de lote y vincula al catálogo</div>
+            <div id="xml-header" style="background:rgba(38,51,72,.8);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px"></div>
+            <div style="overflow-x:auto;margin-bottom:12px">
+              <table class="tbl" id="xml-conceptos-tabla">
+                <thead><tr>
+                  <th>Descripción</th>
+                  <th style="width:70px;text-align:center">Cant.</th>
+                  <th style="width:110px;text-align:right">Costo unit.</th>
+                  <th style="width:160px">Núm. de lote *</th>
+                  <th style="width:260px">Medicamento en sistema</th>
+                </tr></thead>
+                <tbody id="xml-conceptos-body"></tbody>
+              </table>
+            </div>
+            <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:var(--radius-sm);padding:9px 12px;font-size:12px;color:#fcd34d;margin-bottom:10px">
+              ⚠️ Verifica que cada medicamento esté correctamente vinculado. El número de lote es obligatorio.
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              <button class="btn" onclick="cancelarXmlActual()">Cancelar esta factura</button>
+              <button class="btn btnp" id="btn-aplicar-entrada" onclick="confirmarFacturaActual()">✔ Confirmar lotes de esta factura</button>
+            </div>
+            <div id="entrada-alrt" style="display:none;margin-top:10px"></div>
+          </div>
+        </div>
+
+        <!-- Comprobante de pago Albo (único para todas las facturas cargadas) -->
+        <div id="xml-comprobante-panel" style="display:none;margin-top:12px;padding:12px;background:rgba(24,95,165,.06);border:1px dashed rgba(24,95,165,.3);border-radius:var(--radius)">
           <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:8px">
-            💳 Comprobante de pago Albo <span style="font-weight:400;color:var(--text-3)">(opcional — solo si pagaste de contado)</span>
+            💳 Comprobante de pago Albo
+            <span style="font-weight:400;color:var(--text-3)">(opcional — cubre todas las facturas cargadas)</span>
+          </div>
+          <div style="font-size:11px;color:var(--text-3);margin-bottom:8px">
+            El monto del comprobante debe sumar el total de las facturas cargadas.
+            <span id="xml-total-esperado" style="color:var(--amber);font-weight:600"></span>
           </div>
           <div id="pdf-upload-zone" style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="document.getElementById('pdf-file-input').click()">
             <div id="pdf-upload-icon" style="font-size:22px">📎</div>
             <div>
               <div id="pdf-upload-label" style="font-size:12px;color:var(--blue-bright)">Haz clic para seleccionar PDF de comprobante Albo</div>
-              <div style="font-size:10px;color:var(--text-3)">Se conciliará automáticamente en Banco Albo</div>
+              <div style="font-size:10px;color:var(--text-3)">Se conciliará automáticamente en Banco Albo contra todas las facturas</div>
             </div>
             <input type="file" id="pdf-file-input" accept=".pdf" style="display:none" onchange="onPdfComprobanteFile(this)"/>
           </div>
@@ -1250,33 +1302,105 @@ select option { background:var(--bg-2); color:var(--text); }
             <button onclick="limpiarPdf()" style="margin-left:8px;background:none;border:none;color:var(--text-3);cursor:pointer;font-size:11px">✕ Quitar</button>
           </div>
         </div>
-        </div>
-        <div id="xml-result" style="display:none">
-          <div id="xml-header" style="background:rgba(38,51,72,.8);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin:16px 0"></div>
-          <div style="font-size:12px;font-weight:700;color:var(--text-2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">Medicamentos en la factura</div>
-          <div style="overflow-x:auto;margin-bottom:16px">
-            <table class="tbl" id="xml-conceptos-tabla">
-              <thead><tr>
-                <th>Descripción</th>
-                <th style="width:70px;text-align:center">Cant.</th>
-                <th style="width:110px;text-align:right">Costo unit.</th>
-                <th style="width:160px">Núm. de lote *</th>
-                <th style="width:260px">Medicamento en sistema</th>
-              </tr></thead>
-              <tbody id="xml-conceptos-body"></tbody>
-            </table>
-          </div>
-          <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:var(--radius-sm);padding:11px 13px;font-size:12px;color:#fcd34d;margin-bottom:16px">
-            ⚠️ Verifica que cada medicamento esté correctamente vinculado. El número de lote es obligatorio.
-          </div>
-          <div style="display:flex;gap:8px;justify-content:flex-end">
-            <button class="btn" onclick="limpiarXml()">Cancelar</button>
+
+        <!-- Botón final: aplicar todo al inventario -->
+        <div id="xml-aplicar-panel" style="display:none;margin-top:14px">
+          <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center">
+            <span id="xml-aplicar-resumen" style="font-size:12px;color:var(--text-2)"></span>
+            <button class="btn" onclick="limpiarXmlTodo()">Cancelar todo</button>
             <button class="btn btnp" id="btn-aplicar-entrada" onclick="aplicarEntrada()">Aplicar entrada al inventario</button>
           </div>
           <div id="entrada-alrt" style="display:none;margin-top:10px"></div>
         </div>
       </div>
       <!-- SUB-SECCIÓN: Reporte + Trazabilidad -->
+      </div>
+
+      <!-- SUB-SECCIÓN: Pagos de Crédito (HLD) -->
+      <div id="sc-credito" style="display:none">
+        <div class="panel">
+          <div class="ptitle" style="margin-bottom:4px">💳 Pagos de compras a crédito</div>
+          <p style="font-size:13px;color:var(--text-2);margin-bottom:1.25rem;line-height:1.7">
+            Selecciona las facturas ya registradas que estás pagando con este comprobante. El sistema concilia
+            el monto del comprobante contra la suma de las facturas seleccionadas y registra el pago (total o parcial).
+          </p>
+          <!-- Comprobante de pago -->
+          <div style="background:rgba(24,95,165,.06);border:1px dashed rgba(24,95,165,.3);border-radius:var(--radius);padding:14px;margin-bottom:16px">
+            <div style="font-size:12px;font-weight:700;color:var(--text-2);margin-bottom:10px">① Comprobante de pago Albo</div>
+            <div id="hld-pdf-zone" style="display:flex;align-items:center;gap:12px;cursor:pointer" onclick="document.getElementById('hld-pdf-input').click()">
+              <div id="hld-pdf-icon" style="font-size:26px">📎</div>
+              <div>
+                <div id="hld-pdf-label" style="font-size:13px;color:var(--blue-bright);font-weight:600">Haz clic para seleccionar PDF de comprobante Albo</div>
+                <div style="font-size:11px;color:var(--text-3)">El monto del comprobante se mostrará abajo para validar contra las facturas</div>
+              </div>
+              <input type="file" id="hld-pdf-input" accept=".pdf" style="display:none" onchange="onHldPdfFile(this)"/>
+            </div>
+            <div id="hld-pdf-preview" style="display:none;margin-top:10px">
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px">
+                <div><div style="font-size:10px;color:var(--text-3)">Monto comprobante</div><div style="font-size:18px;font-weight:700;color:var(--green)" id="hld-monto-comp">—</div></div>
+                <div><div style="font-size:10px;color:var(--text-3)">Fecha pago</div><div style="font-size:13px;font-weight:600" id="hld-fecha-comp">—</div></div>
+                <div><div style="font-size:10px;color:var(--text-3)">Beneficiario</div><div style="font-size:12px" id="hld-benef-comp">—</div></div>
+              </div>
+            </div>
+          </div>
+          <!-- Selector de facturas a pagar -->
+          <div style="font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">② Facturas que cubre este pago</div>
+          <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:10px;flex-wrap:wrap">
+            <div><label>Proveedor</label>
+              <select id="hld-filtro-prov" style="min-width:220px" onchange="hldFiltrarFacturas()">
+                <option value="">Todos los proveedores</option>
+              </select>
+            </div>
+            <div><label>Estado pago</label>
+              <select id="hld-filtro-estado" onchange="hldFiltrarFacturas()">
+                <option value="pendiente">Pendiente de pago</option>
+                <option value="parcial">Parcialmente pagado</option>
+                <option value="">Todos</option>
+              </select>
+            </div>
+          </div>
+          <div style="overflow-x:auto;margin-bottom:12px">
+            <table class="tbl">
+              <thead><tr>
+                <th style="width:36px"><input type="checkbox" id="hld-chk-all" onchange="hldCheckAll(this)"/></th>
+                <th>Fecha</th><th>Proveedor</th><th>Folio</th>
+                <th style="text-align:right">Total factura</th>
+                <th style="text-align:right">Pagado</th>
+                <th style="text-align:right">Saldo</th>
+                <th>Estado pago</th>
+              </tr></thead>
+              <tbody id="hld-facturas-body"></tbody>
+            </table>
+          </div>
+          <!-- Validación y resumen -->
+          <div id="hld-validacion" style="background:rgba(38,51,72,.7);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:12px;display:none">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+              <div><div style="font-size:10px;color:var(--text-3)">Monto comprobante</div><div style="font-size:16px;font-weight:700;color:var(--blue-bright)" id="hld-val-comp">$0.00</div></div>
+              <div><div style="font-size:10px;color:var(--text-3)">Suma facturas seleccionadas</div><div style="font-size:16px;font-weight:700" id="hld-val-facturas">$0.00</div></div>
+              <div><div style="font-size:10px;color:var(--text-3)">Diferencia</div><div style="font-size:16px;font-weight:700" id="hld-val-diferencia">$0.00</div></div>
+            </div>
+            <div id="hld-alerta-parcial" style="display:none;margin-top:8px;padding:7px 10px;border-radius:var(--radius-sm);font-size:12px"></div>
+          </div>
+          <!-- Parcialidad manual -->
+          <div id="hld-parcialidad-panel" style="display:none;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.3);border-radius:var(--radius);padding:12px;margin-bottom:12px">
+            <div style="font-size:12px;font-weight:700;color:#fcd34d;margin-bottom:8px">⚠️ Pago parcial — indica el monto que aplica a cada factura</div>
+            <div style="overflow-x:auto">
+              <table class="tbl" id="hld-parcialidad-tabla">
+                <thead><tr>
+                  <th>Folio</th><th>Proveedor</th>
+                  <th style="text-align:right">Saldo pendiente</th>
+                  <th style="text-align:right">Monto a pagar ahora ($)</th>
+                </tr></thead>
+                <tbody id="hld-parcialidad-body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button class="btn" onclick="hldLimpiar()">Limpiar</button>
+            <button class="btn btnp" id="btn-hld-registrar" onclick="hldRegistrarPago()">Registrar pago y conciliar</button>
+          </div>
+          <div id="hld-alrt" style="display:none;margin-top:10px"></div>
+        </div>
       </div>
 
       <!-- SUB-SECCIÓN: Reporte + Trazabilidad -->
@@ -1758,7 +1882,36 @@ select option { background:var(--bg-2); color:var(--text); }
 </div>
 
 <!-- MODAL EDITAR LOTE -->
-<div class="overlay" id="modal-lote-overlay" onclick="cerrarModalLote(event)">
+<!-- MODAL COMPROBANTE GASTO FISCAL -->
+<div class="overlay" id="modal-gf-comp-overlay" onclick="if(event.target===this)cerrarGfCompModal()">
+  <div class="modal" style="max-width:480px">
+    <h2 style="margin-bottom:6px">💳 Ligar comprobante de pago</h2>
+    <div id="gf-comp-info" style="font-size:13px;color:var(--text-2);margin-bottom:14px"></div>
+    <div style="background:rgba(24,95,165,.07);border:1px dashed rgba(24,95,165,.3);border-radius:var(--radius);padding:12px;margin-bottom:12px">
+      <div id="gf-comp-pdf-zone" style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="document.getElementById('gf-comp-pdf-input').click()">
+        <div id="gf-comp-pdf-icon" style="font-size:22px">📎</div>
+        <div>
+          <div id="gf-comp-pdf-label" style="font-size:12px;color:var(--blue-bright)">Seleccionar PDF de comprobante Albo</div>
+          <div style="font-size:10px;color:var(--text-3)">El monto se extrae automáticamente del PDF</div>
+        </div>
+        <input type="file" id="gf-comp-pdf-input" accept=".pdf" style="display:none" onchange="onGfCompPdfFile(this)"/>
+      </div>
+      <div id="gf-comp-pdf-preview" style="display:none;margin-top:10px;font-size:12px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><div style="font-size:10px;color:var(--text-3)">Monto extraído</div><div style="font-size:15px;font-weight:700;color:var(--green)" id="gf-comp-monto">—</div></div>
+          <div><div style="font-size:10px;color:var(--text-3)">Fecha pago</div><div style="font-size:13px;font-weight:600" id="gf-comp-fecha">—</div></div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+      <button class="btn" onclick="cerrarGfCompModal()">Cancelar</button>
+      <button class="btn btnp" id="btn-gf-comp-guardar" onclick="guardarGfComprobante()">Guardar y conciliar</button>
+    </div>
+    <div id="gf-comp-alrt" style="display:none;margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR LOTE -->
   <div class="modal">
     <h2>Editar existencias</h2>
     <div id="lote-med-nombre" style="font-size:13px;color:var(--text-2);margin-bottom:14px;font-weight:500"></div>
@@ -2264,45 +2417,184 @@ function exportarInventarioPDF(){
 }
 
 /* ═══════════════════════════════════════════════
-   ENTRADA DE INVENTARIO POR XML
+   ENTRADA DE INVENTARIO POR XML — multi-factura
 ═══════════════════════════════════════════════ */
-var xmlConceptos = [];
-var xmlFacturaInfo = {};
+// Estado acumulado de sesión de entrada
+var _xmlSesion = {
+  facturas: [],   // [{info, conceptos, confirmada}]
+  activo:   -1    // índice de la factura actualmente en edición
+};
+var xmlConceptos   = [];  // alias para la factura activa (compat. con renderXmlResult)
+var xmlFacturaInfo = {};  // alias para la factura activa
 
 function onXmlDrop(e) {
   e.preventDefault();
-  var file = e.dataTransfer.files[0];
-  if (file) procesarXML(file);
-  document.getElementById('xml-upload-zone').style.borderColor = '#ddd';
-  document.getElementById('xml-upload-zone').style.background = '';
+  var files = e.dataTransfer.files;
+  if (files && files.length) _procesarArchivosXML(Array.from(files));
+  document.getElementById('xml-upload-zone').style.borderColor = '';
+  document.getElementById('xml-upload-zone').style.background  = '';
 }
-
 function onXmlFile(e) {
   var files = e.target.files;
   if (!files || !files.length) return;
-  if (files.length === 1) {
-    procesarXML(files[0]);
-  } else {
-    _xmlCola = Array.from(files);
-    _xmlColaIdx = 0;
-    _procesarSiguienteXML();
-  }
+  _procesarArchivosXML(Array.from(files));
   e.target.value = '';
 }
-
-var _xmlCola = [];
-var _xmlColaIdx = 0;
-
-function _procesarSiguienteXML() {
-  if (_xmlColaIdx >= _xmlCola.length) {
-    alert('✅ Se procesaron ' + _xmlCola.length + ' archivos XML.');
-    _xmlCola = []; _xmlColaIdx = 0;
-    return;
-  }
-  procesarXML(_xmlCola[_xmlColaIdx]);
-  // El flujo normal continúa — el usuario aplica y luego llama a limpiarXml
-  // que reinicia. Para múltiples archivos el usuario procesa uno a uno.
+function agregarMasXML() {
+  document.getElementById('xml-file-input').click();
 }
+
+function _procesarArchivosXML(files) {
+  var idx = 0;
+  function siguiente() {
+    if (idx >= files.length) return;
+    var file = files[idx++];
+    if (!file.name.endsWith('.xml')) { siguiente(); return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var parser = new DOMParser();
+        var doc = parser.parseFromString(e.target.result, 'text/xml');
+        var ns = 'http://www.sat.gob.mx/cfd/4';
+        var comp = doc.getElementsByTagNameNS(ns,'Comprobante')[0] ||
+                   doc.getElementsByTagName('cfdi:Comprobante')[0] || doc.documentElement;
+        var folio   = (comp.getAttribute('Serie')||'')+(comp.getAttribute('Folio')||'');
+        var fecha   = comp.getAttribute('Fecha')||'';
+        var total   = parseFloat(comp.getAttribute('Total'))||0;
+        var emisor  = doc.getElementsByTagNameNS(ns,'Emisor')[0]||doc.getElementsByTagName('cfdi:Emisor')[0];
+        var proveedor = emisor?(emisor.getAttribute('Nombre')||''):'';
+        var rfcProv   = emisor?(emisor.getAttribute('Rfc')||''):'';
+        var tfd = doc.getElementsByTagNameNS('http://www.sat.gob.mx/TimbreFiscalDigital','TimbreFiscalDigital')[0]||
+                  doc.getElementsByTagName('tfd:TimbreFiscalDigital')[0];
+        var uuid = tfd?(tfd.getAttribute('UUID')||''):'';
+        // Duplicado?
+        var dupl = _xmlSesion.facturas.some(function(f){ return f.info.uuid && f.info.uuid===uuid; }) ||
+                   compras.some(function(c){ return uuid && String(c.uuid||'').toUpperCase()===uuid.toUpperCase(); });
+        if (dupl) { alert('⚠️ UUID ya registrado: '+folio+' ('+uuid.slice(0,12)+'…). Se omite.'); siguiente(); return; }
+        var conceptoNodes = doc.getElementsByTagNameNS(ns,'Concepto');
+        if (!conceptoNodes.length) conceptoNodes = doc.getElementsByTagName('cfdi:Concepto');
+        var conceptos = [];
+        for (var i=0;i<conceptoNodes.length;i++){
+          var c=conceptoNodes[i];
+          conceptos.push({ descripcion:c.getAttribute('Descripcion')||'', cantidad:parseFloat(c.getAttribute('Cantidad'))||0,
+            valorUnitario:parseFloat(c.getAttribute('ValorUnitario'))||0, importe:parseFloat(c.getAttribute('Importe'))||0,
+            noIdentificacion:c.getAttribute('NoIdentificacion')||'', lote:'', medId:autoMatch(c.getAttribute('Descripcion')||'') });
+        }
+        _xmlSesion.facturas.push({ info:{folio,fecha,total,proveedor,rfcProv,uuid}, conceptos:conceptos, confirmada:false });
+        _renderListaFacturas();
+        // Abrir automáticamente para edición si es la primera
+        if (_xmlSesion.facturas.length===1) _abrirFacturaEdicion(0);
+      } catch(err) { alert('Error al leer '+file.name+': '+err.message); }
+      siguiente();
+    };
+    reader.readAsText(file,'UTF-8');
+  }
+  siguiente();
+}
+
+function _renderListaFacturas() {
+  var facturas = _xmlSesion.facturas;
+  var panel = document.getElementById('xml-facturas-acumuladas');
+  var uploadZone = document.getElementById('xml-upload-zone');
+  if (!facturas.length) { panel.style.display='none'; uploadZone.style.display=''; return; }
+  panel.style.display = 'block';
+  uploadZone.style.display = 'none';
+  document.getElementById('xml-facturas-count').textContent = facturas.length;
+  var totalAcum = facturas.reduce(function(s,f){ return s+f.info.total; }, 0);
+  var html = '';
+  for (var i=0;i<facturas.length;i++){
+    var f=facturas[i];
+    var estado = f.confirmada
+      ? '<span style="color:var(--green);font-size:11px;font-weight:700">✔ Confirmada</span>'
+      : '<span style="color:var(--amber);font-size:11px;font-weight:700">⏳ Pendiente</span>';
+    var fechaF = f.info.fecha?f.info.fecha.split('T')[0]:'';
+    html += '<tr>';
+    html += '<td style="font-weight:600">'+f.info.proveedor+'<div style="font-size:10px;color:var(--text-3)">RFC: '+f.info.rfcProv+'</div></td>';
+    html += '<td style="font-family:var(--mono);font-size:11px">'+f.info.folio+'</td>';
+    html += '<td>'+fechaF+'</td>';
+    html += '<td style="text-align:right;font-weight:700;color:var(--blue-bright)">$'+f.info.total.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    html += '<td>'+estado+'</td>';
+    html += '<td style="display:flex;gap:5px">'
+      + (f.confirmada?'':'<button class="btn btns btnp btno" style="font-size:10px;padding:3px 9px" onclick="_abrirFacturaEdicion('+i+')">Editar</button>')
+      + '<button class="btn btns btnd" style="font-size:10px;padding:3px 7px" onclick="_eliminarFactura('+i+')" title="Quitar factura">✕</button></td>';
+    html += '</tr>';
+  }
+  document.getElementById('xml-facturas-body').innerHTML = html;
+  document.getElementById('xml-facturas-foot').innerHTML =
+    '<tr style="background:rgba(38,51,72,.8);font-weight:700">'
+    +'<td colspan="3">TOTAL '+facturas.length+' factura(s)</td>'
+    +'<td style="text-align:right;color:var(--blue-bright)">$'+totalAcum.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>'
+    +'<td colspan="2"></td></tr>';
+  // Comprobante panel
+  var compPanel = document.getElementById('xml-comprobante-panel');
+  compPanel.style.display = 'block';
+  document.getElementById('xml-total-esperado').textContent =
+    '— Total esperado del comprobante: $'+totalAcum.toLocaleString('es-MX',{minimumFractionDigits:2});
+  // Botón final: solo si todas están confirmadas
+  var todasConfirmadas = facturas.every(function(f){ return f.confirmada; });
+  var aplicarPanel = document.getElementById('xml-aplicar-panel');
+  aplicarPanel.style.display = todasConfirmadas?'block':'none';
+  if (todasConfirmadas) {
+    var totalLotes = facturas.reduce(function(s,f){ return s+f.conceptos.filter(function(c){ return c.medId&&c.lote; }).length; },0);
+    document.getElementById('xml-aplicar-resumen').textContent =
+      facturas.length+' factura(s) | '+totalLotes+' lote(s) listos para ingresar';
+  }
+}
+
+function _abrirFacturaEdicion(idx) {
+  _xmlSesion.activo = idx;
+  var f = _xmlSesion.facturas[idx];
+  xmlFacturaInfo = f.info;
+  xmlConceptos   = f.conceptos;
+  renderXmlResult();
+  document.getElementById('xml-result').style.display='block';
+}
+
+function _eliminarFactura(idx) {
+  if (!confirm('¿Quitar esta factura de la sesión?')) return;
+  _xmlSesion.facturas.splice(idx,1);
+  if (!_xmlSesion.facturas.length) { limpiarXmlTodo(); return; }
+  _renderListaFacturas();
+  document.getElementById('xml-result').style.display='none';
+}
+
+function confirmarFacturaActual() {
+  var idx = _xmlSesion.activo;
+  if (idx<0) return;
+  // Validar
+  var sinLote = xmlConceptos.filter(function(c){ return c.medId&&!c.lote; });
+  if (sinLote.length) { entradaAlrt('Hay '+sinLote.length+' medicamento(s) vinculados sin lote. Agrega el lote o desvincúlalos.','e'); return; }
+  // Sincronizar desde inputs del DOM
+  for (var i=0;i<xmlConceptos.length;i++){
+    var lEl=document.getElementById('lote-'+i); var mEl=document.getElementById('med-'+i);
+    if(lEl) xmlConceptos[i].lote=lEl.value;
+    if(mEl) xmlConceptos[i].medId=mEl.value;
+  }
+  _xmlSesion.facturas[idx].conceptos = xmlConceptos;
+  _xmlSesion.facturas[idx].confirmada = true;
+  document.getElementById('xml-result').style.display='none';
+  _renderListaFacturas();
+}
+
+function cancelarXmlActual() {
+  document.getElementById('xml-result').style.display='none';
+}
+
+function limpiarXmlTodo() {
+  _xmlSesion = { facturas:[], activo:-1 };
+  xmlConceptos=[]; xmlFacturaInfo={};
+  document.getElementById('xml-facturas-acumuladas').style.display='none';
+  document.getElementById('xml-upload-zone').style.display='';
+  document.getElementById('xml-result').style.display='none';
+  document.getElementById('xml-comprobante-panel').style.display='none';
+  document.getElementById('xml-aplicar-panel').style.display='none';
+  limpiarPdf();
+}
+// Alias para compatibilidad
+function limpiarXml(){ limpiarXmlTodo(); }
+
+var _xmlCola = []; var _xmlColaIdx = 0;
+function _procesarSiguienteXML(){}  // deprecated — ahora todo va por _procesarArchivosXML
 
 function procesarXML(file) {
   if (!file.name.endsWith('.xml')) {
@@ -2465,115 +2757,83 @@ function limpiarPdf() {
 }
   
 function aplicarEntrada() {
-  // ── Verificar duplicado: mismo folio + mismo proveedor ──────────
-  if (xmlFacturaInfo && xmlFacturaInfo.folio && xmlFacturaInfo.proveedor) {
-    var folioNorm = String(xmlFacturaInfo.folio).trim().toUpperCase();
-    var provNorm  = String(xmlFacturaInfo.proveedor).trim().toUpperCase();
-    var uuidNorm  = String(xmlFacturaInfo.uuid||'').trim().toUpperCase();
-    var duplicado = compras.some(function(c) {
-      if (uuidNorm && String(c.uuid||'').trim().toUpperCase() === uuidNorm) return true;
-      return String(c.folio||'').trim().toUpperCase() === folioNorm &&
-             String(c.proveedor||'').trim().toUpperCase() === provNorm;
-    });
-    if (duplicado) {
-      entradaAlrt('⚠️ Folio registrado previamente — el folio ' + xmlFacturaInfo.folio +
-        ' del proveedor ' + xmlFacturaInfo.proveedor + ' ya existe en el sistema. Verifica antes de continuar.', 'e');
-      return;
-    }
+  var facturas = _xmlSesion.facturas;
+  if (!facturas || !facturas.length) { entradaAlrt('No hay facturas cargadas.','e'); return; }
+  var sinConfirmar = facturas.filter(function(f){ return !f.confirmada; });
+  if (sinConfirmar.length) {
+    entradaAlrt('Hay '+sinConfirmar.length+' factura(s) sin confirmar lotes. Confirma todas antes de aplicar.','e'); return;
   }
-  // Validate lotes
-  var sinLote = xmlConceptos.filter(function(c){ return c.medId && !c.lote; });
-  if (sinLote.length > 0) {
-    entradaAlrt('Hay '+sinLote.length+' medicamento(s) vinculados sin numero de lote. Agrega el lote o desvincularlos.','e');
-    return;
-  }
-
-  var aAplicar = xmlConceptos.filter(function(c){ return c.medId && c.lote; });
-  if (!aAplicar.length) {
-    entradaAlrt('No hay medicamentos vinculados con lote para aplicar.','e');
-    return;
-  }
-
   var btn = document.getElementById('btn-aplicar-entrada');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Aplicando...';
+  if (btn) { btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Aplicando...'; }
 
-  var procesados = 0;
-  var errores = 0;
+  // Aplanar todos los pares [factura, concepto] a aplicar
+  var tareas = [];
+  facturas.forEach(function(f){
+    f.conceptos.filter(function(c){ return c.medId&&c.lote; }).forEach(function(c){
+      tareas.push({ info:f.info, concepto:c });
+    });
+  });
+  var uuidsFacturas = facturas.map(function(f){ return f.info; });
 
-  function procesarSiguiente(idx) {
-    if (idx >= aAplicar.length) {
-      // Done
-      btn.disabled = false;
-      btn.textContent = 'Aplicar entrada al inventario';
-      if (errores === 0) {
-        entradaAlrt('Entrada aplicada correctamente. '+procesados+' lotes agregados/actualizados.','s');
-        // Refresh lotes
-        apiGet('lotes', function(e,d){ if(!e&&d){ lotes=d.lotes||[]; renderLotesAdmin(); renderInventario(); } });
-        setTimeout(limpiarXml, 3000);
-      } else {
-        entradaAlrt('Se aplicaron '+procesados+' lotes. '+errores+' errores.','e');
+  var procesados=0, errores=0, idx=0;
+
+  function procesarSiguiente() {
+    if (idx >= tareas.length) {
+      // Guardar comprobante si hay PDF
+      function finish() {
+        if (btn) { btn.disabled=false; btn.textContent='Aplicar entrada al inventario'; }
+        if (errores===0) {
+          entradaAlrt('✅ '+procesados+' lote(s) aplicado(s) en '+uuidsFacturas.length+' factura(s).','s');
+          apiGet('lotes', function(e,d){ if(!e&&d){ lotes=d.lotes||[]; renderLotesAdmin(); renderInventario(); } });
+          setTimeout(limpiarXmlTodo, 3000);
+        } else {
+          entradaAlrt('Se aplicaron '+procesados+' lotes con '+errores+' errores.','e');
+        }
       }
+      if (window._pdfComprobanteData) {
+        _parsearPdfAlbo(window._pdfComprobanteData.data, function(datoPago) {
+          if (datoPago) {
+            // Guardar un comprobante por cada UUID de factura
+            uuidsFacturas.forEach(function(fi){
+              apiPost({ accion:'guardar_comprobante_albo', uuid_factura:fi.uuid, folio_factura:fi.folio,
+                proveedor:fi.proveedor, monto_pagado:datoPago.monto, fecha_pago:datoPago.fecha,
+                concepto:datoPago.concepto, clave_rastreo:datoPago.claveRastreo, beneficiario:datoPago.beneficiario }, function(){});
+            });
+          }
+          finish();
+        });
+      } else { finish(); }
       return;
     }
-
-    var c = aAplicar[idx];
-    // Find existing lote or create new one
-    var loteExistente = null;
-    for (var i = 0; i < lotes.length; i++) {
-      if (String(lotes[i].med_id) === String(c.medId) && lotes[i].lote === c.lote) {
-        loteExistente = lotes[i];
-        break;
-      }
+    var t=tareas[idx]; idx++;
+    var c=t.concepto, fi=t.info;
+    var medNombre='';
+    for (var ii=0;ii<medicamentos.length;ii++){
+      if(String(medicamentos[ii].id)===String(c.medId)){ medNombre=medicamentos[ii].nombre; break; }
     }
-
-    var medNombre = '';
-    for (var ii = 0; ii < medicamentos.length; ii++) {
-      if (String(medicamentos[ii].id) === String(c.medId)) { medNombre = medicamentos[ii].nombre; break; }
-    }
-
-    // Register compra
-    apiPost({ accion:'registrar_compra', sucursal:(perfilActual==='slp'?'SLP':'MTY'), fecha:xmlFacturaInfo.fecha, proveedor:xmlFacturaInfo.proveedor,
-      rfc_proveedor:xmlFacturaInfo.rfcProv, folio:xmlFacturaInfo.folio, uuid:xmlFacturaInfo.uuid,
+    apiPost({ accion:'registrar_compra', sucursal:(perfilActual==='slp'?'SLP':'MTY'),
+      fecha:fi.fecha, proveedor:fi.proveedor, rfc_proveedor:fi.rfcProv, folio:fi.folio, uuid:fi.uuid,
       med_id:c.medId, medicamento:medNombre, lote:c.lote, cantidad:c.cantidad,
       costo_unitario:c.valorUnitario, importe:c.cantidad*c.valorUnitario }, function(){});
 
+    var loteExistente=null;
+    for(var i=0;i<lotes.length;i++){
+      if(String(lotes[i].med_id)===String(c.medId)&&lotes[i].lote===c.lote){ loteExistente=lotes[i]; break; }
+    }
     if (loteExistente) {
-      var nuevaExist = Number(loteExistente.existencias) + c.cantidad;
-      apiPost({ accion:'editar_lote', id:loteExistente.id, existencias:nuevaExist, costo:c.valorUnitario }, function(err) {
-        if (!err) procesados++; else errores++;
-        procesarSiguiente(idx + 1);
+      apiPost({ accion:'editar_lote', id:loteExistente.id, existencias:Number(loteExistente.existencias)+c.cantidad, costo:c.valorUnitario }, function(err){
+        if(!err) procesados++; else errores++;
+        procesarSiguiente();
       });
     } else {
-      apiPost({ accion:'agregar_lote', med_id:c.medId, medicamento:medNombre, lote:c.lote, existencias:c.cantidad, costo:c.valorUnitario, precio_venta:0, sucursal:(perfilActual==='slp'?'SLP':'MTY') }, function(err) {
-        if (!err) procesados++; else errores++;
-        procesarSiguiente(idx + 1);
+      apiPost({ accion:'agregar_lote', med_id:c.medId, medicamento:medNombre, lote:c.lote, existencias:c.cantidad,
+        costo:c.valorUnitario, precio_venta:0, sucursal:(perfilActual==='slp'?'SLP':'MTY') }, function(err){
+        if(!err) procesados++; else errores++;
+        procesarSiguiente();
       });
     }
   }
-
-  // Si hay comprobante PDF, procesarlo antes de aplicar lotes
-  if (window._pdfComprobanteData) {
-    _parsearPdfAlbo(window._pdfComprobanteData.data, function(datoPago) {
-      if (datoPago) {
-        // Guardar comprobante ligado a esta factura en Sheets
-        apiPost({
-          accion:          'guardar_comprobante_albo',
-          uuid_factura:    xmlFacturaInfo.uuid,
-          folio_factura:   xmlFacturaInfo.folio,
-          proveedor:       xmlFacturaInfo.proveedor,
-          monto_pagado:    datoPago.monto,
-          fecha_pago:      datoPago.fecha,
-          concepto:        datoPago.concepto,
-          clave_rastreo:   datoPago.claveRastreo,
-          beneficiario:    datoPago.beneficiario
-        }, function(){ });
-      }
-      procesarSiguiente(0);
-    });
-  } else {
-    procesarSiguiente(0);
-  }
+  procesarSiguiente();
 }
 
 function _parsearPdfAlbo(dataUrl, cb) {
@@ -3559,7 +3819,7 @@ function renderGastosFiscales(src) {
     html+='<td><span style="font-size:10px;font-family:var(--mono);background:'+(g.metodo_pago==='PPD'?'rgba(245,158,11,.14)':'rgba(16,185,129,.14)')+';color:'+(g.metodo_pago==='PPD'?'#fcd34d':'#6ee7b7')+';padding:2px 6px;border-radius:99px">'+g.metodo_pago+'</span></td>';
     html+='<td><span class="'+(g.sucursal==='MTY'?'chip-mty':'chip-slp')+'">'+g.sucursal+'</span></td>';
     html+='<td style="font-size:10px;font-family:var(--mono);color:var(--text-3)" title="'+g.uuid+'">'+g.uuid.slice(0,8)+'…</td>';
-    html+='<td><button class="btn btnd btns" onclick="cancelarGFByIdx('+i+')"  >Cancelar</button></td>';
+    html+='<td><button class="btn btnd btns" onclick="cancelarGFByIdx('+i+')"  >Cancelar</button> <button class="btn btns btno" style="font-size:10px;padding:3px 7px" onclick="abrirGfComprobante(\''+g.uuid+'\',\''+g.proveedor.replace(/'/g,'')+'\','+g.total+')" title="Ligar comprobante de pago Albo">💳</button></td>';
     html+='</tr>';
   }
   tbody.innerHTML=html;
@@ -3894,13 +4154,266 @@ function cancelarGastoNFByIndex(idx) {
 
 /* Sub-tabs módulo Compras */
 function comprasTab(t) {
-  document.getElementById('sc-entrada').style.display        = t==='entrada' ? 'block' : 'none';
-  document.getElementById('sc-reporte-compras').style.display = t==='reporte' ? 'block' : 'none';
-  document.getElementById('ct-entrada').className = 'nav-tab'+(t==='entrada'?' on':'');
-  document.getElementById('ct-reporte').className = 'nav-tab'+(t==='reporte'?' on':'');
-  document.getElementById('ct-entrada').style.borderRadius = 'var(--radius-sm)';
-  document.getElementById('ct-reporte').style.borderRadius = 'var(--radius-sm)';
+  ['entrada','credito','reporte'].forEach(function(k){
+    document.getElementById('sc-'+k+(k==='reporte'?'-compras':'')).style.display = t===k?'block':'none';
+    var btn = document.getElementById('ct-'+k);
+    if(btn){ btn.className='nav-tab'+(t===k?' on':''); btn.style.borderRadius='var(--radius-sm)'; }
+  });
   if (t==='reporte') { renderCompras(); inicializarFechasCompras(); }
+  if (t==='credito') { hldInicializar(); }
+}
+
+/* ═══════════════════════════════════════════════
+   PAGOS DE CRÉDITO (HLD)
+═══════════════════════════════════════════════ */
+var _hldDatoPago = null;   // datos extraídos del PDF
+var _hldFacturasDisp = []; // facturas únicas con saldo
+
+function hldInicializar() {
+  // Construir lista de facturas únicas con su saldo desde compras + comprobantes_albo
+  // Usamos el array global `compras` para obtener UUIDs únicos con su total
+  var mapaFacturas = {};
+  compras.forEach(function(c){
+    var key = c.uuid||c.folio;
+    if (!key) return;
+    if (!mapaFacturas[key]) {
+      mapaFacturas[key] = { uuid:c.uuid, folio:c.folio, fecha:c.fecha, proveedor:c.proveedor,
+        total:0, pagado:0, estado:'pendiente' };
+    }
+    mapaFacturas[key].total += Number(c.importe)||0;
+  });
+  _hldFacturasDisp = Object.values(mapaFacturas);
+
+  // Poblar select de proveedores
+  var provs = [...new Set(_hldFacturasDisp.map(function(f){ return f.proveedor; }))].sort();
+  var sel = document.getElementById('hld-filtro-prov');
+  sel.innerHTML = '<option value="">Todos los proveedores</option>';
+  provs.forEach(function(p){ sel.innerHTML += '<option value="'+p+'">'+p+'</option>'; });
+
+  hldFiltrarFacturas();
+}
+
+function hldFiltrarFacturas() {
+  var prov   = document.getElementById('hld-filtro-prov').value;
+  var estado = document.getElementById('hld-filtro-estado').value;
+  var src = _hldFacturasDisp.filter(function(f){
+    if (prov && f.proveedor!==prov) return false;
+    if (estado && f.estado!==estado) return false;
+    return true;
+  });
+  var html = '';
+  if (!src.length) {
+    html = '<tr><td colspan="8" class="es">Sin facturas para el filtro seleccionado</td></tr>';
+  } else {
+    src.forEach(function(f,i){
+      var saldo = f.total - f.pagado;
+      var estadoBadge = f.estado==='pagado'
+        ? '<span style="color:var(--green);font-size:11px;font-weight:700">✔ Pagado</span>'
+        : f.estado==='parcial'
+        ? '<span style="color:var(--amber);font-size:11px;font-weight:700">⚠ Parcial</span>'
+        : '<span style="color:var(--red);font-size:11px;font-weight:700">⏳ Pendiente</span>';
+      html += '<tr>';
+      html += '<td><input type="checkbox" class="hld-chk" data-idx="'+i+'" data-uuid="'+(f.uuid||f.folio)+'" data-total="'+f.total+'" data-saldo="'+saldo+'" onchange="hldActualizarResumen()"/></td>';
+      html += '<td>'+f.fecha+'</td>';
+      html += '<td>'+f.proveedor+'</td>';
+      html += '<td style="font-family:var(--mono);font-size:11px">'+f.folio+'</td>';
+      html += '<td style="text-align:right">$'+f.total.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+      html += '<td style="text-align:right;color:var(--green)">$'+f.pagado.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+      html += '<td style="text-align:right;font-weight:700;color:var(--amber)">$'+saldo.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+      html += '<td>'+estadoBadge+'</td>';
+      html += '</tr>';
+    });
+  }
+  document.getElementById('hld-facturas-body').innerHTML = html;
+  hldActualizarResumen();
+}
+
+function hldCheckAll(chk) {
+  document.querySelectorAll('.hld-chk').forEach(function(c){ c.checked=chk.checked; });
+  hldActualizarResumen();
+}
+
+function hldActualizarResumen() {
+  var seleccionadas = Array.from(document.querySelectorAll('.hld-chk:checked'));
+  var sumaFacturas = seleccionadas.reduce(function(s,c){ return s+parseFloat(c.dataset.saldo); }, 0);
+  var montoComp = _hldDatoPago ? _hldDatoPago.monto : 0;
+  var diff = montoComp - sumaFacturas;
+
+  var valDiv = document.getElementById('hld-validacion');
+  valDiv.style.display = seleccionadas.length?'block':'none';
+  if (!seleccionadas.length) return;
+
+  document.getElementById('hld-val-comp').textContent = '$'+montoComp.toLocaleString('es-MX',{minimumFractionDigits:2});
+  document.getElementById('hld-val-facturas').textContent = '$'+sumaFacturas.toLocaleString('es-MX',{minimumFractionDigits:2});
+  var diffEl = document.getElementById('hld-val-diferencia');
+  diffEl.textContent = (diff>=0?'+':'') + '$'+diff.toLocaleString('es-MX',{minimumFractionDigits:2});
+  diffEl.style.color = Math.abs(diff)<0.1?'var(--green)':diff>0?'var(--amber)':'var(--red)';
+
+  var alertEl = document.getElementById('hld-alerta-parcial');
+  var parcPanel = document.getElementById('hld-parcialidad-panel');
+  if (montoComp>0 && Math.abs(diff)>1) {
+    alertEl.style.display='block';
+    if (diff<0) {
+      alertEl.style.cssText='display:block;margin-top:8px;padding:7px 10px;border-radius:var(--radius-sm);font-size:12px;background:rgba(245,158,11,.12);color:#fcd34d';
+      alertEl.innerHTML='⚠️ El comprobante ('+montoComp.toLocaleString('es-MX',{minimumFractionDigits:2})+') es menor que las facturas seleccionadas. Distribúyelo en el panel de parcialidades.';
+      parcPanel.style.display='block';
+      _renderParcialidades(seleccionadas, montoComp);
+    } else {
+      alertEl.style.cssText='display:block;margin-top:8px;padding:7px 10px;border-radius:var(--radius-sm);font-size:12px;background:rgba(239,68,68,.12);color:#fca5a5';
+      alertEl.innerHTML='❌ El comprobante supera el saldo de las facturas seleccionadas. Verifica la selección.';
+      parcPanel.style.display='none';
+    }
+  } else {
+    alertEl.style.display='none';
+    parcPanel.style.display='none';
+  }
+}
+
+function _renderParcialidades(seleccionadas, montoDisp) {
+  var html='', restante=montoDisp;
+  seleccionadas.forEach(function(chk, i){
+    var saldo=parseFloat(chk.dataset.saldo);
+    var asignar=Math.min(saldo,restante); restante-=asignar;
+    html+='<tr>';
+    html+='<td style="font-family:var(--mono);font-size:11px">'+chk.closest('tr').cells[3].textContent+'</td>';
+    html+='<td>'+chk.closest('tr').cells[1].textContent+'</td>';
+    html+='<td style="text-align:right">$'+saldo.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    html+='<td><input type="number" class="hld-parc-input" data-uuid="'+chk.dataset.uuid+'" data-saldo="'+saldo
+      +'" value="'+asignar.toFixed(2)+'" min="0" max="'+saldo+'" step="0.01" style="width:110px;text-align:right;font-family:var(--mono)"/></td>';
+    html+='</tr>';
+  });
+  document.getElementById('hld-parcialidad-body').innerHTML=html;
+}
+
+function onHldPdfFile(input) {
+  if (!input.files[0]) return;
+  _parsearPdfAlbo(URL.createObjectURL(input.files[0]), function(dato){
+    if (!dato) { alert('No se pudo extraer el monto del PDF. Verifica que sea un comprobante Albo.'); return; }
+    _hldDatoPago = dato;
+    // leer como dataURL para guardar
+    var reader=new FileReader();
+    reader.onload=function(e){ _hldDatoPago._dataUrl=e.target.result; };
+    reader.readAsDataURL(input.files[0]);
+    document.getElementById('hld-pdf-label').textContent='✅ '+input.files[0].name;
+    document.getElementById('hld-pdf-icon').textContent='✅';
+    document.getElementById('hld-monto-comp').textContent='$'+dato.monto.toLocaleString('es-MX',{minimumFractionDigits:2});
+    document.getElementById('hld-fecha-comp').textContent=dato.fecha;
+    document.getElementById('hld-benef-comp').textContent=dato.beneficiario;
+    document.getElementById('hld-pdf-preview').style.display='block';
+    hldActualizarResumen();
+  });
+}
+
+function hldRegistrarPago() {
+  var seleccionadas = Array.from(document.querySelectorAll('.hld-chk:checked'));
+  if (!seleccionadas.length) { hldAlrt('Selecciona al menos una factura.','e'); return; }
+  if (!_hldDatoPago) { hldAlrt('Sube el comprobante de pago Albo.','e'); return; }
+
+  var btn=document.getElementById('btn-hld-registrar');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Registrando...';
+
+  var parcInputs = document.querySelectorAll('.hld-parc-input');
+  var parcMap = {};
+  parcInputs.forEach(function(inp){ parcMap[inp.dataset.uuid]=parseFloat(inp.value)||0; });
+
+  var tareas = seleccionadas.map(function(chk){
+    var saldo=parseFloat(chk.dataset.saldo);
+    var montoPago = parcInputs.length ? (parcMap[chk.dataset.uuid]||0) : saldo;
+    return { uuid:chk.dataset.uuid, saldo:saldo, montoPago:montoPago };
+  });
+
+  var idx=0;
+  function siguiente() {
+    if (idx>=tareas.length) {
+      // Guardar comprobante Albo ligado
+      tareas.forEach(function(t){
+        apiPost({ accion:'guardar_comprobante_albo', uuid_factura:t.uuid, folio_factura:'',
+          proveedor:'', monto_pagado:t.montoPago, fecha_pago:_hldDatoPago.fecha,
+          concepto:'Pago crédito '+_hldDatoPago.concepto, clave_rastreo:_hldDatoPago.claveRastreo,
+          beneficiario:_hldDatoPago.beneficiario }, function(){});
+      });
+      btn.disabled=false; btn.textContent='Registrar pago y conciliar';
+      hldAlrt('✅ Pago registrado y conciliado con '+tareas.length+' factura(s).','s');
+      setTimeout(hldLimpiar, 3000);
+      return;
+    }
+    var t=tareas[idx++];
+    apiPost({ accion:'registrar_pago_compra', uuid_factura:t.uuid, monto_pago:t.montoPago,
+      fecha_pago:_hldDatoPago.fecha, clave_rastreo:_hldDatoPago.claveRastreo }, function(){ siguiente(); });
+  }
+  siguiente();
+}
+
+function hldLimpiar() {
+  _hldDatoPago=null;
+  document.getElementById('hld-pdf-input').value='';
+  document.getElementById('hld-pdf-label').textContent='Haz clic para seleccionar PDF de comprobante Albo';
+  document.getElementById('hld-pdf-icon').textContent='📎';
+  document.getElementById('hld-pdf-preview').style.display='none';
+  document.getElementById('hld-validacion').style.display='none';
+  document.getElementById('hld-parcialidad-panel').style.display='none';
+  document.querySelectorAll('.hld-chk').forEach(function(c){ c.checked=false; });
+  document.getElementById('hld-chk-all').checked=false;
+  document.getElementById('hld-alrt').style.display='none';
+}
+
+function hldAlrt(msg, tipo) {
+  var el=document.getElementById('hld-alrt');
+  el.style.display='block';
+  el.className='alrt alrt-'+(tipo==='s'?'ok':tipo==='e'?'err':'warn');
+  el.textContent=msg;
+}
+
+/* ══════════════════════════════════════════════
+   GF COMPROBANTE — Ligar PDF a gasto fiscal
+══════════════════════════════════════════════ */
+var _gfCompUuid='', _gfCompTotal=0, _gfCompDato=null;
+
+function abrirGfComprobante(uuid, proveedor, total) {
+  _gfCompUuid=uuid; _gfCompTotal=total; _gfCompDato=null;
+  document.getElementById('gf-comp-info').innerHTML =
+    '<strong>'+proveedor+'</strong> · Total: <strong>$'+total.toLocaleString('es-MX',{minimumFractionDigits:2})+'</strong>'
+    +'<div style="font-size:10px;color:var(--text-3);margin-top:3px;font-family:var(--mono)">UUID: '+uuid+'</div>';
+  document.getElementById('gf-comp-pdf-input').value='';
+  document.getElementById('gf-comp-pdf-label').textContent='Seleccionar PDF de comprobante Albo';
+  document.getElementById('gf-comp-pdf-icon').textContent='📎';
+  document.getElementById('gf-comp-pdf-preview').style.display='none';
+  document.getElementById('gf-comp-alrt').style.display='none';
+  document.getElementById('modal-gf-comp-overlay').classList.add('show');
+}
+
+function cerrarGfCompModal() {
+  document.getElementById('modal-gf-comp-overlay').classList.remove('show');
+}
+
+function onGfCompPdfFile(input) {
+  if (!input.files[0]) return;
+  _parsearPdfAlbo(URL.createObjectURL(input.files[0]), function(dato){
+    if (!dato) { alert('No se pudo extraer el monto del PDF.'); return; }
+    _gfCompDato=dato;
+    var reader=new FileReader();
+    reader.onload=function(e){ _gfCompDato._dataUrl=e.target.result; };
+    reader.readAsDataURL(input.files[0]);
+    document.getElementById('gf-comp-monto').textContent='$'+dato.monto.toLocaleString('es-MX',{minimumFractionDigits:2});
+    document.getElementById('gf-comp-fecha').textContent=dato.fecha;
+    document.getElementById('gf-comp-pdf-label').textContent='✅ '+input.files[0].name;
+    document.getElementById('gf-comp-pdf-icon').textContent='✅';
+    document.getElementById('gf-comp-pdf-preview').style.display='block';
+  });
+}
+
+function guardarGfComprobante() {
+  if (!_gfCompDato) { var el=document.getElementById('gf-comp-alrt'); el.style.display='block'; el.className='alrt alrt-err'; el.textContent='Sube el PDF primero.'; return; }
+  var btn=document.getElementById('btn-gf-comp-guardar');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
+  apiPost({ accion:'guardar_comprobante_albo', uuid_factura:_gfCompUuid, folio_factura:'',
+    proveedor:'', monto_pagado:_gfCompDato.monto, fecha_pago:_gfCompDato.fecha,
+    concepto:_gfCompDato.concepto, clave_rastreo:_gfCompDato.claveRastreo,
+    beneficiario:_gfCompDato.beneficiario }, function(err){
+    btn.disabled=false; btn.textContent='Guardar y conciliar';
+    if (!err) { cerrarGfCompModal(); } 
+    else { var el=document.getElementById('gf-comp-alrt'); el.style.display='block'; el.className='alrt alrt-err'; el.textContent='Error al guardar: '+err; }
+  });
 }
 
 /* ═══════════════════════════════════════════════════════════
