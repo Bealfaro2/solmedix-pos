@@ -3,7 +3,7 @@
 <head>
   <link rel="icon" type="image/jpeg" sizes="32x32" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAAgACADASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAABQQCB//EACoQAAICAQIFAQkBAAAAAAAAAAECAwQRABIFEyExYUEGFBUiI0JRcZFS/8QAFwEAAwEAAAAAAAAAAAAAAAAAAgMEAf/EACIRAAIBBAIBBQAAAAAAAAAAAAECAAMRIfAxUXESYYGxwf/aAAwDAQACEQMRAD8A6VPNHXgeaVtqINzHxou3xW7DEBBRE05WOQR78YViQc+R0/utWalqUpz0E6oQSeYQD52YwT4JxqLjTR2uHc5opY543jRsntmVehPYn18aGiS1ZVIxcRzoq0iefzqKR8R3TLvQLDJK0KNn7h+f3g/zzq/REqI8Hw+Cq7qudwc4w2em49+vUhhqunFaQjmthACNpkMhJ/OSBpaM17HMKoi2uMbiZfiJW2lUVJmmaLmlQV6DOO5PfQnE7q2qdvll4lWeJWjlPzBg4JwuegHQnvnSEk6p7Qx2mWTktTKhxGx67wcdBo29UvWDdurAUisSwhI2T6hCso3Y9B3OPA1eaQupA6++NI8yZH5B3fBivDr1Ye9B7MsksR3O0oxuU9ioH25yBj10ojFkVipUkZ2nuNBW6Vtyl+HM1ikx2B1AM4zlh4H+fIzpuCVZ4ElUModQQGXBH7HodJNMKgI+fY7uJrP6nM//2Q=="/>
 <meta charset="UTF-8">
-<!-- Solmedix admin.html — v2.8 — 29/abr/2026 — fix duplicate style attrs en th rompen DOM -->
+<!-- Solmedix admin.html — v2.9 — 01/may/2026 — fix parser PDF Albo HLD y GF usan blob en vez de base64 -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzBmMTcyYSIvPgogIDxyZWN0IHg9IjEzIiB5PSI2IiB3aWR0aD0iNiIgaGVpZ2h0PSIyMCIgcng9IjIiIGZpbGw9IiMyYjdmZDQiLz4KICA8cmVjdCB4PSI2IiB5PSIxMyIgd2lkdGg9IjIwIiBoZWlnaHQ9IjYiIHJ4PSIyIiBmaWxsPSIjMmI3ZmQ0Ii8+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solmedix — Administración</title>
@@ -2851,6 +2851,7 @@ function _parsearPdfAlbo(dataUrl, cb) {
         page.getTextContent().then(function(content) {
           var lines = content.items.map(function(item) { return item.str.trim(); }).filter(Boolean);
           var texto = lines.join('\n');
+          console.log('[PdfAlbo] Texto extraído:\n' + texto);
           // Extraer campos del comprobante Albo
           var monto = 0, fecha = '', concepto = '', claveRastreo = '', beneficiario = '';
           for (var i = 0; i < lines.length; i++) {
@@ -4290,21 +4291,27 @@ function _renderParcialidades(seleccionadas, montoDisp) {
 
 function onHldPdfFile(input) {
   if (!input.files[0]) return;
-  _parsearPdfAlbo(URL.createObjectURL(input.files[0]), function(dato){
-    if (!dato) { alert('No se pudo extraer el monto del PDF. Verifica que sea un comprobante Albo.'); return; }
-    _hldDatoPago = dato;
-    // leer como dataURL para guardar
-    var reader=new FileReader();
-    reader.onload=function(e){ _hldDatoPago._dataUrl=e.target.result; };
-    reader.readAsDataURL(input.files[0]);
-    document.getElementById('hld-pdf-label').textContent='✅ '+input.files[0].name;
-    document.getElementById('hld-pdf-icon').textContent='✅';
-    document.getElementById('hld-monto-comp').textContent='$'+dato.monto.toLocaleString('es-MX',{minimumFractionDigits:2});
-    document.getElementById('hld-fecha-comp').textContent=dato.fecha;
-    document.getElementById('hld-benef-comp').textContent=dato.beneficiario;
-    document.getElementById('hld-pdf-preview').style.display='block';
-    hldActualizarResumen();
-  });
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var dataUrl = e.target.result;
+    _parsearPdfAlbo(dataUrl, function(dato){
+      if (!dato || !dato.monto) { 
+        alert('No se pudo extraer el monto del PDF. Verifica que sea un comprobante Albo.');
+        return; 
+      }
+      _hldDatoPago = dato;
+      _hldDatoPago._dataUrl = dataUrl;
+      document.getElementById('hld-pdf-label').textContent = '✅ ' + file.name;
+      document.getElementById('hld-pdf-icon').textContent = '✅';
+      document.getElementById('hld-monto-comp').textContent = '$' + dato.monto.toLocaleString('es-MX',{minimumFractionDigits:2});
+      document.getElementById('hld-fecha-comp').textContent = dato.fecha;
+      document.getElementById('hld-benef-comp').textContent = dato.beneficiario;
+      document.getElementById('hld-pdf-preview').style.display = 'block';
+      hldActualizarResumen();
+    });
+  };
+  reader.readAsDataURL(file);
 }
 
 function hldRegistrarPago() {
@@ -4391,18 +4398,22 @@ function cerrarGfCompModal() {
 
 function onGfCompPdfFile(input) {
   if (!input.files[0]) return;
-  _parsearPdfAlbo(URL.createObjectURL(input.files[0]), function(dato){
-    if (!dato) { alert('No se pudo extraer el monto del PDF.'); return; }
-    _gfCompDato=dato;
-    var reader=new FileReader();
-    reader.onload=function(e){ _gfCompDato._dataUrl=e.target.result; };
-    reader.readAsDataURL(input.files[0]);
-    document.getElementById('gf-comp-monto').textContent='$'+dato.monto.toLocaleString('es-MX',{minimumFractionDigits:2});
-    document.getElementById('gf-comp-fecha').textContent=dato.fecha;
-    document.getElementById('gf-comp-pdf-label').textContent='✅ '+input.files[0].name;
-    document.getElementById('gf-comp-pdf-icon').textContent='✅';
-    document.getElementById('gf-comp-pdf-preview').style.display='block';
-  });
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var dataUrl = e.target.result;
+    _parsearPdfAlbo(dataUrl, function(dato){
+      if (!dato || !dato.monto) { alert('No se pudo extraer el monto del PDF.'); return; }
+      _gfCompDato = dato;
+      _gfCompDato._dataUrl = dataUrl;
+      document.getElementById('gf-comp-monto').textContent = '$' + dato.monto.toLocaleString('es-MX',{minimumFractionDigits:2});
+      document.getElementById('gf-comp-fecha').textContent = dato.fecha;
+      document.getElementById('gf-comp-pdf-label').textContent = '✅ ' + file.name;
+      document.getElementById('gf-comp-pdf-icon').textContent = '✅';
+      document.getElementById('gf-comp-pdf-preview').style.display = 'block';
+    });
+  };
+  reader.readAsDataURL(file);
 }
 
 function guardarGfComprobante() {
@@ -5314,7 +5325,6 @@ var CLAVES_SAT = [
   { clave:'51142900', desc:'Fármacos anestésicos, complementos y analépticos' },
   { clave:'51171800', desc:'Agentes antivértigo, antinauseantes y antieméticos' },
   { clave:'51181700', desc:'Corticosteroides' },
-  { clave:'51181900', desc:'Hormonas Gonadotropinas y Estimulantes e Inhibidores Ováricos' },
   { clave:'51182400', desc:'Sales de calcio y reguladores del calcio' },
   { clave:'51201500', desc:'Inmunosupresores' },
   { clave:'51201800', desc:'Agentes inmunoestimulantes' }
