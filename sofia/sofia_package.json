@@ -1,0 +1,22 @@
+{
+  "name": "solmedix-sofia-whatsapp",
+  "version": "1.0.0",
+  "description": "Agente IA WhatsApp Sofía — Solmedix Farmacia",
+  "main": "sofia/index.js",
+  "scripts": {
+    "start": "node sofia/index.js",
+    "dev": "nodemon sofia/index.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "axios": "^1.6.0",
+    "express": "^4.18.0",
+    "googleapis": "^140.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

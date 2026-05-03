@@ -1,0 +1,24 @@
+# ============================================================
+# Solmedix — Variables de entorno (Sofía WhatsApp)
+# Configurar en Railway → Variables
+# NUNCA subir este archivo a GitHub con valores reales
+# ============================================================
+
+# ── Anthropic (Claude API) ──────────────────────────────────
+ANTHROPIC_API_KEY=sk-ant-...
+
+# ── Gupshup ────────────────────────────────────────────────
+GUPSHUP_API_KEY=ff1ed4be-180c-4953-b896-9e7f8e52ec78
+GUPSHUP_NUMBER=5215516609658
+GUPSHUP_WABA_ID=4384213051850227
+
+# ── Números internos ───────────────────────────────────────
+NUMERO_ALFREDO=5256236535471   # WhatsApp de Alfredo para escalados
+NUMERO_SLP=5244444330701       # Número SLP para identificar mensajes internos
+
+# ── Google Sheets ──────────────────────────────────────────
+GOOGLE_SHEET_ID=1nt8n7Jn9-pso2avbzfKxq3BjzX7ArtSHl3Qx6Jj7Ofs
+GOOGLE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"..."}
+
+# ── Servidor ───────────────────────────────────────────────
+PORT=3000
