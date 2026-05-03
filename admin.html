@@ -3,7 +3,7 @@
 <head>
   <link rel="icon" type="image/jpeg" sizes="32x32" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAAgACADASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAABQQCB//EACoQAAICAQIFAQkBAAAAAAAAAAECAwQRABIFEyExYUEGFBUiI0JRcZFS/8QAFwEAAwEAAAAAAAAAAAAAAAAAAgMEAf/EACIRAAIBBAIBBQAAAAAAAAAAAAECAAMRIfAxUXESYYGxwf/aAAwDAQACEQMRAD8A6VPNHXgeaVtqINzHxou3xW7DEBBRE05WOQR78YViQc+R0/utWalqUpz0E6oQSeYQD52YwT4JxqLjTR2uHc5opY543jRsntmVehPYn18aGiS1ZVIxcRzoq0iefzqKR8R3TLvQLDJK0KNn7h+f3g/zzq/REqI8Hw+Cq7qudwc4w2em49+vUhhqunFaQjmthACNpkMhJ/OSBpaM17HMKoi2uMbiZfiJW2lUVJmmaLmlQV6DOO5PfQnE7q2qdvll4lWeJWjlPzBg4JwuegHQnvnSEk6p7Qx2mWTktTKhxGx67wcdBo29UvWDdurAUisSwhI2T6hCso3Y9B3OPA1eaQupA6++NI8yZH5B3fBivDr1Ye9B7MsksR3O0oxuU9ioH25yBj10ojFkVipUkZ2nuNBW6Vtyl+HM1ikx2B1AM4zlh4H+fIzpuCVZ4ElUModQQGXBH7HodJNMKgI+fY7uJrP6nM//2Q=="/>
 <meta charset="UTF-8">
-<!-- Solmedix admin.html — v3.2 — 02/may/2026 — fix cache JSONP apiGet rompe pagos_compras -->
+<!-- Solmedix admin.html — v3.3 — 02/may/2026 — fix reporte contador ingresos exentos IVA=0 -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzBmMTcyYSIvPgogIDxyZWN0IHg9IjEzIiB5PSI2IiB3aWR0aD0iNiIgaGVpZ2h0PSIyMCIgcng9IjIiIGZpbGw9IiMyYjdmZDQiLz4KICA8cmVjdCB4PSI2IiB5PSIxMyIgd2lkdGg9IjIwIiBoZWlnaHQ9IjYiIHJ4PSIyIiBmaWxsPSIjMmI3ZmQ0Ii8+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solmedix — Administración</title>
@@ -5879,10 +5879,13 @@ const FiscalModule = (function() {
     _set('rpt-base-ded',    _mxn(baseDed));
     if (ext.isr_nom) _set('rpt-isr-nom', _mxn(ext.isr_nom));
     if (ext.imss)    _set('rpt-imss',    _mxn(ext.imss));
+    // Ingresos — siempre mostrar aunque IVA=0 (medicamentos exentos)
+    _set('rpt-ventas',   _mxn(totIng));
+    _set('rpt-cfdi-ing', _mxn(totIng - ivaTras));
+    _set('rpt-sin-cfdi', _mxn(0)); // placeholder — sin cálculo automático por ahora
+    _set('rpt-iva-tras', ivaTras > 0 ? _mxn(ivaTras) : '$0.00 (exento)');
+    _set('calc-iva-tras', _mxn(ivaTras));
     if (ivaTras > 0) {
-      _set('rpt-cfdi-ing', _mxn(totIng - ivaTras));
-      _set('rpt-iva-tras', _mxn(ivaTras));
-      _set('calc-iva-tras', _mxn(ivaTras));
       var ivaRes = ivaTras - ivaAcred;
       var elLbl = document.getElementById('calc-iva-label');
       var elRes = document.getElementById('calc-iva-resultado');
@@ -5891,6 +5894,11 @@ const FiscalModule = (function() {
         else if (ivaRes < 0) { elLbl.textContent='= Saldo a favor de IVA'; elRes.textContent=_mxn(Math.abs(ivaRes)); elRes.className='fis-sum-val fsv-pos'; }
         else { elLbl.textContent='= IVA en cero'; elRes.textContent='$0.00'; elRes.className='fis-sum-val'; }
       }
+    } else {
+      var elLbl2 = document.getElementById('calc-iva-label');
+      var elRes2 = document.getElementById('calc-iva-resultado');
+      if (elLbl2) elLbl2.textContent = '= IVA (ingresos exentos)';
+      if (elRes2) { elRes2.textContent = _mxn(0 - ivaAcred); elRes2.className = ivaAcred>0?'fis-sum-val fsv-pos':'fis-sum-val'; }
     }
     _set('calc-iva-acred', _mxn(ivaAcred));
     if (ext.ing_acum && _n(ext.ing_acum) > 0) {
