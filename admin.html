@@ -3,7 +3,7 @@
 <head>
   <link rel="icon" type="image/jpeg" sizes="32x32" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAAgACADASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAABQQCB//EACoQAAICAQIFAQkBAAAAAAAAAAECAwQRABIFEyExYUEGFBUiI0JRcZFS/8QAFwEAAwEAAAAAAAAAAAAAAAAAAgMEAf/EACIRAAIBBAIBBQAAAAAAAAAAAAECAAMRIfAxUXESYYGxwf/aAAwDAQACEQMRAD8A6VPNHXgeaVtqINzHxou3xW7DEBBRE05WOQR78YViQc+R0/utWalqUpz0E6oQSeYQD52YwT4JxqLjTR2uHc5opY543jRsntmVehPYn18aGiS1ZVIxcRzoq0iefzqKR8R3TLvQLDJK0KNn7h+f3g/zzq/REqI8Hw+Cq7qudwc4w2em49+vUhhqunFaQjmthACNpkMhJ/OSBpaM17HMKoi2uMbiZfiJW2lUVJmmaLmlQV6DOO5PfQnE7q2qdvll4lWeJWjlPzBg4JwuegHQnvnSEk6p7Qx2mWTktTKhxGx67wcdBo29UvWDdurAUisSwhI2T6hCso3Y9B3OPA1eaQupA6++NI8yZH5B3fBivDr1Ye9B7MsksR3O0oxuU9ioH25yBj10ojFkVipUkZ2nuNBW6Vtyl+HM1ikx2B1AM4zlh4H+fIzpuCVZ4ElUModQQGXBH7HodJNMKgI+fY7uJrP6nM//2Q=="/>
 <meta charset="UTF-8">
-<!-- Solmedix admin.html — v3.4 — 04/may/2026 — fix null style sec-inv -->
+<!-- Solmedix admin.html — v3.5 — 04/may/2026 — módulo declaración mensual completo -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzBmMTcyYSIvPgogIDxyZWN0IHg9IjEzIiB5PSI2IiB3aWR0aD0iNiIgaGVpZ2h0PSIyMCIgcng9IjIiIGZpbGw9IiMyYjdmZDQiLz4KICA8cmVjdCB4PSI2IiB5PSIxMyIgd2lkdGg9IjIwIiBoZWlnaHQ9IjYiIHJ4PSIyIiBmaWxsPSIjMmI3ZmQ0Ii8+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solmedix — Administración</title>
@@ -860,6 +860,8 @@ select option { background:var(--bg-2); color:var(--text); }
             <button class="fis-btn fb-sm" onclick="FIS.exportReporteExcel()">📊 Excel</button>
             <button class="fis-btn fb-sm fb-primary" onclick="FIS.imprimirReporte()">🖨️ PDF</button>
           </div>
+
+          <!-- ① INGRESOS -->
           <div class="fis-report-card">
             <div class="frc-title">① Ingresos del período</div>
             <div class="fis-sum-row"><span>Total ventas (sistema POS)</span><span class="fis-sum-val" id="rpt-ventas">—</span></div>
@@ -867,6 +869,8 @@ select option { background:var(--bg-2); color:var(--text); }
             <div class="fis-sum-row fsr-indent"><span>Ventas sin CFDI / factura global</span><span class="fis-sum-val" id="rpt-sin-cfdi">—</span></div>
             <div class="fis-sum-row fsr-total"><span>IVA trasladado total</span><span class="fis-sum-val fsv-neu" id="rpt-iva-tras">—</span></div>
           </div>
+
+          <!-- ② EGRESOS -->
           <div class="fis-report-card">
             <div class="frc-title">② Egresos deducibles</div>
             <div class="fis-sum-row"><span>Gastos fiscales PUE</span><span class="fis-sum-val" id="rpt-gf-pue">$0.00</span></div>
@@ -875,41 +879,170 @@ select option { background:var(--bg-2); color:var(--text); }
               <span>⚠ PPD pendiente de complemento (NO deducible aún)</span>
               <span class="fis-sum-val fsv-warn" id="rpt-gf-ppd-pend">$0.00</span>
             </div>
-            <div class="fis-sum-row fsr-total"><span>IVA acreditable confirmado</span><span class="fis-sum-val fsv-pos" id="rpt-iva-acred">$0.00</span></div>
+            <div class="fis-sum-row fsr-total"><span>IVA bruto en egresos (antes de prorrateo)</span><span class="fis-sum-val fsv-pos" id="rpt-iva-acred">$0.00</span></div>
             <div class="fis-sum-row fsr-total"><span>Base ISR deducible</span><span class="fis-sum-val fsv-pos" id="rpt-base-ded">$0.00</span></div>
           </div>
+
+          <!-- ③ NÓMINA -->
           <div class="fis-report-card">
             <div class="frc-title">③ Nómina y retenciones</div>
             <div class="fis-sum-row"><span>ISR retenido empleados</span><span class="fis-sum-val" id="rpt-isr-nom">—</span></div>
             <div class="fis-sum-row"><span>Cuotas IMSS / INFONAVIT</span><span class="fis-sum-val" id="rpt-imss">—</span></div>
           </div>
+
+          <!-- ④ CAPTURA DECLARACIÓN SAT -->
+          <div class="fis-report-card" style="border-color:var(--fis-accent);background:rgba(99,102,241,.04)">
+            <div class="frc-title" style="color:var(--fis-accent)">④ Captura declaración SAT — valores reales presentados</div>
+            <p style="font-size:11px;color:var(--text-3);margin-bottom:14px;line-height:1.6">
+              Captura aquí los valores tal como quedaron en la declaración presentada ante el SAT. El sistema los guardará y usará para calcular acumulados de meses futuros.
+            </p>
+
+            <!-- IVA -->
+            <div style="font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;border-bottom:1px solid var(--fis-border);padding-bottom:4px">IVA</div>
+            <div class="fis-sum-row" style="align-items:center">
+              <span>IVA acreditable efectivo (según SAT)</span>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="color:var(--text-3);font-size:11px">$</span>
+                <input type="number" id="dec-iva-acreditable-sat" step="0.01" min="0"
+                  style="width:110px;text-align:right;font-family:var(--mono);font-size:13px"
+                  placeholder="0.00" oninput="FIS.recalcDeclaracion()"/>
+                <span id="dec-iva-acred-hint" style="font-size:10px;color:var(--fis-yellow)"></span>
+              </div>
+            </div>
+            <div class="fis-sum-row" style="align-items:center">
+              <span>IVA retenciones a cargo (honorarios, etc.)</span>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="color:var(--text-3);font-size:11px">$</span>
+                <input type="number" id="dec-iva-retenciones" step="0.01" min="0"
+                  style="width:110px;text-align:right;font-family:var(--mono);font-size:13px"
+                  placeholder="0.00" oninput="FIS.recalcDeclaracion()"/>
+              </div>
+            </div>
+            <div class="fis-sum-row fsr-total" style="margin-top:4px">
+              <span>= Saldo a favor IVA del período</span>
+              <span class="fis-sum-val fsv-pos" id="dec-iva-resultado">—</span>
+            </div>
+
+            <!-- ISR -->
+            <div style="font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px;border-bottom:1px solid var(--fis-border);padding-bottom:4px">ISR</div>
+            <div class="fis-sum-row" style="align-items:center">
+              <span>Coeficiente de utilidad aplicado</span>
+              <div style="display:flex;align-items:center;gap:6px">
+                <input type="number" id="dec-coeficiente" step="0.0001" min="0" max="1"
+                  style="width:90px;text-align:right;font-family:var(--mono);font-size:13px"
+                  placeholder="0.0460" oninput="FIS.recalcDeclaracion()"/>
+              </div>
+            </div>
+            <div class="fis-sum-row">
+              <span>Ingresos acumulados del ejercicio</span>
+              <span class="fis-sum-val" id="dec-ing-acum">—</span>
+            </div>
+            <div class="fis-sum-row fsr-indent">
+              <span>× Coeficiente = Utilidad fiscal base</span>
+              <span class="fis-sum-val" id="dec-utilidad">—</span>
+            </div>
+            <div class="fis-sum-row fsr-indent">
+              <span>× 30% = ISR causado acumulado</span>
+              <span class="fis-sum-val" id="dec-isr-causado-calc">—</span>
+            </div>
+            <div class="fis-sum-row fsr-indent" style="align-items:center">
+              <span>ISR causado (valor SAT — puede diferir)</span>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="color:var(--text-3);font-size:11px">$</span>
+                <input type="number" id="dec-isr-causado" step="0.01" min="0"
+                  style="width:110px;text-align:right;font-family:var(--mono);font-size:13px"
+                  placeholder="0.00" oninput="FIS.recalcDeclaracion()"/>
+              </div>
+            </div>
+            <div class="fis-sum-row fsr-indent">
+              <span>− Pagos provisionales anteriores</span>
+              <span class="fis-sum-val fsv-neg" id="dec-prov-ant">—</span>
+            </div>
+            <div class="fis-sum-row fsr-total">
+              <span>= ISR a cargo del período</span>
+              <span class="fis-sum-val" id="dec-isr-cargo">—</span>
+            </div>
+
+            <!-- Compensaciones -->
+            <div style="font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px;border-bottom:1px solid var(--fis-border);padding-bottom:4px">Compensaciones saldo 2022</div>
+            <div class="fis-sum-row" style="align-items:center">
+              <span>Compensación aplicada este mes</span>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="color:var(--text-3);font-size:11px">$</span>
+                <input type="number" id="dec-compensacion" step="0.01" min="0"
+                  style="width:110px;text-align:right;font-family:var(--mono);font-size:13px"
+                  placeholder="0.00" oninput="FIS.recalcDeclaracion()"/>
+              </div>
+            </div>
+            <div class="fis-sum-row" style="align-items:center">
+              <span>Remanente saldo 2022 tras aplicación</span>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="color:var(--text-3);font-size:11px">$</span>
+                <input type="number" id="dec-remanente" step="0.01" min="0"
+                  style="width:110px;text-align:right;font-family:var(--mono);font-size:13px"
+                  placeholder="0.00"/>
+              </div>
+            </div>
+            <div class="fis-sum-row fsr-total">
+              <span>ISR a pagar en efectivo</span>
+              <span class="fis-sum-val" id="dec-isr-pagar">—</span>
+            </div>
+
+            <!-- Número de operación -->
+            <div style="font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px;border-bottom:1px solid var(--fis-border);padding-bottom:4px">Número de operación SAT</div>
+            <div class="fis-sum-row" style="align-items:center">
+              <span>N° de operación declaración</span>
+              <input type="text" id="dec-num-op" maxlength="20"
+                style="width:160px;text-align:right;font-family:var(--mono);font-size:12px"
+                placeholder="262980117765"/>
+            </div>
+
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+              <button class="fis-btn fb-sm" onclick="FIS.limpiarDeclaracion()">Limpiar</button>
+              <button class="fis-btn fb-sm fb-primary" onclick="FIS.guardarDeclaracion()">💾 Guardar declaración presentada</button>
+            </div>
+            <div id="dec-alrt" style="display:none;margin-top:8px;padding:8px 12px;border-radius:var(--radius-sm);font-size:12px"></div>
+          </div>
+
+          <!-- ⑤ RESUMEN ACUMULADO ANUAL -->
           <div class="fis-report-card" style="border-color:var(--fis-border2)">
-            <div class="frc-title" style="color:var(--fis-accent)">④ Cálculo estimado de impuestos</div>
-            <div class="fis-sum-row"><span>IVA trasladado (ingresos)</span><span class="fis-sum-val" id="calc-iva-tras">—</span></div>
-            <div class="fis-sum-row fsr-indent"><span>− IVA acreditable confirmado</span><span class="fis-sum-val fsv-neg" id="calc-iva-acred">$0.00</span></div>
-            <div class="fis-sum-row fsr-total">
-              <span id="calc-iva-label">= IVA a pagar / (saldo a favor)</span>
-              <span class="fis-sum-val" id="calc-iva-resultado">—</span>
-            </div>
-            <div style="height:1px;background:var(--fis-border);margin:10px 0"></div>
-            <div class="fis-sum-row"><span>Ingresos acumulados del ejercicio</span><span class="fis-sum-val" id="calc-ing-acum">—</span></div>
-            <div class="fis-sum-row fsr-indent"><span>− Deducciones autorizadas acumuladas</span><span class="fis-sum-val fsv-neg" id="calc-ded-acum">$0.00</span></div>
-            <div class="fis-sum-row fsr-indent"><span>= Utilidad fiscal base</span><span class="fis-sum-val" id="calc-utilidad">—</span></div>
-            <div class="fis-sum-row fsr-indent"><span>× Tasa ISR (30%)</span><span class="fis-sum-val">30%</span></div>
-            <div class="fis-sum-row fsr-indent"><span>= ISR ejercicio parcial</span><span class="fis-sum-val" id="calc-isr-ej">—</span></div>
-            <div class="fis-sum-row fsr-indent"><span>− Pagos provisionales anteriores</span><span class="fis-sum-val fsv-neg" id="calc-prov-ant">—</span></div>
-            <div class="fis-sum-row fsr-total">
-              <span id="calc-isr-label">= ISR provisional</span>
-              <span class="fis-sum-val" id="calc-isr-resultado">—</span>
+            <div class="frc-title" style="color:var(--fis-accent)">⑤ Acumulado anual 2026</div>
+            <div style="overflow-x:auto">
+              <table class="tbl" id="dec-tabla-anual">
+                <thead><tr>
+                  <th>Mes</th>
+                  <th style="text-align:right">Ingresos</th>
+                  <th style="text-align:right">IVA acred.</th>
+                  <th style="text-align:right">IVA reten.</th>
+                  <th style="text-align:right">ISR causado</th>
+                  <th style="text-align:right">Compensación</th>
+                  <th style="text-align:right">ISR pagado</th>
+                  <th style="text-align:center">Estado</th>
+                </tr></thead>
+                <tbody id="dec-tabla-body"></tbody>
+                <tfoot id="dec-tabla-foot"></tfoot>
+              </table>
             </div>
           </div>
+
+          <!-- ⑥ NOTAS -->
           <div class="fis-report-card">
-            <div class="frc-title">⑤ Notas para el contador</div>
-            <textarea id="fis-notas-contador" style="width:100%;background:var(--bg-3);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:12px;padding:10px;border-radius:var(--radius-sm);min-height:90px;resize:vertical" placeholder="PPD pendientes, observaciones, instrucciones especiales..."></textarea>
-            <div style="display:flex;justify-content:flex-end;margin-top:8px">
-              <button class="fis-btn fb-sm fb-primary" onclick="FIS.guardarDeclaracion()">💾 Guardar borrador declaración</button>
-            </div>
+            <div class="frc-title">⑥ Notas para el contador</div>
+            <textarea id="fis-notas-contador" style="width:100%;background:var(--bg-3);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:12px;padding:10px;border-radius:var(--radius-sm);min-height:80px;resize:vertical" placeholder="PPD pendientes, observaciones, instrucciones especiales..."></textarea>
           </div>
+
+          <!-- Cálculo estimado (oculto — se mantiene para compatibilidad) -->
+          <span id="calc-iva-tras" style="display:none"></span>
+          <span id="calc-iva-acred" style="display:none"></span>
+          <span id="calc-iva-label" style="display:none"></span>
+          <span id="calc-iva-resultado" style="display:none"></span>
+          <span id="calc-ing-acum" style="display:none"></span>
+          <span id="calc-ded-acum" style="display:none"></span>
+          <span id="calc-utilidad" style="display:none"></span>
+          <span id="calc-isr-ej" style="display:none"></span>
+          <span id="calc-prov-ant" style="display:none"></span>
+          <span id="calc-isr-label" style="display:none"></span>
+          <span id="calc-isr-resultado" style="display:none"></span>
         </div>
 
       </div><!-- /fis-content-view -->
@@ -5580,8 +5713,14 @@ const FiscalModule = (function() {
       if (st.declaracion) {
         st.externos = { isr_nom:st.declaracion.isr_nomina, imss:st.declaracion.imss,
                         prov_ant:st.declaracion.pagos_prov_anteriores, ing_acum:st.declaracion.ingresos_total };
+        _cargarDeclaracionEnForm(st.declaracion);
+      } else {
+        limpiarDeclaracion();
+        var coefEl = document.getElementById('dec-coeficiente');
+        if (coefEl && !coefEl.value) coefEl.value = EMPRESA.coeficiente_utilidad || 0.046;
       }
       _renderExternos(); _renderReporte();
+      _cargarTodasDeclaraciones(function(){ _renderTablaAnual(); recalcDeclaracion(); });
     });
   }
 
@@ -6350,27 +6489,239 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
   }
 
   /* ── Declaración ── */
+  /* ── DECLARACIÓN MENSUAL ── */
+  function _n(v){ return Number(v)||0; }
+  function _mxn(v){ return '$'+(Math.abs(v)||0).toLocaleString('es-MX',{minimumFractionDigits:2}); }
+
+  function _getDecInput(id){ var el=document.getElementById(id); return el?_n(el.value):0; }
+  function _setDecInput(id,v){ var el=document.getElementById(id); if(el) el.value=v||''; }
+  function _setDecSpan(id,v,cls){
+    var el=document.getElementById(id); if(!el) return;
+    el.textContent=v;
+    if(cls) el.className='fis-sum-val '+cls;
+  }
+
+  function recalcDeclaracion() {
+    var totIng   = st.ingresos.reduce(function(s,i){ return s+_n(i.total); },0);
+    var ivaAcredSAT  = _getDecInput('dec-iva-acreditable-sat');
+    var ivaReten     = _getDecInput('dec-iva-retenciones');
+    var coef         = _getDecInput('dec-coeficiente') || EMPRESA.coeficiente_utilidad || 0.046;
+    var isrCausado   = _getDecInput('dec-isr-causado');
+    var compensacion = _getDecInput('dec-compensacion');
+
+    // IVA resultado
+    var ivaSaldoFavor = ivaAcredSAT - ivaReten;
+    if (ivaAcredSAT > 0 || ivaReten > 0) {
+      _setDecSpan('dec-iva-resultado',
+        ivaSaldoFavor >= 0 ? _mxn(ivaSaldoFavor)+' a favor' : _mxn(Math.abs(ivaSaldoFavor))+' a pagar',
+        ivaSaldoFavor >= 0 ? 'fsv-pos' : 'fsv-warn');
+    }
+
+    // ISR — calcular acumulado sumando declaraciones anteriores del año
+    var ingAcum = _calcIngresosAcumulados(st.periodo);
+    var utilidad = ingAcum * coef;
+    var isrCalc  = utilidad * 0.30;
+    var provAnt  = _calcPagosProvisionalesAnteriores(st.periodo);
+
+    _setDecSpan('dec-ing-acum', _mxn(ingAcum));
+    _setDecSpan('dec-utilidad', _mxn(utilidad));
+    _setDecSpan('dec-isr-causado-calc', _mxn(isrCalc));
+    _setDecSpan('dec-prov-ant', _mxn(provAnt), 'fsv-neg');
+
+    var isrUsado = isrCausado > 0 ? isrCausado : isrCalc;
+    var isrCargo = Math.max(0, isrUsado - provAnt);
+    var isrPagar = Math.max(0, isrCargo - compensacion);
+
+    _setDecSpan('dec-isr-cargo', isrCargo > 0 ? _mxn(isrCargo) : '$0.00',
+      isrCargo > 0 ? 'fsv-warn' : 'fsv-pos');
+    _setDecSpan('dec-isr-pagar', isrPagar > 0 ? _mxn(isrPagar)+' PAGO EN EFECTIVO' : '$0.00 (compensa)',
+      isrPagar > 0 ? 'fsv-warn' : 'fsv-pos');
+  }
+
+  function _calcIngresosAcumulados(periodoActual) {
+    // Suma ingresos del período actual + declaraciones presentadas anteriores del mismo año
+    var year = periodoActual ? periodoActual.substring(0,4) : '';
+    var acum = st.ingresos.reduce(function(s,i){ return s+_n(i.total); },0);
+    // Agregar ingresos de declaraciones previas del año
+    if (window._todasDeclaraciones) {
+      window._todasDeclaraciones.forEach(function(d){
+        if (d.periodo && d.periodo.substring(0,4) === year &&
+            d.periodo < periodoActual && d.estado !== 'borrador') {
+          acum += _n(d.ingresos_total);
+        }
+      });
+    }
+    return acum;
+  }
+
+  function _calcPagosProvisionalesAnteriores(periodoActual) {
+    // Suma ISR causado de declaraciones presentadas anteriores del año
+    var year = periodoActual ? periodoActual.substring(0,4) : '';
+    var total = 0;
+    if (window._todasDeclaraciones) {
+      window._todasDeclaraciones.forEach(function(d){
+        if (d.periodo && d.periodo.substring(0,4) === year &&
+            d.periodo < periodoActual && d.estado !== 'borrador') {
+          total += _n(d.isr_causado) || _n(d.isr_provisional);
+        }
+      });
+    }
+    return total;
+  }
+
+  function _cargarTodasDeclaraciones(cb) {
+    _get({ accion:'declaraciones' }, function(e,d){
+      window._todasDeclaraciones = (d && d.data) ? d.data : [];
+      if (cb) cb();
+    });
+  }
+
+  function _cargarDeclaracionEnForm(dec) {
+    if (!dec) return;
+    _setDecInput('dec-iva-acreditable-sat', dec.iva_acreditable_sat);
+    _setDecInput('dec-iva-retenciones',     dec.iva_retenciones_cargo);
+    _setDecInput('dec-coeficiente',         dec.coeficiente_utilidad || EMPRESA.coeficiente_utilidad || 0.046);
+    _setDecInput('dec-isr-causado',         dec.isr_causado);
+    _setDecInput('dec-compensacion',        dec.compensacion_aplicada);
+    _setDecInput('dec-remanente',           dec.remanente_saldo_2022);
+    _setDecInput('dec-num-op',              dec.num_op_declaracion);
+    var notasEl = document.getElementById('fis-notas-contador');
+    if (notasEl && dec.notas) notasEl.value = dec.notas;
+    recalcDeclaracion();
+  }
+
+  function _renderTablaAnual() {
+    var tbody = document.getElementById('dec-tabla-body');
+    var tfoot = document.getElementById('dec-tabla-foot');
+    if (!tbody) return;
+    var year = st.periodo ? st.periodo.substring(0,4) : new Date().getFullYear().toString();
+    var decAno = (window._todasDeclaraciones||[]).filter(function(d){
+      return d.periodo && d.periodo.substring(0,4) === year;
+    }).sort(function(a,b){ return a.periodo.localeCompare(b.periodo); });
+
+    var meses = ['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06',
+                 '2026-07','2026-08','2026-09','2026-10','2026-11','2026-12'];
+    var nombreMes = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    var totIng=0,totIvaAcred=0,totIvaRet=0,totISR=0,totComp=0,totPago=0;
+
+    var html = '';
+    meses.forEach(function(m,idx){
+      var dec = decAno.find(function(d){ return d.periodo===m; });
+      if (dec) {
+        var estadoBadge = dec.estado==='presentada'
+          ? '<span style="color:var(--green);font-size:10px;font-weight:700">✔ Presentada</span>'
+          : '<span style="color:var(--amber);font-size:10px">Borrador</span>';
+        totIng      += _n(dec.ingresos_total);
+        totIvaAcred += _n(dec.iva_acreditable_sat);
+        totIvaRet   += _n(dec.iva_retenciones_cargo);
+        totISR      += _n(dec.isr_causado) || _n(dec.isr_provisional);
+        totComp     += _n(dec.compensacion_aplicada);
+        totPago     += _n(dec.isr_a_pagar);
+        html += '<tr>';
+        html += '<td style="font-weight:600">'+nombreMes[idx]+'</td>';
+        html += '<td style="text-align:right;font-family:var(--mono);font-size:12px">$'+_n(dec.ingresos_total).toLocaleString('es-MX',{minimumFractionDigits:0})+'</td>';
+        html += '<td style="text-align:right;font-family:var(--mono);font-size:12px;color:var(--green)">$'+_n(dec.iva_acreditable_sat).toLocaleString('es-MX',{minimumFractionDigits:0})+'</td>';
+        html += '<td style="text-align:right;font-family:var(--mono);font-size:12px;color:var(--amber)">$'+_n(dec.iva_retenciones_cargo).toLocaleString('es-MX',{minimumFractionDigits:0})+'</td>';
+        html += '<td style="text-align:right;font-family:var(--mono);font-size:12px">$'+(_n(dec.isr_causado)||_n(dec.isr_provisional)).toLocaleString('es-MX',{minimumFractionDigits:0})+'</td>';
+        html += '<td style="text-align:right;font-family:var(--mono);font-size:12px;color:var(--green)">$'+_n(dec.compensacion_aplicada).toLocaleString('es-MX',{minimumFractionDigits:0})+'</td>';
+        html += '<td style="text-align:right;font-family:var(--mono);font-size:12px;font-weight:700">$'+_n(dec.isr_a_pagar).toLocaleString('es-MX',{minimumFractionDigits:0})+'</td>';
+        html += '<td style="text-align:center">'+estadoBadge+'</td>';
+        html += '</tr>';
+      } else {
+        var esMesActual = m === st.periodo;
+        html += '<tr style="opacity:.4">';
+        html += '<td>'+nombreMes[idx]+(esMesActual?' <span style="opacity:1;color:var(--fis-accent);font-size:10px">← actual</span>':'')+'</td>';
+        html += '<td colspan="7" style="text-align:center;font-size:11px;color:var(--text-3)">sin datos</td>';
+        html += '</tr>';
+      }
+    });
+    tbody.innerHTML = html;
+    tfoot.innerHTML = '<tr style="font-weight:700;background:rgba(38,51,72,.8)">'
+      +'<td>TOTAL '+year+'</td>'
+      +'<td style="text-align:right;font-family:var(--mono);font-size:12px">$'+totIng.toLocaleString('es-MX',{minimumFractionDigits:0})+'</td>'
+      +'<td style="text-align:right;font-family:var(--mono);font-size:12px;color:var(--green)">$'+totIvaAcred.toLocaleString('es-MX',{minimumFractionDigits:0})+'</td>'
+      +'<td style="text-align:right;font-family:var(--mono);font-size:12px;color:var(--amber)">$'+totIvaRet.toLocaleString('es-MX',{minimumFractionDigits:0})+'</td>'
+      +'<td style="text-align:right;font-family:var(--mono);font-size:12px">$'+totISR.toLocaleString('es-MX',{minimumFractionDigits:0})+'</td>'
+      +'<td style="text-align:right;font-family:var(--mono);font-size:12px;color:var(--green)">$'+totComp.toLocaleString('es-MX',{minimumFractionDigits:0})+'</td>'
+      +'<td style="text-align:right;font-family:var(--mono);font-size:12px;font-weight:700">$'+totPago.toLocaleString('es-MX',{minimumFractionDigits:0})+'</td>'
+      +'<td></td></tr>';
+  }
+
+  function limpiarDeclaracion() {
+    ['dec-iva-acreditable-sat','dec-iva-retenciones','dec-coeficiente',
+     'dec-isr-causado','dec-compensacion','dec-remanente','dec-num-op'].forEach(function(id){
+      var el=document.getElementById(id); if(el) el.value='';
+    });
+    var notasEl=document.getElementById('fis-notas-contador'); if(notasEl) notasEl.value='';
+    ['dec-iva-resultado','dec-ing-acum','dec-utilidad','dec-isr-causado-calc',
+     'dec-prov-ant','dec-isr-cargo','dec-isr-pagar'].forEach(function(id){
+      var el=document.getElementById(id); if(el) el.textContent='—';
+    });
+    var alrt=document.getElementById('dec-alrt'); if(alrt) alrt.style.display='none';
+  }
+
   function guardarDeclaracion() {
-    var ext = st.externos;
-    var ivaAcred = st.egresos.reduce(function(s,g){ return s+_n(g.iva); },0);
-    var ivaTras  = st.ingresos.reduce(function(s,i){ return s+_n(i.iva); },0);
-    var baseDed  = st.egresos.reduce(function(s,g){ return s+_n(g.subtotal); },0);
-    var utilidad = Math.max(0, (_n(ext.ing_acum)||0) - baseDed);
-    var isrEj    = utilidad * EMPRESA.tasa_isr;
-    var isrProv  = isrEj - (_n(ext.prov_ant)||0);
-    var notas    = (document.getElementById('fis-notas-contador')||{}).value||'';
-    var payload  = {
-      accion: st.declaracion ? 'actualizar_declaracion' : 'guardar_declaracion',
-      periodo:st.periodo, sucursal:st.sucursal,
-      ingresos_total:st.ingresos.reduce(function(s,i){ return s+_n(i.total); },0),
-      iva_trasladado:ivaTras, iva_acreditable_pue:st.egresos.filter(function(g){ return g.metodo_pago==='PUE'; }).reduce(function(s,g){ return s+_n(g.iva); },0),
-      iva_acreditable_ppd:st.egresos.filter(function(g){ return g.metodo_pago==='PPD'; }).reduce(function(s,g){ return s+_n(g.iva); },0),
-      iva_retenido_ppd:st.ppd.reduce(function(s,p){ return s+_n(p.iva); },0),
-      isr_nomina:ext.isr_nom||0, imss:ext.imss||0, pagos_prov_anteriores:ext.prov_ant||0,
-      isr_provisional:isrProv, iva_pagar:ivaTras - ivaAcred,
-      estado:'borrador', notas:notas
+    var totIng   = st.ingresos.reduce(function(s,i){ return s+_n(i.total); },0);
+    var ivaAcredBruto = st.egresos.reduce(function(s,g){ return s+_n(g.iva); },0);
+    var ivaPue   = st.egresos.filter(function(g){ return g.metodo_pago==='PUE'; }).reduce(function(s,g){ return s+_n(g.iva); },0);
+    var ivaPpd   = st.egresos.filter(function(g){ return g.metodo_pago==='PPD'; }).reduce(function(s,g){ return s+_n(g.iva); },0);
+    var ivaAcredSAT  = _getDecInput('dec-iva-acreditable-sat');
+    var ivaReten     = _getDecInput('dec-iva-retenciones');
+    var coef         = _getDecInput('dec-coeficiente') || EMPRESA.coeficiente_utilidad || 0.046;
+    var isrCausado   = _getDecInput('dec-isr-causado');
+    var compensacion = _getDecInput('dec-compensacion');
+    var remanente    = _getDecInput('dec-remanente');
+    var notas        = (document.getElementById('fis-notas-contador')||{}).value||'';
+    var numOp        = (document.getElementById('dec-num-op')||{}).value||'';
+    var provAnt      = _calcPagosProvisionalesAnteriores(st.periodo);
+    var isrCargo     = Math.max(0, isrCausado - provAnt);
+    var isrPagar     = Math.max(0, isrCargo - compensacion);
+
+    var payload = {
+      accion:                st.declaracion ? 'actualizar_declaracion' : 'guardar_declaracion',
+      periodo:               st.periodo,
+      sucursal:              st.sucursal||'TODAS',
+      estado:                numOp ? 'presentada' : 'borrador',
+      // Datos del sistema
+      ingresos_total:        totIng,
+      iva_trasladado:        0,  // medicamentos exentos
+      iva_acreditable_pue:   ivaPue,
+      iva_acreditable_ppd:   ivaPpd,
+      iva_retenido_ppd:      st.ppd.reduce(function(s,p){ return s+_n(p.iva); },0),
+      isr_nomina:            _n(st.externos.isr_nom),
+      imss:                  _n(st.externos.imss),
+      pagos_prov_anteriores: provAnt,
+      isr_provisional:       isrCargo,
+      iva_pagar:             Math.max(0, ivaReten - ivaAcredSAT),
+      // Datos capturados del SAT
+      iva_acreditable_sat:   ivaAcredSAT,
+      iva_retenciones_cargo: ivaReten,
+      isr_causado:           isrCausado,
+      compensacion_aplicada: compensacion,
+      remanente_saldo_2022:  remanente,
+      isr_a_pagar:           isrPagar,
+      coeficiente_utilidad:  coef,
+      num_op_declaracion:    numOp,
+      notas:                 notas
     };
-    apiPost(payload, function(e,d){ if(!e) { st.declaracion = payload; alert('✅ Borrador guardado.'); } else alert('Error: '+e.message); });
+
+    var alrt = document.getElementById('dec-alrt');
+    apiPost(payload, function(e,d){
+      if (!e && d && d.ok) {
+        st.declaracion = payload;
+        alrt.style.display='block';
+        alrt.style.cssText='display:block;padding:8px 12px;border-radius:var(--radius-sm);font-size:12px;background:rgba(16,185,129,.12);color:#6ee7b7;margin-top:8px';
+        alrt.textContent = numOp
+          ? '✅ Declaración '+st.periodo+' guardada como PRESENTADA (N° op: '+numOp+')'
+          : '✅ Borrador guardado para '+st.periodo;
+        // Refrescar todas las declaraciones y tabla anual
+        _cargarTodasDeclaraciones(function(){ _renderTablaAnual(); });
+      } else {
+        alrt.style.display='block';
+        alrt.style.cssText='display:block;padding:8px 12px;border-radius:var(--radius-sm);font-size:12px;background:rgba(239,68,68,.12);color:#fca5a5;margin-top:8px';
+        alrt.textContent = 'Error: '+(e ? e.message : JSON.stringify(d));
+      }
+    });
   }
 
   /* ── Exportaciones ── */
@@ -6698,7 +7049,8 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     abrirModalGastoEsperado:abrirModalGastoEsperado, guardarGastoEsperado:guardarGastoEsperado,
     cargarXML:cargarXML, dropXML:dropXML, cancelarPreview:cancelarPreview, guardarLote:guardarLote,
     exportDIOT:exportDIOT, exportCSV:exportCSV, exportReporteExcel:exportReporteExcel, imprimirReporte:imprimirReporte,
-    guardarDeclaracion:guardarDeclaracion, abrirModal:abrirModal, cerrarModal:cerrarModal,
+    guardarDeclaracion:guardarDeclaracion, recalcDeclaracion:recalcDeclaracion,
+    limpiarDeclaracion:limpiarDeclaracion, abrirModal:abrirModal, cerrarModal:cerrarModal,
     dropCSVBanco:dropCSVBanco, cargarCSVBanco:cargarCSVBanco, filtrarBanco:filtrarBanco
   };
 })();
