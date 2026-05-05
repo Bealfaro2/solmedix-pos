@@ -326,6 +326,7 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
         <button id="btn-caja-menu" onclick="toggleMenuCaja()" style="padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.15);color:#fcd34d">💰 Caja</button>
         <div id="caja-menu-dropdown" style="display:none;position:absolute;top:110%;right:0;background:#1e293b;border:1px solid rgba(148,163,184,.15);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.4);min-width:160px;z-index:300;overflow:hidden">
           <button onclick="abrirModalRetiro();document.getElementById('caja-menu-dropdown').style.display='none'" style="display:block;width:100%;padding:10px 14px;text-align:left;background:none;border:none;color:#f1f5f9;font-size:13px;cursor:pointer;border-bottom:1px solid rgba(148,163,184,.1)">💸 Retiro</button>
+          <button onclick="abrirModalAbono();document.getElementById('caja-menu-dropdown').style.display='none'" style="display:block;width:100%;padding:10px 14px;text-align:left;background:none;border:none;color:#f1f5f9;font-size:13px;cursor:pointer;border-bottom:1px solid rgba(148,163,184,.1)">💵 Abonar</button>
           <button onclick="abrirModalCorte();document.getElementById('caja-menu-dropdown').style.display='none'" style="display:block;width:100%;padding:10px 14px;text-align:left;background:none;border:none;color:#f1f5f9;font-size:13px;cursor:pointer">🔒 Corte</button>
         </div>
       </div>
@@ -1663,6 +1664,44 @@ function guardarRetiro() {
     });
 }
 
+/* ── MODAL ABONO ─────────────────────────────────────────────── */
+function abrirModalAbono() {
+  document.getElementById('abo-monto').value = '';
+  document.getElementById('abo-nombre').value = '';
+  document.getElementById('abo-notas').value = '';
+  document.getElementById('abo-alrt').style.display = 'none';
+  document.getElementById('modal-abono').classList.add('show');
+  document.getElementById('abo-nombre').focus();
+}
+
+function guardarAbono() {
+  var nombre = document.getElementById('abo-nombre').value.trim();
+  var monto  = parseFloat(document.getElementById('abo-monto').value) || 0;
+  var notas  = document.getElementById('abo-notas').value.trim();
+  if (!nombre) { cajaAlrt('abo-alrt','El nombre de quien abona es obligatorio','e'); return; }
+  if (!monto || monto <= 0) { cajaAlrt('abo-alrt','Ingresa un monto válido','e'); return; }
+
+  var btn = document.getElementById('btn-guardar-abono');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Guardando...';
+
+  var hoy  = fechaHoy();
+  var hora = horaAhora();
+
+  apiPost({ accion:'guardar_caja', fecha:hoy, hora:hora, sucursal:sucursal,
+    tipo:'abono', retiro_monto:monto, retiro_nombre:nombre, notas:notas },
+    function(err) {
+      if (!err) {
+        cajaDia.push({ fecha:hoy, sucursal:sucursal, tipo:'abono',
+                       retiro_monto:monto, retiro_nombre:nombre, notas:notas });
+        document.getElementById('modal-abono').classList.remove('show');
+        alrt('Abono registrado: $'+monto.toLocaleString('es-MX',{minimumFractionDigits:2})+' — '+nombre, 's');
+      } else {
+        cajaAlrt('abo-alrt','Error al guardar. Intenta de nuevo.','e');
+      }
+      btn.disabled = false; btn.textContent = 'Registrar abono';
+    });
+}
+
 /* ── MODAL CORTE ─────────────────────────────────────────────── */
 function abrirModalCorte() {
   document.getElementById('cort-efectivo').value = '';
@@ -1821,9 +1860,10 @@ function renderReporteCaja() {
   // Agrupar por día
   var dias = {};
   src.forEach(function(r) {
-    if (!dias[r.fecha]) dias[r.fecha] = { aperturas:[], retiros:[], cortes:[] };
+    if (!dias[r.fecha]) dias[r.fecha] = { aperturas:[], retiros:[], abonos:[], cortes:[] };
     if (r.tipo==='apertura') dias[r.fecha].aperturas.push(r);
     if (r.tipo==='retiro')   dias[r.fecha].retiros.push(r);
+    if (r.tipo==='abono')    dias[r.fecha].abonos.push(r);
     if (r.tipo==='corte')    dias[r.fecha].cortes.push(r);
   });
 
@@ -1836,6 +1876,7 @@ function renderReporteCaja() {
     var fechaF = fecha.split('-').reverse().join('/');
     var fondo = d.aperturas.length ? Number(d.aperturas[0].fondo_inicial||0) : 0;
     var retiros = d.retiros.reduce(function(s,r){ return s+Number(r.retiro_monto||0); },0);
+    var abonos  = d.abonos.reduce(function(s,r){ return s+Number(r.retiro_monto||0); },0);
     var corte = d.cortes.length ? d.cortes[d.cortes.length-1] : null;
     var totalV = corte ? Number(corte.total_ventas||0) : 0;
     var diff   = corte ? Number(corte.diferencia||0) : null;
@@ -1865,9 +1906,17 @@ function renderReporteCaja() {
     html += '<td>'+estado+'</td>';
     // Retiros detalle
     if (d.retiros.length) {
-      html += '</tr><tr><td colspan="9" style="padding:4px 12px 8px;font-size:11px;color:var(--text-3)">';
+      html += '</tr><tr><td colspan="9" style="padding:4px 12px 8px;font-size:11px;color:#fca5a5">';
       html += '↳ Retiros: '+d.retiros.map(function(r){
         return r.retiro_nombre+' $'+Number(r.retiro_monto||0).toLocaleString('es-MX',{minimumFractionDigits:2});
+      }).join(' · ');
+      html += '</td>';
+    }
+    // Abonos detalle
+    if (d.abonos.length) {
+      html += '</tr><tr><td colspan="9" style="padding:4px 12px 8px;font-size:11px;color:#6ee7b7">';
+      html += '↳ Abonos: '+d.abonos.map(function(r){
+        return r.retiro_nombre+' +$'+Number(r.retiro_monto||0).toLocaleString('es-MX',{minimumFractionDigits:2});
       }).join(' · ');
       html += '</td>';
     }
@@ -2057,6 +2106,24 @@ function cerrarSesionManual() {
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn" onclick="document.getElementById('modal-retiro').classList.remove('show')">Cancelar</button>
       <button class="btn btnp" id="btn-guardar-retiro" onclick="guardarRetiro()">Registrar retiro</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ABONO -->
+<div class="overlay" id="modal-abono" onclick="if(event.target===this)this.classList.remove('show')" style="z-index:1100">
+  <div class="modal" style="max-width:400px">
+    <h2 style="margin-bottom:16px">💵 Registrar abono a caja</h2>
+    <div class="fr"><label>Nombre de quien abona *</label>
+      <input type="text" id="abo-nombre" placeholder="Nombre completo"/></div>
+    <div class="fr"><label>Monto a abonar ($) *</label>
+      <input type="number" id="abo-monto" placeholder="0.00" min="0.01" step="0.01"/></div>
+    <div class="fr"><label>Motivo / Notas</label>
+      <input type="text" id="abo-notas" placeholder="Ej: Depósito inicial, reposición fondo..."/></div>
+    <div id="abo-alrt" style="display:none;margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="document.getElementById('modal-abono').classList.remove('show')">Cancelar</button>
+      <button class="btn btnp" id="btn-guardar-abono" onclick="guardarAbono()">Registrar abono</button>
     </div>
   </div>
 </div>
