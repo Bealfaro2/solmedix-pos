@@ -3486,7 +3486,7 @@ function renderClientesAdmin(lista){
 
 function filtrarClientesAdmin(){
   var q=document.getElementById('bq-cli').value.trim().toLowerCase();
-  renderClientesAdmin(q.length<2?clientes:clientes.filter(function(c){return c.nombre.toLowerCase().indexOf(q)>=0||String(c.telefono||'').indexOf(q)>=0||(c.rfc||'').toLowerCase().indexOf(q)>=0;}));
+  renderClientesAdmin(q.length<2?clientes:clientes.filter(function(c){return String(c.nombre||'').toLowerCase().indexOf(q)>=0||String(c.telefono||'').indexOf(q)>=0||String(c.rfc||'').toLowerCase().indexOf(q)>=0;}));
 }
 
 function abrirEditarCliente(id){
