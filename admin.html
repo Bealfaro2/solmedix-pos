@@ -3,7 +3,7 @@
 <head>
   <link rel="icon" type="image/jpeg" sizes="32x32" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAAgACADASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAABQQCB//EACoQAAICAQIFAQkBAAAAAAAAAAECAwQRABIFEyExYUEGFBUiI0JRcZFS/8QAFwEAAwEAAAAAAAAAAAAAAAAAAgMEAf/EACIRAAIBBAIBBQAAAAAAAAAAAAECAAMRIfAxUXESYYGxwf/aAAwDAQACEQMRAD8A6VPNHXgeaVtqINzHxou3xW7DEBBRE05WOQR78YViQc+R0/utWalqUpz0E6oQSeYQD52YwT4JxqLjTR2uHc5opY543jRsntmVehPYn18aGiS1ZVIxcRzoq0iefzqKR8R3TLvQLDJK0KNn7h+f3g/zzq/REqI8Hw+Cq7qudwc4w2em49+vUhhqunFaQjmthACNpkMhJ/OSBpaM17HMKoi2uMbiZfiJW2lUVJmmaLmlQV6DOO5PfQnE7q2qdvll4lWeJWjlPzBg4JwuegHQnvnSEk6p7Qx2mWTktTKhxGx67wcdBo29UvWDdurAUisSwhI2T6hCso3Y9B3OPA1eaQupA6++NI8yZH5B3fBivDr1Ye9B7MsksR3O0oxuU9ioH25yBj10ojFkVipUkZ2nuNBW6Vtyl+HM1ikx2B1AM4zlh4H+fIzpuCVZ4ElUModQQGXBH7HodJNMKgI+fY7uJrP6nM//2Q=="/>
 <meta charset="UTF-8">
-<!-- Solmedix admin.html — v3.8 — 05/may/2026 — cuadre global Albo vs CFDI conciliación bancaria -->
+<!-- Solmedix admin.html — v3.9 — 05/may/2026 — DIOT formato oficial SAT 28 campos, Excel DIOT -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzBmMTcyYSIvPgogIDxyZWN0IHg9IjEzIiB5PSI2IiB3aWR0aD0iNiIgaGVpZ2h0PSIyMCIgcng9IjIiIGZpbGw9IiMyYjdmZDQiLz4KICA8cmVjdCB4PSI2IiB5PSIxMyIgd2lkdGg9IjIwIiBoZWlnaHQ9IjYiIHJ4PSIyIiBmaWxsPSIjMmI3ZmQ0Ii8+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solmedix — Administración</title>
@@ -788,17 +788,20 @@ select option { background:var(--bg-2); color:var(--text); }
           <div class="fis-sec-header">
             <h3>DIOT — Declaración Informativa de Operaciones con Terceros</h3>
             <div class="fis-spacer"></div>
-            <button class="fis-btn fb-primary" onclick="FIS.exportDIOT()">⬇ Exportar DIOT .txt</button>
+            <button class="fis-btn fb-sm" onclick="FIS.exportDIOTExcel()">📊 Excel</button>
+            <button class="fis-btn fb-sm fb-primary" onclick="FIS.exportDIOT()">⬇ Exportar DIOT .txt</button>
           </div>
           <div class="fis-alert fa-info">
             <span>ℹ️</span>
-            <span>Formato SAT oficial separado por <span class="fis-tag">|</span>. Tipo operación <span class="fis-tag">03</span>. Solo IVA acreditable confirmado. Vence el último día del mes siguiente.</span>
+            <span>Formato SAT oficial — 28 campos separados por <span class="fis-tag">|</span>. Tipo op. <span class="fis-tag">04</span> nacional / <span class="fis-tag">05</span> extranjero. Bases segregadas por tasa. Vence último día del mes siguiente.</span>
           </div>
           <div class="fis-tbl-wrap">
             <table><thead><tr>
               <th>RFC Proveedor</th><th>Proveedor</th><th>Tipo oper.</th>
-              <th class="fis-tr">IVA 16% pagado</th><th class="fis-tr">Base</th>
-              <th class="fis-tr">Total operaciones</th><th>Facturas</th>
+              <th class="fis-tr">IVA 16% pagado</th>
+              <th class="fis-tr">Base 16%</th>
+              <th class="fis-tr">Base 0%</th>
+              <th class="fis-tr">Total</th><th>CFDIs</th>
             </tr></thead><tbody id="fis-tbl-diot"></tbody></table>
           </div>
           <div class="fis-tbl-foot">
@@ -6041,22 +6044,64 @@ const FiscalModule = (function() {
   }
 
   function _renderDIOT() {
-    var map = {};
-    st.egresos.forEach(function(g){
-      var rfc = g.rfc_emisor||g.rfc_proveedor||'?';
-      if (!map[rfc]) map[rfc] = { rfc:rfc, proveedor:g.proveedor||'', iva:0, base:0, total:0, count:0 };
-      map[rfc].iva += _n(g.iva); map[rfc].base += _n(g.subtotal); map[rfc].total += _n(g.total); map[rfc].count++;
-    });
-    var rows = Object.keys(map).map(function(k){ return map[k]; });
+    var map = _buildDIOTmap();
+    var rows = Object.keys(map).map(function(k){ return map[k]; })
+      .sort(function(a,b){ return a.proveedor.localeCompare(b.proveedor,'es'); });
+
     var tbody = document.getElementById('fis-tbl-diot');
     if (!tbody) return;
+
     tbody.innerHTML = rows.length ? rows.map(function(r){
-      return '<tr><td class="fis-mono">' + r.rfc + '</td><td>' + r.proveedor + '</td><td class="fis-tc"><span class="fis-tag">03</span></td>' +
-             '<td class="fis-tr fis-mono" style="color:var(--green)">' + _mxn(r.iva) + '</td><td class="fis-tr fis-mono">$0.00</td>' +
-             '<td class="fis-tr fis-mono">' + _mxn(r.total) + '</td><td class="fis-tc">' + r.count + '</td></tr>';
-    }).join('') : '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-3)">Sin egresos confirmados.</td></tr>';
-    _set('fis-diot-iva', _mxn(rows.reduce(function(s,r){ return s+r.iva; },0)));
+      var tipoTag = r.tipo==='04' ? '<span class="fis-tag">04 Nacional</span>'
+                  : r.tipo==='05' ? '<span class="fis-tag" style="background:rgba(245,158,11,.2);color:#fcd34d">05 Importación</span>'
+                  : '<span class="fis-tag">'+r.tipo+'</span>';
+      var ivaColor = r.iva16 > 0 ? 'color:var(--green)' : 'color:var(--text-3)';
+      return '<tr>' +
+        '<td class="fis-mono" style="font-size:11px">' + r.rfc + '</td>' +
+        '<td style="font-size:12px">' + r.proveedor + '</td>' +
+        '<td class="fis-tc">' + tipoTag + '</td>' +
+        '<td class="fis-tr fis-mono" style="' + ivaColor + '">' + _mxn(r.iva16) + '</td>' +
+        '<td class="fis-tr fis-mono" style="color:var(--text-3)">' + _mxn(r.base16) + '</td>' +
+        '<td class="fis-tr fis-mono" style="color:var(--text-3)">' + _mxn(r.base0) + '</td>' +
+        '<td class="fis-tr fis-mono">' + _mxn(r.total) + '</td>' +
+        '<td class="fis-tc" style="font-size:11px">' + r.count + '</td></tr>';
+    }).join('') : '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-3)">Sin egresos confirmados.</td></tr>';
+
+    _set('fis-diot-iva', _mxn(rows.reduce(function(s,r){ return s+r.iva16; },0)));
     _set('fis-diot-ops', _mxn(rows.reduce(function(s,r){ return s+r.total; },0)));
+  }
+
+  function _buildDIOTmap() {
+    // Tipo de operación SAT:
+    // 04 = Proveedor nacional | 05 = Importación/extranjero | 06 = Global
+    var map = {};
+    st.egresos.concat(st.ppd).forEach(function(g){
+      var rfc = (g.rfc_emisor||g.rfc_proveedor||'').toUpperCase().trim() || 'XAXX010101000';
+      if (!map[rfc]) {
+        // Determinar tipo: RFC extranjero no sigue el patrón mexicano (13 chars alfanum)
+        var esMexicano = /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/.test(rfc);
+        var tipo = rfc==='XAXX010101000'||rfc==='XEXX010101000' ? '04' :
+                   !esMexicano ? '05' : '04';
+        map[rfc] = { rfc:rfc, proveedor:g.proveedor||g.emisor_nom||'', tipo:tipo,
+                     iva16:0, base16:0, base0:0, baseExento:0, ivaRetenido:0, total:0, count:0 };
+      }
+      // Segregar base por tasa de IVA
+      var iva    = _n(g.iva);
+      var base   = _n(g.subtotal);
+      var tot    = _n(g.total);
+      if (iva > 0) {
+        // Tiene IVA 16%
+        map[rfc].iva16  += iva;
+        map[rfc].base16 += base;
+      } else {
+        // Sin IVA — medicamentos van a base 0%
+        map[rfc].base0  += base;
+      }
+      map[rfc].total += tot;
+      map[rfc].ivaRetenido += _n(g.iva_retenido);
+      map[rfc].count++;
+    });
+    return map;
   }
 
   function _renderReporte() {
@@ -6787,12 +6832,91 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
 
   /* ── Exportaciones ── */
  function exportDIOT() {
-    var map = {};
-    st.egresos.forEach(function(g){ var rfc=g.rfc_emisor||g.rfc_proveedor||'?'; if(!map[rfc]) map[rfc]={rfc:rfc,iva:0,base:0,total:0}; map[rfc].iva+=_n(g.iva); map[rfc].base+=_n(g.subtotal); map[rfc].total+=_n(g.total); });
+    var map = _buildDIOTmap();
     var rows = Object.keys(map).map(function(k){ return map[k]; });
     if (!rows.length) { alert('Sin egresos confirmados para exportar.'); return; }
-    var txt = rows.map(function(r){ return '04|03|'+r.rfc+'||||||||||'+r.base.toFixed(2)+'|'+r.iva.toFixed(2)+'|0|0|0|0|0|0|0|0|0|0|0'; }).join('\n');
+
+    // Layout oficial SAT DIOT — 28 campos separados por |
+    // Referencia: Anexo 8 RMF vigente
+    // Pos 1:  Tipo de tercero (04=nacional, 05=extranjero)
+    // Pos 2:  RFC (o vacío si extranjero)
+    // Pos 3:  ID fiscal extranjero (vacío si nacional)
+    // Pos 4:  Nombre extranjero (vacío si nacional)
+    // Pos 5:  País de residencia (vacío si nacional)
+    // Pos 6:  Nacionalidad (vacío si nacional)
+    // Pos 7:  Monto operaciones tasa 16% (base)
+    // Pos 8:  IVA pagado no acreditable 16% (0)
+    // Pos 9:  IVA pagado acreditable 16%
+    // Pos 10: Monto operaciones tasa 0%
+    // Pos 11: Monto operaciones exentas
+    // Pos 12: Monto operaciones importación 16% (0)
+    // Pos 13: IVA pagado importación no acreditable (0)
+    // Pos 14: IVA pagado importación acreditable (0)
+    // Pos 15: Monto importación tasa 0% (0)
+    // Pos 16: Monto importación exento (0)
+    // Pos 17: IVA retenido por el contribuyente
+    // Pos 18-28: Campos adicionales (todos en 0 para Solmedix)
+
+    var txt = rows.map(function(r) {
+      var esNacional = r.tipo === '04';
+      var campos = [
+        r.tipo,                          // 1: tipo tercero
+        esNacional ? r.rfc : '',         // 2: RFC (solo nacional)
+        esNacional ? '' : r.rfc,         // 3: ID fiscal extranjero
+        '',                              // 4: nombre extranjero
+        esNacional ? '' : 'USA',         // 5: país residencia (estimado)
+        '',                              // 6: nacionalidad
+        r.base16.toFixed(2),             // 7: base 16%
+        '0',                             // 8: IVA no acreditable 16%
+        r.iva16.toFixed(2),              // 9: IVA acreditable 16%
+        r.base0.toFixed(2),              // 10: base 0%
+        r.baseExento.toFixed(2),         // 11: base exenta
+        '0',                             // 12: importación base 16%
+        '0',                             // 13: importación IVA no acred
+        '0',                             // 14: importación IVA acred
+        '0',                             // 15: importación base 0%
+        '0',                             // 16: importación exenta
+        r.ivaRetenido.toFixed(2),        // 17: IVA retenido
+        '0',                             // 18
+        '0',                             // 19
+        '0',                             // 20
+        '0',                             // 21
+        '0',                             // 22
+        '0',                             // 23
+        '0',                             // 24
+        '0',                             // 25
+        '0',                             // 26
+        '0',                             // 27
+        '0'                              // 28
+      ];
+      return campos.join('|');
+    }).join('\n');
+
     _descargar(txt, 'DIOT_'+EMPRESA.rfc+'_'+st.periodo+'.txt', 'text/plain');
+  }
+
+  function exportDIOTExcel() {
+    if (typeof XLSX === 'undefined') { alert('SheetJS no disponible.'); return; }
+    var map = _buildDIOTmap();
+    var rows = Object.keys(map).map(function(k){ return map[k]; });
+    if (!rows.length) { alert('Sin egresos para exportar.'); return; }
+    var wb = XLSX.utils.book_new();
+    var data = [['RFC','Proveedor','Tipo Op.','IVA 16% acred.','Base 16%','Base 0%','Base Exenta','IVA Retenido','Total CFDIs']];
+    rows.forEach(function(r){
+      data.push([r.rfc, r.proveedor, r.tipo,
+        r.iva16, r.base16, r.base0, r.baseExento,
+        r.ivaRetenido, r.total, r.count]);
+    });
+    // Totales
+    data.push(['','TOTALES','',
+      rows.reduce(function(s,r){return s+r.iva16;},0),
+      rows.reduce(function(s,r){return s+r.base16;},0),
+      rows.reduce(function(s,r){return s+r.base0;},0),
+      rows.reduce(function(s,r){return s+r.baseExento;},0),
+      rows.reduce(function(s,r){return s+r.ivaRetenido;},0),
+      rows.reduce(function(s,r){return s+r.total;},0),'']);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), 'DIOT');
+    XLSX.writeFile(wb, 'DIOT_'+EMPRESA.rfc+'_'+st.periodo+'.xlsx');
   }
 
   function exportCSV(tipo) {
@@ -6812,9 +6936,14 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['uuid','fecha','folio','rfc_receptor','receptor','tipo_factura','subtotal','iva','total','metodo_pago','sucursal']].concat(st.ingresos.map(function(r){ return ['uuid','fecha','folio','rfc_receptor','receptor','tipo_factura','subtotal','iva','total','metodo_pago','sucursal'].map(function(c){ return r[c]||''; }); }))), 'Ingresos CFDI');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['uuid','proveedor','rfc_emisor','fecha','folio','subtotal','iva','total','metodo_pago','estado']].concat(st.egresos.concat(st.ppd).map(function(r){ return ['uuid','proveedor','rfc_emisor','fecha','folio','subtotal','iva','total','metodo_pago','estado'].map(function(c){ return r[c]||''; }); }))), 'Egresos');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['proveedor','rfc_emisor','folio','fecha','concepto','total','iva','estado']].concat(st.ppd.map(function(p){ return [p.proveedor||'',p.rfc_emisor||'',p.folio||'',p.fecha||'',p.concepto||'',p.total,p.iva,p.estado]; }))), 'PPD Pendientes');
-    var map={};
-    st.egresos.forEach(function(g){ var rfc=g.rfc_emisor||'?'; if(!map[rfc]) map[rfc]={rfc:rfc,prov:g.proveedor||'',iva:0,base:0,tot:0}; map[rfc].iva+=_n(g.iva); map[rfc].base+=_n(g.subtotal); map[rfc].tot+=_n(g.total); });
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['RFC','Proveedor','Tipo Op.','IVA 16%','Base','Total']].concat(Object.keys(map).map(function(k){ var r=map[k]; return [r.rfc,r.prov,'03',r.iva.toFixed(2),r.base.toFixed(2),r.tot.toFixed(2)]; }))), 'DIOT');
+    var diotMap = _buildDIOTmap();
+    var diotRows = [['RFC','Proveedor','Tipo Op.','IVA 16% acred.','Base 16%','Base 0%','Base Exenta','IVA Retenido','Total']];
+    Object.keys(diotMap).forEach(function(k){
+      var r = diotMap[k];
+      diotRows.push([r.rfc, r.proveedor, r.tipo,
+        r.iva16, r.base16, r.base0, r.baseExento, r.ivaRetenido, r.total]);
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(diotRows), 'DIOT');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
       ['REPORTE FISCAL — '+EMPRESA.nombre, st.periodo],['RFC',EMPRESA.rfc],[''],
       ['INGRESOS',''],['Total ingresos',st.ingresos.reduce(function(s,i){ return s+_n(i.total); },0)],['IVA trasladado',ivaTras],[''],
@@ -7163,7 +7292,7 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     abrirModalExternos:abrirModalExternos, guardarExternos:guardarExternos,
     abrirModalGastoEsperado:abrirModalGastoEsperado, guardarGastoEsperado:guardarGastoEsperado,
     cargarXML:cargarXML, dropXML:dropXML, cancelarPreview:cancelarPreview, guardarLote:guardarLote,
-    exportDIOT:exportDIOT, exportCSV:exportCSV, exportReporteExcel:exportReporteExcel, imprimirReporte:imprimirReporte,
+    exportDIOT:exportDIOT, exportDIOTExcel:exportDIOTExcel, exportCSV:exportCSV, exportReporteExcel:exportReporteExcel, imprimirReporte:imprimirReporte,
     guardarDeclaracion:guardarDeclaracion, recalcDeclaracion:recalcDeclaracion,
     limpiarDeclaracion:limpiarDeclaracion, abrirModal:abrirModal, cerrarModal:cerrarModal,
     dropCSVBanco:dropCSVBanco, cargarCSVBanco:cargarCSVBanco, filtrarBanco:filtrarBanco
