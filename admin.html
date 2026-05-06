@@ -3,7 +3,7 @@
 <head>
   <link rel="icon" type="image/jpeg" sizes="32x32" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAAgACADASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAABQQCB//EACoQAAICAQIFAQkBAAAAAAAAAAECAwQRABIFEyExYUEGFBUiI0JRcZFS/8QAFwEAAwEAAAAAAAAAAAAAAAAAAgMEAf/EACIRAAIBBAIBBQAAAAAAAAAAAAECAAMRIfAxUXESYYGxwf/aAAwDAQACEQMRAD8A6VPNHXgeaVtqINzHxou3xW7DEBBRE05WOQR78YViQc+R0/utWalqUpz0E6oQSeYQD52YwT4JxqLjTR2uHc5opY543jRsntmVehPYn18aGiS1ZVIxcRzoq0iefzqKR8R3TLvQLDJK0KNn7h+f3g/zzq/REqI8Hw+Cq7qudwc4w2em49+vUhhqunFaQjmthACNpkMhJ/OSBpaM17HMKoi2uMbiZfiJW2lUVJmmaLmlQV6DOO5PfQnE7q2qdvll4lWeJWjlPzBg4JwuegHQnvnSEk6p7Qx2mWTktTKhxGx67wcdBo29UvWDdurAUisSwhI2T6hCso3Y9B3OPA1eaQupA6++NI8yZH5B3fBivDr1Ye9B7MsksR3O0oxuU9ioH25yBj10ojFkVipUkZ2nuNBW6Vtyl+HM1ikx2B1AM4zlh4H+fIzpuCVZ4ElUModQQGXBH7HodJNMKgI+fY7uJrP6nM//2Q=="/>
 <meta charset="UTF-8">
-<!-- Solmedix admin.html — v4.1 — 05/may/2026 — paquete ZIP completo para contador -->
+<!-- Solmedix admin.html — v4.2 — 05/may/2026 — fix código exportDIOT suelto que se ejecutaba al cargar -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzBmMTcyYSIvPgogIDxyZWN0IHg9IjEzIiB5PSI2IiB3aWR0aD0iNiIgaGVpZ2h0PSIyMCIgcng9IjIiIGZpbGw9IiMyYjdmZDQiLz4KICA8cmVjdCB4PSI2IiB5PSIxMyIgd2lkdGg9IjIwIiBoZWlnaHQ9IjYiIHJ4PSIyIiBmaWxsPSIjMmI3ZmQ0Ii8+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solmedix — Administración</title>
@@ -7122,30 +7122,6 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     ]);
     return lineas.join('\n');
   }
-    var map = _buildDIOTmap();
-    var rows = Object.keys(map).map(function(k){ return map[k]; });
-    if (!rows.length) { alert('Sin egresos confirmados para exportar.'); return; }
-
-    // Layout oficial SAT DIOT — 28 campos separados por |
-    // Referencia: Anexo 8 RMF vigente
-    // Pos 1:  Tipo de tercero (04=nacional, 05=extranjero)
-    // Pos 2:  RFC (o vacío si extranjero)
-    // Pos 3:  ID fiscal extranjero (vacío si nacional)
-    // Pos 4:  Nombre extranjero (vacío si nacional)
-    // Pos 5:  País de residencia (vacío si nacional)
-    // Pos 6:  Nacionalidad (vacío si nacional)
-    // Pos 7:  Monto operaciones tasa 16% (base)
-    // Pos 8:  IVA pagado no acreditable 16% (0)
-    // Pos 9:  IVA pagado acreditable 16%
-    // Pos 10: Monto operaciones tasa 0%
-    // Pos 11: Monto operaciones exentas
-    // Pos 12: Monto operaciones importación 16% (0)
-    // Pos 13: IVA pagado importación no acreditable (0)
-    // Pos 14: IVA pagado importación acreditable (0)
-    // Pos 15: Monto importación tasa 0% (0)
-    // Pos 16: Monto importación exento (0)
-    // Pos 17: IVA retenido por el contribuyente
-    // Pos 18-28: Campos adicionales (todos en 0 para Solmedix)
 
   function exportDIOT() {
     var map = _buildDIOTmap();
