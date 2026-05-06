@@ -3,7 +3,7 @@
 <head>
   <link rel="icon" type="image/jpeg" sizes="32x32" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAAgACADASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAABQQCB//EACoQAAICAQIFAQkBAAAAAAAAAAECAwQRABIFEyExYUEGFBUiI0JRcZFS/8QAFwEAAwEAAAAAAAAAAAAAAAAAAgMEAf/EACIRAAIBBAIBBQAAAAAAAAAAAAECAAMRIfAxUXESYYGxwf/aAAwDAQACEQMRAD8A6VPNHXgeaVtqINzHxou3xW7DEBBRE05WOQR78YViQc+R0/utWalqUpz0E6oQSeYQD52YwT4JxqLjTR2uHc5opY543jRsntmVehPYn18aGiS1ZVIxcRzoq0iefzqKR8R3TLvQLDJK0KNn7h+f3g/zzq/REqI8Hw+Cq7qudwc4w2em49+vUhhqunFaQjmthACNpkMhJ/OSBpaM17HMKoi2uMbiZfiJW2lUVJmmaLmlQV6DOO5PfQnE7q2qdvll4lWeJWjlPzBg4JwuegHQnvnSEk6p7Qx2mWTktTKhxGx67wcdBo29UvWDdurAUisSwhI2T6hCso3Y9B3OPA1eaQupA6++NI8yZH5B3fBivDr1Ye9B7MsksR3O0oxuU9ioH25yBj10ojFkVipUkZ2nuNBW6Vtyl+HM1ikx2B1AM4zlh4H+fIzpuCVZ4ElUModQQGXBH7HodJNMKgI+fY7uJrP6nM//2Q=="/>
 <meta charset="UTF-8">
-<!-- Solmedix admin.html — v3.7 — 05/may/2026 — retenciones auto desde XMLs, fix filtrarClientes -->
+<!-- Solmedix admin.html — v3.8 — 05/may/2026 — cuadre global Albo vs CFDI conciliación bancaria -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzBmMTcyYSIvPgogIDxyZWN0IHg9IjEzIiB5PSI2IiB3aWR0aD0iNiIgaGVpZ2h0PSIyMCIgcng9IjIiIGZpbGw9IiMyYjdmZDQiLz4KICA8cmVjdCB4PSI2IiB5PSIxMyIgd2lkdGg9IjIwIiBoZWlnaHQ9IjYiIHJ4PSIyIiBmaWxsPSIjMmI3ZmQ0Ii8+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solmedix — Administración</title>
@@ -829,6 +829,33 @@ select option { background:var(--bg-2); color:var(--text); }
               <div class="fis-kpi fk-err"><div class="fk-label">Salidas</div><div class="fk-val" id="fis-b-salidas">—</div><div class="fk-sub" id="fis-b-salidas-n">—</div></div>
               <div class="fis-kpi fk-accent"><div class="fk-label">Conciliados</div><div class="fk-val" id="fis-b-conc">—</div><div class="fk-sub" id="fis-b-conc-n">—</div></div>
               <div class="fis-kpi fk-warn"><div class="fk-label">Sin match</div><div class="fk-val" id="fis-b-sinmatch">—</div><div class="fk-sub" id="fis-b-sinmatch-n">—</div></div>
+            </div>
+
+            <!-- CUADRE GLOBAL INGRESOS -->
+            <div id="fis-cuadre-panel" style="background:rgba(38,51,72,.7);border:1px solid var(--fis-border);border-radius:var(--radius);padding:16px;margin-bottom:14px">
+              <div style="font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">
+                📊 Cuadre global — Ingresos del período
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:12px">
+                <div>
+                  <div style="font-size:10px;color:var(--text-3);margin-bottom:4px;text-transform:uppercase">Total depósitos en Albo</div>
+                  <div style="font-size:22px;font-weight:700;color:var(--fis-green)" id="fis-cuadre-albo">—</div>
+                  <div style="font-size:11px;color:var(--text-3)" id="fis-cuadre-albo-n">—</div>
+                </div>
+                <div>
+                  <div style="font-size:10px;color:var(--text-3);margin-bottom:4px;text-transform:uppercase">Total facturas CFDI emitidas</div>
+                  <div style="font-size:22px;font-weight:700;color:var(--fis-accent)" id="fis-cuadre-cfdi">—</div>
+                  <div style="font-size:11px;color:var(--text-3)" id="fis-cuadre-cfdi-n">—</div>
+                </div>
+              </div>
+              <div style="border-top:1px solid var(--fis-border);padding-top:12px;display:flex;align-items:center;justify-content:space-between">
+                <div style="font-size:13px;font-weight:600;color:var(--text-2)">Diferencia (Albo − CFDI)</div>
+                <div>
+                  <span style="font-size:20px;font-weight:700" id="fis-cuadre-diferencia">—</span>
+                  <span style="font-size:11px;margin-left:8px" id="fis-cuadre-status">—</span>
+                </div>
+              </div>
+              <div id="fis-cuadre-nota" style="display:none;margin-top:10px;padding:8px 12px;border-radius:var(--radius-sm);font-size:12px;line-height:1.6"></div>
             </div>
           </div>
 
@@ -7007,6 +7034,60 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     _set('fis-b-conc-n',     _mxn(sumConc));
     _set('fis-b-sinmatch',   sinMatch.length + ' movimientos');
     _set('fis-b-sinmatch-n', _mxn(sumSin));
+
+    // ── CUADRE GLOBAL INGRESOS ──────────────────────────────────
+    // Depósitos = entradas que NO son traspasos internos ni SAT
+    var depositos = entradas.filter(function(m){
+      var nom = (m.nombre||'').toUpperCase();
+      var con = (m.concepto||'').toUpperCase();
+      return !nom.includes('MERCADO') && !con.includes('MERCADO') &&
+             !nom.includes('SAT') && !con.includes('SAT') &&
+             !nom.includes('TRASPASO');
+    });
+    var sumDepositos = depositos.reduce(function(s,m){ return s+m.monto; },0);
+
+    // Total CFDI emitidos del período (ingresos)
+    var totalCFDI = st.ingresos.reduce(function(s,i){ return s+_n(i.total); },0);
+
+    var diff = sumDepositos - totalCFDI;
+    var diffAbs = Math.abs(diff);
+    var cuadra = diffAbs < 1;
+
+    _set('fis-cuadre-albo',   _mxn(sumDepositos));
+    _set('fis-cuadre-albo-n', depositos.length + ' depósito(s) identificados');
+    _set('fis-cuadre-cfdi',   _mxn(totalCFDI));
+    _set('fis-cuadre-cfdi-n', st.ingresos.length + ' CFDI(s) del período');
+
+    var difEl   = document.getElementById('fis-cuadre-diferencia');
+    var statEl  = document.getElementById('fis-cuadre-status');
+    var notaEl  = document.getElementById('fis-cuadre-nota');
+
+    if (difEl) {
+      difEl.textContent = (diff >= 0 ? '+' : '') + _mxn(diff).replace('$', diff < 0 ? '-$' : '+$');
+      difEl.style.color = cuadra ? 'var(--fis-green)' : diffAbs < 500 ? 'var(--fis-yellow)' : '#ef4444';
+    }
+    if (statEl) {
+      statEl.textContent = cuadra ? '✅ Cuadrado' : diffAbs < 500 ? '⚠️ Diferencia menor' : '❌ Revisar';
+      statEl.style.color = cuadra ? 'var(--fis-green)' : diffAbs < 500 ? 'var(--fis-yellow)' : '#ef4444';
+    }
+    if (notaEl) {
+      if (cuadra) {
+        notaEl.style.display = 'block';
+        notaEl.style.background = 'rgba(16,185,129,.08)';
+        notaEl.style.color = '#6ee7b7';
+        notaEl.textContent = '✅ Los depósitos en Albo cuadran con el total de facturas CFDI emitidas. El contador puede proceder con la declaración.';
+      } else if (diff > 0) {
+        notaEl.style.display = 'block';
+        notaEl.style.background = 'rgba(245,158,11,.08)';
+        notaEl.style.color = '#fcd34d';
+        notaEl.textContent = '⚠️ Albo tiene $'+_mxn(diffAbs)+' MÁS que las facturas CFDI. Puede haber depósitos sin factura, traspasos no filtrados o anticipos de clientes sin facturar aún.';
+      } else {
+        notaEl.style.display = 'block';
+        notaEl.style.background = 'rgba(239,68,68,.08)';
+        notaEl.style.color = '#fca5a5';
+        notaEl.textContent = '❌ Las facturas CFDI suman $'+_mxn(diffAbs)+' MÁS que los depósitos en Albo. Puede haber facturas de meses anteriores cobradas en este período, o depósitos en otra cuenta.';
+      }
+    }
 
     document.getElementById('fis-banco-resumen').style.display = 'block';
     document.getElementById('fis-banco-tabla').style.display   = 'block';
