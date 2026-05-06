@@ -3,7 +3,7 @@
 <head>
   <link rel="icon" type="image/jpeg" sizes="32x32" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAAgACADASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAABQQCB//EACoQAAICAQIFAQkBAAAAAAAAAAECAwQRABIFEyExYUEGFBUiI0JRcZFS/8QAFwEAAwEAAAAAAAAAAAAAAAAAAgMEAf/EACIRAAIBBAIBBQAAAAAAAAAAAAECAAMRIfAxUXESYYGxwf/aAAwDAQACEQMRAD8A6VPNHXgeaVtqINzHxou3xW7DEBBRE05WOQR78YViQc+R0/utWalqUpz0E6oQSeYQD52YwT4JxqLjTR2uHc5opY543jRsntmVehPYn18aGiS1ZVIxcRzoq0iefzqKR8R3TLvQLDJK0KNn7h+f3g/zzq/REqI8Hw+Cq7qudwc4w2em49+vUhhqunFaQjmthACNpkMhJ/OSBpaM17HMKoi2uMbiZfiJW2lUVJmmaLmlQV6DOO5PfQnE7q2qdvll4lWeJWjlPzBg4JwuegHQnvnSEk6p7Qx2mWTktTKhxGx67wcdBo29UvWDdurAUisSwhI2T6hCso3Y9B3OPA1eaQupA6++NI8yZH5B3fBivDr1Ye9B7MsksR3O0oxuU9ioH25yBj10ojFkVipUkZ2nuNBW6Vtyl+HM1ikx2B1AM4zlh4H+fIzpuCVZ4ElUModQQGXBH7HodJNMKgI+fY7uJrP6nM//2Q=="/>
 <meta charset="UTF-8">
-<!-- Solmedix admin.html — v4.2 — 05/may/2026 — fix código exportDIOT suelto que se ejecutaba al cargar -->
+<!-- Solmedix admin.html — v4.3 — 05/may/2026 — manual ZIP, lector PDF acuse SAT, link manual -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzBmMTcyYSIvPgogIDxyZWN0IHg9IjEzIiB5PSI2IiB3aWR0aD0iNiIgaGVpZ2h0PSIyMCIgcng9IjIiIGZpbGw9IiMyYjdmZDQiLz4KICA8cmVjdCB4PSI2IiB5PSIxMyIgd2lkdGg9IjIwIiBoZWlnaHQ9IjYiIHJ4PSIyIiBmaWxsPSIjMmI3ZmQ0Ii8+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solmedix — Administración</title>
@@ -927,7 +927,29 @@ select option { background:var(--bg-2); color:var(--text); }
             <div class="frc-title" style="color:var(--fis-accent)">④ Captura declaración SAT — valores reales presentados</div>
             <p style="font-size:11px;color:var(--text-3);margin-bottom:14px;line-height:1.6">
               Captura aquí los valores tal como quedaron en la declaración presentada ante el SAT. El sistema los guardará y usará para calcular acumulados de meses futuros.
+              <a href="https://bealfaro2.github.io/solmedix-pos/Manual_Cierre_Fiscal_Solmedix.docx"
+                 target="_blank"
+                 style="color:var(--fis-accent);text-decoration:none;margin-left:8px;font-weight:600">
+                📥 Descargar Manual de Cierre Fiscal
+              </a>
             </p>
+
+            <!-- LECTOR PDF ACUSE -->
+            <div style="border:1px dashed var(--fis-accent);border-radius:var(--radius-sm);padding:12px;margin-bottom:16px;background:rgba(99,102,241,.03)">
+              <div style="font-size:11px;font-weight:700;color:var(--fis-accent);margin-bottom:8px">📄 Lector automático — PDF del acuse SAT (opcional)</div>
+              <div style="font-size:11px;color:var(--text-3);margin-bottom:10px">Sube el PDF del acuse que te envió el contador y el sistema extrae los datos automáticamente.</div>
+              <div class="fis-upload" id="fis-uz-acuse" style="padding:14px;min-height:60px"
+                   ondragover="event.preventDefault();this.classList.add('drag')"
+                   ondragleave="this.classList.remove('drag')"
+                   ondrop="FIS.dropPDFAcuse(event)"
+                   onclick="document.getElementById('fis-file-acuse').click()">
+                <input type="file" id="fis-file-acuse" accept=".pdf" onchange="FIS.leerPDFAcuse(this.files[0])">
+                <div style="font-size:20px;margin-bottom:4px">📄</div>
+                <div style="font-size:12px;font-weight:600">Arrastra el PDF del acuse aquí</div>
+                <div style="font-size:11px;color:var(--text-3)">o haz clic para seleccionar</div>
+              </div>
+              <div id="acuse-alrt" style="display:none;margin-top:8px;padding:8px 12px;border-radius:var(--radius-sm);font-size:12px"></div>
+            </div>
 
             <!-- IVA -->
             <div style="font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;border-bottom:1px solid var(--fis-border);padding-bottom:4px">IVA</div>
@@ -6603,7 +6625,128 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
   }
 
   /* ── Declaración ── */
-  /* ── DECLARACIÓN MENSUAL ── */
+  /* ── LECTOR PDF ACUSE SAT ───────────────────────────────────── */
+  function dropPDFAcuse(e) {
+    e.preventDefault();
+    document.getElementById('fis-uz-acuse').classList.remove('drag');
+    var file = e.dataTransfer.files[0];
+    if (file) leerPDFAcuse(file);
+  }
+
+  function leerPDFAcuse(file) {
+    if (!file || !file.name.match(/\.pdf$/i)) {
+      _acuseAlrt('Solo se aceptan archivos PDF.', 'e'); return;
+    }
+    if (typeof pdfjsLib === 'undefined') {
+      _acuseAlrt('Librería PDF no disponible. Recarga la página.', 'e'); return;
+    }
+    _acuseAlrt('⏳ Leyendo PDF del acuse...', 'i');
+
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      var typedArray = new Uint8Array(ev.target.result);
+      pdfjsLib.getDocument({ data: typedArray }).promise.then(function(pdf) {
+        var textoTotal = '';
+        var promesas = [];
+        for (var i = 1; i <= Math.min(pdf.numPages, 10); i++) {
+          promesas.push(pdf.getPage(i).then(function(page) {
+            return page.getTextContent().then(function(tc) {
+              return tc.items.map(function(item){ return item.str; }).join(' ');
+            });
+          }));
+        }
+        Promise.all(promesas).then(function(paginas) {
+          textoTotal = paginas.join('\n');
+          _parsearAcuseSAT(textoTotal);
+        });
+      }).catch(function(err) {
+        _acuseAlrt('Error al leer el PDF: ' + err.message + '. Captura los datos manualmente.', 'e');
+      });
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function _parsearAcuseSAT(texto) {
+    var encontrados = {};
+
+    // Número de operación — 12 dígitos después de "Número de operación"
+    var mNumOp = texto.match(/N[uú]mero de operaci[oó]n[:\s]+(\d{12})/i);
+    if (mNumOp) encontrados.num_op = mNumOp[1];
+
+    // IVA acreditable efectivo — "Total de IVA trasladado al contribuyente (efectivamente pagado)"
+    var mIvaAcred = texto.match(/Total de IVA trasladado al contribuyente[\s\S]{0,80}?(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s/i);
+    if (mIvaAcred) encontrados.iva_acreditable = _parseNum(mIvaAcred[1]);
+
+    // IVA retenciones a cargo — "Cantidad a pagar" en sección IVA retenciones
+    var mIvaRet = texto.match(/IVA retenciones[\s\S]{0,500}?Cantidad a pagar\s+(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
+    if (mIvaRet) encontrados.iva_retenciones = _parseNum(mIvaRet[1]);
+
+    // ISR causado — "Impuesto causado" en sección Determinación
+    var mISR = texto.match(/Impuesto causado\s+(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
+    if (mISR) encontrados.isr_causado = _parseNum(mISR[1]);
+
+    // Compensación aplicada — "Saldo a aplicar" en Detalle de Compensaciones
+    var mComp = texto.match(/SALDO A APLICAR\s+(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
+    if (!mComp) mComp = texto.match(/Saldo a aplicar\s+(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
+    if (mComp) encontrados.compensacion = _parseNum(mComp[1]);
+
+    // Remanente saldo 2022 — "Remanente histórico antes de la aplicación"
+    var mRem = texto.match(/Remanente hist[oó]rico antes de la aplicaci[oó]n\s+(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
+    if (mRem) encontrados.remanente = _parseNum(mRem[1]);
+
+    // Aplicar valores encontrados a los campos
+    var campos = 0;
+    if (encontrados.num_op) {
+      _setDecInput('dec-num-op', encontrados.num_op); campos++;
+    }
+    if (encontrados.iva_acreditable > 0) {
+      _setDecInput('dec-iva-acreditable-sat', encontrados.iva_acreditable.toFixed(2));
+      document.getElementById('dec-iva-acreditable-sat').dataset.manualEdit = '1';
+      campos++;
+    }
+    if (encontrados.iva_retenciones > 0) {
+      _setDecInput('dec-iva-retenciones', encontrados.iva_retenciones.toFixed(2));
+      document.getElementById('dec-iva-retenciones').dataset.manualEdit = '1';
+      campos++;
+    }
+    if (encontrados.isr_causado > 0) {
+      _setDecInput('dec-isr-causado', encontrados.isr_causado.toFixed(2)); campos++;
+    }
+    if (encontrados.compensacion > 0) {
+      _setDecInput('dec-compensacion', encontrados.compensacion.toFixed(2)); campos++;
+    }
+    if (encontrados.remanente > 0) {
+      var remEl = document.getElementById('dec-remanente');
+      if (remEl) { remEl.value = encontrados.remanente.toFixed(2); remEl.dataset.manualEdit = '1'; }
+      campos++;
+    }
+
+    recalcDeclaracion();
+
+    if (campos >= 3) {
+      _acuseAlrt('✅ Se extrajeron ' + campos + ' datos del PDF. Verifica los valores y guarda la declaración.', 's');
+    } else if (campos > 0) {
+      _acuseAlrt('⚠️ Se extrajeron ' + campos + ' datos. Algunos campos requieren captura manual — verifica el PDF.', 'w');
+    } else {
+      _acuseAlrt('❌ No se pudieron extraer datos. El PDF puede tener un formato diferente. Captura los datos manualmente.', 'e');
+    }
+  }
+
+  function _parseNum(str) {
+    return parseFloat(String(str).replace(/,/g,'')) || 0;
+  }
+
+  function _acuseAlrt(msg, tipo) {
+    var el = document.getElementById('acuse-alrt');
+    if (!el) return;
+    el.style.display = 'block';
+    var bg = tipo==='s' ? 'rgba(16,185,129,.12)' : tipo==='w' ? 'rgba(245,158,11,.12)' :
+             tipo==='i' ? 'rgba(99,102,241,.12)' : 'rgba(239,68,68,.12)';
+    var color = tipo==='s' ? '#6ee7b7' : tipo==='w' ? '#fcd34d' :
+                tipo==='i' ? '#a5b4fc' : '#fca5a5';
+    el.style.cssText = 'display:block;padding:8px 12px;border-radius:var(--radius-sm);font-size:12px;background:'+bg+';color:'+color;
+    el.textContent = msg;
+  }
   function _n(v){ return Number(v)||0; }
   function _mxn(v){ return '$'+(Math.abs(v)||0).toLocaleString('es-MX',{minimumFractionDigits:2}); }
 
@@ -7565,7 +7708,7 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     cargarXML:cargarXML, dropXML:dropXML, cancelarPreview:cancelarPreview, guardarLote:guardarLote,
     exportDIOT:exportDIOT, exportDIOTExcel:exportDIOTExcel, exportCSV:exportCSV,
     generarPaqueteContador:generarPaqueteContador, exportReporteExcel:exportReporteExcel, imprimirReporte:imprimirReporte,
-    guardarDeclaracion:guardarDeclaracion, recalcDeclaracion:recalcDeclaracion,
+    dropPDFAcuse:dropPDFAcuse, leerPDFAcuse:leerPDFAcuse,
     limpiarDeclaracion:limpiarDeclaracion, abrirModal:abrirModal, cerrarModal:cerrarModal,
     dropCSVBanco:dropCSVBanco, cargarCSVBanco:cargarCSVBanco, filtrarBanco:filtrarBanco
   };
