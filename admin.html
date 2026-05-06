@@ -3,12 +3,13 @@
 <head>
   <link rel="icon" type="image/jpeg" sizes="32x32" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAAgACADASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAABQQCB//EACoQAAICAQIFAQkBAAAAAAAAAAECAwQRABIFEyExYUEGFBUiI0JRcZFS/8QAFwEAAwEAAAAAAAAAAAAAAAAAAgMEAf/EACIRAAIBBAIBBQAAAAAAAAAAAAECAAMRIfAxUXESYYGxwf/aAAwDAQACEQMRAD8A6VPNHXgeaVtqINzHxou3xW7DEBBRE05WOQR78YViQc+R0/utWalqUpz0E6oQSeYQD52YwT4JxqLjTR2uHc5opY543jRsntmVehPYn18aGiS1ZVIxcRzoq0iefzqKR8R3TLvQLDJK0KNn7h+f3g/zzq/REqI8Hw+Cq7qudwc4w2em49+vUhhqunFaQjmthACNpkMhJ/OSBpaM17HMKoi2uMbiZfiJW2lUVJmmaLmlQV6DOO5PfQnE7q2qdvll4lWeJWjlPzBg4JwuegHQnvnSEk6p7Qx2mWTktTKhxGx67wcdBo29UvWDdurAUisSwhI2T6hCso3Y9B3OPA1eaQupA6++NI8yZH5B3fBivDr1Ye9B7MsksR3O0oxuU9ioH25yBj10ojFkVipUkZ2nuNBW6Vtyl+HM1ikx2B1AM4zlh4H+fIzpuCVZ4ElUModQQGXBH7HodJNMKgI+fY7uJrP6nM//2Q=="/>
 <meta charset="UTF-8">
-<!-- Solmedix admin.html — v4.0 — 05/may/2026 — saldo 2022 parámetro EMPRESA, remanente automático -->
+<!-- Solmedix admin.html — v4.1 — 05/may/2026 — paquete ZIP completo para contador -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzBmMTcyYSIvPgogIDxyZWN0IHg9IjEzIiB5PSI2IiB3aWR0aD0iNiIgaGVpZ2h0PSIyMCIgcng9IjIiIGZpbGw9IiMyYjdmZDQiLz4KICA8cmVjdCB4PSI2IiB5PSIxMyIgd2lkdGg9IjIwIiBoZWlnaHQ9IjYiIHJ4PSIyIiBmaWxsPSIjMmI3ZmQ0Ii8+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solmedix — Administración</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -889,6 +890,7 @@ select option { background:var(--bg-2); color:var(--text); }
             <div class="fis-spacer"></div>
             <button class="fis-btn fb-sm" onclick="FIS.exportReporteExcel()">📊 Excel</button>
             <button class="fis-btn fb-sm fb-primary" onclick="FIS.imprimirReporte()">🖨️ PDF</button>
+            <button class="fis-btn fb-sm" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none" onclick="FIS.generarPaqueteContador()">📦 Paquete ZIP contador</button>
           </div>
 
           <!-- ① INGRESOS -->
@@ -6888,7 +6890,238 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
   }
 
   /* ── Exportaciones ── */
- function exportDIOT() {
+  /* ── PAQUETE ZIP PARA CONTADOR ──────────────────────────────── */
+  function generarPaqueteContador() {
+    if (typeof JSZip === 'undefined') {
+      alert('JSZip no disponible. Verifica tu conexión a internet.');
+      return;
+    }
+    if (!st.ingresos.length && !st.egresos.length) {
+      alert('No hay datos cargados para el período ' + st.periodo + '.\nSube primero los XMLs de ingresos y egresos.');
+      return;
+    }
+
+    var btn = event.target;
+    btn.disabled = true;
+    btn.textContent = '⏳ Generando...';
+
+    try {
+      var zip  = new JSZip();
+      var per  = st.periodo; // ej. 2026-04
+      var rfc  = EMPRESA.rfc;
+      var pre  = 'Solmedix_' + per + '_';
+
+      // ── 1. Excel completo (ingresos, egresos, PPD, DIOT) ──────
+      var wb = _buildExcelCompleto();
+      var xlsxBin = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+      zip.file(pre + 'Reporte_Fiscal.xlsx', xlsxBin);
+
+      // ── 2. DIOT .txt ──────────────────────────────────────────
+      var diotTxt = _buildDIOTtxt();
+      zip.file(pre + 'DIOT_' + rfc + '.txt', diotTxt);
+
+      // ── 3. Resumen para el contador (TXT legible) ─────────────
+      var resumen = _buildResumenTxt();
+      zip.file(pre + 'Resumen_Contador.txt', resumen);
+
+      // ── 4. Generar y descargar ZIP ────────────────────────────
+      zip.generateAsync({ type:'blob' }).then(function(blob) {
+        var url  = URL.createObjectURL(blob);
+        var link = document.createElement('a');
+        link.href = url;
+        link.download = 'Solmedix_Paquete_Contador_' + per + '.zip';
+        link.click();
+        URL.revokeObjectURL(url);
+        btn.disabled = false;
+        btn.textContent = '📦 Paquete ZIP contador';
+      });
+
+    } catch(err) {
+      alert('Error al generar el paquete: ' + err.message);
+      btn.disabled = false;
+      btn.textContent = '📦 Paquete ZIP contador';
+    }
+  }
+
+  function _buildExcelCompleto() {
+    if (typeof XLSX === 'undefined') return null;
+    var wb = XLSX.utils.book_new();
+
+    // Hoja 1: Ingresos CFDI
+    var colsIng = ['uuid','fecha','folio','serie','rfc_emisor','proveedor',
+                   'subtotal','iva','total','metodo_pago','forma_pago','uso_cfdi','sucursal'];
+    var dataIng = [['UUID','Fecha','Folio','Serie','RFC Receptor','Receptor',
+                    'Subtotal','IVA','Total','Método Pago','Forma Pago','Uso CFDI','Sucursal']];
+    st.ingresos.forEach(function(r){
+      dataIng.push(colsIng.map(function(c){ return r[c]||''; }));
+    });
+    dataIng.push(['','','','','','TOTAL','',
+      st.ingresos.reduce(function(s,i){return s+_n(i.iva);},0),
+      st.ingresos.reduce(function(s,i){return s+_n(i.total);},0),'','','','']);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dataIng), '1_Ingresos_CFDI');
+
+    // Hoja 2: Egresos confirmados
+    var colsEgr = ['uuid','fecha','folio','proveedor','rfc_emisor',
+                   'subtotal','descuento','iva','total','metodo_pago','uso_cfdi','estado'];
+    var dataEgr = [['UUID','Fecha','Folio','Proveedor','RFC Emisor',
+                    'Subtotal','Descuento','IVA','Total','Método Pago','Uso CFDI','Estado']];
+    st.egresos.forEach(function(r){
+      dataEgr.push(colsEgr.map(function(c){ return r[c]||''; }));
+    });
+    dataEgr.push(['','','','','TOTAL',
+      st.egresos.reduce(function(s,g){return s+_n(g.subtotal);},0),'',
+      st.egresos.reduce(function(s,g){return s+_n(g.iva);},0),
+      st.egresos.reduce(function(s,g){return s+_n(g.total);},0),'','','']);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dataEgr), '2_Egresos');
+
+    // Hoja 3: PPD Pendientes
+    var dataPPD = [['UUID','Fecha','Folio','Proveedor','RFC','Total','IVA','Estado','UUID Complemento']];
+    st.ppd.forEach(function(p){
+      dataPPD.push([p.uuid||'',p.fecha||'',p.folio||'',p.proveedor||'',
+                    p.rfc_emisor||'',_n(p.total),_n(p.iva),p.estado||'',p.uuid_complemento||'']);
+    });
+    if (!st.ppd.length) dataPPD.push(['Sin PPD pendientes','','','','','','','','']);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dataPPD), '3_PPD_Pendientes');
+
+    // Hoja 4: DIOT
+    var diotMap = _buildDIOTmap();
+    var dataDIOT = [['RFC','Proveedor','Tipo Op.','IVA 16% Acred.','Base 16%',
+                     'Base 0%','Base Exenta','IVA Retenido','Total','CFDIs']];
+    Object.keys(diotMap).forEach(function(k){
+      var r = diotMap[k];
+      dataDIOT.push([r.rfc, r.proveedor, r.tipo,
+        r.iva16, r.base16, r.base0, r.baseExento, r.ivaRetenido, r.total, r.count]);
+    });
+    dataDIOT.push(['','TOTALES','',
+      Object.keys(diotMap).reduce(function(s,k){return s+diotMap[k].iva16;},0),
+      Object.keys(diotMap).reduce(function(s,k){return s+diotMap[k].base16;},0),
+      Object.keys(diotMap).reduce(function(s,k){return s+diotMap[k].base0;},0),
+      '','','','']);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dataDIOT), '4_DIOT');
+
+    // Hoja 5: Resumen declaración
+    var dec = st.declaracion;
+    var totIng = st.ingresos.reduce(function(s,i){return s+_n(i.total);},0);
+    var ivaAcred = st.egresos.reduce(function(s,g){return s+_n(g.iva);},0);
+    var dataDec = [
+      ['RESUMEN DECLARACIÓN MENSUAL — ' + st.periodo],
+      ['Empresa', EMPRESA.nombre],
+      ['RFC', EMPRESA.rfc],
+      ['Período', st.periodo],
+      [''],
+      ['INGRESOS',''],
+      ['Total ingresos CFDI', totIng],
+      ['Número de facturas emitidas', st.ingresos.length],
+      ['IVA trasladado (medicamentos exentos)', 0],
+      [''],
+      ['EGRESOS',''],
+      ['Total egresos deducibles PUE',
+        st.egresos.filter(function(g){return g.metodo_pago==='PUE';}).reduce(function(s,g){return s+_n(g.total);},0)],
+      ['Total egresos PPD confirmados',
+        st.egresos.filter(function(g){return g.metodo_pago==='PPD';}).reduce(function(s,g){return s+_n(g.total);},0)],
+      ['PPD pendientes de complemento', st.ppd.reduce(function(s,p){return s+_n(p.total);},0)],
+      ['IVA bruto en egresos', ivaAcred],
+      [''],
+      ['DATOS DE DECLARACIÓN SAT',''],
+      ['IVA acreditable efectivo (SAT)', dec ? _n(dec.iva_acreditable_sat) : 'Pendiente captura'],
+      ['IVA retenciones a cargo', dec ? _n(dec.iva_retenciones_cargo) : 'Pendiente captura'],
+      ['Coeficiente de utilidad', dec ? _n(dec.coeficiente_utilidad) : EMPRESA.coeficiente_utilidad],
+      ['ISR causado acumulado', dec ? _n(dec.isr_causado) : 'Pendiente captura'],
+      ['Compensación saldo 2022 aplicada', dec ? _n(dec.compensacion_aplicada) : 'Pendiente captura'],
+      ['Remanente saldo 2022', dec ? _n(dec.remanente_saldo_2022) : EMPRESA.saldo_favor_2022_remanente],
+      ['ISR a pagar en efectivo', dec ? _n(dec.isr_a_pagar) : 'Pendiente captura'],
+      ['N° de operación SAT', dec ? (dec.num_op_declaracion||'Pendiente') : 'Pendiente'],
+      ['Estado', dec ? (dec.estado||'borrador') : 'Sin declaración guardada'],
+      [''],
+      ['Generado', new Date().toLocaleString('es-MX')],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dataDec), '5_Resumen_Declaracion');
+
+    return wb;
+  }
+
+  function _buildDIOTtxt() {
+    var map  = _buildDIOTmap();
+    var rows = Object.keys(map).map(function(k){ return map[k]; });
+    return rows.map(function(r) {
+      var esNacional = r.tipo === '04';
+      return [
+        r.tipo, esNacional?r.rfc:'', esNacional?'':r.rfc,
+        '','',esNacional?'':'USA','',
+        r.base16.toFixed(2),'0',r.iva16.toFixed(2),
+        r.base0.toFixed(2),r.baseExento.toFixed(2),
+        '0','0','0','0','0',
+        r.ivaRetenido.toFixed(2),
+        '0','0','0','0','0','0','0','0','0','0'
+      ].join('|');
+    }).join('\n');
+  }
+
+  function _buildResumenTxt() {
+    var dec    = st.declaracion;
+    var totIng = st.ingresos.reduce(function(s,i){return s+_n(i.total);},0);
+    var ivaAcred = st.egresos.reduce(function(s,g){return s+_n(g.iva);},0);
+    var lineas = [
+      '═══════════════════════════════════════════════════════',
+      '  SOLMEDIX SOLUCIONES MÉDICAS SA DE CV — ' + EMPRESA.rfc,
+      '  PAQUETE MENSUAL PARA CONTADOR — PERÍODO: ' + st.periodo,
+      '  Generado: ' + new Date().toLocaleString('es-MX'),
+      '═══════════════════════════════════════════════════════',
+      '',
+      '📄 CONTENIDO DEL PAQUETE:',
+      '  1. Reporte_Fiscal.xlsx  — Ingresos, Egresos, PPD y DIOT',
+      '  2. DIOT_' + EMPRESA.rfc + '.txt — Para cargar directo al portal SAT',
+      '  3. Resumen_Contador.txt — Este archivo',
+      '',
+      '─── INGRESOS DEL PERÍODO ───────────────────────────────',
+      '  Total CFDI emitidos:    $' + totIng.toLocaleString('es-MX', {minimumFractionDigits:2}),
+      '  Número de facturas:     ' + st.ingresos.length,
+      '  IVA trasladado:         $0.00 (medicamentos exentos)',
+      '',
+      '─── EGRESOS DEDUCIBLES ─────────────────────────────────',
+      '  Gastos PUE:             $' + st.egresos.filter(function(g){return g.metodo_pago==='PUE';}).reduce(function(s,g){return s+_n(g.total);},0).toLocaleString('es-MX',{minimumFractionDigits:2}),
+      '  Gastos PPD confirmados: $' + st.egresos.filter(function(g){return g.metodo_pago==='PPD';}).reduce(function(s,g){return s+_n(g.total);},0).toLocaleString('es-MX',{minimumFractionDigits:2}),
+      '  ⚠ PPD sin complemento: $' + st.ppd.reduce(function(s,p){return s+_n(p.total);},0).toLocaleString('es-MX',{minimumFractionDigits:2}) + ' (NO deducibles aún)',
+      '  IVA bruto en egresos:   $' + ivaAcred.toLocaleString('es-MX',{minimumFractionDigits:2}),
+      '',
+      '─── DECLARACIÓN SAT ────────────────────────────────────',
+    ];
+    if (dec) {
+      lineas = lineas.concat([
+        '  IVA acreditable real:   $' + _n(dec.iva_acreditable_sat).toLocaleString('es-MX',{minimumFractionDigits:2}),
+        '  IVA retenciones cargo:  $' + _n(dec.iva_retenciones_cargo).toLocaleString('es-MX',{minimumFractionDigits:2}),
+        '  Coeficiente utilidad:   ' + _n(dec.coeficiente_utilidad),
+        '  ISR causado acumulado:  $' + _n(dec.isr_causado).toLocaleString('es-MX',{minimumFractionDigits:2}),
+        '  Compensación 2022:      $' + _n(dec.compensacion_aplicada).toLocaleString('es-MX',{minimumFractionDigits:2}),
+        '  Remanente saldo 2022:   $' + _n(dec.remanente_saldo_2022).toLocaleString('es-MX',{minimumFractionDigits:2}),
+        '  ISR a pagar:            $' + _n(dec.isr_a_pagar).toLocaleString('es-MX',{minimumFractionDigits:2}),
+        '  N° operación SAT:       ' + (dec.num_op_declaracion||'Pendiente'),
+        '  Estado:                 ' + (dec.estado==='presentada'?'✅ PRESENTADA':'⏳ Borrador'),
+      ]);
+    } else {
+      lineas.push('  ⚠ Declaración pendiente de captura en el sistema.');
+    }
+    if (st.ppd.length) {
+      lineas = lineas.concat([
+        '',
+        '─── PPD PENDIENTES DE COMPLEMENTO ──────────────────────',
+      ]);
+      st.ppd.slice(0,10).forEach(function(p){
+        lineas.push('  ' + (p.proveedor||'').substring(0,30).padEnd(30) +
+                    ' $' + _n(p.total).toLocaleString('es-MX',{minimumFractionDigits:2}) +
+                    '  ' + (p.fecha||''));
+      });
+      if (st.ppd.length > 10) lineas.push('  ...y ' + (st.ppd.length-10) + ' más.');
+    }
+    lineas = lineas.concat([
+      '',
+      '═══════════════════════════════════════════════════════',
+      '  Solmedix Soluciones Médicas SA de CV — SSM180928AQ7',
+      '  Sistema POS generado con Claude (Anthropic)',
+      '═══════════════════════════════════════════════════════',
+    ]);
+    return lineas.join('\n');
+  }
     var map = _buildDIOTmap();
     var rows = Object.keys(map).map(function(k){ return map[k]; });
     if (!rows.length) { alert('Sin egresos confirmados para exportar.'); return; }
@@ -6913,6 +7146,11 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     // Pos 16: Monto importación exento (0)
     // Pos 17: IVA retenido por el contribuyente
     // Pos 18-28: Campos adicionales (todos en 0 para Solmedix)
+
+  function exportDIOT() {
+    var map = _buildDIOTmap();
+    var rows = Object.keys(map).map(function(k){ return map[k]; });
+    if (!rows.length) { alert('Sin egresos confirmados para exportar.'); return; }
 
     var txt = rows.map(function(r) {
       var esNacional = r.tipo === '04';
@@ -7349,7 +7587,8 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     abrirModalExternos:abrirModalExternos, guardarExternos:guardarExternos,
     abrirModalGastoEsperado:abrirModalGastoEsperado, guardarGastoEsperado:guardarGastoEsperado,
     cargarXML:cargarXML, dropXML:dropXML, cancelarPreview:cancelarPreview, guardarLote:guardarLote,
-    exportDIOT:exportDIOT, exportDIOTExcel:exportDIOTExcel, exportCSV:exportCSV, exportReporteExcel:exportReporteExcel, imprimirReporte:imprimirReporte,
+    exportDIOT:exportDIOT, exportDIOTExcel:exportDIOTExcel, exportCSV:exportCSV,
+    generarPaqueteContador:generarPaqueteContador, exportReporteExcel:exportReporteExcel, imprimirReporte:imprimirReporte,
     guardarDeclaracion:guardarDeclaracion, recalcDeclaracion:recalcDeclaracion,
     limpiarDeclaracion:limpiarDeclaracion, abrirModal:abrirModal, cerrarModal:cerrarModal,
     dropCSVBanco:dropCSVBanco, cargarCSVBanco:cargarCSVBanco, filtrarBanco:filtrarBanco
