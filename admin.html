@@ -3,7 +3,7 @@
 <head>
   <link rel="icon" type="image/jpeg" sizes="32x32" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAAgACADASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAABQQCB//EACoQAAICAQIFAQkBAAAAAAAAAAECAwQRABIFEyExYUEGFBUiI0JRcZFS/8QAFwEAAwEAAAAAAAAAAAAAAAAAAgMEAf/EACIRAAIBBAIBBQAAAAAAAAAAAAECAAMRIfAxUXESYYGxwf/aAAwDAQACEQMRAD8A6VPNHXgeaVtqINzHxou3xW7DEBBRE05WOQR78YViQc+R0/utWalqUpz0E6oQSeYQD52YwT4JxqLjTR2uHc5opY543jRsntmVehPYn18aGiS1ZVIxcRzoq0iefzqKR8R3TLvQLDJK0KNn7h+f3g/zzq/REqI8Hw+Cq7qudwc4w2em49+vUhhqunFaQjmthACNpkMhJ/OSBpaM17HMKoi2uMbiZfiJW2lUVJmmaLmlQV6DOO5PfQnE7q2qdvll4lWeJWjlPzBg4JwuegHQnvnSEk6p7Qx2mWTktTKhxGx67wcdBo29UvWDdurAUisSwhI2T6hCso3Y9B3OPA1eaQupA6++NI8yZH5B3fBivDr1Ye9B7MsksR3O0oxuU9ioH25yBj10ojFkVipUkZ2nuNBW6Vtyl+HM1ikx2B1AM4zlh4H+fIzpuCVZ4ElUModQQGXBH7HodJNMKgI+fY7uJrP6nM//2Q=="/>
 <meta charset="UTF-8">
-<!-- Solmedix admin.html — v4.5 — 05/may/2026 — fix BI sección en blanco, bi en navTab -->
+<!-- Solmedix admin.html — v4.6 — 05/may/2026 — BI fix datos vacíos, layout compacto -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzBmMTcyYSIvPgogIDxyZWN0IHg9IjEzIiB5PSI2IiB3aWR0aD0iNiIgaGVpZ2h0PSIyMCIgcng9IjIiIGZpbGw9IiMyYjdmZDQiLz4KICA8cmVjdCB4PSI2IiB5PSIxMyIgd2lkdGg9IjIwIiBoZWlnaHQ9IjYiIHJ4PSIyIiBmaWxsPSIjMmI3ZmQ0Ii8+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solmedix — Administración</title>
@@ -554,81 +554,67 @@ select option { background:var(--bg-2); color:var(--text); }
     ══════════════════════════════════════════════════ -->
     <!-- ══════════════ INTELIGENCIA DE NEGOCIO ══════════════ -->
     <div id="sec-bi" style="display:none">
-      <!-- KPIs superiores -->
-      <div id="bi-kpis" style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px"></div>
-
-      <!-- Selector de año -->
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <!-- Toolbar -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
         <label style="font-size:12px;color:var(--text-2);font-weight:600">AÑO:</label>
-        <select id="bi-anio" onchange="renderBI()" style="font-size:13px;padding:6px 12px;background:var(--bg-3);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);cursor:pointer"></select>
+        <select id="bi-anio" onchange="renderBI()" style="font-size:12px;padding:5px 10px;background:var(--bg-3);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm)"></select>
         <label style="font-size:12px;color:var(--text-2);font-weight:600">SUCURSAL:</label>
-        <select id="bi-suc" onchange="renderBI()" style="font-size:13px;padding:6px 12px;background:var(--bg-3);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);cursor:pointer">
-          <option value="TODAS">Todas</option>
-          <option value="MTY">MTY</option>
-          <option value="SLP">SLP</option>
+        <select id="bi-suc" onchange="renderBI()" style="font-size:12px;padding:5px 10px;background:var(--bg-3);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm)">
+          <option value="TODAS">Todas</option><option value="MTY">MTY</option><option value="SLP">SLP</option>
         </select>
         <div style="flex:1"></div>
-        <button class="btn btns btno" onclick="exportBIExcel()">📊 Exportar Excel</button>
+        <button class="btn btns btno" onclick="exportBIExcel()" style="font-size:12px;padding:5px 12px">📊 Excel</button>
       </div>
 
-      <!-- Fila 1: Ventas y Compras -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-        <div class="card" style="padding:18px">
-          <div style="font-size:13px;font-weight:700;color:var(--text-2);margin-bottom:14px">📈 Ventas mensuales</div>
-          <canvas id="bi-chart-ventas" height="220"></canvas>
-        </div>
-        <div class="card" style="padding:18px">
-          <div style="font-size:13px;font-weight:700;color:var(--text-2);margin-bottom:14px">🛒 Compras mensuales</div>
-          <canvas id="bi-chart-compras" height="220"></canvas>
-        </div>
-      </div>
+      <!-- KPIs — fila compacta -->
+      <div id="bi-kpis" style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:12px"></div>
 
-      <!-- Fila 2: Margen bruto y Ticket promedio -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-        <div class="card" style="padding:18px">
-          <div style="font-size:13px;font-weight:700;color:var(--text-2);margin-bottom:14px">💰 Margen bruto mensual (Ventas − Compras)</div>
-          <canvas id="bi-chart-margen" height="220"></canvas>
+      <!-- Fila 1: Ventas y Compras (altura reducida) -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="card" style="padding:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">📈 Ventas mensuales</div>
+          <div style="height:180px;position:relative"><canvas id="bi-chart-ventas"></canvas></div>
         </div>
-        <div class="card" style="padding:18px">
-          <div style="font-size:13px;font-weight:700;color:var(--text-2);margin-bottom:14px">🎫 Ticket promedio mensual</div>
-          <canvas id="bi-chart-ticket" height="220"></canvas>
+        <div class="card" style="padding:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">🛒 Compras mensuales</div>
+          <div style="height:180px;position:relative"><canvas id="bi-chart-compras"></canvas></div>
         </div>
       </div>
 
-      <!-- Fila 3: Top medicamentos y Ventas por sucursal -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-        <div class="card" style="padding:18px">
-          <div style="font-size:13px;font-weight:700;color:var(--text-2);margin-bottom:14px">💊 Top 10 medicamentos más vendidos</div>
-          <canvas id="bi-chart-top-meds" height="280"></canvas>
+      <!-- Fila 2: Margen y Ticket -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="card" style="padding:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">💰 Margen bruto (Ventas − Compras)</div>
+          <div style="height:180px;position:relative"><canvas id="bi-chart-margen"></canvas></div>
         </div>
-        <div class="card" style="padding:18px">
-          <div style="font-size:13px;font-weight:700;color:var(--text-2);margin-bottom:14px">🏢 Ventas MTY vs SLP</div>
-          <canvas id="bi-chart-sucursales" height="280"></canvas>
-        </div>
-      </div>
-
-      <!-- Fila 4: Heatmap días de la semana + hora -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-        <div class="card" style="padding:18px">
-          <div style="font-size:13px;font-weight:700;color:var(--text-2);margin-bottom:14px">📅 Ventas por día de la semana</div>
-          <canvas id="bi-chart-diasemana" height="220"></canvas>
-        </div>
-        <div class="card" style="padding:18px">
-          <div style="font-size:13px;font-weight:700;color:var(--text-2);margin-bottom:14px">📊 Acumulado anual de ingresos vs meta</div>
-          <canvas id="bi-chart-acumulado" height="220"></canvas>
+        <div class="card" style="padding:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">🎫 Ticket promedio</div>
+          <div style="height:180px;position:relative"><canvas id="bi-chart-ticket"></canvas></div>
         </div>
       </div>
 
-      <!-- Tabla resumen mensual -->
-      <div class="card" style="padding:18px;margin-bottom:16px">
-        <div style="font-size:13px;font-weight:700;color:var(--text-2);margin-bottom:14px">📋 Resumen mensual detallado</div>
+      <!-- Fila 3: Top meds + Día semana -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="card" style="padding:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">💊 Top 10 medicamentos</div>
+          <div style="height:200px;position:relative"><canvas id="bi-chart-top-meds"></canvas></div>
+        </div>
+        <div class="card" style="padding:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">📅 Ventas por día de la semana</div>
+          <div style="height:200px;position:relative"><canvas id="bi-chart-diasemana"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Tabla resumen mensual compacta -->
+      <div class="card" style="padding:12px;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">📋 Resumen mensual</div>
         <div style="overflow-x:auto">
-          <table class="tbl" id="bi-tabla-resumen">
+          <table class="tbl" style="font-size:12px" id="bi-tabla-resumen">
             <thead><tr>
               <th>Mes</th><th class="fis-tr">Ventas</th><th class="fis-tr">Compras</th>
               <th class="fis-tr">Margen $</th><th class="fis-tr">Margen %</th>
               <th class="fis-tr">Tickets</th><th class="fis-tr">Ticket prom.</th>
-              <th class="fis-tr">vs mes ant.</th>
+              <th class="fis-tr">vs anterior</th>
             </tr></thead>
             <tbody id="bi-tabla-body"></tbody>
             <tfoot id="bi-tabla-foot"></tfoot>
@@ -7812,161 +7798,160 @@ var FIS = FiscalModule;
 <script>
 /* ── PALETA ────────────────────────────────────────────────── */
 var BI_COLORS = {
-  ventas:   '#6366f1',
-  compras:  '#f97316',
-  margen:   '#10b981',
-  ticket:   '#f59e0b',
-  mty:      '#6366f1',
-  slp:      '#f97316',
-  tendencia:'rgba(255,255,255,0.55)',
-  grid:     'rgba(255,255,255,0.06)',
-  text:     'rgba(255,255,255,0.65)',
+  ventas:   '#6366f1', compras: '#f97316', margen: '#10b981',
+  ticket:   '#f59e0b', tendencia:'rgba(255,255,255,0.5)', grid:'rgba(255,255,255,0.06)', text:'rgba(255,255,255,0.65)'
 };
 var _biCharts = {};
 var MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-/* ── INICIALIZAR ──────────────────────────────────────────── */
+/* ── INICIALIZAR ─────────────────────────────────────────── */
 function initBI() {
-  // Poblar selector de años
+  // Si los datos aún no cargaron, reintenta en 500ms
+  if (!ventas || !compras) { setTimeout(initBI, 500); return; }
+
+  // Poblar selector de años desde ventas + compras
   var anios = new Set();
-  ventas.forEach(function(v){ if(v.fecha) anios.add(String(v.fecha).substring(0,4)); });
-  compras.forEach(function(c){ if(c.fecha) anios.add(String(c.fecha).substring(0,4)); });
-  if (!anios.size) anios.add(new Date().getFullYear().toString());
+  var hoy = new Date().getFullYear().toString();
+  anios.add(hoy);
+  ventas.forEach(function(v){ var a=String(v.fecha||'').substring(0,4); if(a>='2020') anios.add(a); });
+  compras.forEach(function(c){ var a=String(c.fecha||'').substring(0,4); if(a>='2020') anios.add(a); });
+
   var sel = document.getElementById('bi-anio');
+  if (!sel) return;
+  var prev = sel.value;
   sel.innerHTML = '';
   Array.from(anios).sort().reverse().forEach(function(a){
     var opt = document.createElement('option');
     opt.value = a; opt.textContent = a;
+    if (a === prev) opt.selected = true;
     sel.appendChild(opt);
   });
+  if (!prev) sel.value = hoy;
   renderBI();
 }
 
 /* ── RENDER PRINCIPAL ─────────────────────────────────────── */
 function renderBI() {
-  var anio = document.getElementById('bi-anio').value || new Date().getFullYear().toString();
-  var suc  = document.getElementById('bi-suc').value || 'TODAS';
+  var sel = document.getElementById('bi-anio');
+  var sucSel = document.getElementById('bi-suc');
+  if (!sel || !sucSel) return;
+  var anio = sel.value || new Date().getFullYear().toString();
+  var suc  = sucSel.value || 'TODAS';
 
-  // Filtrar ventas del año
+  function getMes(fecha) {
+    // fecha puede ser "2026-04-15", "2026-04-15T10:00:00", etc.
+    var s = String(fecha||'');
+    var m = s.match(/^(\d{4})-(\d{2})/);
+    if (!m) return -1;
+    if (m[1] !== anio) return -1;
+    return parseInt(m[2]) - 1;
+  }
+
+  // Ventas del año filtradas
   var vAnio = ventas.filter(function(v){
     return v.estado !== 'cancelada' &&
            String(v.fecha||'').substring(0,4) === anio &&
-           (suc === 'TODAS' || v.sucursal === suc);
+           (suc === 'TODAS' || (v.sucursal||'MTY') === suc);
   });
-  // Filtrar compras del año
+
+  // Compras del año
   var cAnio = compras.filter(function(c){
     return String(c.fecha||'').substring(0,4) === anio;
   });
 
-  // Agregar por mes (1-12)
+  // Acumular por mes
   var ventasMes  = new Array(12).fill(0);
-  var ticketsMes = new Array(12).fill(0);
   var cuentaMes  = new Array(12).fill(0);
-  var ventasMty  = new Array(12).fill(0);
-  var ventasSlp  = new Array(12).fill(0);
-
   vAnio.forEach(function(v){
-    var m = parseInt(String(v.fecha||'').substring(5,7)) - 1;
-    if (m < 0 || m > 11) return;
-    var tot = Number(v.total)||0;
-    ventasMes[m]  += tot;
+    var m = getMes(v.fecha);
+    if (m < 0) return;
+    ventasMes[m]  += Number(v.total)||0;
     cuentaMes[m]  += 1;
-    if (v.sucursal === 'MTY') ventasMty[m] += tot;
-    else if (v.sucursal === 'SLP') ventasSlp[m] += tot;
-    else { ventasMty[m] += tot; } // sin sucursal → MTY
   });
-
-  ticketsMes = ventasMes.map(function(v,i){ return cuentaMes[i] > 0 ? v/cuentaMes[i] : 0; });
 
   var comprasMes = new Array(12).fill(0);
   cAnio.forEach(function(c){
-    var m = parseInt(String(c.fecha||'').substring(5,7)) - 1;
-    if (m < 0 || m > 11) return;
-    comprasMes[m] += Number(c.importe||c.total||c.costo||0);
+    var m = getMes(c.fecha);
+    if (m < 0) return;
+    // campo puede ser importe, total_factura, total o costo
+    comprasMes[m] += Number(c.importe || c.total_factura || c.total || 0);
   });
 
-  var margenMes = ventasMes.map(function(v,i){ return v - comprasMes[i]; });
+  var margenMes  = ventasMes.map(function(v,i){ return v - comprasMes[i]; });
+  var ticketsMes = ventasMes.map(function(v,i){ return cuentaMes[i]>0 ? v/cuentaMes[i] : 0; });
 
   // KPIs
-  _renderBIKpis(vAnio, ventasMes, comprasMes, margenMes, ticketsMes, cuentaMes);
+  _renderBIKpis(ventasMes, comprasMes, margenMes, cuentaMes);
 
   // Gráficas
-  _biBarTendencia('bi-chart-ventas',  MESES, ventasMes,  BI_COLORS.ventas,  'Ventas $');
-  _biBarTendencia('bi-chart-compras', MESES, comprasMes, BI_COLORS.compras, 'Compras $');
-  _biBarTendencia('bi-chart-margen',  MESES, margenMes,  BI_COLORS.margen,  'Margen $');
-  _biBarTendencia('bi-chart-ticket',  MESES, ticketsMes, BI_COLORS.ticket,  'Ticket prom. $');
+  _biBarTend('bi-chart-ventas',  ventasMes,  BI_COLORS.ventas,  'Ventas $');
+  _biBarTend('bi-chart-compras', comprasMes, BI_COLORS.compras, 'Compras $');
+  _biBarTend('bi-chart-margen',  margenMes,  BI_COLORS.margen,  'Margen $');
+  _biBarTend('bi-chart-ticket',  ticketsMes, BI_COLORS.ticket,  'Ticket $');
   _biTopMeds(vAnio);
-  _biSucursales(MESES, ventasMty, ventasSlp);
   _biDiaSemana(vAnio);
-  _biAcumulado(ventasMes, anio);
   _biTablaResumen(ventasMes, comprasMes, margenMes, cuentaMes, ticketsMes);
 }
 
 /* ── KPIs superiores ─────────────────────────────────────── */
-function _renderBIKpis(vAnio, ventasMes, comprasMes, margenMes, ticketsMes, cuentaMes) {
+function _renderBIKpis(ventasMes, comprasMes, margenMes, cuentaMes) {
   var totalVentas  = ventasMes.reduce(function(s,v){return s+v;},0);
   var totalCompras = comprasMes.reduce(function(s,v){return s+v;},0);
   var totalMargen  = totalVentas - totalCompras;
   var margenPct    = totalVentas > 0 ? (totalMargen/totalVentas*100) : 0;
   var totalTickets = cuentaMes.reduce(function(s,v){return s+v;},0);
-  var ticketProm   = totalTickets > 0 ? totalVentas/totalTickets : 0;
   var mejorMes     = ventasMes.indexOf(Math.max.apply(null, ventasMes));
 
   var kpis = [
-    { label:'Ventas totales', val:'$'+_biMxn(totalVentas), color:'#6366f1', icon:'💰' },
-    { label:'Compras totales', val:'$'+_biMxn(totalCompras), color:'#f97316', icon:'🛒' },
-    { label:'Margen bruto', val:'$'+_biMxn(totalMargen), color:'#10b981', icon:'📈' },
-    { label:'Margen %', val:margenPct.toFixed(1)+'%', color: margenPct>15?'#10b981':margenPct>5?'#f59e0b':'#ef4444', icon:'📊' },
-    { label:'Tickets emitidos', val:totalTickets.toLocaleString('es-MX'), color:'#f59e0b', icon:'🎫' },
-    { label:'Mejor mes', val:mejorMes>=0?MESES[mejorMes]:'—', color:'#8b5cf6', icon:'🏆' },
+    { label:'Ventas', val:'$'+_biMxn(totalVentas), color:'#6366f1', icon:'💰' },
+    { label:'Compras', val:'$'+_biMxn(totalCompras), color:'#f97316', icon:'🛒' },
+    { label:'Margen', val:'$'+_biMxn(totalMargen), color:'#10b981', icon:'📈' },
+    { label:'Margen %', val:margenPct.toFixed(1)+'%', color:margenPct>15?'#10b981':margenPct>5?'#f59e0b':'#ef4444', icon:'📊' },
+    { label:'Tickets', val:totalTickets.toLocaleString('es-MX'), color:'#f59e0b', icon:'🎫' },
+    { label:'Mejor mes', val:mejorMes>=0&&ventasMes[mejorMes]>0?MESES[mejorMes]:'—', color:'#8b5cf6', icon:'🏆' },
   ];
   var cont = document.getElementById('bi-kpis');
   if (!cont) return;
   cont.innerHTML = kpis.map(function(k){
-    return '<div class="card" style="padding:14px;text-align:center">'+
-      '<div style="font-size:22px;margin-bottom:4px">'+k.icon+'</div>'+
-      '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">'+k.label+'</div>'+
-      '<div style="font-size:18px;font-weight:700;color:'+k.color+'">'+k.val+'</div>'+
-      '</div>';
+    return '<div class="card" style="padding:10px;text-align:center">'+
+      '<div style="font-size:18px">'+k.icon+'</div>'+
+      '<div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;margin:2px 0">'+k.label+'</div>'+
+      '<div style="font-size:15px;font-weight:700;color:'+k.color+'">'+k.val+'</div></div>';
   }).join('');
 }
 
 /* ── GRÁFICA BARRAS + TENDENCIA ──────────────────────────── */
-function _biBarTendencia(id, labels, data, color, label) {
+function _biBarTend(id, data, color, label) {
   var ctx = document.getElementById(id);
   if (!ctx) return;
-  if (_biCharts[id]) { _biCharts[id].destroy(); }
+  if (_biCharts[id]) { _biCharts[id].destroy(); delete _biCharts[id]; }
 
-  // Línea de tendencia (regresión lineal simple)
-  var n = data.length, sumX=0, sumY=0, sumXY=0, sumX2=0, activos=0;
-  data.forEach(function(v,i){ if(v>0){sumX+=i;sumY+=v;sumXY+=i*v;sumX2+=i*i;activos++;} });
-  var tendencia = new Array(n).fill(null);
-  if (activos >= 2) {
-    var m = (activos*sumXY - sumX*sumY)/(activos*sumX2 - sumX*sumX);
-    var b = (sumY - m*sumX)/activos;
-    // Solo mostrar tendencia hasta el último mes con datos
-    var ultimo = data.reduce(function(acc,v,i){ return v>0?i:acc; }, -1);
-    for (var i=0; i<=ultimo; i++) tendencia[i] = Math.max(0, m*i+b);
+  // Línea de tendencia — regresión lineal solo sobre meses con datos
+  var pts = []; data.forEach(function(v,i){ if(v>0) pts.push({x:i,y:v}); });
+  var tendencia = new Array(12).fill(null);
+  if (pts.length >= 2) {
+    var n=pts.length, sx=0,sy=0,sxy=0,sx2=0;
+    pts.forEach(function(p){ sx+=p.x;sy+=p.y;sxy+=p.x*p.y;sx2+=p.x*p.x; });
+    var m=(n*sxy-sx*sy)/(n*sx2-sx*sx), b=(sy-m*sx)/n;
+    var ultimo = pts[pts.length-1].x;
+    for (var i=0; i<=ultimo; i++) tendencia[i] = Math.max(0, Math.round(m*i+b));
   }
 
   _biCharts[id] = new Chart(ctx, {
-    data: {
-      labels: labels,
-      datasets: [
-        { type:'bar', label:label, data:data, backgroundColor: color+'99',
-          borderColor:color, borderWidth:1.5, borderRadius:4 },
-        { type:'line', label:'Tendencia', data:tendencia,
-          borderColor:BI_COLORS.tendencia, borderWidth:2, borderDash:[5,4],
-          pointRadius:0, tension:0.4, fill:false }
-      ]
-    },
+    data: { labels: MESES, datasets: [
+      { type:'bar', label:label, data:data,
+        backgroundColor:color+'88', borderColor:color, borderWidth:1.5, borderRadius:3 },
+      { type:'line', label:'Tendencia', data:tendencia,
+        borderColor:BI_COLORS.tendencia, borderWidth:2, borderDash:[5,4],
+        pointRadius:0, tension:0.3, fill:false }
+    ]},
     options: {
       responsive:true, maintainAspectRatio:false,
-      plugins: { legend:{ labels:{ color:BI_COLORS.text, font:{size:11} } } },
-      scales: {
-        x: { grid:{ color:BI_COLORS.grid }, ticks:{ color:BI_COLORS.text, font:{size:11} } },
-        y: { grid:{ color:BI_COLORS.grid }, ticks:{ color:BI_COLORS.text, font:{size:11},
-             callback:function(v){ return '$'+_biMxn(v); } } }
+      plugins:{ legend:{ labels:{ color:BI_COLORS.text, font:{size:10}, boxWidth:12 } } },
+      scales:{
+        x:{ grid:{color:BI_COLORS.grid}, ticks:{color:BI_COLORS.text, font:{size:10}} },
+        y:{ grid:{color:BI_COLORS.grid}, ticks:{color:BI_COLORS.text, font:{size:10},
+            callback:function(v){ return '$'+_biMxn(v); }} }
       }
     }
   });
@@ -8010,31 +7995,6 @@ function _biTopMeds(vAnio) {
 }
 
 /* ── VENTAS MTY vs SLP ───────────────────────────────────── */
-function _biSucursales(labels, mty, slp) {
-  var ctx = document.getElementById('bi-chart-sucursales');
-  if (!ctx) return;
-  if (_biCharts['sucursales']) _biCharts['sucursales'].destroy();
-  _biCharts['sucursales'] = new Chart(ctx, {
-    type:'bar',
-    data: {
-      labels:labels,
-      datasets:[
-        { label:'MTY', data:mty, backgroundColor:BI_COLORS.mty+'99', borderColor:BI_COLORS.mty, borderWidth:1.5, borderRadius:3 },
-        { label:'SLP', data:slp, backgroundColor:BI_COLORS.slp+'99', borderColor:BI_COLORS.slp, borderWidth:1.5, borderRadius:3 }
-      ]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{labels:{color:BI_COLORS.text, font:{size:11}}}},
-      scales:{
-        x:{stacked:false, grid:{color:BI_COLORS.grid}, ticks:{color:BI_COLORS.text, font:{size:11}}},
-        y:{grid:{color:BI_COLORS.grid}, ticks:{color:BI_COLORS.text, font:{size:11},
-           callback:function(v){return '$'+_biMxn(v);}}}
-      }
-    }
-  });
-}
-
 /* ── VENTAS POR DÍA DE LA SEMANA ─────────────────────────── */
 function _biDiaSemana(vAnio) {
   var dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -8070,43 +8030,6 @@ function _biDiaSemana(vAnio) {
         y:{position:'left', grid:{color:BI_COLORS.grid}, ticks:{color:BI_COLORS.text, font:{size:10},
            callback:function(v){return '$'+_biMxn(v);}}},
         y2:{position:'right', grid:{display:false}, ticks:{color:'#f59e0b', font:{size:10},
-           callback:function(v){return '$'+_biMxn(v);}}}
-      }
-    }
-  });
-}
-
-/* ── ACUMULADO ANUAL ─────────────────────────────────────── */
-function _biAcumulado(ventasMes, anio) {
-  var acum = [], suma = 0;
-  // Meta mensual estimada basada en promedio 2026 ($181K/mes de los 3 meses conocidos)
-  var metaMensual = 181164;
-  var metaAcum = [], metaSuma = 0;
-  ventasMes.forEach(function(v, i){
-    suma += v; acum.push(suma);
-    metaSuma += metaMensual; metaAcum.push(metaSuma);
-  });
-  var ctx = document.getElementById('bi-chart-acumulado');
-  if (!ctx) return;
-  if (_biCharts['acumulado']) _biCharts['acumulado'].destroy();
-  _biCharts['acumulado'] = new Chart(ctx, {
-    type:'line',
-    data:{
-      labels:MESES,
-      datasets:[
-        { label:'Ingresos acumulados', data:acum, borderColor:BI_COLORS.ventas,
-          backgroundColor:BI_COLORS.ventas+'22', fill:true, tension:0.3, borderWidth:2,
-          pointRadius:3 },
-        { label:'Meta estimada', data:metaAcum, borderColor:'rgba(255,255,255,0.3)',
-          borderWidth:1.5, borderDash:[6,4], pointRadius:0, fill:false }
-      ]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{labels:{color:BI_COLORS.text, font:{size:11}}}},
-      scales:{
-        x:{grid:{color:BI_COLORS.grid}, ticks:{color:BI_COLORS.text}},
-        y:{grid:{color:BI_COLORS.grid}, ticks:{color:BI_COLORS.text, font:{size:10},
            callback:function(v){return '$'+_biMxn(v);}}}
       }
     }
