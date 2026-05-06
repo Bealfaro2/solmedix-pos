@@ -3,7 +3,7 @@
 <head>
   <link rel="icon" type="image/jpeg" sizes="32x32" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAAgACADASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAABQQCB//EACoQAAICAQIFAQkBAAAAAAAAAAECAwQRABIFEyExYUEGFBUiI0JRcZFS/8QAFwEAAwEAAAAAAAAAAAAAAAAAAgMEAf/EACIRAAIBBAIBBQAAAAAAAAAAAAECAAMRIfAxUXESYYGxwf/aAAwDAQACEQMRAD8A6VPNHXgeaVtqINzHxou3xW7DEBBRE05WOQR78YViQc+R0/utWalqUpz0E6oQSeYQD52YwT4JxqLjTR2uHc5opY543jRsntmVehPYn18aGiS1ZVIxcRzoq0iefzqKR8R3TLvQLDJK0KNn7h+f3g/zzq/REqI8Hw+Cq7qudwc4w2em49+vUhhqunFaQjmthACNpkMhJ/OSBpaM17HMKoi2uMbiZfiJW2lUVJmmaLmlQV6DOO5PfQnE7q2qdvll4lWeJWjlPzBg4JwuegHQnvnSEk6p7Qx2mWTktTKhxGx67wcdBo29UvWDdurAUisSwhI2T6hCso3Y9B3OPA1eaQupA6++NI8yZH5B3fBivDr1Ye9B7MsksR3O0oxuU9ioH25yBj10ojFkVipUkZ2nuNBW6Vtyl+HM1ikx2B1AM4zlh4H+fIzpuCVZ4ElUModQQGXBH7HodJNMKgI+fY7uJrP6nM//2Q=="/>
 <meta charset="UTF-8">
-<!-- Solmedix admin.html — v4.7 — 06/may/2026 — fix logo flotante, fix datos BI esperan sync-ok -->
+<!-- Solmedix admin.html — v4.9 — 06/may/2026 — fix tabla BI alineación inline styles, loading indicator -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzBmMTcyYSIvPgogIDxyZWN0IHg9IjEzIiB5PSI2IiB3aWR0aD0iNiIgaGVpZ2h0PSIyMCIgcng9IjIiIGZpbGw9IiMyYjdmZDQiLz4KICA8cmVjdCB4PSI2IiB5PSIxMyIgd2lkdGg9IjIwIiBoZWlnaHQ9IjYiIHJ4PSIyIiBmaWxsPSIjMmI3ZmQ0Ii8+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solmedix — Administración</title>
@@ -609,12 +609,26 @@ select option { background:var(--bg-2); color:var(--text); }
       <div class="card" style="padding:12px;margin-bottom:10px">
         <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">📋 Resumen mensual</div>
         <div style="overflow-x:auto">
-          <table class="tbl" style="font-size:12px" id="bi-tabla-resumen">
-            <thead><tr>
-              <th>Mes</th><th class="fis-tr">Ventas</th><th class="fis-tr">Compras</th>
-              <th class="fis-tr">Margen $</th><th class="fis-tr">Margen %</th>
-              <th class="fis-tr">Tickets</th><th class="fis-tr">Ticket prom.</th>
-              <th class="fis-tr">vs anterior</th>
+          <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed" id="bi-tabla-resumen">
+            <colgroup>
+              <col style="width:55px">
+              <col style="width:13%">
+              <col style="width:13%">
+              <col style="width:13%">
+              <col style="width:10%">
+              <col style="width:9%">
+              <col style="width:13%">
+              <col style="width:11%">
+            </colgroup>
+            <thead><tr style="background:rgba(15,23,42,.6)">
+              <th style="padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Mes</th>
+              <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);color:var(--text-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Ventas</th>
+              <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);color:var(--text-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Compras</th>
+              <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);color:var(--text-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Margen $</th>
+              <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);color:var(--text-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Margen %</th>
+              <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);color:var(--text-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Tickets</th>
+              <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);color:var(--text-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Ticket prom.</th>
+              <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);color:var(--text-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">vs anterior</th>
             </tr></thead>
             <tbody id="bi-tabla-body"></tbody>
             <tfoot id="bi-tabla-foot"></tfoot>
@@ -7806,14 +7820,20 @@ var MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','
 
 /* ── INICIALIZAR ─────────────────────────────────────────── */
 function initBI() {
-  // Esperar a que los datos estén cargados — cargarTodo marca sync como 'ok'
   var syncEl = document.getElementById('sync-status');
   var syncOk = syncEl && syncEl.classList.contains('sync-ok');
-  if (!syncOk || (ventas.length === 0 && compras.length === 0)) {
-    // Datos aún no listos — revisar si al menos ventas tiene datos
-    // (puede haber 0 ventas legítimamente, pero sync debe ser ok)
-    if (!syncOk) { setTimeout(initBI, 400); return; }
+  if (!syncOk) {
+    var kpis = document.getElementById('bi-kpis');
+    if (kpis && !kpis.dataset.loading) {
+      kpis.dataset.loading = '1';
+      kpis.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-3);font-size:13px">⏳ Cargando datos del servidor...</div>';
+    }
+    setTimeout(initBI, 400);
+    return;
   }
+  // Limpiar indicador de carga
+  var kpisEl = document.getElementById('bi-kpis');
+  if (kpisEl) delete kpisEl.dataset.loading;
 
   // Poblar selector de años desde ventas + compras
   var anios = new Set();
@@ -8049,6 +8069,9 @@ function _biTablaResumen(ventasMes, comprasMes, margenMes, cuentaMes, ticketsMes
   if (!tbody) return;
   var html = '';
   var tvTot=0, tcTot=0, tmTot=0, tkTot=0;
+  var S  = ';border-bottom:1px solid rgba(51,65,85,.4);text-align:right;font-family:var(--mono);font-size:12px';
+  var SL = ';border-bottom:1px solid rgba(51,65,85,.4);font-weight:600;font-size:12px';
+  var P  = 'padding:8px 10px';
   ventasMes.forEach(function(v,i){
     if (v === 0 && comprasMes[i] === 0) return;
     var m = comprasMes[i], mg = margenMes[i], mp = v>0?(mg/v*100):0;
@@ -8059,27 +8082,29 @@ function _biTablaResumen(ventasMes, comprasMes, margenMes, cuentaMes, ticketsMes
       (cambio>=0?'▲':'▼')+Math.abs(cambio).toFixed(1)+'%</span>';
     tvTot+=v; tcTot+=m; tmTot+=mg; tkTot+=cuentaMes[i];
     html += '<tr>'+
-      '<td style="font-weight:600">'+MESES[i]+'</td>'+
-      '<td class="fis-tr fis-mono" style="color:#6366f1">$'+_biMxn(v)+'</td>'+
-      '<td class="fis-tr fis-mono" style="color:#f97316">$'+_biMxn(m)+'</td>'+
-      '<td class="fis-tr fis-mono" style="color:'+(mg>=0?'#10b981':'#ef4444')+'">$'+_biMxn(mg)+'</td>'+
-      '<td class="fis-tr" style="color:'+(mp>=15?'#10b981':mp>=5?'#f59e0b':'#ef4444')+'">'+mp.toFixed(1)+'%</td>'+
-      '<td class="fis-tr">'+cuentaMes[i]+'</td>'+
-      '<td class="fis-tr fis-mono">$'+_biMxn(ticketsMes[i])+'</td>'+
-      '<td class="fis-tr">'+cambioHtml+'</td>'+
+      '<td style="'+P+SL+'">'+MESES[i]+'</td>'+
+      '<td style="'+P+S+';color:#6366f1">$'+_biMxn(v)+'</td>'+
+      '<td style="'+P+S+';color:#f97316">$'+_biMxn(m)+'</td>'+
+      '<td style="'+P+S+';color:'+(mg>=0?'#10b981':'#ef4444')+'">$'+_biMxn(mg)+'</td>'+
+      '<td style="'+P+S+';color:'+(mp>=15?'#10b981':mp>=5?'#f59e0b':'#ef4444')+'">'+mp.toFixed(1)+'%</td>'+
+      '<td style="'+P+S+'">'+cuentaMes[i]+'</td>'+
+      '<td style="'+P+S+'">$'+_biMxn(ticketsMes[i])+'</td>'+
+      '<td style="'+P+S+'">'+cambioHtml+'</td>'+
       '</tr>';
   });
   tbody.innerHTML = html || '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-3)">Sin datos para el año seleccionado</td></tr>';
   var mgTot = tvTot-tcTot, mpTot = tvTot>0?(mgTot/tvTot*100):0;
-  if (tfoot) tfoot.innerHTML = '<tr style="font-weight:700;background:rgba(38,51,72,.8)">'+
-    '<td>TOTAL</td>'+
-    '<td class="fis-tr fis-mono" style="color:#6366f1">$'+_biMxn(tvTot)+'</td>'+
-    '<td class="fis-tr fis-mono" style="color:#f97316">$'+_biMxn(tcTot)+'</td>'+
-    '<td class="fis-tr fis-mono" style="color:'+(mgTot>=0?'#10b981':'#ef4444')+'">$'+_biMxn(mgTot)+'</td>'+
-    '<td class="fis-tr" style="color:'+(mpTot>=15?'#10b981':mpTot>=5?'#f59e0b':'#ef4444')+'">'+mpTot.toFixed(1)+'%</td>'+
-    '<td class="fis-tr">'+tkTot+'</td>'+
-    '<td class="fis-tr fis-mono">$'+_biMxn(tkTot>0?tvTot/tkTot:0)+'</td>'+
-    '<td></td></tr>';
+  var SF = ';text-align:right;font-family:var(--mono);font-size:12px;font-weight:700';
+  var PF = 'padding:8px 10px;background:rgba(38,51,72,.8)';
+  if (tfoot) tfoot.innerHTML = '<tr>'+
+    '<td style="'+PF+';font-weight:700;font-size:12px">TOTAL</td>'+
+    '<td style="'+PF+SF+';color:#6366f1">$'+_biMxn(tvTot)+'</td>'+
+    '<td style="'+PF+SF+';color:#f97316">$'+_biMxn(tcTot)+'</td>'+
+    '<td style="'+PF+SF+';color:'+(mgTot>=0?'#10b981':'#ef4444')+'">$'+_biMxn(mgTot)+'</td>'+
+    '<td style="'+PF+SF+';color:'+(mpTot>=15?'#10b981':mpTot>=5?'#f59e0b':'#ef4444')+'">'+mpTot.toFixed(1)+'%</td>'+
+    '<td style="'+PF+SF+'">'+tkTot+'</td>'+
+    '<td style="'+PF+SF+'">$'+_biMxn(tkTot>0?tvTot/tkTot:0)+'</td>'+
+    '<td style="'+PF+'"></td></tr>';
 }
 
 /* ── EXPORTAR EXCEL ──────────────────────────────────────── */
