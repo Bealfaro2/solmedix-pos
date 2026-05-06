@@ -3,7 +3,7 @@
 <head>
   <link rel="icon" type="image/jpeg" sizes="32x32" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAAgACADASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAABQQCB//EACoQAAICAQIFAQkBAAAAAAAAAAECAwQRABIFEyExYUEGFBUiI0JRcZFS/8QAFwEAAwEAAAAAAAAAAAAAAAAAAgMEAf/EACIRAAIBBAIBBQAAAAAAAAAAAAECAAMRIfAxUXESYYGxwf/aAAwDAQACEQMRAD8A6VPNHXgeaVtqINzHxou3xW7DEBBRE05WOQR78YViQc+R0/utWalqUpz0E6oQSeYQD52YwT4JxqLjTR2uHc5opY543jRsntmVehPYn18aGiS1ZVIxcRzoq0iefzqKR8R3TLvQLDJK0KNn7h+f3g/zzq/REqI8Hw+Cq7qudwc4w2em49+vUhhqunFaQjmthACNpkMhJ/OSBpaM17HMKoi2uMbiZfiJW2lUVJmmaLmlQV6DOO5PfQnE7q2qdvll4lWeJWjlPzBg4JwuegHQnvnSEk6p7Qx2mWTktTKhxGx67wcdBo29UvWDdurAUisSwhI2T6hCso3Y9B3OPA1eaQupA6++NI8yZH5B3fBivDr1Ye9B7MsksR3O0oxuU9ioH25yBj10ojFkVipUkZ2nuNBW6Vtyl+HM1ikx2B1AM4zlh4H+fIzpuCVZ4ElUModQQGXBH7HodJNMKgI+fY7uJrP6nM//2Q=="/>
 <meta charset="UTF-8">
-<!-- Solmedix admin.html — v3.6 — 04/may/2026 — fix filtrarClientes telefono como número -->
+<!-- Solmedix admin.html — v3.7 — 05/may/2026 — retenciones auto desde XMLs, fix filtrarClientes -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzBmMTcyYSIvPgogIDxyZWN0IHg9IjEzIiB5PSI2IiB3aWR0aD0iNiIgaGVpZ2h0PSIyMCIgcng9IjIiIGZpbGw9IiMyYjdmZDQiLz4KICA8cmVjdCB4PSI2IiB5PSIxMyIgd2lkdGg9IjIwIiBoZWlnaHQ9IjYiIHJ4PSIyIiBmaWxsPSIjMmI3ZmQ0Ii8+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solmedix — Administración</title>
@@ -911,11 +911,12 @@ select option { background:var(--bg-2); color:var(--text); }
             </div>
             <div class="fis-sum-row" style="align-items:center">
               <span>IVA retenciones a cargo (honorarios, etc.)</span>
-              <div style="display:flex;align-items:center;gap:6px">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
                 <span style="color:var(--text-3);font-size:11px">$</span>
                 <input type="number" id="dec-iva-retenciones" step="0.01" min="0"
                   style="width:110px;text-align:right;font-family:var(--mono);font-size:13px"
                   placeholder="0.00" oninput="FIS.recalcDeclaracion()"/>
+                <span id="dec-iva-ret-hint" style="font-size:10px;width:100%;text-align:right"></span>
               </div>
             </div>
             <div class="fis-sum-row fsr-total" style="margin-top:4px">
@@ -3486,7 +3487,7 @@ function renderClientesAdmin(lista){
 
 function filtrarClientesAdmin(){
   var q=document.getElementById('bq-cli').value.trim().toLowerCase();
-  renderClientesAdmin(q.length<2?clientes:clientes.filter(function(c){return String(c.nombre||'').toLowerCase().indexOf(q)>=0||String(c.telefono||'').indexOf(q)>=0||String(c.rfc||'').toLowerCase().indexOf(q)>=0;}));
+  renderClientesAdmin(q.length<2?clientes:clientes.filter(function(c){return c.nombre.toLowerCase().indexOf(q)>=0||String(c.telefono||'').indexOf(q)>=0||(c.rfc||'').toLowerCase().indexOf(q)>=0;}));
 }
 
 function abrirEditarCliente(id){
@@ -5851,8 +5852,10 @@ const FiscalModule = (function() {
     var tbodyRet = document.getElementById('fis-tbl-retenciones');
     if (tbodyRet) {
       tbodyRet.innerHTML = [
-        ['IVA retenido (arrendamiento 10.67%)', ivaRetIVA, 'Impuesto 002 retenido'],
-        ['ISR retenido (arrendamiento 1.25%)', isrRetenido, 'Impuesto 001 retenido'],
+        ['IVA retenido — servicios independientes (002)', ivaRetIVA,
+          ivaRetIVA > 0 ? st.egresos.filter(function(g){return _n(g.iva_retenido)>0;}).length+' CFDI(s)' : 'Sin retenciones'],
+        ['ISR retenido — servicios independientes (001)', isrRetenido,
+          isrRetenido > 0 ? 'Retención impuesto 001' : 'Sin retenciones'],
       ].map(function(r) {
         return '<tr><td>' + r[0] + '</td>' +
                '<td class="fis-tr fis-mono" style="color:#ef4444">' + _mxn(r[1]) + '</td>' +
@@ -5863,6 +5866,33 @@ const FiscalModule = (function() {
     // ── Resultado Retenciones ─────────────────────────────────────
     var retEl = document.getElementById('fis-ret-resultado');
     if (retEl) retEl.textContent = _mxn(ivaRetIVA + isrRetenido);
+
+    // ── Pre-llenar campo de declaración con retenciones calculadas ──
+    var decRetEl = document.getElementById('dec-iva-retenciones');
+    if (decRetEl && !decRetEl.dataset.manualEdit) {
+      // Solo pre-llenar si no hay declaración guardada ya cargada
+      if (!st.declaracion || !st.declaracion.iva_retenciones_cargo) {
+        decRetEl.value = ivaRetIVA > 0 ? ivaRetIVA.toFixed(2) : '';
+      }
+      // Mostrar hint con detalle
+      var hintEl = document.getElementById('dec-iva-ret-hint');
+      if (hintEl) {
+        var cfdiConRet = st.egresos.filter(function(g){ return _n(g.iva_retenido) > 0; });
+        if (cfdiConRet.length) {
+          hintEl.textContent = '↑ Calculado de ' + cfdiConRet.length + ' CFDI(s) con retención';
+          hintEl.style.color = 'var(--green)';
+        } else {
+          hintEl.textContent = 'Sin CFDIs con retención detectados';
+          hintEl.style.color = 'var(--text-3)';
+        }
+      }
+    }
+
+    // Marcar como edición manual si el usuario modifica el campo
+    if (decRetEl && !decRetEl._listenerAdded) {
+      decRetEl._listenerAdded = true;
+      decRetEl.addEventListener('input', function(){ this.dataset.manualEdit = '1'; });
+    }
   }
 
   function _renderExternos() {
@@ -6579,7 +6609,11 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
   function _cargarDeclaracionEnForm(dec) {
     if (!dec) return;
     _setDecInput('dec-iva-acreditable-sat', dec.iva_acreditable_sat);
-    _setDecInput('dec-iva-retenciones',     dec.iva_retenciones_cargo);
+    var retEl = document.getElementById('dec-iva-retenciones');
+    if (retEl) {
+      retEl.value = dec.iva_retenciones_cargo || '';
+      retEl.dataset.manualEdit = dec.iva_retenciones_cargo ? '1' : '';
+    }
     _setDecInput('dec-coeficiente',         dec.coeficiente_utilidad || EMPRESA.coeficiente_utilidad || 0.046);
     _setDecInput('dec-isr-causado',         dec.isr_causado);
     _setDecInput('dec-compensacion',        dec.compensacion_aplicada);
