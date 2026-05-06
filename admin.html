@@ -3,7 +3,7 @@
 <head>
   <link rel="icon" type="image/jpeg" sizes="32x32" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAAgACADASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAABQQCB//EACoQAAICAQIFAQkBAAAAAAAAAAECAwQRABIFEyExYUEGFBUiI0JRcZFS/8QAFwEAAwEAAAAAAAAAAAAAAAAAAgMEAf/EACIRAAIBBAIBBQAAAAAAAAAAAAECAAMRIfAxUXESYYGxwf/aAAwDAQACEQMRAD8A6VPNHXgeaVtqINzHxou3xW7DEBBRE05WOQR78YViQc+R0/utWalqUpz0E6oQSeYQD52YwT4JxqLjTR2uHc5opY543jRsntmVehPYn18aGiS1ZVIxcRzoq0iefzqKR8R3TLvQLDJK0KNn7h+f3g/zzq/REqI8Hw+Cq7qudwc4w2em49+vUhhqunFaQjmthACNpkMhJ/OSBpaM17HMKoi2uMbiZfiJW2lUVJmmaLmlQV6DOO5PfQnE7q2qdvll4lWeJWjlPzBg4JwuegHQnvnSEk6p7Qx2mWTktTKhxGx67wcdBo29UvWDdurAUisSwhI2T6hCso3Y9B3OPA1eaQupA6++NI8yZH5B3fBivDr1Ye9B7MsksR3O0oxuU9ioH25yBj10ojFkVipUkZ2nuNBW6Vtyl+HM1ikx2B1AM4zlh4H+fIzpuCVZ4ElUModQQGXBH7HodJNMKgI+fY7uJrP6nM//2Q=="/>
 <meta charset="UTF-8">
-<!-- Solmedix admin.html — v3.9 — 05/may/2026 — DIOT formato oficial SAT 28 campos, Excel DIOT -->
+<!-- Solmedix admin.html — v4.0 — 05/may/2026 — saldo 2022 parámetro EMPRESA, remanente automático -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzBmMTcyYSIvPgogIDxyZWN0IHg9IjEzIiB5PSI2IiB3aWR0aD0iNiIgaGVpZ2h0PSIyMCIgcng9IjIiIGZpbGw9IiMyYjdmZDQiLz4KICA8cmVjdCB4PSI2IiB5PSIxMyIgd2lkdGg9IjIwIiBoZWlnaHQ9IjYiIHJ4PSIyIiBmaWxsPSIjMmI3ZmQ0Ii8+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solmedix — Administración</title>
@@ -1007,11 +1007,14 @@ select option { background:var(--bg-2); color:var(--text); }
             </div>
             <div class="fis-sum-row" style="align-items:center">
               <span>Remanente saldo 2022 tras aplicación</span>
-              <div style="display:flex;align-items:center;gap:6px">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
                 <span style="color:var(--text-3);font-size:11px">$</span>
                 <input type="number" id="dec-remanente" step="0.01" min="0"
                   style="width:110px;text-align:right;font-family:var(--mono);font-size:13px"
                   placeholder="0.00"/>
+                <span id="dec-remanente-hint" style="font-size:10px;width:100%;text-align:right;color:var(--text-3)">
+                  Saldo original: $247,947 — última actualización cargada
+                </span>
               </div>
             </div>
             <div class="fis-sum-row fsr-total">
@@ -5675,7 +5678,14 @@ function setClaveSatInput(clave) {
 <script>
 const FiscalModule = (function() {
   const RFC_EMPRESA = 'SSM180928AQ7';
-  var EMPRESA = { nombre:'SOLMEDIX', rfc: RFC_EMPRESA, tasa_isr: 0.30 };
+  var EMPRESA = {
+    nombre: 'SOLMEDIX',
+    rfc: RFC_EMPRESA,
+    tasa_isr: 0.30,
+    coeficiente_utilidad: 0.0460,       // Coeficiente 2025 aplicable en 2026
+    saldo_favor_2022: 247947,           // Saldo original ejercicio 2022
+    saldo_favor_2022_remanente: 162069  // Remanente actualizado — se actualiza al guardar declaraciones
+  };
 
   var st = {
     periodo:'', sucursal:'TODAS', inicializado:false,
@@ -6611,6 +6621,25 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     var isrCausado   = _getDecInput('dec-isr-causado');
     var compensacion = _getDecInput('dec-compensacion');
 
+    // ── Pre-llenar remanente saldo 2022 ──────────────────────────
+    var remEl = document.getElementById('dec-remanente');
+    if (remEl && !remEl.dataset.manualEdit && !remEl.value) {
+      // Buscar el remanente de la declaración del mes anterior
+      var remAuto = _calcRemanenteSaldo2022(st.periodo);
+      if (remAuto > 0) {
+        remEl.value = remAuto.toFixed(2);
+        var remHintEl = document.getElementById('dec-remanente-hint');
+        if (remHintEl) {
+          remHintEl.textContent = '↑ Del mes anterior';
+          remHintEl.style.color = 'var(--green)';
+        }
+      }
+    }
+    if (remEl && !remEl._remListenerAdded) {
+      remEl._remListenerAdded = true;
+      remEl.addEventListener('input', function(){ this.dataset.manualEdit = '1'; });
+    }
+
     // IVA resultado
     var ivaSaldoFavor = ivaAcredSAT - ivaReten;
     if (ivaAcredSAT > 0 || ivaReten > 0) {
@@ -6638,6 +6667,26 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
       isrCargo > 0 ? 'fsv-warn' : 'fsv-pos');
     _setDecSpan('dec-isr-pagar', isrPagar > 0 ? _mxn(isrPagar)+' PAGO EN EFECTIVO' : '$0.00 (compensa)',
       isrPagar > 0 ? 'fsv-warn' : 'fsv-pos');
+  }
+
+  function _calcRemanenteSaldo2022(periodoActual) {
+    // Busca la declaración presentada más reciente anterior al período actual
+    // y devuelve su remanente. Si no hay ninguna, devuelve el remanente de EMPRESA.
+    if (!window._todasDeclaraciones || !window._todasDeclaraciones.length) {
+      return EMPRESA.saldo_favor_2022_remanente;
+    }
+    var year = periodoActual ? periodoActual.substring(0,4) : '';
+    var previas = window._todasDeclaraciones.filter(function(d){
+      return d.periodo < periodoActual &&
+             d.periodo.substring(0,4) === year &&
+             d.estado === 'presentada' &&
+             _n(d.remanente_saldo_2022) > 0;
+    }).sort(function(a,b){ return b.periodo.localeCompare(a.periodo); });
+
+    if (previas.length) {
+      return _n(previas[0].remanente_saldo_2022);
+    }
+    return EMPRESA.saldo_favor_2022_remanente;
   }
 
   function _calcIngresosAcumulados(periodoActual) {
@@ -6756,8 +6805,12 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
   function limpiarDeclaracion() {
     ['dec-iva-acreditable-sat','dec-iva-retenciones','dec-coeficiente',
      'dec-isr-causado','dec-compensacion','dec-remanente','dec-num-op'].forEach(function(id){
-      var el=document.getElementById(id); if(el) el.value='';
+      var el=document.getElementById(id);
+      if(el){ el.value=''; delete el.dataset.manualEdit; el._remListenerAdded=false; el._listenerAdded=false; }
     });
+    // Pre-llenar coeficiente por defecto
+    var coefEl = document.getElementById('dec-coeficiente');
+    if (coefEl) coefEl.value = EMPRESA.coeficiente_utilidad || 0.046;
     var notasEl=document.getElementById('fis-notas-contador'); if(notasEl) notasEl.value='';
     ['dec-iva-resultado','dec-ing-acum','dec-utilidad','dec-isr-causado-calc',
      'dec-prov-ant','dec-isr-cargo','dec-isr-pagar'].forEach(function(id){
@@ -6815,6 +6868,10 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     apiPost(payload, function(e,d){
       if (!e && d && d.ok) {
         st.declaracion = payload;
+        // Actualizar remanente en memoria si la declaración quedó presentada
+        if (numOp && remanente > 0) {
+          EMPRESA.saldo_favor_2022_remanente = remanente;
+        }
         alrt.style.display='block';
         alrt.style.cssText='display:block;padding:8px 12px;border-radius:var(--radius-sm);font-size:12px;background:rgba(16,185,129,.12);color:#6ee7b7;margin-top:8px';
         alrt.textContent = numOp
