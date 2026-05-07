@@ -2352,7 +2352,7 @@ function login() {
   // Show/hide features based on perfil
   aplicarPermisos();
   mostrarTabsSegunPerfil();
-  if(usuarioActual && usuarioActual.rol==='maestro'){
+  if(perfilActual==='admin'){
     var dashTab=document.getElementById('nt-dashboard');
     if(dashTab) dashTab.style.display='';
     navTab('dashboard');
@@ -2485,8 +2485,8 @@ function navTab(t) {
     if(x==='pwds' && perfilActual!=='admin') return;
     // Don't show fiscal tab for non-admin
     if(x==='fiscal' && perfilActual!=='admin') return;
-    // Don't show dashboard tab for non-maestro
-    if(x==='dashboard' && !(usuarioActual && usuarioActual.rol==='maestro')) return;
+    // Don't show dashboard tab for non-admin (maestro en sistema legacy = admin)
+    if(x==='dashboard' && perfilActual!=='admin') return;
     tabEl.className='nav-tab'+(t===x?' on':'');
     tabEl.style.display= (x==='bi') ? '' : '';
   });
@@ -3661,6 +3661,10 @@ function mostrarTabsSegunPerfil(){
   var chipTextos = { admin:'Administrador', mty:'Suc. Monterrey', slp:'Suc. San Luis Potosi' };
   var chipEl = document.getElementById('chip-perfil');
   if(chipEl) chipEl.textContent = chipTextos[perfilActual]||'';
+
+  // Dashboard tab - only admin
+  var dashTab=document.getElementById('nt-dashboard');
+  if(dashTab) dashTab.style.display=perfilActual==='admin'?'':'none';
 
   // Passwords tab - only admin
   var pwdTab=document.getElementById('nt-pwds');
