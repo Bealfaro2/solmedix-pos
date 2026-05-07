@@ -534,6 +534,7 @@ select option { background:var(--bg-2); color:var(--text); }
 
   <!-- NAV TABS -->
   <div class="nav-tabs">
+    <button class="nav-tab" id="nt-dashboard" onclick="navTab('dashboard')" style="display:none">🏠 Dashboard</button>
     <button class="nav-tab on"  id="nt-reporte"  onclick="navTab('reporte')">📊 Ventas</button>
     <button class="nav-tab"     id="nt-meds"      onclick="navTab('meds')">💊 Medicamentos</button>
     <button class="nav-tab"     id="nt-clientes"  onclick="navTab('clientes')">👤 Clientes</button>
@@ -1309,6 +1310,49 @@ select option { background:var(--bg-2); color:var(--text); }
     </div>
 
     <!-- MEDICAMENTOS -->
+    <!-- DASHBOARD MAESTRO -->
+    <div id="sec-dashboard" style="display:none">
+      <div style="padding:0 0 20px">
+        <h3 style="font-family:var(--font);font-size:16px;color:var(--text);margin-bottom:4px">Dashboard General</h3>
+        <p style="font-size:12px;color:var(--text-3)">Vista consolidada de ambas sucursales</p>
+      </div>
+      <div id="dash-metricas" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px">
+        <div class="stat-card"><div class="stat-label">Ventas hoy — Total</div><div class="stat-num" id="dash-total-dia">$0</div></div>
+        <div class="stat-card"><div class="stat-label" id="dash-lbl-suc1">Ventas hoy — Suc 1</div><div class="stat-num" id="dash-total-suc1">$0</div></div>
+        <div class="stat-card"><div class="stat-label" id="dash-lbl-suc2">Ventas hoy — Suc 2</div><div class="stat-num" id="dash-total-suc2">$0</div></div>
+        <div class="stat-card"><div class="stat-label">Tickets hoy — Total</div><div class="stat-num" id="dash-tickets-dia">0</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+        <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
+          <div style="font-size:12px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px" id="dash-mes-lbl-suc1">Ventas del mes — Sucursal 1</div>
+          <div id="dash-ventas-mes-suc1" style="font-size:28px;font-weight:700;color:var(--blue-bright);margin-bottom:4px">$0</div>
+          <div id="dash-tickets-mes-suc1" style="font-size:12px;color:var(--text-3)">0 tickets</div>
+        </div>
+        <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
+          <div style="font-size:12px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px" id="dash-mes-lbl-suc2">Ventas del mes — Sucursal 2</div>
+          <div id="dash-ventas-mes-suc2" style="font-size:28px;font-weight:700;color:var(--blue-bright);margin-bottom:4px">$0</div>
+          <div id="dash-tickets-mes-suc2" style="font-size:12px;color:var(--text-3)">0 tickets</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:24px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:12px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em">⚠️ Inventario crítico (stock ≤ 5)</div>
+          <div id="dash-critico-count" style="font-size:11px;color:var(--text-3)"></div>
+        </div>
+        <div id="dash-inventario-critico"><p style="font-size:13px;color:var(--text-3);text-align:center;padding:20px">Cargando...</p></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
+          <div style="font-size:12px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px" id="dash-caja-lbl-suc1">Caja — Sucursal 1</div>
+          <div id="dash-caja-suc1" style="font-size:13px;color:var(--text-2)">Sin datos de caja</div>
+        </div>
+        <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
+          <div style="font-size:12px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px" id="dash-caja-lbl-suc2">Caja — Sucursal 2</div>
+          <div id="dash-caja-suc2" style="font-size:13px;color:var(--text-2)">Sin datos de caja</div>
+        </div>
+      </div>
+    </div><!-- /sec-dashboard -->
+
     <div id="sec-meds" style="display:none">
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
@@ -2308,7 +2352,13 @@ function login() {
   // Show/hide features based on perfil
   aplicarPermisos();
   mostrarTabsSegunPerfil();
-  navTab('reporte');
+  if(usuarioActual && usuarioActual.rol==='maestro'){
+    var dashTab=document.getElementById('nt-dashboard');
+    if(dashTab) dashTab.style.display='';
+    navTab('dashboard');
+  } else {
+    navTab('reporte');
+  }
   cargarTodo();
 }
 
@@ -2426,7 +2476,7 @@ function setSyncStatus(t,m){ var el=document.getElementById('sync-status'); el.c
 
 /* NAV */
 function navTab(t) {
-  ['reporte','meds','clientes','lotes','compras','gastos','utilidad','precios','pwds','fiscal','bi'].forEach(function(x){
+  ['dashboard','reporte','meds','clientes','lotes','compras','gastos','utilidad','precios','pwds','fiscal','bi'].forEach(function(x){
     var secEl=document.getElementById('sec-'+x);
     if(secEl) secEl.style.display=t===x?'block':'none';
     var tabEl=document.getElementById('nt-'+x);
@@ -2435,6 +2485,8 @@ function navTab(t) {
     if(x==='pwds' && perfilActual!=='admin') return;
     // Don't show fiscal tab for non-admin
     if(x==='fiscal' && perfilActual!=='admin') return;
+    // Don't show dashboard tab for non-maestro
+    if(x==='dashboard' && !(usuarioActual && usuarioActual.rol==='maestro')) return;
     tabEl.className='nav-tab'+(t===x?' on':'');
     tabEl.style.display= (x==='bi') ? '' : '';
   });
@@ -2442,6 +2494,7 @@ function navTab(t) {
     var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
     s.onload=function(){ setTimeout(initBI,400); }; document.head.appendChild(s);
   }}
+  if(t==='dashboard'){ cargarDashboard(); }
   if(t==='reporte'){ ventasTab('reporte'); }
   if(t==='lotes'){ inventarioTab('lotes'); }
   if(t==='compras'){ renderCompras(); comprasTab('entrada'); }
@@ -2449,6 +2502,140 @@ function navTab(t) {
   if(t==='utilidad'){ inicializarFechasUtilidad(); }
   if(t==='precios'){ renderReportePrecios(); }
   if(t==='fiscal'){ FiscalModule.onLogin('Administrador'); }
+}
+
+/* DASHBOARD MAESTRO */
+function cargarDashboard() {
+  if (!ventas || !ventas.length) {
+    // Datos aún no cargados — reintentar
+    setTimeout(cargarDashboard, 500);
+    return;
+  }
+
+  var hoy = fechaLocal(new Date());
+  var mesActual = hoy.substring(0, 7); // YYYY-MM
+
+  // Obtener nombres de sucursales desde configSistema
+  var nomSuc1 = (configSistema.nombre_suc1 || 'Sucursal 1');
+  var nomSuc2 = (configSistema.nombre_suc2 || 'Sucursal 2');
+
+  // Actualizar labels dinámicos
+  var el;
+  el = document.getElementById('dash-lbl-suc1');      if(el) el.textContent = 'Ventas hoy — '+nomSuc1;
+  el = document.getElementById('dash-lbl-suc2');      if(el) el.textContent = 'Ventas hoy — '+nomSuc2;
+  el = document.getElementById('dash-mes-lbl-suc1');  if(el) el.textContent = 'Ventas del mes — '+nomSuc1;
+  el = document.getElementById('dash-mes-lbl-suc2');  if(el) el.textContent = 'Ventas del mes — '+nomSuc2;
+  el = document.getElementById('dash-caja-lbl-suc1'); if(el) el.textContent = 'Caja — '+nomSuc1;
+  el = document.getElementById('dash-caja-lbl-suc2'); if(el) el.textContent = 'Caja — '+nomSuc2;
+
+  // ── Ventas del día y del mes ──────────────────────────────
+  var totalDia=0, suc1Dia=0, suc2Dia=0, ticketsDia=0;
+  var suc1Mes=0, suc2Mes=0, ticketsSuc1Mes=0, ticketsSuc2Mes=0;
+
+  ventas.forEach(function(v) {
+    if (v.estado === 'cancelada') return;
+    var fecha = String(v.fecha||'').substring(0,10);
+    var suc   = String(v.sucursal||'').toUpperCase();
+    var total = Number(v.total)||0;
+    var esSuc1 = (suc==='SUC1'||suc==='MTY');
+    var esSuc2 = (suc==='SUC2'||suc==='SLP');
+
+    // Día de hoy
+    if (fecha === hoy) {
+      totalDia  += total;
+      ticketsDia++;
+      if (esSuc1) suc1Dia += total;
+      if (esSuc2) suc2Dia += total;
+    }
+    // Mes actual
+    if (fecha.substring(0,7) === mesActual) {
+      if (esSuc1) { suc1Mes += total; ticketsSuc1Mes++; }
+      if (esSuc2) { suc2Mes += total; ticketsSuc2Mes++; }
+    }
+  });
+
+  function fmt(n){ return '$'+(Math.round(n)||0).toLocaleString('es-MX'); }
+
+  var d1=document.getElementById('dash-total-dia');    if(d1) d1.textContent=fmt(totalDia);
+  var d2=document.getElementById('dash-total-suc1');   if(d2) d2.textContent=fmt(suc1Dia);
+  var d3=document.getElementById('dash-total-suc2');   if(d3) d3.textContent=fmt(suc2Dia);
+  var d4=document.getElementById('dash-tickets-dia');  if(d4) d4.textContent=ticketsDia;
+  var d5=document.getElementById('dash-ventas-mes-suc1'); if(d5) d5.textContent=fmt(suc1Mes);
+  var d6=document.getElementById('dash-ventas-mes-suc2'); if(d6) d6.textContent=fmt(suc2Mes);
+  var d7=document.getElementById('dash-tickets-mes-suc1'); if(d7) d7.textContent=ticketsSuc1Mes+' tickets';
+  var d8=document.getElementById('dash-tickets-mes-suc2'); if(d8) d8.textContent=ticketsSuc2Mes+' tickets';
+
+  // ── Inventario crítico (stock ≤ 5) ───────────────────────
+  var criticos = [];
+  lotes.forEach(function(l) {
+    var stock = parseInt(l.existencia||l.existencias||0);
+    if (stock <= 5) {
+      criticos.push({
+        nombre: l.nombre||l.medicamento||l.clave||'—',
+        lote:   l.lote||'—',
+        stock:  stock,
+        suc:    String(l.sucursal||'').toUpperCase()
+      });
+    }
+  });
+  criticos.sort(function(a,b){ return a.stock-b.stock; });
+
+  var critEl = document.getElementById('dash-inventario-critico');
+  var cntEl  = document.getElementById('dash-critico-count');
+  if (cntEl) cntEl.textContent = criticos.length + ' producto(s)';
+  if (critEl) {
+    if (!criticos.length) {
+      critEl.innerHTML = '<p style="font-size:13px;color:var(--text-3);text-align:center;padding:20px">Sin productos en stock crítico ✅</p>';
+    } else {
+      var html = '<table style="width:100%;border-collapse:collapse;font-size:12px">';
+      html += '<thead><tr style="color:var(--text-3)">';
+      html += '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border)">Medicamento</th>';
+      html += '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">Lote</th>';
+      html += '<th style="text-align:center;padding:6px 8px;border-bottom:1px solid var(--border)">Sucursal</th>';
+      html += '<th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border)">Stock</th>';
+      html += '</tr></thead><tbody>';
+      criticos.slice(0,15).forEach(function(c) {
+        var color = c.stock===0 ? '#ef4444' : c.stock<=2 ? '#f97316' : '#f59e0b';
+        html += '<tr>';
+        html += '<td style="padding:6px 8px;border-bottom:1px solid rgba(51,65,85,.3)">'+c.nombre+'</td>';
+        html += '<td style="padding:6px 8px;border-bottom:1px solid rgba(51,65,85,.3);color:var(--text-3);text-align:center">'+c.lote+'</td>';
+        var sucNom = (c.suc==='SUC1'||c.suc==='MTY') ? nomSuc1 : (c.suc==='SUC2'||c.suc==='SLP') ? nomSuc2 : c.suc;
+        html += '<td style="padding:6px 8px;border-bottom:1px solid rgba(51,65,85,.3);color:var(--text-3);text-align:center">'+sucNom+'</td>';
+        html += '<td style="padding:6px 8px;border-bottom:1px solid rgba(51,65,85,.3);text-align:right;font-weight:700;color:'+color+'">'+c.stock+'</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      if (criticos.length > 15) html += '<p style="font-size:11px;color:var(--text-3);text-align:center;padding:8px">...y '+(criticos.length-15)+' más</p>';
+      critEl.innerHTML = html;
+    }
+  }
+
+  // ── Caja del día por sucursal ─────────────────────────────
+  function renderCaja(elId, sucCodes) {
+    var cajEl = document.getElementById(elId);
+    if (!cajEl) return;
+    var entradas=0, salidas=0, venDia=0;
+    if (caja && caja.length) {
+      caja.forEach(function(c) {
+        if (String(c.fecha||'').substring(0,10) !== hoy) return;
+        var suc = String(c.sucursal||'').toUpperCase();
+        if (sucCodes.indexOf(suc) === -1) return;
+        var monto = Number(c.monto||0);
+        var tipo  = String(c.tipo||'').toLowerCase();
+        if (tipo==='apertura'||tipo==='abono') entradas += monto;
+        else if (tipo==='retiro') salidas += monto;
+        else if (tipo==='venta') venDia += monto;
+      });
+    }
+    cajEl.innerHTML =
+      '<div style="display:flex;gap:16px;flex-wrap:wrap">' +
+      '<span style="font-size:12px;color:var(--text-3)">Entradas: <strong style="color:#10b981">$'+Math.round(entradas).toLocaleString('es-MX')+'</strong></span>' +
+      '<span style="font-size:12px;color:var(--text-3)">Ventas: <strong style="color:var(--blue-bright)">$'+Math.round(venDia).toLocaleString('es-MX')+'</strong></span>' +
+      '<span style="font-size:12px;color:var(--text-3)">Retiros: <strong style="color:#ef4444">$'+Math.round(salidas).toLocaleString('es-MX')+'</strong></span>' +
+      '</div>';
+  }
+  renderCaja('dash-caja-suc1', ['SUC1','MTY']);
+  renderCaja('dash-caja-suc2', ['SUC2','SLP']);
 }
 
 /* REPORTE */
