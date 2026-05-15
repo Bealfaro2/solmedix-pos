@@ -1800,7 +1800,6 @@ function guardarCorte() {
           diferencia:diff, notas:'Cajero: '+cajero });
         cajaCorteHoy = cajaDia[cajaDia.length-1];
         document.getElementById('modal-corte').classList.remove('show');
-        cajaDia.push({ fecha:hoy, sucursal:sucursal, tipo:'corte' });
         // Siempre cerrar sesión después del corte (pendiente o normal)
         if (!_cortePendienteFecha) {
           cajaCorteHoy = cajaDia[cajaDia.length-1];
