@@ -539,6 +539,7 @@ select option { background:var(--bg-2); color:var(--text); }
     <button class="nav-tab"     id="nt-meds"      onclick="navTab('meds')">💊 Medicamentos</button>
     <button class="nav-tab"     id="nt-clientes"  onclick="navTab('clientes')">👤 Clientes</button>
     <button class="nav-tab"     id="nt-lotes"     onclick="navTab('lotes')">📦 Inventario</button>
+    <button class="nav-tab" id="nt-vencimientos" onclick="navTab('vencimientos')" style="background:rgba(239,68,68,.15);color:#fca5a5;border-color:rgba(239,68,68,.3)">⚠️ Vencimientos</button>
     <button class="nav-tab"     id="nt-compras"   onclick="navTab('compras')">🧾 Compras</button>
     <button class="nav-tab"     id="nt-gastos"    onclick="navTab('gastos')">💸 Gastos</button>
     <button class="nav-tab"     id="nt-utilidad"  onclick="navTab('utilidad')">📉 Utilidad</button>
@@ -1420,11 +1421,12 @@ select option { background:var(--bg-2); color:var(--text); }
         <div id="reporte-inv-stats" style="margin-bottom:14px"></div>
         <div style="overflow-x:auto">
           <table class="tbl">
-            <thead><tr>
+             <thead><tr>
               <th>Medicamento</th><th>Categoría</th><th>Lote</th>
               <th style="text-align:right">Existencias</th>
               <th style="text-align:right">Costo unit.</th>
               <th style="text-align:right">Valor total</th>
+              <th style="text-align:center">Vencimiento</th>
             </tr></thead>
             <tbody id="inv-body"></tbody>
             <tfoot id="inv-foot"></tfoot>
@@ -1525,6 +1527,38 @@ select option { background:var(--bg-2); color:var(--text); }
       </div>
 
     </div>
+    <div id="sec-vencimientos" style="display:none">
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div class="ptitle" style="margin:0">⚠️ Alertas de Vencimiento</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <label style="font-size:12px;color:var(--text-2)">Días de anticipación:</label>
+        <select id="venc-dias" onchange="renderVencimientos()" style="width:120px">
+          <option value="30">30 días</option>
+          <option value="60">60 días</option>
+          <option value="90" selected>90 días</option>
+          <option value="180">180 días</option>
+          <option value="0">Vencidos</option>
+        </select>
+      </div>
+    </div>
+    <div id="venc-stats" style="margin-bottom:14px"></div>
+    <div style="overflow-x:auto">
+      <table class="tbl">
+        <thead><tr>
+          <th>Medicamento</th>
+          <th>Lote</th>
+          <th>Sucursal</th>
+          <th style="text-align:right">Existencias</th>
+          <th style="text-align:center">Vencimiento</th>
+          <th style="text-align:right">Días restantes</th>
+          <th style="text-align:right">Valor en riesgo</th>
+        </tr></thead>
+        <tbody id="venc-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
     <!-- COMPRAS (unificado: Entrada XML + Reporte + Trazabilidad) -->
     <div id="sec-compras" style="display:none">
@@ -1736,12 +1770,13 @@ select option { background:var(--bg-2); color:var(--text); }
             <button class="btn btns" style="background:rgba(245,158,11,.2);color:#fcd34d;border-color:rgba(245,158,11,.4)" onclick="exportarReportePagos()">💳 Reporte Pagos</button>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:flex-end;margin-bottom:14px">
-          <div><label>Fecha inicio</label><input type="date" id="c-desde"/></div>
-          <div><label>Fecha fin</label><input type="date" id="c-hasta"/></div>
-          <div><label>Proveedor</label><select id="c-prov"><option value="">Todos los proveedores</option></select></div>
-          <div><button class="btn btnp" onclick="filtrarCompras()">Filtrar</button></div>
-        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:flex-end;margin-bottom:14px">
+  <div><label>Fecha inicio</label><input type="date" id="c-desde"/></div>
+  <div><label>Fecha fin</label><input type="date" id="c-hasta"/></div>
+  <div><label>Proveedor</label><select id="c-prov"><option value="">Todos los proveedores</option></select></div>
+  <div><label>Sucursal</label><select id="c-suc"><option value="">Todas</option><option value="MTY">MTY</option><option value="SLP">SLP</option></select></div>
+  <div><button class="btn btnp" onclick="filtrarCompras()">Filtrar</button></div>
+</div>
         <div id="compras-stats" style="margin-bottom:14px"></div>
         <div style="overflow-x:auto">
           <table class="tbl">
@@ -2476,7 +2511,7 @@ function setSyncStatus(t,m){ var el=document.getElementById('sync-status'); el.c
 
 /* NAV */
 function navTab(t) {
-  ['dashboard','reporte','meds','clientes','lotes','compras','gastos','utilidad','precios','pwds','fiscal','bi'].forEach(function(x){
+  ['dashboard','reporte','meds','clientes','lotes','vencimientos','compras','gastos','utilidad','precios','pwds','fiscal','bi'].forEach(function(x){
     var secEl=document.getElementById('sec-'+x);
     if(secEl) secEl.style.display=t===x?'block':'none';
     var tabEl=document.getElementById('nt-'+x);
@@ -2497,6 +2532,7 @@ function navTab(t) {
   if(t==='dashboard'){ cargarDashboard(); }
   if(t==='reporte'){ ventasTab('reporte'); }
   if(t==='lotes'){ inventarioTab('lotes'); }
+  if(t==='vencimientos'){ renderVencimientos(); }
   if(t==='compras'){ renderCompras(); comprasTab('entrada'); }
   if(t==='gastos'){ inicializarFechasGastos(); filtrarGastosFiscales(); filtrarGastosNF(); }
   if(t==='utilidad'){ inicializarFechasUtilidad(); }
@@ -2811,7 +2847,7 @@ function renderInventario(lista){
     if(perfilActual==='slp') src=src.filter(function(l){ return l.sucursal==='SLP'; });
   }
   src.sort(function(a,b){ return a.medicamento.localeCompare(b.medicamento,'es'); });
-  if(!src.length){document.getElementById('inv-body').innerHTML='<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px">Sin datos de inventario</td></tr>';return;}
+  if(!src.length){document.getElementById('inv-body').innerHTML='<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">Sin datos de inventario</td></tr>';return;}
   var totalPiezas=0,totalValor=0;
   var html='';
   for(var i=0;i<src.length;i++){
@@ -2827,7 +2863,27 @@ function renderInventario(lista){
     html+='<td style="font-family:monospace;color:var(--text-2)">'+l.lote+'</td>';
     html+='<td style="text-align:right;font-weight:700;color:'+color+'">'+stock+'</td>';
     html+='<td style="text-align:right;color:var(--text)">$'+costo.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
-    html+='<td style="text-align:right;font-weight:600;color:var(--text)">$'+valor.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
+    var venc = l.fecha_vencimiento || '';
+    var vencColor = 'var(--text-2)';
+    var vencIcon = '';
+    if (venc) {
+      var partes = venc.split('/');
+      var fechaVenc;
+      if (partes.length === 3) {
+        fechaVenc = new Date(partes[2], partes[1]-1, partes[0]);
+      } else if (partes.length === 2) {
+        fechaVenc = new Date(partes[1], partes[0]-1, 28);
+      }
+      if (fechaVenc) {
+        var hoy = new Date();
+        var diasRestantes = Math.floor((fechaVenc - hoy) / (1000*60*60*24));
+        if (diasRestantes < 0) { vencColor = '#ef4444'; vencIcon = ' ⚠️'; }
+        else if (diasRestantes <= 90) { vencColor = '#f59e0b'; vencIcon = ' ⚠️'; }
+        else { vencColor = '#10b981'; }
+      }
+    }
+    html+='<td style="text-align:right;font-weight:600;color:var(--text)">$'+valor.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    html+='<td style="text-align:center;color:'+vencColor+';font-size:12px">'+(venc||'—')+vencIcon+'</td></tr>';
   }
   document.getElementById('inv-body').innerHTML=html;
   document.getElementById('inv-foot').innerHTML='<tr style="background:rgba(38,51,72,.8);font-weight:700;color:var(--text)"><td colspan="3">TOTALES</td><td style="text-align:right">'+totalPiezas+' pzas</td><td></td><td style="text-align:right">$'+totalValor.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
@@ -3372,6 +3428,87 @@ function entradaAlrt(msg, tipo) {
   el.style.display = 'block';
 }
 
+/* ═══════════════════════════════════════════════
+   ALERTAS DE VENCIMIENTO
+═══════════════════════════════════════════════ */
+function renderVencimientos() {
+  var diasFiltro = parseInt(document.getElementById('venc-dias').value) || 90;
+  var hoy = new Date();
+  var alertas = [];
+
+  lotes.forEach(function(l) {
+    var venc = l.fecha_vencimiento || '';
+    if (!venc) return;
+    var partes = venc.split('/');
+    var fechaVenc;
+    if (partes.length === 3) {
+      fechaVenc = new Date(partes[2], partes[1]-1, partes[0]);
+    } else if (partes.length === 2) {
+      fechaVenc = new Date(partes[1], partes[0]-1, 28);
+    }
+    if (!fechaVenc) return;
+
+    var diasRestantes = Math.floor((fechaVenc - hoy) / (1000*60*60*24));
+
+    if (diasFiltro === 0) {
+      if (diasRestantes >= 0) return;
+    } else {
+      if (diasRestantes > diasFiltro) return;
+    }
+
+    var costo = Number(l.costo) || 0;
+    var stock = Number(l.existencias) || 0;
+    alertas.push({
+      medicamento: l.medicamento,
+      lote: l.lote,
+      sucursal: l.sucursal || 'MTY',
+      existencias: stock,
+      fecha_vencimiento: venc,
+      diasRestantes: diasRestantes,
+      valorRiesgo: stock * costo
+    });
+  });
+
+  alertas.sort(function(a,b){ return a.diasRestantes - b.diasRestantes; });
+
+  if (perfilActual === 'mty') alertas = alertas.filter(function(a){ return a.sucursal === 'MTY' || !a.sucursal; });
+  if (perfilActual === 'slp') alertas = alertas.filter(function(a){ return a.sucursal === 'SLP'; });
+
+  var totalValorRiesgo = alertas.reduce(function(s,a){ return s + a.valorRiesgo; }, 0);
+  var vencidos = alertas.filter(function(a){ return a.diasRestantes < 0; }).length;
+  var proximos = alertas.filter(function(a){ return a.diasRestantes >= 0; }).length;
+
+  document.getElementById('venc-stats').innerHTML =
+    '<div class="reporte-header">' +
+    '<div class="stat-card"><div class="stat-label">Vencidos</div><div class="stat-value" style="color:#ef4444">'+vencidos+'</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Por vencer</div><div class="stat-value" style="color:#f59e0b">'+proximos+'</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Valor en riesgo</div><div class="stat-value">$'+totalValorRiesgo.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div></div>' +
+    '</div>';
+
+  if (!alertas.length) {
+    document.getElementById('venc-body').innerHTML =
+      '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">✅ Sin alertas de vencimiento para el período seleccionado</td></tr>';
+    return;
+  }
+
+  var html = '';
+  alertas.forEach(function(a) {
+    var color = a.diasRestantes < 0 ? '#ef4444' : a.diasRestantes <= 30 ? '#f59e0b' : '#fcd34d';
+    var badge = a.diasRestantes < 0
+      ? '<span style="background:rgba(239,68,68,.2);color:#ef4444;padding:2px 8px;border-radius:99px;font-size:11px">VENCIDO</span>'
+      : '<span style="background:rgba(245,158,11,.2);color:#f59e0b;padding:2px 8px;border-radius:99px;font-size:11px">'+a.diasRestantes+' días</span>';
+    html += '<tr>';
+    html += '<td style="font-weight:500">'+a.medicamento+'</td>';
+    html += '<td style="font-family:monospace;font-size:11px">'+a.lote+'</td>';
+    html += '<td><span class="chip chip-'+(a.sucursal==='SLP'?'slp':'mty')+'">'+a.sucursal+'</span></td>';
+    html += '<td style="text-align:right;font-weight:700;color:'+(a.existencias>0?'#ef4444':'#aaa')+'">'+a.existencias+'</td>';
+    html += '<td style="text-align:center;color:'+color+'">'+a.fecha_vencimiento+'</td>';
+    html += '<td style="text-align:center">'+badge+'</td>';
+    html += '<td style="text-align:right;font-weight:600">$'+a.valorRiesgo.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    html += '</tr>';
+  });
+  document.getElementById('venc-body').innerHTML = html;
+}
 
 /* ═══════════════════════════════════════════════
    REPORTE DE COMPRAS Y TRAZABILIDAD
@@ -3441,12 +3578,14 @@ function filtrarCompras() {
   var desde = document.getElementById('c-desde').value;
   var hasta = document.getElementById('c-hasta').value;
   var prov  = document.getElementById('c-prov').value;
+  var suc   = document.getElementById('c-suc').value;
   var src = compras.filter(function(c) {
     var fecha = String(c.fecha).split('T')[0];
     var ok = true;
     if (desde && fecha < desde) ok = false;
     if (hasta && fecha > hasta) ok = false;
     if (prov && c.proveedor !== prov) ok = false;
+    if (suc && (c.sucursal||'MTY') !== suc) ok = false;
     return ok;
   });
   renderCompras(src);
