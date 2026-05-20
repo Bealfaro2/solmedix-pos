@@ -1620,6 +1620,7 @@ select option { background:var(--bg-2); color:var(--text); }
                   <th style="width:70px;text-align:center">Cant.</th>
                   <th style="width:110px;text-align:right">Costo unit.</th>
                   <th style="width:160px">Núm. de lote *</th>
+                  <th style="width:130px">Fecha vencimiento</th>
                   <th style="width:260px">Medicamento en sistema</th>
                 </tr></thead>
                 <tbody id="xml-conceptos-body"></tbody>
@@ -3096,9 +3097,10 @@ function confirmarFacturaActual() {
   }
   // Sincronizar desde inputs del DOM
   for (var i=0;i<xmlConceptos.length;i++){
-    var lEl=document.getElementById('lote-'+i); var mEl=document.getElementById('med-'+i);
+    var lEl=document.getElementById('lote-'+i); var mEl=document.getElementById('med-'+i); var vEl=document.getElementById('venc-'+i);
     if(lEl) xmlConceptos[i].lote=lEl.value;
     if(mEl) xmlConceptos[i].medId=mEl.value;
+    if(vEl) xmlConceptos[i].fecha_vencimiento=vEl.value;
   }
   _xmlSesion.facturas[idx].conceptos = xmlConceptos;
   _xmlSesion.facturas[idx].confirmada = true;
@@ -3223,6 +3225,7 @@ function renderXmlResult() {
     html += '<td style="text-align:center;font-weight:600">'+c.cantidad+'</td>';
     html += '<td style="text-align:right">$'+c.valorUnitario.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
     html += '<td><input type="text" id="lote-'+i+'" placeholder="Num. lote" style="font-family:monospace;font-size:12px" oninput="xmlConceptos['+i+'].lote=this.value"/></td>';
+    html += '<td><input type="text" id="venc-'+i+'" placeholder="DD/MM/YYYY" style="font-family:monospace;font-size:12px" oninput="xmlConceptos['+i+'].fecha_vencimiento=this.value"/></td>';
     html += '<td><select id="med-'+i+'" style="font-size:11px;width:100%;min-width:240px" onchange="xmlConceptos['+i+'].medId=this.value">'+opts+'</select></td>';
     html += '</tr>';
   }
@@ -3357,8 +3360,8 @@ function aplicarEntrada() {
         procesarSiguiente();
       });
     } else {
-      apiPost({ accion:'agregar_lote', med_id:c.medId, medicamento:medNombre, lote:c.lote, existencias:c.cantidad,
-        costo:c.valorUnitario, precio_venta:0, sucursal:(perfilActual==='slp'?'SLP':'MTY') }, function(err){
+     apiPost({ accion:'agregar_lote', med_id:c.medId, medicamento:medNombre, lote:c.lote, existencias:c.cantidad,
+        costo:c.valorUnitario, precio_venta:0, sucursal:(perfilActual==='slp'?'SLP':'MTY'), fecha_vencimiento:(c.fecha_vencimiento||'') }, function(err){
         if(!err) procesados++; else errores++;
         procesarSiguiente();
       });
