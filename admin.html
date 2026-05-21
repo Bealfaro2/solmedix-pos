@@ -3362,7 +3362,7 @@ function aplicarEntrada() {
       if(String(lotes[i].med_id)===String(c.medId)&&lotes[i].lote===c.lote){ loteExistente=lotes[i]; break; }
     }
     if (loteExistente) {
-      apiPost({ accion:'editar_lote', id:loteExistente.id, existencias:Number(loteExistente.existencias)+c.cantidad, costo:c.valorUnitario }, function(err){
+      apiPost({ accion:'editar_lote', id:loteExistente.id, existencias:Number(loteExistente.existencias)+c.cantidad, costo:c.valorUnitario, fecha_vencimiento:(c.fecha_vencimiento||'') }, function(err){
         if(!err) procesados++; else errores++;
         procesarSiguiente();
       });
@@ -5691,7 +5691,7 @@ function aplicarCargaXlsx() {
       // Sumar existencias al lote ya existente
       var nuevas = Number(loteExist.existencias) + f.existencias;
       apiPost({ accion:'editar_lote', id:loteExist.id,
-                existencias:nuevas, costo:f.costo||loteExist.costo },
+                existencias:nuevas, costo:f.costo||loteExist.costo, fecha_vencimiento:(f.fecha_vencimiento||'') },
         function(e){ done(!e); });
     } else {
       // Crear lote nuevo
