@@ -3108,7 +3108,6 @@ function confirmarFacturaActual() {
     if(lEl) xmlConceptos[i].lote=lEl.value;
     if(mEl) xmlConceptos[i].medId=mEl.value;
     if(vEl) xmlConceptos[i].fecha_vencimiento=vEl.value;
-    console.log('[DEBUG VENC]', xmlConceptos.map(function(c){ return c.lote+':'+c.fecha_vencimiento; }));
   }
   _xmlSesion.facturas[idx].conceptos = xmlConceptos;
   _xmlSesion.facturas[idx].confirmada = true;
@@ -3319,7 +3318,6 @@ function aplicarEntrada() {
   var procesados=0, errores=0, idx=0;
 
   function procesarSiguiente() {
-    console.log('[DEBUG TAREAS] idx:', idx, 'total:', tareas.length);
     if (idx >= tareas.length) {
       // Guardar comprobante si hay PDF
       function finish() {
@@ -3363,7 +3361,6 @@ function aplicarEntrada() {
     for(var i=0;i<lotes.length;i++){
       if(String(lotes[i].med_id)===String(c.medId)&&lotes[i].lote===c.lote){ loteExistente=lotes[i]; break; }
     }
-    console.log('[DEBUG LOTE]', c.lote, 'existente:', loteExistente ? loteExistente.id : 'NO', 'fecha:', c.fecha_vencimiento);
     if (loteExistente) {
       apiPost({ accion:'editar_lote', id:loteExistente.id, existencias:Number(loteExistente.existencias)+c.cantidad, costo:c.valorUnitario, fecha_vencimiento:(c.fecha_vencimiento||'') }, function(err){
         if(!err) procesados++; else errores++;
