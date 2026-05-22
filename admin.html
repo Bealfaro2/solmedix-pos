@@ -3362,6 +3362,7 @@ function aplicarEntrada() {
     for(var i=0;i<lotes.length;i++){
       if(String(lotes[i].med_id)===String(c.medId)&&lotes[i].lote===c.lote){ loteExistente=lotes[i]; break; }
     }
+    console.log('[DEBUG LOTE]', c.lote, 'existente:', loteExistente ? loteExistente.id : 'NO', 'fecha:', c.fecha_vencimiento);
     if (loteExistente) {
       apiPost({ accion:'editar_lote', id:loteExistente.id, existencias:Number(loteExistente.existencias)+c.cantidad, costo:c.valorUnitario, fecha_vencimiento:(c.fecha_vencimiento||'') }, function(err){
         if(!err) procesados++; else errores++;
