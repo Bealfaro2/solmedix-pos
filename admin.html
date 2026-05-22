@@ -3319,6 +3319,7 @@ function aplicarEntrada() {
   var procesados=0, errores=0, idx=0;
 
   function procesarSiguiente() {
+    console.log('[DEBUG TAREAS] idx:', idx, 'total:', tareas.length);
     if (idx >= tareas.length) {
       // Guardar comprobante si hay PDF
       function finish() {
