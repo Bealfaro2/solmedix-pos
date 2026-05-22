@@ -3108,6 +3108,7 @@ function confirmarFacturaActual() {
     if(lEl) xmlConceptos[i].lote=lEl.value;
     if(mEl) xmlConceptos[i].medId=mEl.value;
     if(vEl) xmlConceptos[i].fecha_vencimiento=vEl.value;
+    console.log('[DEBUG VENC]', xmlConceptos.map(function(c){ return c.lote+':'+c.fecha_vencimiento; }));
   }
   _xmlSesion.facturas[idx].conceptos = xmlConceptos;
   _xmlSesion.facturas[idx].confirmada = true;
