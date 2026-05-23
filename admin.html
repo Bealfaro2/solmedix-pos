@@ -3293,7 +3293,7 @@ function renderXmlResult() {
       'style="font-size:11px;width:100%;min-width:240px;padding:4px 6px" ' +
       'oninput="filtrarMedXml('+i+',this.value)" ' +
       'onfocus="mostrarDropdownXml('+i+')" ' +
-      'onblur="setTimeout(function(){ocultarDropdownXml('+i+')},200)"/>' +
+      'data-idx="'+i+'" onblur="var _i=parseInt(this.getAttribute(\'data-idx\'));setTimeout(function(){ocultarDropdownXml(_i);},200)"/>' +
       '<div id="med-drop-'+i+'" style="display:none;position:absolute;z-index:999;background:var(--surface);border:1px solid var(--border);border-radius:6px;max-height:200px;overflow-y:auto;width:100%;min-width:240px;box-shadow:0 4px 12px rgba(0,0,0,.3)">' +
       '</div>' +
       '<input type="hidden" id="med-'+i+'" value=""/>' +
