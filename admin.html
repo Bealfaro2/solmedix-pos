@@ -3136,14 +3136,16 @@ function ocultarDropdownXml(idx) {
   if (drop) drop.style.display = 'none';
 }
 
+function ocultarDropdownXmlDelay(idx) {
+  setTimeout(function(){ ocultarDropdownXml(idx); }, 200);
+}
+
 function seleccionarMedXml(idx, medId, nombre) {
   document.getElementById('med-'+idx).value = medId;
   document.getElementById('med-search-'+idx).value = nombre;
   ocultarDropdownXml(idx);
   xmlConceptos[idx].medId = medId;
 }
-
-function confirmarFacturaActual() {
 
 function confirmarFacturaActual() {
   var idx = _xmlSesion.activo;
@@ -3288,12 +3290,12 @@ function renderXmlResult() {
     html += '<td style="text-align:right">$'+c.valorUnitario.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
     html += '<td><input type="text" id="lote-'+i+'" placeholder="Num. lote" style="font-family:monospace;font-size:12px" oninput="xmlConceptos['+i+'].lote=this.value"/></td>';
     html += '<td><input type="text" id="venc-'+i+'" placeholder="DD/MM/YYYY" maxlength="10" style="font-family:monospace;font-size:12px" oninput="formatearFechaVenc(this,'+i+')"/></td>';
-     html += '<td style="position:relative">' +
+    html += '<td style="position:relative">' +
       '<input type="text" id="med-search-'+i+'" placeholder="Buscar medicamento..." ' +
       'style="font-size:11px;width:100%;min-width:240px;padding:4px 6px" ' +
       'oninput="filtrarMedXml('+i+',this.value)" ' +
       'onfocus="mostrarDropdownXml('+i+')" ' +
-      'data-idx="'+i+'" onblur="var _i=parseInt(this.getAttribute(\'data-idx\'));setTimeout(function(){ocultarDropdownXml(_i);},200)"/>' +
+      'onblur="ocultarDropdownXmlDelay('+i+')" />' +
       '<div id="med-drop-'+i+'" style="display:none;position:absolute;z-index:999;background:var(--surface);border:1px solid var(--border);border-radius:6px;max-height:200px;overflow-y:auto;width:100%;min-width:240px;box-shadow:0 4px 12px rgba(0,0,0,.3)">' +
       '</div>' +
       '<input type="hidden" id="med-'+i+'" value=""/>' +
