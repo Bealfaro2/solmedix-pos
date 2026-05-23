@@ -3109,11 +3109,22 @@ function filtrarMedXml(idx, query) {
     drop.innerHTML = '<div style="padding:8px;color:var(--text-3);font-size:12px">Sin resultados</div>';
     return;
   }
-  drop.innerHTML = items.map(function(m){
-    return '<div style="padding:6px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border)" ' +
-      'onmousedown="seleccionarMedXml('+idx+',\''+m.id+'\',\''+m.nombre.replace(/'/g,"\\'")+'\')">' +
+  var html = '';
+  items.forEach(function(m){
+    var nombre = m.nombre.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    html += '<div style="padding:6px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border)" ' +
+      'data-med-id="' + m.id + '" data-med-nombre="' + nombre + '" data-idx="' + idx + '" ' +
+      'onmousedown="seleccionarMedXmlEvt(this)">' +
       m.nombre + '</div>';
-  }).join('');
+  });
+  drop.innerHTML = html;
+}
+
+function seleccionarMedXmlEvt(el) {
+  var idx = parseInt(el.getAttribute('data-idx'));
+  var medId = el.getAttribute('data-med-id');
+  var nombre = el.getAttribute('data-med-nombre');
+  seleccionarMedXml(idx, medId, nombre);
 }
 
 function mostrarDropdownXml(idx) {
