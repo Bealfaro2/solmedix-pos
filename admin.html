@@ -4865,6 +4865,8 @@ var _hldDatoPago = null;   // datos extraídos del PDF
 var _hldFacturasDisp = []; // facturas únicas con saldo
 
 function hldInicializar() {
+  console.log('[DEBUG HLD] pagosCompras:', pagosCompras.length, pagosCompras.slice(0,3));
+  var mapaFacturas = {};
   var mapaFacturas = {};
   compras.forEach(function(c){
     var key = c.uuid||c.folio;
