@@ -5059,7 +5059,13 @@ function hldRegistrarPago() {
         }
         btn.disabled=false; btn.textContent='Registrar pago y conciliar';
         hldAlrt('✅ Pago registrado y conciliado con '+tareas.length+' factura(s).','s');
-        setTimeout(function(){ hldLimpiar(); hldInicializar(); }, 2500);
+        setTimeout(function(){ 
+  apiGet('pagos_compras', function(e,d){ 
+    if(!e&&d) pagosCompras=(d.pagos_compras)||[]; 
+    hldLimpiar(); 
+    hldInicializar(); 
+  }); 
+}, 2500);
       });
       return;
     }
