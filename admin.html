@@ -5226,8 +5226,12 @@ var _hldFacturasDisp = []; // facturas únicas con saldo
 
 function hldInicializar() {
   var mapaFacturas = {};
-  var mapaFacturas = {};
-  compras.forEach(function(c){
+  // Filtrar por sucursal según perfil (igual que el resto del sistema)
+  var sucursalActual = perfilActual === 'slp' ? 'SLP' : (perfilActual === 'mty' ? 'MTY' : null);
+  var comprasFiltradas = sucursalActual
+    ? compras.filter(function(c){ return String(c.sucursal||'').toUpperCase() === sucursalActual; })
+    : compras; // Admin ve todas
+  comprasFiltradas.forEach(function(c){
     var key = c.uuid||c.folio;
     if (!key) return;
     if (!mapaFacturas[key]) {
