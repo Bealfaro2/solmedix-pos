@@ -479,6 +479,8 @@ select option { background:var(--bg-2); color:var(--text); }
   margin-top: 3px;
 }
 @keyframes shimmer { to { background-position: 200% center; } }
+#med-drop-float-list > div:hover { background: var(--surface-2, #252d3d) !important; }
+#med-drop-float-list > div { transition: background .1s; }
 </style>
 </head>
 <body>
@@ -3105,26 +3107,81 @@ function formatearFechaVenc(input, idx) {
   xmlConceptos[idx].fecha_vencimiento = v;
 }
 
-function filtrarMedXml(idx, query) {
-  var drop = document.getElementById('med-drop-'+idx);
-  drop.style.display = 'block';
-  var q = query.toLowerCase().trim();
-  var items = medicamentos.filter(function(m){ 
-    return !q || m.nombre.toLowerCase().includes(q); 
-  }).slice(0, 30);
-  if (!items.length) {
-    drop.innerHTML = '<div style="padding:8px;color:var(--text-3);font-size:12px">Sin resultados</div>';
-    return;
+// ── Dropdown medicamentos XML — flotante fijo en viewport ──────────────
+var _medDropActivo = null;
+
+function _getOrCreateDropFloat() {
+  var drop = document.getElementById('med-drop-float');
+  if (!drop) {
+    drop = document.createElement('div');
+    drop.id = 'med-drop-float';
+    drop.style.cssText = 'position:fixed;z-index:99999;background:var(--surface,#1e2533);border:1px solid var(--border,#333);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.55);display:none;overflow:hidden;width:360px;max-height:320px;flex-direction:column';
+    drop.innerHTML = '<div id="med-drop-float-list" style="overflow-y:auto;flex:1;max-height:320px"></div>';
+    document.body.appendChild(drop);
+    document.addEventListener('mousedown', function(e) {
+      if (_medDropActivo !== null && !drop.contains(e.target)) {
+        var inp = document.getElementById('med-search-' + _medDropActivo);
+        if (!inp || !inp.contains(e.target)) _cerrarDropFloat();
+      }
+    });
   }
-  var html = '';
-  items.forEach(function(m){
-    var nombre = m.nombre.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-    html += '<div style="padding:6px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border)" ' +
-      'data-med-id="' + m.id + '" data-med-nombre="' + nombre + '" data-idx="' + idx + '" ' +
-      'onmousedown="seleccionarMedXmlEvt(this)">' +
-      m.nombre + '</div>';
-  });
-  drop.innerHTML = html;
+  return drop;
+}
+
+function _posicionarDropFloat(idx) {
+  var inp = document.getElementById('med-search-' + idx);
+  if (!inp) return;
+  var drop = _getOrCreateDropFloat();
+  var rect = inp.getBoundingClientRect();
+  var spaceBelow = window.innerHeight - rect.bottom - 8;
+  var spaceAbove = rect.top - 8;
+  var dropH = 320;
+  drop.style.width = Math.max(rect.width, 360) + 'px';
+  drop.style.left = rect.left + 'px';
+  if (spaceBelow >= Math.min(dropH, 180) || spaceBelow >= spaceAbove) {
+    drop.style.top = (rect.bottom + 4) + 'px';
+    drop.style.bottom = 'auto';
+    var h = Math.min(dropH, spaceBelow);
+    drop.style.maxHeight = h + 'px';
+    document.getElementById('med-drop-float-list').style.maxHeight = h + 'px';
+  } else {
+    drop.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+    drop.style.top = 'auto';
+    var h = Math.min(dropH, spaceAbove);
+    drop.style.maxHeight = h + 'px';
+    document.getElementById('med-drop-float-list').style.maxHeight = h + 'px';
+  }
+  drop.style.display = 'flex';
+}
+
+function _cerrarDropFloat() {
+  var drop = document.getElementById('med-drop-float');
+  if (drop) drop.style.display = 'none';
+  _medDropActivo = null;
+}
+
+function filtrarMedXml(idx, query) {
+  _medDropActivo = idx;
+  var q = query.toLowerCase().trim();
+  var items = medicamentos.filter(function(m){
+    return !q || m.nombre.toLowerCase().includes(q);
+  }).slice(0, 50);
+  var list = document.getElementById('med-drop-float-list') || _getOrCreateDropFloat().querySelector('#med-drop-float-list');
+  if (!items.length) {
+    list.innerHTML = '<div style="padding:12px 14px;color:var(--text-3,#888);font-size:13px;font-style:italic">Sin resultados para &quot;' + query + '&quot;</div>';
+  } else {
+    var html = '';
+    items.forEach(function(m) {
+      var nombre = m.nombre.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+      var qEsc = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      var highlight = q ? m.nombre.replace(new RegExp('(' + qEsc + ')','gi'), '<mark style="background:#2563eb44;color:inherit;border-radius:2px;padding:0 1px">$1</mark>') : m.nombre;
+      html += '<div style="padding:9px 14px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border,#2a2a2a);transition:background .1s;line-height:1.4" ' +
+        'data-med-id="' + m.id + '" data-med-nombre="' + nombre + '" data-idx="' + idx + '" ' +
+        'onmousedown="seleccionarMedXmlEvt(this)">' + highlight + '</div>';
+    });
+    list.innerHTML = html;
+  }
+  _posicionarDropFloat(idx);
 }
 
 function seleccionarMedXmlEvt(el) {
@@ -3135,12 +3192,12 @@ function seleccionarMedXmlEvt(el) {
 }
 
 function mostrarDropdownXml(idx) {
+  _medDropActivo = idx;
   filtrarMedXml(idx, document.getElementById('med-search-'+idx).value);
 }
 
 function ocultarDropdownXml(idx) {
-  var drop = document.getElementById('med-drop-'+idx);
-  if (drop) drop.style.display = 'none';
+  if (_medDropActivo === idx) _cerrarDropFloat();
 }
 
 function ocultarDropdownXmlDelay(idx) {
@@ -3150,7 +3207,7 @@ function ocultarDropdownXmlDelay(idx) {
 function seleccionarMedXml(idx, medId, nombre) {
   document.getElementById('med-'+idx).value = medId;
   document.getElementById('med-search-'+idx).value = nombre;
-  ocultarDropdownXml(idx);
+  _cerrarDropFloat();
   xmlConceptos[idx].medId = medId;
 }
 
@@ -3297,14 +3354,12 @@ function renderXmlResult() {
     html += '<td style="text-align:right">$'+c.valorUnitario.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
     html += '<td><input type="text" id="lote-'+i+'" placeholder="Num. lote" style="font-family:monospace;font-size:12px" oninput="xmlConceptos['+i+'].lote=this.value"/></td>';
     html += '<td><input type="text" id="venc-'+i+'" placeholder="DD/MM/YYYY" maxlength="10" style="font-family:monospace;font-size:12px" oninput="formatearFechaVenc(this,'+i+')"/></td>';
-    html += '<td style="position:relative">' +
+    html += '<td>' +
       '<input type="text" id="med-search-'+i+'" placeholder="Buscar medicamento..." ' +
-      'style="font-size:11px;width:100%;min-width:240px;padding:4px 6px" ' +
+      'style="font-size:12px;width:100%;min-width:260px;padding:6px 8px" ' +
       'oninput="filtrarMedXml('+i+',this.value)" ' +
       'onfocus="mostrarDropdownXml('+i+')" ' +
       'onblur="ocultarDropdownXmlDelay('+i+')" />' +
-      '<div id="med-drop-'+i+'" style="display:none;position:absolute;z-index:999;background:var(--surface);border:1px solid var(--border);border-radius:6px;max-height:200px;overflow-y:auto;width:100%;min-width:240px;box-shadow:0 4px 12px rgba(0,0,0,.3)">' +
-      '</div>' +
       '<input type="hidden" id="med-'+i+'" value=""/>' +
       '</td>';
     html += '</tr>';
