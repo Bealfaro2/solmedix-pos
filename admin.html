@@ -4227,6 +4227,18 @@ function calcularOptimo(medId) {
   var corte = new Date(hoy.getFullYear(), hoy.getMonth() - 3, hoy.getDate());
   var corteStr = fechaLocal(corte);
 
+  // Obtener nombre del medicamento para buscar en items (que no guardan med_id)
+  var nombreMed = '';
+  for (var k = 0; k < medicamentos.length; k++) {
+    if (String(medicamentos[k].id) === String(medId)) { nombreMed = medicamentos[k].nombre.toLowerCase(); break; }
+  }
+  // También buscar por nombre en lotes
+  if (!nombreMed) {
+    for (var k = 0; k < lotes.length; k++) {
+      if (String(lotes[k].med_id) === String(medId)) { nombreMed = lotes[k].medicamento.toLowerCase(); break; }
+    }
+  }
+
   // Detectar meses distintos con ventas del medicamento
   var mesesConVentas = {};
   var totalPiezas = 0;
@@ -4238,7 +4250,14 @@ function calcularOptimo(medId) {
     var mes = fecha.substring(0, 7);
     for (var j = 0; j < (v.items || []).length; j++) {
       var it = v.items[j];
-      if (String(it.medId || it.med_id || '') === String(medId)) {
+      // Intentar match por med_id primero, luego por nombre
+      var coincide = false;
+      if (it.medId || it.med_id) {
+        coincide = String(it.medId || it.med_id) === String(medId);
+      } else if (nombreMed && it.nombre) {
+        coincide = it.nombre.toLowerCase() === nombreMed;
+      }
+      if (coincide) {
         var qty = Number(it.qty) || 1;
         totalPiezas += qty;
         mesesConVentas[mes] = (mesesConVentas[mes] || 0) + qty;
