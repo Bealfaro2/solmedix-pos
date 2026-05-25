@@ -4227,25 +4227,44 @@ function calcularOptimo(medId) {
   var corte = new Date(hoy.getFullYear(), hoy.getMonth() - 3, hoy.getDate());
   var corteStr = fechaLocal(corte);
 
-  // Suma piezas vendidas en los últimos 3 meses para este medicamento
+  // Detectar meses distintos con ventas del medicamento
+  var mesesConVentas = {};
   var totalPiezas = 0;
   for (var i = 0; i < ventas.length; i++) {
     var v = ventas[i];
     if (v.estado === 'cancelada') continue;
     var fecha = String(v.fecha).split('T')[0];
     if (fecha < corteStr) continue;
+    var mes = fecha.substring(0, 7);
     for (var j = 0; j < (v.items || []).length; j++) {
       var it = v.items[j];
       if (String(it.medId || it.med_id || '') === String(medId)) {
-        totalPiezas += Number(it.qty) || 1;
+        var qty = Number(it.qty) || 1;
+        totalPiezas += qty;
+        mesesConVentas[mes] = (mesesConVentas[mes] || 0) + qty;
       }
     }
   }
 
-  // Promedio mensual × 1.5, mínimo 1
-  var promMensual = totalPiezas / 3;
-  return Math.max(1, Math.ceil(promMensual * 1.5));
+  // Dividir entre meses reales con datos (mínimo 1, máximo 3)
+  var mesesReales = Math.max(1, Object.keys(mesesConVentas).length);
+  var promMensual = totalPiezas / mesesReales;
+  // Buffer del 20% sobre promedio real, mínimo 1
+  return Math.max(1, Math.ceil(promMensual * 1.2));
 }
+
+// Suma existencias de un medicamento en todos sus lotes de la sucursal activa
+function stockTotalMed(medId, sucursal) {
+  var total = 0;
+  for (var i = 0; i < lotes.length; i++) {
+    var l = lotes[i];
+    if (String(l.med_id) !== String(medId)) continue;
+    if (sucursal && l.sucursal && l.sucursal.toUpperCase() !== sucursal.toUpperCase()) continue;
+    total += Number(l.existencias) || 0;
+  }
+  return total;
+}
+
 
 function renderLotesAdmin(lista){
   var src=(lista||lotes).slice();
@@ -4258,30 +4277,31 @@ function renderLotesAdmin(lista){
   var html='';
   for(var i=0;i<src.length;i++){
     var l=src[i];
-    var stock  = Number(l.existencias);
-    var optimo = calcularOptimo(l.med_id);
+    var stockLote  = Number(l.existencias);
+    var sucursal   = perfilActual === 'slp' ? 'SLP' : 'MTY';
+    var stockTotal = stockTotalMed(l.med_id, sucursal);
+    var optimo     = calcularOptimo(l.med_id);
 
-    // Color existencias
-    var colorStock = stock >= optimo ? '#166534' : stock > 0 ? '#d97706' : '#c00';
+    // Color existencias del lote individual
+    var colorStock = stockLote > 0 ? 'var(--text-1)' : '#c00';
 
-    // Indicador óptimo
-    var diff = stock - optimo;
+    // Indicador óptimo basado en TOTAL del medicamento
     var badge, tip;
-    if (stock >= optimo) {
-      badge = '<span style="font-size:11px;background:rgba(16,185,129,.15);color:#6ee7b7;padding:2px 7px;border-radius:99px;font-weight:700">🟢 '+optimo+'</span>';
-      tip   = 'Bien surtido';
-    } else if (stock > 0) {
-      badge = '<span style="font-size:11px;background:rgba(245,158,11,.15);color:#fcd34d;padding:2px 7px;border-radius:99px;font-weight:700">🟡 '+optimo+'</span>';
-      tip   = 'Pide '+(optimo-stock)+' pza'+(optimo-stock>1?'s':'');
+    if (stockTotal >= optimo) {
+      badge = '<span style="font-size:11px;background:rgba(16,185,129,.15);color:#6ee7b7;padding:2px 7px;border-radius:99px;font-weight:700">\u{1F7E2} '+optimo+'</span>';
+      tip   = 'Total: '+stockTotal+' pzas \u2014 bien surtido';
+    } else if (stockTotal > 0) {
+      badge = '<span style="font-size:11px;background:rgba(245,158,11,.15);color:#fcd34d;padding:2px 7px;border-radius:99px;font-weight:700">\u{1F7E1} '+optimo+'</span>';
+      tip   = 'Total: '+stockTotal+' pzas \u2014 pide '+(optimo-stockTotal)+' m\u00e1s';
     } else {
-      badge = '<span style="font-size:11px;background:rgba(239,68,68,.15);color:#fca5a5;padding:2px 7px;border-radius:99px;font-weight:700">🔴 '+optimo+'</span>';
-      tip   = 'Sin stock — pide '+optimo+' pza'+(optimo>1?'s':'');
+      badge = '<span style="font-size:11px;background:rgba(239,68,68,.15);color:#fca5a5;padding:2px 7px;border-radius:99px;font-weight:700">\u{1F534} '+optimo+'</span>';
+      tip   = 'Sin stock \u2014 pide '+optimo+' pza'+(optimo>1?'s':'');
     }
 
     html+='<tr>';
     html+='<td>'+l.medicamento+'</td>';
     html+='<td style="font-family:monospace">'+l.lote+'</td>';
-    html+='<td style="font-weight:700;color:'+colorStock+'">'+stock+' pzas</td>';
+    html+='<td style="font-weight:700;color:'+colorStock+'">'+stockLote+' pzas</td>';
     html+='<td title="'+tip+'" style="cursor:default">'+badge+'<div style="font-size:10px;color:var(--text-3);margin-top:2px">'+tip+'</div></td>';
     html+='<td>$'+Number(l.costo).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
     html+='<td><button class="btn btns btno" onclick="abrirEditarLote(\''+l.id+'\')">Editar</button></td>';
