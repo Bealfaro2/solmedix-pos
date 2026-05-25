@@ -2475,6 +2475,12 @@ function apiPost(data, callback) {
   .catch(function(err) { callback(err); });
 }
 
+// Escrituras críticas de inventario via JSONP (evita fallo silencioso por redirect 302 de Apps Script)
+function apiPostViaJSONP(data, callback) {
+  var encoded = encodeURIComponent(JSON.stringify(data));
+  jsonp(API_URL + '?_data=' + encoded + '&t=' + Date.now(), callback);
+}
+
 /* CARGAR DATOS */
 function cargarTodo() {
   setSyncStatus('load','Cargando...');
@@ -3429,14 +3435,14 @@ function aplicarEntrada() {
       if(String(lotes[i].med_id)===String(c.medId)&&lotes[i].lote===c.lote){ loteExistente=lotes[i]; break; }
     }
     if (loteExistente) {
-      apiPost({ accion:'editar_lote', id:loteExistente.id, existencias:Number(loteExistente.existencias)+c.cantidad, costo:c.valorUnitario, fecha_vencimiento:(c.fecha_vencimiento||'') }, function(err){
-        if(!err) procesados++; else errores++;
+      apiPostViaJSONP({ accion:'editar_lote', id:loteExistente.id, existencias:Number(loteExistente.existencias)+c.cantidad, costo:c.valorUnitario, fecha_vencimiento:(c.fecha_vencimiento||'') }, function(err, res){
+        if(!err && res && res.ok) procesados++; else { console.error('[editar_lote]', err||JSON.stringify(res)); errores++; }
         procesarSiguiente();
       });
     } else {
-     apiPost({ accion:'agregar_lote', med_id:c.medId, medicamento:medNombre, lote:c.lote, existencias:c.cantidad,
-        costo:c.valorUnitario, precio_venta:0, sucursal:(perfilActual==='slp'?'SLP':'MTY'), fecha_vencimiento:(c.fecha_vencimiento||'') }, function(err){
-        if(!err) procesados++; else errores++;
+      apiPostViaJSONP({ accion:'agregar_lote', med_id:c.medId, medicamento:medNombre, lote:c.lote, existencias:c.cantidad,
+        costo:c.valorUnitario, precio_venta:0, sucursal:(perfilActual==='slp'?'SLP':'MTY'), fecha_vencimiento:(c.fecha_vencimiento||'') }, function(err, res){
+        if(!err && res && res.ok) procesados++; else { console.error('[agregar_lote]', err||JSON.stringify(res)); errores++; }
         procesarSiguiente();
       });
     }
