@@ -1393,7 +1393,10 @@ select option { background:var(--bg-2); color:var(--text); }
 
       <div id="si-lotes">
         <div class="panel">
-        <div class="ptitle">Inventario por lote</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="ptitle" style="margin:0">Inventario por lote</div>
+          <button class="btn btnp btns" onclick="abrirNuevoLote()">+ Nuevo lote</button>
+        </div>
         <div class="fr" style="margin-bottom:14px">
           <input type="text" id="bq-lote" placeholder="Buscar medicamento o lote..." oninput="filtrarLotes()"/>
         </div>
@@ -2252,6 +2255,37 @@ select option { background:var(--bg-2); color:var(--text); }
       <button class="btn btnp" id="btn-guardar-lote" onclick="guardarEdicionLote()">Guardar cambios</button>
     </div>
     <div id="lote-alrt" style="display:none;margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- MODAL NUEVO LOTE MANUAL -->
+<div class="overlay" id="modal-nuevo-lote-overlay" onclick="if(event.target===this)cerrarNuevoLote()">
+  <div class="modal" style="max-width:440px">
+    <h2 style="margin-bottom:4px">Nuevo lote manual</h2>
+    <p style="font-size:12px;color:var(--text-3);margin-bottom:16px">Agrega un lote directamente al inventario sin necesidad de un XML.</p>
+    <div class="fr">
+      <label>Medicamento *</label>
+      <div style="position:relative">
+        <input type="text" id="nl-med-search" placeholder="Buscar medicamento..." autocomplete="off"
+          oninput="filtrarNuevoLoteMed(this.value)"
+          onfocus="filtrarNuevoLoteMed(this.value)"
+          onblur="setTimeout(function(){document.getElementById('nl-med-drop').style.display='none'},200)"
+          style="width:100%"/>
+        <div id="nl-med-drop" style="display:none;position:absolute;z-index:999;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;max-height:180px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4)"></div>
+        <input type="hidden" id="nl-med-id"/>
+      </div>
+    </div>
+    <div class="fr"><label>Número de lote *</label><input type="text" id="nl-lote" placeholder="Ej. AB12345" style="font-family:var(--mono)"/></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fr"><label>Existencias *</label><input type="number" id="nl-existencias" min="1" placeholder="0"/></div>
+      <div class="fr"><label>Costo unitario ($)</label><input type="number" id="nl-costo" min="0" step="0.01" placeholder="0.00"/></div>
+    </div>
+    <div class="fr"><label>Fecha vencimiento</label><input type="text" id="nl-vencimiento" placeholder="DD/MM/YYYY" maxlength="10" oninput="formatearNlVenc(this)"/></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+      <button class="btn" onclick="cerrarNuevoLote()">Cancelar</button>
+      <button class="btn btnp" id="btn-guardar-nuevo-lote" onclick="guardarNuevoLote()">Guardar lote</button>
+    </div>
+    <div id="nl-alrt" style="display:none;margin-top:8px"></div>
   </div>
 </div>
 
@@ -4290,6 +4324,108 @@ function guardarEdicionLote(){
   });
 }
 function loteAlrt(msg,tipo){var el=document.getElementById('lote-alrt');el.className='alrt '+(tipo==='e'?'ale':'als');el.textContent=msg;el.style.display='block';}
+
+// ── Nuevo lote manual ─────────────────────────────────────
+function abrirNuevoLote() {
+  document.getElementById('nl-med-search').value = '';
+  document.getElementById('nl-med-id').value = '';
+  document.getElementById('nl-lote').value = '';
+  document.getElementById('nl-existencias').value = '';
+  document.getElementById('nl-costo').value = '';
+  document.getElementById('nl-vencimiento').value = '';
+  document.getElementById('nl-alrt').style.display = 'none';
+  document.getElementById('nl-med-drop').style.display = 'none';
+  document.getElementById('modal-nuevo-lote-overlay').classList.add('show');
+  setTimeout(function(){ document.getElementById('nl-med-search').focus(); }, 100);
+}
+
+function cerrarNuevoLote() {
+  document.getElementById('modal-nuevo-lote-overlay').classList.remove('show');
+}
+
+function filtrarNuevoLoteMed(q) {
+  var drop = document.getElementById('nl-med-drop');
+  var items = medicamentos.filter(function(m){
+    return !q || m.nombre.toLowerCase().includes(q.toLowerCase());
+  }).slice(0, 40);
+  if (!items.length) { drop.style.display = 'none'; return; }
+  var html = '';
+  items.forEach(function(m) {
+    var nombre = m.nombre.replace(/"/g, '&quot;');
+    html += '<div style="padding:8px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border)" ' +
+      'onmousedown="seleccionarNlMed(\'' + m.id + '\',\'' + nombre + '\')">' + m.nombre + '</div>';
+  });
+  drop.innerHTML = html;
+  drop.style.display = 'block';
+}
+
+function seleccionarNlMed(id, nombre) {
+  document.getElementById('nl-med-id').value = id;
+  document.getElementById('nl-med-search').value = nombre;
+  document.getElementById('nl-med-drop').style.display = 'none';
+}
+
+function formatearNlVenc(inp) {
+  var v = inp.value.replace(/\D/g, '');
+  if (v.length > 2) v = v.slice(0,2) + '/' + v.slice(2);
+  if (v.length > 5) v = v.slice(0,5) + '/' + v.slice(5);
+  inp.value = v.slice(0, 10);
+}
+
+function nlAlrt(msg, tipo) {
+  var el = document.getElementById('nl-alrt');
+  el.className = 'alrt ' + (tipo === 'e' ? 'ale' : 'als');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function guardarNuevoLote() {
+  var medId       = document.getElementById('nl-med-id').value.trim();
+  var medNombre   = document.getElementById('nl-med-search').value.trim();
+  var loteNum     = document.getElementById('nl-lote').value.trim().toUpperCase();
+  var existencias = parseInt(document.getElementById('nl-existencias').value) || 0;
+  var costo       = parseFloat(document.getElementById('nl-costo').value) || 0;
+  var venc        = document.getElementById('nl-vencimiento').value.trim();
+
+  if (!medId)       { nlAlrt('Selecciona un medicamento del catálogo.', 'e'); return; }
+  if (!loteNum)     { nlAlrt('El número de lote es obligatorio.', 'e'); return; }
+  if (existencias < 1) { nlAlrt('Las existencias deben ser al menos 1.', 'e'); return; }
+
+  // Verificar si ya existe ese lote para ese medicamento
+  var loteExist = lotes.find(function(l){ return String(l.med_id) === String(medId) && l.lote.toUpperCase() === loteNum; });
+
+  var btn = document.getElementById('btn-guardar-nuevo-lote');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Guardando...';
+
+  var sucursal = perfilActual === 'slp' ? 'SLP' : 'MTY';
+
+  if (loteExist) {
+    // Lote ya existe — sumar existencias
+    var nuevasExist = Number(loteExist.existencias) + existencias;
+    apiPostViaJSONP({ accion:'editar_lote', id:loteExist.id, existencias:nuevasExist, costo:costo || loteExist.costo, fecha_vencimiento:(venc||'') }, function(err, res) {
+      btn.disabled = false; btn.textContent = 'Guardar lote';
+      if (!err && res && res.ok) {
+        loteExist.existencias = nuevasExist;
+        if (costo) loteExist.costo = costo;
+        renderLotesAdmin();
+        nlAlrt('✅ Lote existente actualizado — ' + nuevasExist + ' pzas en inventario.', 's');
+        setTimeout(cerrarNuevoLote, 1800);
+      } else { nlAlrt('Error al guardar. Intenta de nuevo.', 'e'); }
+    });
+  } else {
+    // Lote nuevo — crear
+    apiPostViaJSONP({ accion:'agregar_lote', med_id:medId, medicamento:medNombre, lote:loteNum,
+      existencias:existencias, costo:costo, precio_venta:0, sucursal:sucursal, fecha_vencimiento:(venc||'') }, function(err, res) {
+      btn.disabled = false; btn.textContent = 'Guardar lote';
+      if (!err && res && res.ok) {
+        apiPostViaJSONP({ accion:'lotes' }, function(){});  // trigger no-op
+        apiGet('lotes', function(e, d) { if (!e && d) { lotes = d.lotes || []; renderLotesAdmin(); } });
+        nlAlrt('✅ Lote creado con ' + existencias + ' pzas.', 's');
+        setTimeout(cerrarNuevoLote, 1800);
+      } else { nlAlrt('Error al crear lote. Intenta de nuevo.', 'e'); }
+    });
+  }
+}
 
 /* ═══════════════════════════════════════════════════════════
    GASTOS — MÓDULO COMPLETO
