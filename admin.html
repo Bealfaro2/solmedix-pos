@@ -609,6 +609,20 @@ select option { background:var(--bg-2); color:var(--text); }
         </div>
       </div>
 
+      <!-- Fila 3b: Top 10 más vendidos por unidades -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="card" style="padding:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">🏆 Top 10 más vendidos (por unidades)</div>
+          <div style="font-size:10px;color:var(--text-3);margin-bottom:6px">Medicamentos con mayor número de piezas vendidas en el periodo</div>
+          <div style="height:200px;position:relative"><canvas id="bi-chart-top-uds"></canvas></div>
+        </div>
+        <div class="card" style="padding:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">🔁 Top 10 más frecuentes (por tickets)</div>
+          <div style="font-size:10px;color:var(--text-3);margin-bottom:6px">Medicamentos que aparecen en más tickets de venta</div>
+          <div style="height:200px;position:relative"><canvas id="bi-chart-top-freq"></canvas></div>
+        </div>
+      </div>
+
       <!-- Fila 4: Franja horaria, Estacionalidad mensual histórica, Día+Hora heatmap -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
         <div class="card" style="padding:12px">
@@ -8712,22 +8726,153 @@ function renderBI() {
   _biTablaResumen(ventasMes, comprasMes, margenMes, cuentaMes, ticketsMes);
   _biChartFranja(vAnio);
   _biChartEstacional(); // usa todos los años
+  _biTopUds(vAnio);
+  _biTopFreq(vAnio);
 }
 
 
 /* ── Franja horaria ─────────────────────────────────────────── */
+function _parsearHora(horaRaw) {
+  // Maneja: "14:30", "14:30:00", "2:30 PM", "2:30 p. m.", objeto Date serializado, número decimal de día
+  if (!horaRaw) return -1;
+  var s = String(horaRaw).trim();
+  if (!s || s === 'Invalid Date') return -1;
+
+  // Número decimal (fracción de día de Google Sheets, ej: 0.604166 = 14:30)
+  var num = parseFloat(s);
+  if (!isNaN(num) && num > 0 && num < 1) {
+    return Math.floor(num * 24);
+  }
+
+  // Formato AM/PM: "2:30 PM", "2:30 p. m.", "2:30 p.m."
+  var ampm = s.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(a\.?\s*m\.?|p\.?\s*m\.?)/i);
+  if (ampm) {
+    var h = parseInt(ampm[1]);
+    var isPM = /p/i.test(ampm[3]);
+    if (isPM && h !== 12) h += 12;
+    if (!isPM && h === 12) h = 0;
+    return h;
+  }
+
+  // Formato 24h: "14:30" o "14:30:00"
+  var h24 = s.match(/^(\d{1,2}):(\d{2})/);
+  if (h24) return parseInt(h24[1]);
+
+  return -1;
+}
+
+
+/* ── Top 10 más vendidos por unidades ──────────────────────── */
+function _biTopUds(vAnio) {
+  var medUds = {};
+  vAnio.forEach(function(v) {
+    if (v.estado === 'cancelada') return;
+    (v.items || []).forEach(function(it) {
+      var nombre = it.nombre || 'Sin nombre';
+      if (!medUds[nombre]) medUds[nombre] = { uds: 0, tickets: 0 };
+      medUds[nombre].uds     += Number(it.qty) || 1;
+      medUds[nombre].tickets += 1;
+    });
+  });
+
+  var lista = Object.entries(medUds)
+    .map(function(e){ return { nombre: e[0], uds: e[1].uds, tickets: e[1].tickets }; })
+    .sort(function(a,b){ return b.uds - a.uds; })
+    .slice(0, 10);
+
+  var ctx = document.getElementById('bi-chart-top-uds');
+  if (!ctx) return;
+  if (ctx._chartInst) ctx._chartInst.destroy();
+
+  var labels = lista.map(function(m){
+    return m.nombre.length > 28 ? m.nombre.substring(0,26)+'…' : m.nombre;
+  });
+
+  ctx._chartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{ label: 'Unidades', data: lista.map(function(m){return m.uds;}),
+        backgroundColor: 'rgba(16,185,129,.7)', borderRadius: 3 }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: function(c) {
+          var m = lista[c.dataIndex];
+          return ['Unidades: '+m.uds, 'En '+m.tickets+' tickets'];
+        }}}
+      },
+      scales: {
+        x: { grid:{color:'rgba(255,255,255,.04)'}, ticks:{color:'#94a3b8',font:{size:9}} },
+        y: { grid:{color:'rgba(255,255,255,.04)'}, ticks:{color:'#94a3b8',font:{size:9}} }
+      }
+    }
+  });
+}
+
+/* ── Top 10 más frecuentes por tickets ─────────────────────── */
+function _biTopFreq(vAnio) {
+  var medFreq = {};
+  vAnio.forEach(function(v) {
+    if (v.estado === 'cancelada') return;
+    var vistos = new Set();
+    (v.items || []).forEach(function(it) {
+      var nombre = it.nombre || 'Sin nombre';
+      if (!vistos.has(nombre)) {
+        vistos.add(nombre);
+        if (!medFreq[nombre]) medFreq[nombre] = 0;
+        medFreq[nombre]++;
+      }
+    });
+  });
+
+  var lista = Object.entries(medFreq)
+    .map(function(e){ return { nombre: e[0], tickets: e[1] }; })
+    .sort(function(a,b){ return b.tickets - a.tickets; })
+    .slice(0, 10);
+
+  var ctx = document.getElementById('bi-chart-top-freq');
+  if (!ctx) return;
+  if (ctx._chartInst) ctx._chartInst.destroy();
+
+  var labels = lista.map(function(m){
+    return m.nombre.length > 28 ? m.nombre.substring(0,26)+'…' : m.nombre;
+  });
+
+  ctx._chartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{ label: 'Tickets', data: lista.map(function(m){return m.tickets;}),
+        backgroundColor: 'rgba(99,102,241,.7)', borderRadius: 3 }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: function(c) {
+          return 'En '+c.raw+' tickets';
+        }}}
+      },
+      scales: {
+        x: { grid:{color:'rgba(255,255,255,.04)'}, ticks:{color:'#94a3b8',font:{size:9}} },
+        y: { grid:{color:'rgba(255,255,255,.04)'}, ticks:{color:'#94a3b8',font:{size:9}} }
+      }
+    }
+  });
+}
+
 function _biChartFranja(vAnio) {
-  // Franjas de 2 horas: 06-08, 08-10, ... 20-22
-  var labels = ['6-8h','8-10h','10-12h','12-14h','14-16h','16-18h','18-20h','20-22h','Otra'];
+  var labels = ['6-8h','8-10h','10-12h','12-14h','14-16h','16-18h','18-20h','20-22h','Otras'];
   var counts = new Array(labels.length).fill(0);
+  var sinHora = 0;
 
   vAnio.forEach(function(v) {
     if (v.estado === 'cancelada') return;
-    var hora = String(v.hora || '').trim();
-    if (!hora) return;
-    // Formato esperado HH:MM o HH:MM:SS
-    var partes = hora.split(':');
-    var h = parseInt(partes[0]) || 0;
+    var h = _parsearHora(v.hora);
+    if (h < 0) { sinHora++; return; }
     var idx;
     if      (h >= 6  && h < 8)  idx = 0;
     else if (h >= 8  && h < 10) idx = 1;
@@ -8781,10 +8926,16 @@ function _biChartEstacional() {
   var sumaImporte  = new Array(12).fill(0);
   var aniosConMes  = new Array(12).fill(0).map(function(){ return new Set(); });
 
-  var sucursalActual = perfilActual === 'slp' ? 'SLP' : (perfilActual === 'mty' ? 'MTY' : null);
+  // Filtrar por sucursal — usar misma lógica que renderBI
+  var sucursalActual = (perfilActual === 'slp') ? 'SLP'
+                     : (perfilActual === 'mty' || perfilActual === 'admin-mty') ? 'MTY'
+                     : null; // admin ve todo
   var vFiltradas = ventas.filter(function(v) {
     if (v.estado === 'cancelada') return false;
-    if (sucursalActual && String(v.sucursal||'').toUpperCase() !== sucursalActual) return false;
+    if (sucursalActual) {
+      var suc = String(v.sucursal || '').trim().toUpperCase();
+      if (suc !== sucursalActual) return false;
+    }
     return true;
   });
 
