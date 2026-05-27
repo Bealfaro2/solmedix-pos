@@ -2770,16 +2770,45 @@ function cargarDashboard() {
 }
 
 /* REPORTE */
+
+/* ── Helper: fijar selector de sucursal según perfil ───────── */
+function _fijarSucursalSel(selId) {
+  var sel = document.getElementById(selId);
+  if (!sel) return;
+  if (perfilActual === 'mty')      { sel.value = 'MTY'; sel.disabled = true; }
+  else if (perfilActual === 'slp') { sel.value = 'SLP'; sel.disabled = true; }
+  else                             { sel.disabled = false; }
+}
+/* ── Helper: obtener sucursal forzada por perfil ────────────── */
+function _sucursalPerfil(selId) {
+  if (perfilActual === 'mty') return 'MTY';
+  if (perfilActual === 'slp') return 'SLP';
+  var sel = document.getElementById(selId);
+  return sel ? sel.value : '';
+}
+
 function inicializarFechasCompras(){
   var hoy=new Date(), inicio=new Date(hoy.getFullYear(),hoy.getMonth(),1);
   document.getElementById('c-hasta').value=fechaLocal(hoy);
   document.getElementById('c-desde').value=fechaLocal(inicio);
+  // Fijar y bloquear selector de sucursal según perfil
+  var sucSel = document.getElementById('c-suc');
+  if (sucSel) {
+    if (perfilActual === 'mty') {
+      sucSel.value = 'MTY'; sucSel.disabled = true;
+    } else if (perfilActual === 'slp') {
+      sucSel.value = 'SLP'; sucSel.disabled = true;
+    } else {
+      sucSel.disabled = false;
+    }
+  }
 }
 
 function inicializarFechas(){
   var hoy=new Date(), inicio=new Date(hoy.getFullYear(),hoy.getMonth(),1);
   document.getElementById('r-hasta').value=fechaLocal(hoy);
   document.getElementById('r-desde').value=fechaLocal(inicio);
+  _fijarSucursalSel('r-suc');
   inicializarFechasGastos();
 }
 
@@ -2788,9 +2817,7 @@ function ff(f){ if(!f)return''; var p=String(f).split('T')[0].split('-'); return
 function generarReporte(){
   var desde=document.getElementById('r-desde').value;
   var hasta=document.getElementById('r-hasta').value;
-  var suc=document.getElementById('r-suc').value;
-  if(perfilActual==='mty') suc='MTY';
-  if(perfilActual==='slp') suc='SLP';
+  var suc = _sucursalPerfil('r-suc');
   if(!desde||!hasta){alert('Selecciona el rango de fechas');return;}
 
   var filtradas=ventas.filter(function(v){
@@ -3801,7 +3828,11 @@ function filtrarCompras() {
   var desde = document.getElementById('c-desde').value;
   var hasta = document.getElementById('c-hasta').value;
   var prov  = document.getElementById('c-prov').value;
-  var suc   = document.getElementById('c-suc').value;
+  // Forzar sucursal según perfil — el selector solo es libre para Admin
+  var suc;
+  if (perfilActual === 'mty')      suc = 'MTY';
+  else if (perfilActual === 'slp') suc = 'SLP';
+  else                             suc = document.getElementById('c-suc').value;
   var src = compras.filter(function(c) {
     var fecha = String(c.fecha).split('T')[0];
     var ok = true;
@@ -4038,6 +4069,7 @@ function mostrarTabsSegunPerfil(){
 
   // Lock sucursal selector for MTY/SLP profiles
   var rSuc = document.getElementById('r-suc');
+  _fijarSucursalSel('r-suc');
   var sucDiv = document.getElementById('suc-filter-div');
   if(perfilActual==='mty'){
     rSuc.value='MTY';
