@@ -1670,11 +1670,11 @@ select option { background:var(--bg-2); color:var(--text); }
           </div>
         </div>
 
-        <!-- Comprobante de pago Albo (único para todas las facturas cargadas) -->
+        <!-- Comprobante(s) de pago Albo — múltiples archivos -->
         <div id="xml-comprobante-panel" style="display:none;margin-top:12px;padding:12px;background:rgba(24,95,165,.06);border:1px dashed rgba(24,95,165,.3);border-radius:var(--radius)">
           <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:8px">
-            💳 Comprobante de pago Albo
-            <span style="font-weight:400;color:var(--text-3)">(opcional — cubre todas las facturas cargadas)</span>
+            💳 Comprobante(s) de pago Albo
+            <span style="font-weight:400;color:var(--text-3)">(opcional — puedes agregar uno por factura)</span>
           </div>
           <div style="font-size:11px;color:var(--text-3);margin-bottom:8px">
             El monto del comprobante debe sumar el total de las facturas cargadas.
@@ -1688,10 +1688,8 @@ select option { background:var(--bg-2); color:var(--text); }
             </div>
             <input type="file" id="pdf-file-input" accept=".pdf" style="display:none" onchange="onPdfComprobanteFile(this)"/>
           </div>
-          <div id="pdf-preview" style="display:none;margin-top:8px;padding:8px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:6px;font-size:11px">
-            <span id="pdf-preview-texto"></span>
-            <button onclick="limpiarPdf()" style="margin-left:8px;background:none;border:none;color:var(--text-3);cursor:pointer;font-size:11px">✕ Quitar</button>
-          </div>
+          <!-- Lista de comprobantes cargados -->
+          <div id="pdf-lista" style="margin-top:8px"></div>
         </div>
 
         <!-- Botón final: aplicar todo al inventario -->
@@ -3360,7 +3358,7 @@ function limpiarXmlTodo() {
   document.getElementById('xml-result').style.display='none';
   document.getElementById('xml-comprobante-panel').style.display='none';
   document.getElementById('xml-aplicar-panel').style.display='none';
-  limpiarPdf();
+  window._pdfComprobantes = []; limpiarPdf();
 }
 // Alias para compatibilidad
 function limpiarXml(){ limpiarXmlTodo(); }
@@ -3514,24 +3512,55 @@ function limpiarXml() {
 function onPdfComprobanteFile(input) {
   if (!input.files[0]) return;
   var file = input.files[0];
+  // No duplicar el mismo archivo
+  if (window._pdfComprobantes.some(function(p){ return p.nombre === file.name; })) {
+    alert('Ya cargaste un comprobante con ese nombre: ' + file.name); return;
+  }
   var reader = new FileReader();
   reader.onload = function(e) {
-    window._pdfComprobanteData = {
-      nombre: file.name,
-      data:   e.target.result
-    };
-    document.getElementById('pdf-preview').style.display = 'block';
-    document.getElementById('pdf-preview-texto').textContent = '✅ ' + file.name;
-    document.getElementById('pdf-upload-label').textContent = file.name;
-    document.getElementById('pdf-upload-icon').textContent = '✅';
+    if (!window._pdfComprobantes) window._pdfComprobantes = [];
+    window._pdfComprobantes.push({ nombre: file.name, data: e.target.result });
+    document.getElementById('pdf-file-input').value = '';
+    _renderListaPdfs();
   };
   reader.readAsDataURL(file);
 }
 
-function limpiarPdf() {
-  window._pdfComprobanteData = null;
+// Array de comprobantes PDF (múltiples soportados)
+window._pdfComprobantes = [];
+
+function _renderListaPdfs() {
+  var lista = document.getElementById('pdf-lista');
+  if (!lista) return;
+  if (!window._pdfComprobantes.length) { lista.innerHTML = ''; return; }
+  var html = '';
+  window._pdfComprobantes.forEach(function(p, i) {
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-top:6px;padding:7px 10px;' +
+      'background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:6px;font-size:11px">' +
+      '<span>✅ ' + p.nombre + '</span>' +
+      '<button onclick="quitarPdf(' + i + ')" style="margin-left:auto;background:none;border:none;' +
+      'color:var(--text-3);cursor:pointer;font-size:11px">✕ Quitar</button>' +
+      '</div>';
+  });
+  lista.innerHTML = html;
+  // Actualizar label del botón
+  var n = window._pdfComprobantes.length;
+  document.getElementById('pdf-upload-label').textContent = n > 0
+    ? 'Agregar otro comprobante (' + n + ' cargado' + (n>1?'s':'') + ')'
+    : 'Haz clic para seleccionar PDF de comprobante Albo';
+  document.getElementById('pdf-upload-icon').textContent = n > 0 ? '➕' : '📎';
+}
+
+function quitarPdf(idx) {
+  window._pdfComprobantes.splice(idx, 1);
   document.getElementById('pdf-file-input').value = '';
-  document.getElementById('pdf-preview').style.display = 'none';
+  _renderListaPdfs();
+}
+
+function limpiarPdf() {
+  window._pdfComprobantes = [];
+  document.getElementById('pdf-file-input').value = '';
+  _renderListaPdfs();
   document.getElementById('pdf-upload-label').textContent = 'Haz clic para seleccionar PDF de comprobante Albo';
   document.getElementById('pdf-upload-icon').textContent = '📎';
 }
@@ -3570,19 +3599,29 @@ function aplicarEntrada() {
           entradaAlrt('Se aplicaron '+procesados+' lotes con '+errores+' errores.','e');
         }
       }
-      if (window._pdfComprobanteData) {
-        _parsearPdfAlbo(window._pdfComprobanteData.data, function(datoPago) {
+      // Procesar todos los comprobantes cargados (puede ser 0, 1 o más)
+      var pdfs = (window._pdfComprobantes && window._pdfComprobantes.length)
+        ? window._pdfComprobantes.slice()
+        : [];
+      if (!pdfs.length) { finish(); return; }
+      var pdfIdx = 0;
+      function procesarSiguientePdf() {
+        if (pdfIdx >= pdfs.length) { finish(); return; }
+        var pdf = pdfs[pdfIdx++];
+        _parsearPdfAlbo(pdf.data, function(datoPago) {
           if (datoPago) {
-            // Guardar un comprobante por cada UUID de factura
+            // Asociar este comprobante con todas las facturas
             uuidsFacturas.forEach(function(fi){
               apiPost({ accion:'guardar_comprobante_albo', uuid_factura:fi.uuid, folio_factura:fi.folio,
                 proveedor:fi.proveedor, monto_pagado:datoPago.monto, fecha_pago:datoPago.fecha,
-                concepto:datoPago.concepto, clave_rastreo:datoPago.claveRastreo, beneficiario:datoPago.beneficiario }, function(){});
+                concepto:datoPago.concepto, clave_rastreo:datoPago.claveRastreo,
+                beneficiario:datoPago.beneficiario, archivo_pdf:pdf.nombre }, function(){});
             });
           }
-          finish();
+          procesarSiguientePdf();
         });
-      } else { finish(); }
+      }
+      procesarSiguientePdf();
       return;
     }
     var t=tareas[idx]; idx++;
