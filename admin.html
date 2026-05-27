@@ -8660,6 +8660,21 @@ function initBI() {
     sel.appendChild(opt);
   });
   if (!prev || !anios.has(prev)) sel.value = hoy;
+
+  // Fijar selector de sucursal según perfil
+  var sucSel = document.getElementById('bi-suc');
+  if (sucSel) {
+    if (perfilActual === 'mty') {
+      sucSel.value    = 'MTY';
+      sucSel.disabled = true;
+    } else if (perfilActual === 'slp') {
+      sucSel.value    = 'SLP';
+      sucSel.disabled = true;
+    } else {
+      // Admin — puede seleccionar libremente
+      sucSel.disabled = false;
+    }
+  }
   renderBI();
 }
 
@@ -8669,7 +8684,11 @@ function renderBI() {
   var sucSel = document.getElementById('bi-suc');
   if (!sel || !sucSel) return;
   var anio = sel.value || new Date().getFullYear().toString();
-  var suc  = sucSel.value || 'TODAS';
+  // Forzar sucursal según perfil — el selector solo es libre para Admin
+  var suc;
+  if (perfilActual === 'mty')      suc = 'MTY';
+  else if (perfilActual === 'slp') suc = 'SLP';
+  else                             suc = sucSel.value || 'TODAS';
 
   function getMes(fecha) {
     // fecha puede ser "2026-04-15", "2026-04-15T10:00:00", etc.
