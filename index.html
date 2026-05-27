@@ -1738,7 +1738,12 @@ function abrirModalCorte() {
     return r.fecha === hoy && r.sucursal === sucursal && r.tipo === 'abono';
   }).reduce(function(s,r){ return s + Number(r.retiro_monto||0); }, 0);
 
-  var fondo = cajaHoy ? Number(cajaHoy.fondo_inicial||0) : 0;
+  // Si es corte pendiente de ayer, buscar la apertura de ESA fecha (no de hoy)
+  var fechaApertura = _cortePendienteFecha || fechaHoy();
+  var aperturaCorte = cajaDia.find(function(r) {
+    return r.fecha === fechaApertura && r.sucursal === sucursal && r.tipo === 'apertura';
+  }) || cajaHoy;
+  var fondo = aperturaCorte ? Number(aperturaCorte.fondo_inicial||0) : 0;
   var totalVentas = efec + trans + tarj;
 
   // Fill in the corte summary
