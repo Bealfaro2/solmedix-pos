@@ -4298,13 +4298,29 @@ function renderVentasAdmin(lista){
   if(!lista && perfilActual==='mty') src=src.filter(function(v){return v.sucursal==='MTY'||!v.sucursal;});
   if(!lista && perfilActual==='slp') src=src.filter(function(v){return v.sucursal==='SLP';});
   var tbody=document.getElementById('ventas-body');
-  if(!src.length){tbody.innerHTML='<tr><td colspan="7" class="es">Sin ventas</td></tr>';return;}
+  if(!src.length){tbody.innerHTML='<tr><td colspan="8" class="es">Sin ventas</td></tr>';return;}
   var html='';
   for(var i=0;i<src.length;i++){
     var v=src[i];
     var cancelada=v.estado==='cancelada';
     html+='<tr style="'+(cancelada?'background:rgba(239,68,68,.08);color:#aaa':'')+'"><td><strong>#'+String(v.id).padStart(4,'0')+'</strong></td><td>'+ff(v.fecha)+'</td><td>'+v.cliente+'</td>';
     html+='<td><strong>$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</strong></td>';
+    // Calcular modo de pago dominante de los ítems
+    var pagosMapa = {};
+    (v.items||[]).forEach(function(it){
+      var p = (it.pago||'Efectivo').trim();
+      pagosMapa[p] = (pagosMapa[p]||0) + (Number(it.total)||0);
+    });
+    var pagos = Object.keys(pagosMapa);
+    var pagoLabel = pagos.length === 0 ? '—' : pagos.join(' + ');
+    var pl = pagoLabel.toLowerCase();
+    var pagoColor;
+    if (pl.indexOf('tarjeta') >= 0 || pl.indexOf('mp') >= 0) pagoColor = 'rgba(99,102,241,.2)';
+    else if (pl.indexOf('trans') >= 0) pagoColor = 'rgba(16,185,129,.15)';
+    else if (pl.indexOf('efec') >= 0) pagoColor = 'rgba(245,158,11,.15)';
+    else pagoColor = 'rgba(100,116,139,.15)';
+    var pagoShort = pagoLabel.length > 16 ? pagoLabel.substring(0,14)+'…' : pagoLabel;
+    html+='<td><span title="'+pagoLabel+'" style="font-size:10px;padding:2px 7px;border-radius:99px;background:'+pagoColor+';white-space:nowrap">'+pagoShort+'</span></td>';
     html+='<td><span class="'+(v.sucursal==='MTY'?'chip-mty':'chip-slp')+'">'+(v.sucursal||'—')+'</span></td>';
     html+='<td style="font-family:monospace;font-size:11px">'+v.clave+'</td>';
     html+='<td>';
