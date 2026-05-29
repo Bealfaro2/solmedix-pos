@@ -3641,7 +3641,7 @@ function aplicarEntrada() {
       if(String(lotes[i].med_id)===String(c.medId)&&lotes[i].lote===c.lote){ loteExistente=lotes[i]; break; }
     }
     if (loteExistente) {
-      apiPostViaJSONP({ accion:'editar_lote', id:loteExistente.id, existencias:Number(loteExistente.existencias)+c.cantidad, costo:c.valorUnitario, fecha_vencimiento:(c.fecha_vencimiento||'') }, function(err, res){
+      apiPostViaJSONP({ accion:'editar_lote', id:loteExistente.id, med_id:loteExistente.med_id, lote:loteExistente.lote, existencias:Number(loteExistente.existencias)+c.cantidad, costo:c.valorUnitario, fecha_vencimiento:(c.fecha_vencimiento||'') }, function(err, res){
         if(!err && res && res.ok) procesados++; else { console.error('[editar_lote]', err||JSON.stringify(res)); errores++; }
         procesarSiguiente();
       });
@@ -4298,7 +4298,7 @@ function renderVentasAdmin(lista){
   if(!lista && perfilActual==='mty') src=src.filter(function(v){return v.sucursal==='MTY'||!v.sucursal;});
   if(!lista && perfilActual==='slp') src=src.filter(function(v){return v.sucursal==='SLP';});
   var tbody=document.getElementById('ventas-body');
-  if(!src.length){tbody.innerHTML='<tr><td colspan="8" class="es">Sin ventas</td></tr>';return;}
+  if(!src.length){tbody.innerHTML='<tr><td colspan="7" class="es">Sin ventas</td></tr>';return;}
   var html='';
   for(var i=0;i<src.length;i++){
     var v=src[i];
@@ -4319,7 +4319,7 @@ function renderVentasAdmin(lista){
     else if (pl.indexOf('trans') >= 0) pagoColor = 'rgba(16,185,129,.15)';
     else if (pl.indexOf('efec') >= 0) pagoColor = 'rgba(245,158,11,.15)';
     else pagoColor = 'rgba(100,116,139,.15)';
-    var pagoShort = pagoLabel.length > 16 ? pagoLabel.substring(0,14)+'…' : pagoLabel;
+    var pagoShort = pagoLabel.length > 16 ? pagoLabel.substring(0,14)+'\u2026' : pagoLabel;
     html+='<td><span title="'+pagoLabel+'" style="font-size:10px;padding:2px 7px;border-radius:99px;background:'+pagoColor+';white-space:nowrap">'+pagoShort+'</span></td>';
     html+='<td><span class="'+(v.sucursal==='MTY'?'chip-mty':'chip-slp')+'">'+(v.sucursal||'—')+'</span></td>';
     html+='<td style="font-family:monospace;font-size:11px">'+v.clave+'</td>';
@@ -4679,7 +4679,7 @@ function guardarNuevoLote() {
   if (loteExist) {
     // Lote ya existe — sumar existencias
     var nuevasExist = Number(loteExist.existencias) + existencias;
-    apiPostViaJSONP({ accion:'editar_lote', id:loteExist.id, existencias:nuevasExist, costo:costo || loteExist.costo, fecha_vencimiento:(venc||'') }, function(err, res) {
+    apiPostViaJSONP({ accion:'editar_lote', id:loteExist.id, med_id:loteExist.med_id, lote:loteExist.lote, existencias:nuevasExist, costo:costo || loteExist.costo, fecha_vencimiento:(venc||'') }, function(err, res) {
       btn.disabled = false; btn.textContent = 'Guardar lote';
       if (!err && res && res.ok) {
         loteExist.existencias = nuevasExist;
