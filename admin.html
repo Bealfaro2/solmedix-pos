@@ -3648,7 +3648,13 @@ function aplicarEntrada() {
     } else {
       apiPostViaJSONP({ accion:'agregar_lote', med_id:c.medId, medicamento:medNombre, lote:c.lote, existencias:c.cantidad,
         costo:c.valorUnitario, precio_venta:0, sucursal:(perfilActual==='slp'?'SLP':'MTY'), fecha_vencimiento:(c.fecha_vencimiento||'') }, function(err, res){
-        if(!err && res && res.ok) procesados++; else { console.error('[agregar_lote]', err||JSON.stringify(res)); errores++; }
+        if(!err && res && res.ok) {
+          procesados++;
+          // Actualizar lotes en memoria para que el siguiente concepto lo encuentre
+          lotes.push({ id:res.id||'', med_id:c.medId, medicamento:medNombre, lote:c.lote,
+            existencias:c.cantidad, costo:c.valorUnitario, precio_venta:0,
+            sucursal:(perfilActual==='slp'?'SLP':'MTY') });
+        } else { console.error('[agregar_lote]', err||JSON.stringify(res)); errores++; }
         procesarSiguiente();
       });
     }
