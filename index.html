@@ -360,10 +360,7 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
         <div class="fr">
           <label>Escanear código de barras</label>
           <input type="text" id="barcode" placeholder="Escanea o escribe el código..." autocomplete="off"
-            inputmode="numeric"
-            onkeydown="if(event.key==='Enter'){event.preventDefault();onBarcodeInput();}"
-            oninput="this.value=this.value.replace(/[^0-9]/g,'')"
-            style="font-family:var(--mono)"/>
+            onkeydown="if(event.key==='Enter'){event.preventDefault();onBarcodeInput();}" style="font-family:var(--mono)"/>
         </div>
         <div class="fr">
           <label>o seleccionar por nombre</label>
@@ -1647,26 +1644,37 @@ function guardarRetiro() {
   if (!nombre) { cajaAlrt('ret-alrt','El nombre de quien retira es obligatorio','e'); return; }
   if (!monto || monto <= 0) { cajaAlrt('ret-alrt','Ingresa un monto válido','e'); return; }
 
-  // Calcular efectivo disponible: fondo + ventas efectivo - retiros previos del día
+  // Calcular efectivo real disponible: fondo + ventas efectivo del día - retiros previos
   var hoyChk = fechaHoy();
   var fondoDisp = cajaDia.filter(function(r){
     return r.fecha === hoyChk && r.sucursal === sucursal && r.tipo === 'apertura';
   }).reduce(function(s,r){ return s + Number(r.fondo_inicial||0); }, 0);
-  var efecDisp = ventas.filter(function(v){
+
+  var efecDisp = 0;
+  ventas.filter(function(v){
     return String(v.fecha).split('T')[0] === hoyChk && v.sucursal === sucursal && v.estado !== 'cancelada';
-  }).reduce(function(s,v){ return s + Number(v.efectivo||v.pago_efectivo||0); }, 0);
+  }).forEach(function(v){
+    (v.items||[]).forEach(function(it){
+      var p = (it.pago||'').toLowerCase();
+      if (p === '' || p.indexOf('efectivo') >= 0 || p.indexOf('efec') >= 0) {
+        efecDisp += Number(it.total) || 0;
+      }
+    });
+  });
+
   var retiradoHoy = cajaDia.filter(function(r){
     return r.fecha === hoyChk && r.sucursal === sucursal && r.tipo === 'retiro';
   }).reduce(function(s,r){ return s + Number(r.retiro_monto||0); }, 0);
+
   var disponible = fondoDisp + efecDisp - retiradoHoy;
 
   if (monto > disponible) {
     cajaAlrt('ret-alrt',
-      'Efectivo insuficiente. Disponible en caja: $' +
+      'Efectivo insuficiente. Disponible: $' +
       disponible.toLocaleString('es-MX',{minimumFractionDigits:2}) +
-      ' (Fondo: $' + fondoDisp.toLocaleString('es-MX',{minimumFractionDigits:2}) +
-      ' + Ventas efectivo: $' + efecDisp.toLocaleString('es-MX',{minimumFractionDigits:2}) +
-      ' - Retiros previos: $' + retiradoHoy.toLocaleString('es-MX',{minimumFractionDigits:2}) + ')',
+      ' (Fondo $' + fondoDisp.toLocaleString('es-MX',{minimumFractionDigits:2}) +
+      ' + Ventas efectivo $' + efecDisp.toLocaleString('es-MX',{minimumFractionDigits:2}) +
+      ' - Retiros previos $' + retiradoHoy.toLocaleString('es-MX',{minimumFractionDigits:2}) + ')',
       'e');
     return;
   }
