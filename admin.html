@@ -3664,9 +3664,11 @@ function aplicarEntrada() {
       total_factura:fi.total }, function(){});
 
     var loteExistente=null;
-    for(var i=0;i<lotes.length;i++){
-      if(String(lotes[i].med_id)===String(c.medId)&&lotes[i].lote===c.lote){ loteExistente=lotes[i]; break; }
-    }
+var sucursalActual = perfilActual==='slp' ? 'SLP' : 'MTY';
+for(var i=0;i<lotes.length;i++){
+  if(String(lotes[i].med_id)===String(c.medId) && lotes[i].lote===c.lote &&
+    (lotes[i].sucursal||'MTY').toUpperCase()===sucursalActual){ loteExistente=lotes[i]; break; }
+}
     if (loteExistente) {
       apiPostViaJSONP({ accion:'editar_lote', id:loteExistente.id, med_id:loteExistente.med_id, lote:loteExistente.lote, existencias:Number(loteExistente.existencias)+c.cantidad, costo:c.valorUnitario, fecha_vencimiento:(c.fecha_vencimiento||'') }, function(err, res){
         if(!err && res && res.ok) procesados++; else { console.error('[editar_lote]', err||JSON.stringify(res)); errores++; }
