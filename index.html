@@ -576,6 +576,34 @@ function apiPost(data, callback) {
     callback(err);
   });
 }
+function apiPostViaJSONP(data, callback) {
+  var cbName = 'cb_' + Math.random().toString(36).slice(2);
+  var timeout = setTimeout(function() {
+    if (window[cbName]) {
+      delete window[cbName];
+      var sc = document.getElementById('sc_'+cbName);
+      if (sc) sc.remove();
+      apiPostViaJSONP(data, callback);
+    }
+  }, 8000);
+  window[cbName] = function(res) {
+    clearTimeout(timeout);
+    delete window[cbName];
+    var sc = document.getElementById('sc_'+cbName);
+    if (sc) sc.remove();
+    callback(null, res);
+  };
+  var script = document.createElement('script');
+  script.id = 'sc_'+cbName;
+  script.onerror = function() {
+    clearTimeout(timeout);
+    delete window[cbName];
+    script.remove();
+    callback(new Error('Error de red'));
+  };
+  script.src = API_URL + '?_data=' + encodeURIComponent(JSON.stringify(data)) + '&t=' + Date.now() + '&callback=' + cbName;
+  document.head.appendChild(script);
+}
 
 /* SUCURSAL */
 function selSuc(clave) {
@@ -1685,7 +1713,7 @@ function guardarRetiro() {
   var hoy = fechaHoy();
   var hora = horaAhora();
 
-  apiPost({ accion:'guardar_caja', fecha:hoy, hora:hora, sucursal:sucursal,
+  apiPostViaJSONP({ accion:'guardar_caja', fecha:hoy, hora:hora, sucursal:sucursal,
     tipo:'retiro', retiro_monto:monto, retiro_nombre:nombre, notas:notas },
     function(err) {
       if (!err) {
