@@ -2563,7 +2563,34 @@ function apiPost(data, callback) {
 // Escrituras críticas de inventario via JSONP (evita fallo silencioso por redirect 302 de Apps Script)
 function apiPostViaJSONP(data, callback) {
   var encoded = encodeURIComponent(JSON.stringify(data));
-  jsonp(API_URL + '?_data=' + encoded + '&t=' + Date.now(), callback);
+  var cbName = 'cb_' + Math.random().toString(36).slice(2);
+  var timeout = setTimeout(function() {
+    if (window[cbName]) {
+      delete window[cbName];
+      var sc = document.getElementById('sc_'+cbName);
+      if (sc) sc.remove();
+      console.warn('[apiPostViaJSONP] Timeout — reintentando:', data.accion);
+      // Reintentar una vez
+      apiPostViaJSONP(data, callback);
+    }
+  }, 8000);
+  window[cbName] = function(res) {
+    clearTimeout(timeout);
+    delete window[cbName];
+    var sc = document.getElementById('sc_'+cbName);
+    if (sc) sc.remove();
+    callback(null, res);
+  };
+  var script = document.createElement('script');
+  script.id = 'sc_'+cbName;
+  script.onerror = function() {
+    clearTimeout(timeout);
+    delete window[cbName];
+    script.remove();
+    callback(new Error('Error de red'));
+  };
+  script.src = API_URL + '?_data=' + encoded + '&t=' + Date.now() + '&callback=' + cbName;
+  document.head.appendChild(script);
 }
 
 /* CARGAR DATOS */
