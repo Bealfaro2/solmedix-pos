@@ -5575,8 +5575,8 @@ function hldRegistrarPago() {
         btn.disabled=false; btn.textContent='Registrar pago y conciliar';
         hldAlrt('✅ Pago registrado y conciliado con '+tareas.length+' factura(s).','s');
         setTimeout(function(){ 
-  apiGet('todo', function(e,d){ 
-    if(!e&&d) pagosCompras=(d.pagos_compras)||[]; 
+   apiGet('get_all', function(e,d){ 
+    if(!e&&d) pagosCompras=(d.pagos_compras)||[];
     hldLimpiar(); 
     hldInicializar(); 
   }); 
@@ -5585,8 +5585,8 @@ function hldRegistrarPago() {
       return;
     }
     var t=tareas[idx++];
-    apiPost({ accion:'registrar_pago_compra', uuid_factura:t.uuid, monto_pago:t.montoPago,
-      fecha_pago:_hldDatoPago.fecha, clave_rastreo:_hldDatoPago.claveRastreo }, function(){ siguiente(); });
+    apiPostViaJSONP({ accion:'registrar_pago_compra', uuid_factura:t.uuid, monto_pago:t.montoPago,
+      fecha_pago:_hldDatoPago.fecha, clave_rastreo:_hldDatoPago.claveRastreo }, function(err,res){ siguiente(); });
   }
   siguiente();
 }
