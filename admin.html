@@ -7718,7 +7718,7 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     if (mComp) encontrados.compensacion = _parseNum(mComp[1]);
 
      // Pagos provisionales anteriores — anclar a "PAGOS PROVISIONALES EFECTUADOS" para no confundir con "INGRESOS NOMINALES DE PERIODOS ANTERIORES... SOLO PERIODOS PAGADOS"
-    var mProvAnt = texto.match(/PAGOS PROVISIONALES EFECTUADOS[\s\S]{0,300}?SOLO PERIODOS PAGADOS[\s\S]{0,30}?([\d,]+)/i);
+    var mProvAnt = texto.match(/PAGOS PROVISIONALES EFECTUADOS DE PERIODOS ANTERIORES DE DECLARACIONES, SOLO PERIODOS PAGADOS\s+([\d,]+)/i);
     if (mProvAnt) encontrados.pagos_prov_anteriores = _parseNum(mProvAnt[1]);
 
     // Remanente saldo 2022 — tomar "Remanente actualizado antes de la aplicación"
