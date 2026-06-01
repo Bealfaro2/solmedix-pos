@@ -7836,7 +7836,7 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     var ingAcum = _calcIngresosAcumulados(st.periodo);
     var utilidad = ingAcum * coef;
     var isrCalc  = utilidad * 0.30;
-    var provAnt  = _calcPagosProvisionalesAnteriores(st.periodo);
+    var provAnt = _getDecInput('dec-pagos-prov-ant') || _calcPagosProvisionalesAnteriores(st.periodo);
 
     _setDecSpan('dec-ing-acum', _mxn(ingAcum));
     _setDecSpan('dec-utilidad', _mxn(utilidad));
@@ -8016,7 +8016,7 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     var remanente    = _getDecInput('dec-remanente');
     var notas        = (document.getElementById('fis-notas-contador')||{}).value||'';
     var numOp        = (document.getElementById('dec-num-op')||{}).value||'';
-    var provAnt      = _calcPagosProvisionalesAnteriores(st.periodo);
+    var provAnt = _getDecInput('dec-pagos-prov-ant') || _calcPagosProvisionalesAnteriores(st.periodo);
     var isrCargo     = Math.max(0, isrCausado - provAnt);
     var isrPagar     = Math.max(0, isrCargo - compensacion);
 
