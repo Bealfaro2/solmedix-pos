@@ -7696,13 +7696,14 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     var mNumOp = texto.match(/N[uú]mero de operaci[oó]n[:\s]+(\d{12})/i);
     if (mNumOp) encontrados.num_op = mNumOp[1];
 
-     // IVA acreditable efectivo — "IVA Acreditable" en la determinación final
-    var mIvaAcred = texto.match(/TOTAL DE IVA ACREDITABLE\s+(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
-    if (!mIvaAcred) mIvaAcred = texto.match(/IVA ACREDITABLE\s+(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s/i);
+     // IVA acreditable — "TOTAL DE IVA ACREDITABLE   2,247"
+    var mIvaAcred = texto.match(/TOTAL DE IVA ACREDITABLE\s+([\d,]+)/i);
+    if (!mIvaAcred) mIvaAcred = texto.match(/IVA ACREDITABLE\s+([\d,]+)/i);
     if (mIvaAcred) encontrados.iva_acreditable = _parseNum(mIvaAcred[1]);
 
-    // IVA retenciones a cargo — "Cantidad a pagar" en sección IVA retenciones
-    var mIvaRet = texto.match(/IVA retenciones[\s\S]{0,500}?Cantidad a pagar\s+(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
+    // IVA retenciones — "CANTIDAD A PAGAR   1,600" en sección IVA retenciones
+    var mIvaRet = texto.match(/IVA retenciones[\s\S]{0,800}?CANTIDAD A PAGAR\s+([\d,]+)/i);
+    if (!mIvaRet) mIvaRet = texto.match(/DETALLE DEL PAGO IVA RETENCIONES[\s\S]{0,300}?CANTIDAD A PAGAR\s+([\d,]+)/i);
     if (mIvaRet) encontrados.iva_retenciones = _parseNum(mIvaRet[1]);
 
     // ISR causado — "Impuesto causado" en sección Determinación
@@ -7714,9 +7715,9 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     if (!mComp) mComp = texto.match(/Saldo a aplicar\s+(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
     if (mComp) encontrados.compensacion = _parseNum(mComp[1]);
 
-     // Pagos provisionales anteriores — suma de meses anteriores pagados
-    var mProvAnt = texto.match(/PAGOS PROVISIONALES EFECTUADOS DE PERIODOS ANTERIORES DE[\s\S]{0,50}?SOLO PERIODOS PAGADOS\s+(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
-    if (!mProvAnt) mProvAnt = texto.match(/Pagos provisionales efectuados de periodos anteriores\s+(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
+     // Pagos provisionales anteriores — buscar "Total   7,500" después de la sección de pagos provisionales
+    var mProvAnt = texto.match(/PAGOS PROVISIONALES EFECTUADOS DE PERIODOS ANTERIORES DE DECLARACIONES, SOLO PERIODOS PAGADOS\s+([\d,]+)/i);
+    if (!mProvAnt) mProvAnt = texto.match(/Total\s+([\d,]+)\s+PAGOS PROVISIONALES EFECTUADOS DE PERIODOS ANTERIORES DE DECLARACIONES/i);
     if (mProvAnt) encontrados.pagos_prov_anteriores = _parseNum(mProvAnt[1]);
 
     // Remanente saldo 2022 — tomar "Remanente actualizado antes de la aplicación"
