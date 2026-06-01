@@ -7670,7 +7670,7 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
       pdfjsLib.getDocument({ data: typedArray }).promise.then(function(pdf) {
         var textoTotal = '';
         var promesas = [];
-        for (var i = 1; i <= Math.min(pdf.numPages, 10); i++) {
+        ffor (var i = 1; i <= pdf.numPages; i++) {
           promesas.push(pdf.getPage(i).then(function(page) {
             return page.getTextContent().then(function(tc) {
               return tc.items.map(function(item){ return item.str; }).join(' ');
@@ -7716,8 +7716,8 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     if (mComp) encontrados.compensacion = _parseNum(mComp[1]);
 
      // Pagos provisionales anteriores — buscar "Total   7,500" después de la sección de pagos provisionales
-    var mProvAnt = texto.match(/PAGOS PROVISIONALES EFECTUADOS DE PERIODOS ANTERIORES DE DECLARACIONES, SOLO PERIODOS PAGADOS\s+([\d,]+)/i);
-    if (!mProvAnt) mProvAnt = texto.match(/Total\s+([\d,]+)\s+PAGOS PROVISIONALES EFECTUADOS DE PERIODOS ANTERIORES DE DECLARACIONES/i);
+    var mProvAnt = texto.match(/PAGOS PROVISIONALES EFECTUADOS DE PERIODOS ANTERIORES DE[\s\S]{0,30}?SOLO PERIODOS PAGADOS\s+([\d,]+)/i);
+    if (!mProvAnt) mProvAnt = texto.match(/Total\s+(7[,\d]+)\s+PAGOS PROVISIONALES/i);
     if (mProvAnt) encontrados.pagos_prov_anteriores = _parseNum(mProvAnt[1]);
 
     // Remanente saldo 2022 — tomar "Remanente actualizado antes de la aplicación"
