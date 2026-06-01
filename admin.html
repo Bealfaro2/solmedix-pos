@@ -7717,10 +7717,8 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     if (!mComp) mComp = texto.match(/Saldo a aplicar\s+(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
     if (mComp) encontrados.compensacion = _parseNum(mComp[1]);
 
-     // Pagos provisionales anteriores — buscar "Total   7,500" después de la sección de pagos provisionales
-    var mProvAnt = texto.match(/SOLO\s+PERIODOS\s+PAGADOS[\r\n\s]+([\d,]+)/i);
-    if (!mProvAnt) mProvAnt = texto.match(/SOLO\s+PERIODOS\s+PAGADOS\s+([\d,]+)/i);
-    if (!mProvAnt) mProvAnt = texto.match(/PAGOS PROVISIONALES EFECTUADOS DE PERIODOS ANTERIORES[\s\S]{0,150}?SOLO PERIODOS PAGADOS[\s\S]{0,20}?([\d,]+)/i);
+     // Pagos provisionales anteriores — anclar a "PAGOS PROVISIONALES EFECTUADOS" para no confundir con "INGRESOS NOMINALES DE PERIODOS ANTERIORES... SOLO PERIODOS PAGADOS"
+    var mProvAnt = texto.match(/PAGOS PROVISIONALES EFECTUADOS[\s\S]{0,300}?SOLO PERIODOS PAGADOS[\s\S]{0,30}?([\d,]+)/i);
     if (mProvAnt) encontrados.pagos_prov_anteriores = _parseNum(mProvAnt[1]);
 
     // Remanente saldo 2022 — tomar "Remanente actualizado antes de la aplicación"
