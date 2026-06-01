@@ -7680,7 +7680,7 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
         Promise.all(promesas).then(function(paginas) {
           textoTotal = paginas.join('\n');
           console.log('TEXTO PDF:', textoTotal);
-          _parsearAcuseSAT(textoTotal);
+          window._ultimoTextoPDF = textoTotal; _parsearAcuseSAT(textoTotal);
         });
       }).catch(function(err) {
         _acuseAlrt('Error al leer el PDF: ' + err.message + '. Captura los datos manualmente.', 'e');
