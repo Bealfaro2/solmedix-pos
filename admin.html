@@ -7752,7 +7752,8 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
       _setDecInput('dec-compensacion', encontrados.compensacion.toFixed(2)); campos++;
     }
     if (encontrados.pagos_prov_anteriores > 0) {
-      _setDecInput('dec-pagos-prov-ant', encontrados.pagos_prov_anteriores.toFixed(2)); campos++;
+      st._provAntSAT = encontrados.pagos_prov_anteriores;
+      campos++;
     }
     if (encontrados.remanente > 0) {
       var remEl = document.getElementById('dec-remanente');
@@ -7836,7 +7837,7 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     var ingAcum = _calcIngresosAcumulados(st.periodo);
     var utilidad = ingAcum * coef;
     var isrCalc  = utilidad * 0.30;
-    var provAnt = _getDecInput('dec-pagos-prov-ant') || _calcPagosProvisionalesAnteriores(st.periodo);
+    var provAnt = (st._provAntSAT > 0 ? st._provAntSAT : null) || _calcPagosProvisionalesAnteriores(st.periodo);
 
     _setDecSpan('dec-ing-acum', _mxn(ingAcum));
     _setDecSpan('dec-utilidad', _mxn(utilidad));
