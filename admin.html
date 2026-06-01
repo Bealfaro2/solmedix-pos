@@ -7670,7 +7670,7 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
       pdfjsLib.getDocument({ data: typedArray }).promise.then(function(pdf) {
         var textoTotal = '';
         var promesas = [];
-        ffor (var i = 1; i <= pdf.numPages; i++) {
+        for (var i = 1; i <= pdf.numPages; i++) {
           promesas.push(pdf.getPage(i).then(function(page) {
             return page.getTextContent().then(function(tc) {
               return tc.items.map(function(item){ return item.str; }).join(' ');
@@ -7697,13 +7697,15 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     if (mNumOp) encontrados.num_op = mNumOp[1];
 
      // IVA acreditable — "TOTAL DE IVA ACREDITABLE   2,247"
-    var mIvaAcred = texto.match(/TOTAL DE IVA ACREDITABLE\s+([\d,]+)/i);
-    if (!mIvaAcred) mIvaAcred = texto.match(/IVA ACREDITABLE\s+([\d,]+)/i);
+    var mIvaAcred = texto.match(/TOTAL\s+DE\s+IVA\s+ACREDITABLE[\r\n\s]+([\d,]+)/i);
+    if (!mIvaAcred) mIvaAcred = texto.match(/TOTAL\s+DE\s+IVA\s+ACREDITABLE\s+([\d,]+)/i);
+    if (!mIvaAcred) mIvaAcred = texto.match(/IVA\s+ACREDITABLE[\r\n\s]+([\d,]+)/i);
     if (mIvaAcred) encontrados.iva_acreditable = _parseNum(mIvaAcred[1]);
 
     // IVA retenciones — "CANTIDAD A PAGAR   1,600" en sección IVA retenciones
-    var mIvaRet = texto.match(/IVA retenciones[\s\S]{0,800}?CANTIDAD A PAGAR\s+([\d,]+)/i);
-    if (!mIvaRet) mIvaRet = texto.match(/DETALLE DEL PAGO IVA RETENCIONES[\s\S]{0,300}?CANTIDAD A PAGAR\s+([\d,]+)/i);
+    var mIvaRet = texto.match(/IVA\s+retenciones[\s\S]{0,1500}?CANTIDAD\s+A\s+PAGAR[\r\n\s]+([\d,]+)/i);
+    if (!mIvaRet) mIvaRet = texto.match(/IVA\s+retenciones[\s\S]{0,1500}?CANTIDAD\s+A\s+PAGAR\s+([\d,]+)/i);
+    if (!mIvaRet) mIvaRet = texto.match(/DETALLE DEL PAGO IVA RETENCIONES[\s\S]{0,800}?CANTIDAD\s+A\s+PAGAR[\r\n\s]+([\d,]+)/i);
     if (mIvaRet) encontrados.iva_retenciones = _parseNum(mIvaRet[1]);
 
     // ISR causado — "Impuesto causado" en sección Determinación
@@ -7716,8 +7718,9 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     if (mComp) encontrados.compensacion = _parseNum(mComp[1]);
 
      // Pagos provisionales anteriores — buscar "Total   7,500" después de la sección de pagos provisionales
-    var mProvAnt = texto.match(/PAGOS PROVISIONALES EFECTUADOS DE PERIODOS ANTERIORES DE[\s\S]{0,30}?SOLO PERIODOS PAGADOS\s+([\d,]+)/i);
-    if (!mProvAnt) mProvAnt = texto.match(/Total\s+(7[,\d]+)\s+PAGOS PROVISIONALES/i);
+    var mProvAnt = texto.match(/SOLO\s+PERIODOS\s+PAGADOS[\r\n\s]+([\d,]+)/i);
+    if (!mProvAnt) mProvAnt = texto.match(/SOLO\s+PERIODOS\s+PAGADOS\s+([\d,]+)/i);
+    if (!mProvAnt) mProvAnt = texto.match(/PAGOS PROVISIONALES EFECTUADOS DE PERIODOS ANTERIORES[\s\S]{0,150}?SOLO PERIODOS PAGADOS[\s\S]{0,20}?([\d,]+)/i);
     if (mProvAnt) encontrados.pagos_prov_anteriores = _parseNum(mProvAnt[1]);
 
     // Remanente saldo 2022 — tomar "Remanente actualizado antes de la aplicación"
