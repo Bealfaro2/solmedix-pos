@@ -8032,7 +8032,7 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     };
 
     var alrt = document.getElementById('dec-alrt');
-    apiPost(payload, function(e,d){
+    apiPostViaJSONP(payload, function(e,d){
       if (!e && d && d.ok) {
         st.declaracion = payload;
         // Actualizar remanente en memoria si la declaración quedó presentada
