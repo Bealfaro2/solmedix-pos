@@ -7695,8 +7695,9 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     var mNumOp = texto.match(/N[uú]mero de operaci[oó]n[:\s]+(\d{12})/i);
     if (mNumOp) encontrados.num_op = mNumOp[1];
 
-    // IVA acreditable efectivo — "Total de IVA trasladado al contribuyente (efectivamente pagado)"
-    var mIvaAcred = texto.match(/Total de IVA trasladado al contribuyente[\s\S]{0,80}?(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s/i);
+     // IVA acreditable efectivo — "IVA Acreditable" en la determinación final
+    var mIvaAcred = texto.match(/TOTAL DE IVA ACREDITABLE\s+(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
+    if (!mIvaAcred) mIvaAcred = texto.match(/IVA ACREDITABLE\s+(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s/i);
     if (mIvaAcred) encontrados.iva_acreditable = _parseNum(mIvaAcred[1]);
 
     // IVA retenciones a cargo — "Cantidad a pagar" en sección IVA retenciones
@@ -7712,9 +7713,19 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     if (!mComp) mComp = texto.match(/Saldo a aplicar\s+(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
     if (mComp) encontrados.compensacion = _parseNum(mComp[1]);
 
-    // Remanente saldo 2022 — "Remanente histórico antes de la aplicación"
-    var mRem = texto.match(/Remanente hist[oó]rico antes de la aplicaci[oó]n\s+(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
-    if (mRem) encontrados.remanente = _parseNum(mRem[1]);
+     // Pagos provisionales anteriores — suma de meses anteriores pagados
+    var mProvAnt = texto.match(/PAGOS PROVISIONALES EFECTUADOS DE PERIODOS ANTERIORES DE[\s\S]{0,50}?SOLO PERIODOS PAGADOS\s+(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
+    if (!mProvAnt) mProvAnt = texto.match(/Pagos provisionales efectuados de periodos anteriores\s+(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
+    if (mProvAnt) encontrados.pagos_prov_anteriores = _parseNum(mProvAnt[1]);
+
+    // Remanente saldo 2022 — tomar "Remanente actualizado antes de la aplicación"
+    // y restarle la compensación para obtener el remanente DESPUÉS de aplicar
+    var mRem = texto.match(/Remanente actualizado antes de la aplicaci[oó]n\s+(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
+    if (mRem) {
+      var remAntes = _parseNum(mRem[1]);
+      var compAplicada = encontrados.compensacion || 0;
+      encontrados.remanente = remAntes - compAplicada;
+    }
 
     // Aplicar valores encontrados a los campos
     var campos = 0;
@@ -7736,6 +7747,9 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     }
     if (encontrados.compensacion > 0) {
       _setDecInput('dec-compensacion', encontrados.compensacion.toFixed(2)); campos++;
+    }
+    if (encontrados.pagos_prov_anteriores > 0) {
+      _setDecInput('dec-pagos-prov-ant', encontrados.pagos_prov_anteriores.toFixed(2)); campos++;
     }
     if (encontrados.remanente > 0) {
       var remEl = document.getElementById('dec-remanente');
