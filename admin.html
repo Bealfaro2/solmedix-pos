@@ -4791,13 +4791,17 @@ function guardarNuevoLote() {
   if (!loteNum)     { nlAlrt('El número de lote es obligatorio.', 'e'); return; }
   if (existencias < 1) { nlAlrt('Las existencias deben ser al menos 1.', 'e'); return; }
 
-  // Verificar si ya existe ese lote para ese medicamento
-  var loteExist = lotes.find(function(l){ return String(l.med_id) === String(medId) && l.lote.toUpperCase() === loteNum; });
-
-  var btn = document.getElementById('btn-guardar-nuevo-lote');
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Guardando...';
-
+  // Verificar si ya existe ese lote para ese medicamento EN LA MISMA SUCURSAL
   var sucursal = perfilActual === 'slp' ? 'SLP' : 'MTY';
+  var loteExist = lotes.find(function(l){
+    var lSuc = (l.sucursal || 'MTY').toUpperCase();
+    return String(l.med_id) === String(medId) &&
+           l.lote.toUpperCase() === loteNum &&
+           lSuc === sucursal;
+  });
+
+ var btn = document.getElementById('btn-guardar-nuevo-lote');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Guardando...';
 
   if (loteExist) {
     // Lote ya existe — sumar existencias
