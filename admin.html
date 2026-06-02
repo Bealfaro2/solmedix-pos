@@ -2284,6 +2284,13 @@ select option { background:var(--bg-2); color:var(--text); }
     <div class="fr"><label>Existencias *</label><input type="number" id="lote-existencias" min="0"/></div>
     <div class="fr"><label>Costo unitario ($)</label><input type="number" id="lote-costo" min="0" step="0.01"/></div>
     <input type="hidden" id="lote-editando-id"/>
+    <div class="fr" id="lote-venc-row">
+      <label>Fecha caducidad</label>
+      <input type="text" id="lote-vencimiento" placeholder="DD/MM/YYYY" maxlength="10" oninput="formatearNlVenc(this)"/>
+    </div>
+    <div id="lote-venc-aviso" style="display:none;font-size:11px;color:#f59e0b;margin-top:-8px;margin-bottom:8px">
+      ⚠️ Una vez guardada la caducidad no podrá modificarse. En caso de error solicitar al administrador el cambio.
+    </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
       <button class="btn" onclick="cerrarModalLoteBtn()">Cancelar</button>
       <button class="btn btnp" id="btn-guardar-lote" onclick="guardarEdicionLote()">Guardar cambios</button>
@@ -4536,6 +4543,36 @@ function abrirEditarLote(id){
   document.getElementById('lote-costo').value=l.costo;
   document.getElementById('lote-editando-id').value=l.id;
   document.getElementById('lote-alrt').style.display='none';
+
+  // Campo caducidad
+  var vencInput = document.getElementById('lote-vencimiento');
+  var vencRow   = document.getElementById('lote-venc-row');
+  var vencAviso = document.getElementById('lote-venc-aviso');
+  var yaVence   = !!(l.fecha_vencimiento && l.fecha_vencimiento.trim());
+
+  vencInput.value = l.fecha_vencimiento || '';
+
+  if (perfilActual === 'admin') {
+    // Admin: siempre puede editar
+    vencInput.disabled = false;
+    vencInput.style.opacity = '';
+    vencAviso.style.display = 'none';
+    vencRow.style.display = '';
+  } else {
+    // MTY / SLP: solo pueden agregar si no hay caducidad aún
+    if (yaVence) {
+      // Ya tiene caducidad — ocultar campo completamente
+      vencRow.style.display = 'none';
+      vencAviso.style.display = 'none';
+    } else {
+      // Sin caducidad — permitir agregar una sola vez, mostrar aviso
+      vencInput.disabled = false;
+      vencInput.style.opacity = '';
+      vencRow.style.display = '';
+      vencAviso.style.display = 'block';
+    }
+  }
+
   document.getElementById('modal-lote-overlay').classList.add('show');
   document.getElementById('lote-existencias').focus();
 }
@@ -4546,10 +4583,29 @@ function guardarEdicionLote(){
   var id=document.getElementById('lote-editando-id').value;
   var existencias=parseInt(document.getElementById('lote-existencias').value)||0;
   var costo=parseFloat(document.getElementById('lote-costo').value)||0;
+  var vencInput = document.getElementById('lote-vencimiento');
+  var nuevaVenc = (vencInput && !vencInput.disabled) ? vencInput.value.trim() : '';
+
+  // Validar formato DD/MM/YYYY si se ingresó algo
+  if (nuevaVenc && !/^\d{2}\/\d{2}\/\d{4}$/.test(nuevaVenc)) {
+    loteAlrt('Formato de fecha inválido. Usa DD/MM/YYYY', 'e'); return;
+  }
+
   var btn=document.getElementById('btn-guardar-lote');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
-  apiPost({accion:'editar_lote',id:id,existencias:existencias,costo:costo},function(err){
-    for(var i=0;i<lotes.length;i++){if(String(lotes[i].id)===String(id)){lotes[i].existencias=existencias;lotes[i].costo=costo;break;}}
+
+  var payload = {accion:'editar_lote', id:id, existencias:existencias, costo:costo};
+  if (nuevaVenc) payload.fecha_vencimiento = nuevaVenc;
+
+  apiPost(payload, function(err){
+    for(var i=0;i<lotes.length;i++){
+      if(String(lotes[i].id)===String(id)){
+        lotes[i].existencias=existencias;
+        lotes[i].costo=costo;
+        if(nuevaVenc) lotes[i].fecha_vencimiento=nuevaVenc;
+        break;
+      }
+    }
     renderLotesAdmin(); cerrarModalLoteBtn();
     btn.disabled=false; btn.textContent='Guardar cambios';
   });
