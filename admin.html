@@ -1433,8 +1433,13 @@ select option { background:var(--bg-2); color:var(--text); }
           <div class="ptitle" style="margin:0">Inventario por lote</div>
           <button class="btn btnp btns" onclick="abrirNuevoLote()">+ Nuevo lote</button>
         </div>
-        <div class="fr" style="margin-bottom:14px">
-          <input type="text" id="bq-lote" placeholder="Buscar medicamento o lote..." oninput="filtrarLotes()"/>
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+          <input type="text" id="bq-lote" placeholder="Buscar medicamento o lote..." oninput="filtrarLotes()" style="flex:1;min-width:200px"/>
+          <select id="lote-filtro-suc" onchange="filtrarLotes()" style="padding:8px 12px;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px">
+            <option value="TODAS">🏪 Todas las sucursales</option>
+            <option value="MTY">📍 Monterrey</option>
+            <option value="SLP">📍 San Luis Potosí</option>
+          </select>
         </div>
         <div style="overflow-x:auto">
           <table class="tbl">
@@ -4486,9 +4491,16 @@ function stockTotalMed(medId, sucursal) {
 
 function renderLotesAdmin(lista){
   var src=(lista||lotes).slice();
-  // Filtrar por sucursal según perfil — SIEMPRE, no solo en carga inicial
+  // Filtrar por sucursal según perfil
   if(perfilActual==='mty') src=src.filter(function(l){ return l.sucursal==='MTY'||!l.sucursal; });
-  if(perfilActual==='slp') src=src.filter(function(l){ return l.sucursal==='SLP'; });
+  else if(perfilActual==='slp') src=src.filter(function(l){ return l.sucursal==='SLP'; });
+  else {
+    // Admin: aplicar selector de sucursal
+    var selSuc = document.getElementById('lote-filtro-suc');
+    var filtroSuc = selSuc ? selSuc.value : 'TODAS';
+    if(filtroSuc === 'MTY') src=src.filter(function(l){ return l.sucursal==='MTY'||!l.sucursal; });
+    else if(filtroSuc === 'SLP') src=src.filter(function(l){ return l.sucursal==='SLP'; });
+  }
   src.sort(function(a,b){ return a.medicamento.localeCompare(b.medicamento,'es'); });
   var tbody=document.getElementById('lotes-body');
   if(!src.length){tbody.innerHTML='<tr><td colspan="6" class="es">Sin lotes</td></tr>';return;}
@@ -4530,7 +4542,8 @@ function renderLotesAdmin(lista){
 
 function filtrarLotes(){
   var q=document.getElementById('bq-lote').value.trim().toLowerCase();
-  renderLotesAdmin(q.length<2?lotes:lotes.filter(function(l){return l.medicamento.toLowerCase().indexOf(q)>=0||l.lote.toLowerCase().indexOf(q)>=0;}));
+  var base=q.length<2?lotes:lotes.filter(function(l){return l.medicamento.toLowerCase().indexOf(q)>=0||l.lote.toLowerCase().indexOf(q)>=0;});
+  renderLotesAdmin(base);
 }
 
 function abrirEditarLote(id){
