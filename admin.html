@@ -3042,8 +3042,9 @@ function renderInventario(lista){
       if (fechaVenc) {
         var hoy = new Date();
         var diasRestantes = Math.floor((fechaVenc - hoy) / (1000*60*60*24));
-        if (diasRestantes < 0) { vencColor = '#ef4444'; vencIcon = ' ⚠️'; }
-        else if (diasRestantes <= 90) { vencColor = '#f59e0b'; vencIcon = ' ⚠️'; }
+        if (diasRestantes < 0) { vencColor = '#7f1d1d'; vencIcon = ' ⚠️'; }
+        else if (diasRestantes <= 90) { vencColor = '#991b1b'; vencIcon = ' ⚠️'; }
+        else if (diasRestantes <= 180) { vencColor = '#f59e0b'; vencIcon = ' ⚠️'; }
         else { vencColor = '#10b981'; }
       }
     }
