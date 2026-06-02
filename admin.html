@@ -4575,7 +4575,16 @@ function abrirEditarLote(id){
   var vencAviso = document.getElementById('lote-venc-aviso');
   var yaVence   = !!(l.fecha_vencimiento && l.fecha_vencimiento.trim());
 
-  vencInput.value = l.fecha_vencimiento || '';
+  var vencRaw = l.fecha_vencimiento || '';
+  if (vencRaw.length > 10) {
+    var dObj = new Date(vencRaw);
+    if (!isNaN(dObj)) {
+      vencRaw = String(dObj.getDate()).padStart(2,'0') + '/' +
+                String(dObj.getMonth()+1).padStart(2,'0') + '/' +
+                dObj.getFullYear();
+    }
+  }
+  vencInput.value = vencRaw;
 
   if (perfilActual === 'admin') {
     // Admin: siempre puede editar
