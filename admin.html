@@ -2349,6 +2349,7 @@ select option { background:var(--bg-2); color:var(--text); }
       <div class="fr"><label>Existencias *</label><input type="number" id="nl-existencias" min="1" placeholder="0"/></div>
       <div class="fr"><label>Costo unitario ($)</label><input type="number" id="nl-costo" min="0" step="0.01" placeholder="0.00"/></div>
     </div>
+    <div class="fr"><label>Fecha vencimiento</label><input type="text" id="nl-vencimiento" placeholder="DD/MM/YYYY" maxlength="10" oninput="formatearNlVenc(this)"/></div>
     <div class="fr" id="nl-suc-row" style="display:none"><label>Sucursal *</label>
       <select id="nl-sucursal" style="padding:8px 12px;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;width:100%">
         <option value="MTY">📍 Monterrey (MTY)</option>
