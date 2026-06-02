@@ -4496,6 +4496,7 @@ function stockTotalMed(medId, sucursal) {
 
 
 function renderLotesAdmin(lista){
+  _actualizarVisibilidadFiltroSuc();
   var src=(lista||lotes).slice();
   // Filtrar por sucursal según perfil
   if(perfilActual==='mty') src=src.filter(function(l){ return l.sucursal==='MTY'||!l.sucursal; });
@@ -4552,6 +4553,11 @@ function filtrarLotes(){
   renderLotesAdmin(base);
 }
 
+function _actualizarVisibilidadFiltroSuc(){
+  var sel = document.getElementById('lote-filtro-suc');
+  if(sel) sel.style.display = perfilActual === 'admin' ? '' : 'none';
+}
+
 function abrirEditarLote(id){
   var l=null;
   for(var i=0;i<lotes.length;i++){if(String(lotes[i].id)===String(id)){l=lotes[i];break;}}
@@ -4580,8 +4586,12 @@ function abrirEditarLote(id){
   } else {
     // MTY / SLP: solo pueden agregar si no hay caducidad aún
     if (yaVence) {
-      // Ya tiene caducidad — ocultar campo completamente
-      vencRow.style.display = 'none';
+      // Ya tiene caducidad — mostrar como solo lectura
+      vencRow.style.display = '';
+      vencInput.disabled = true;
+      vencInput.style.background = 'rgba(15,23,42,.6)';
+      vencInput.style.color = 'var(--text-3)';
+      vencInput.style.fontFamily = 'var(--mono)';
       vencAviso.style.display = 'none';
     } else {
       // Sin caducidad — permitir agregar una sola vez, mostrar aviso
