@@ -3019,6 +3019,16 @@ function renderInventario(lista){
     html+='<td style="text-align:right;font-weight:700;color:'+color+'">'+stock+'</td>';
     html+='<td style="text-align:right;color:var(--text)">$'+costo.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
     var venc = l.fecha_vencimiento || '';
+    // Normalizar fecha al formato DD/MM/YYYY
+    if (venc && venc.length > 10) {
+      var dObj = new Date(venc);
+      if (!isNaN(dObj)) {
+        var dd = String(dObj.getDate()).padStart(2,'0');
+        var mm = String(dObj.getMonth()+1).padStart(2,'0');
+        var yy = dObj.getFullYear();
+        venc = dd+'/'+mm+'/'+yy;
+      }
+    }
     var vencColor = 'var(--text-2)';
     var vencIcon = '';
     if (venc) {
