@@ -2205,7 +2205,8 @@ select option { background:var(--bg-2); color:var(--text); }
     <div class="fr"><label>Nombre completo *</label><input type="text" id="med-nombre" placeholder="Nombre del medicamento"/></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="fr"><label>Precio base ($) *</label><input type="number" id="med-precio" placeholder="0.00"/></div>
-      <div class="fr"><label>Costo de compra ($)</label><input type="number" id="med-costo" placeholder="0.00"/></div>
+      <div class="fr"><label>Costo MTY ($)</label><input type="number" id="med-costo-mty" placeholder="0.00" step="0.01"/></div>
+<div class="fr"><label>Costo SLP ($)</label><input type="number" id="med-costo-slp" placeholder="0.00" step="0.01"/></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
       <div class="fr"><label>Precio MTY ($)</label><input type="number" id="med-precio-mty" placeholder="Usa precio base si vacío"/></div>
@@ -4246,7 +4247,8 @@ function abrirModalMed(med){
   document.getElementById('modal-med-titulo').textContent=med?'Editar medicamento':'Nuevo medicamento';
   document.getElementById('med-nombre').value=med?med.nombre:'';
   document.getElementById('med-precio').value=med?med.precio:'';
-  document.getElementById('med-costo').value=med?med.costo:'';
+  document.getElementById('med-costo-mty').value=med?(med.costo_mty||med.costo||''):'';
+  document.getElementById('med-costo-slp').value=med?(med.costo_slp||''):'';
   document.getElementById('med-precio-mty').value=med?(med.precio_mty||''):'';
   document.getElementById('med-precio-slp').value=med?(med.precio_slp||''):'';
   // Costo solo Admin; precios puede editarlos cada sucursal
@@ -4254,10 +4256,12 @@ function abrirModalMed(med){
   // Precio base: solo admin
   document.getElementById('med-precio').disabled = soloAdmin && !!med;
   document.getElementById('med-precio').title = soloAdmin ? 'Solo el Administrador puede modificar el precio base' : '';
-  // Costo: bloqueado solo si es perfil no-admin Y es edición de med existente
-  var costoDisabled = soloAdmin && !!med;
-  document.getElementById('med-costo').disabled  = costoDisabled;
-  document.getElementById('med-costo').title  = costoDisabled ? 'Solo el Administrador puede modificar el costo de un medicamento existente' : '';
+  // Costo MTY: solo admin y MTY pueden editar
+  document.getElementById('med-costo-mty').disabled = perfilActual==='slp';
+  document.getElementById('med-costo-mty').title = perfilActual==='slp' ? 'Solo MTY o Admin pueden editar el costo MTY' : '';
+  // Costo SLP: solo admin y SLP pueden editar
+  document.getElementById('med-costo-slp').disabled = perfilActual==='mty';
+  document.getElementById('med-costo-slp').title = perfilActual==='mty' ? 'Solo SLP o Admin pueden editar el costo SLP' : '';
   // Precio MTY: solo admin y MTY pueden editar
   document.getElementById('med-precio-mty').disabled = perfilActual==='slp';
   document.getElementById('med-precio-mty').title = perfilActual==='slp' ? 'Solo MTY o Admin pueden editar' : '';
@@ -4288,7 +4292,9 @@ function editarMed(id){
 function guardarMedicamento(){
   var nombre=document.getElementById('med-nombre').value.trim();
   var precio=parseFloat(document.getElementById('med-precio').value)||0;
-  var costo=parseFloat(document.getElementById('med-costo').value)||0;
+  var costo_mty=parseFloat(document.getElementById('med-costo-mty').value)||0;
+  var costo_slp=parseFloat(document.getElementById('med-costo-slp').value)||0;
+  var costo = perfilActual==='slp' ? costo_slp : costo_mty || costo_slp;
   var precio_mty=parseFloat(document.getElementById('med-precio-mty').value)||0;
   var precio_slp=parseFloat(document.getElementById('med-precio-slp').value)||0;
   var categoria=document.getElementById('med-cat').value;
@@ -4301,9 +4307,9 @@ function guardarMedicamento(){
   if(!nombre||(!precio&&!precio_mty&&!precio_slp)){medAlrt('Nombre y precio son obligatorios','e');return;}
   var btn=document.getElementById('btn-guardar-med');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
-  apiPost({accion:editId?'editar_medicamento':'guardar_medicamento',id:editId,nombre:nombre,precio:precio,costo:costo,precio_mty:precio_mty,precio_slp:precio_slp,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad},function(err){
-    if(editId){for(var i=0;i<medicamentos.length;i++){if(String(medicamentos[i].id)===String(editId)){Object.assign(medicamentos[i],{nombre:nombre,precio:precio,costo:costo,precio_mty:precio_mty,precio_slp:precio_slp,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad});break;}}}
-    else{medicamentos.push({id:'m'+Date.now(),nombre:nombre,precio:precio,costo:costo,precio_mty:precio_mty,precio_slp:precio_slp,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad});}
+  apiPost({accion:editId?'editar_medicamento':'guardar_medicamento',id:editId,nombre:nombre,precio:precio,costo:costo,costo_mty:costo_mty,costo_slp:costo_slp,precio_mty:precio_mty,precio_slp:precio_slp,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad},function(err){
+    if(editId){for(var i=0;i<medicamentos.length;i++){if(String(medicamentos[i].id)===String(editId)){Object.assign(medicamentos[i],{nombre:nombre,precio:precio,costo:costo,costo_mty:costo_mty,costo_slp:costo_slp,precio_mty:precio_mty,precio_slp:precio_slp,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad});break;}}}
+    else{medicamentos.push({id:'m'+Date.now(),nombre:nombre,precio:precio,costo:costo,costo_mty:costo_mty,costo_slp:costo_slp,precio_mty:precio_mty,precio_slp:precio_slp,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad});}
     renderMeds(); cerrarModalMedBtn();
     btn.disabled=false; btn.textContent='Guardar';
   });
@@ -5838,11 +5844,11 @@ function renderReportePrecios() {
         if(Number(lotes[j].existencias)>0) lotesList.push(lotes[j].lote+' ('+lotes[j].existencias+')');
       }
     }
-    var costo  = Number(m.costo)||0;
+    var costo  = perfilActual==='slp' ? (Number(m.costo_slp)||Number(m.costo)||0) : (Number(m.costo_mty)||Number(m.costo)||0);
     var precio = Number(m.precio)||0;
     var margen = precio>0 ? ((precio-costo)/precio*100) : 0;
     var utilidad = precio - costo;
-    return Object.assign({}, m, {_stock:stock, _lotes:lotesList, _margen:margen, _utilidad:utilidad});
+    return Object.assign({}, m, {_stock:stock, _lotes:lotesList, _margen:margen, _utilidad:utilidad, _costo:costo});
   });
 
   // Ordenar
@@ -5886,7 +5892,7 @@ function renderReportePrecios() {
   var html='';
   for(var i=0;i<src.length;i++){
     var m = src[i];
-    var costo  = Number(m.costo)||0;
+    var costo  = m._costo !== undefined ? m._costo : (perfilActual==='slp' ? (Number(m.costo_slp)||Number(m.costo)||0) : (Number(m.costo_mty)||Number(m.costo)||0));
     var precio = Number(m.precio)||0;
     var margenColor = m._margen>=40?'#6ee7b7':m._margen>=20?'#fcd34d':'#fca5a5';
     var stockColor  = m._stock>5?'#6ee7b7':m._stock>0?'#fcd34d':'#fca5a5';
