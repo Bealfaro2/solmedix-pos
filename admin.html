@@ -8980,9 +8980,10 @@ function renderBI() {
            (suc === 'TODAS' || (v.sucursal||'MTY') === suc);
   });
 
-  // Compras del año
+  // Compras del año filtradas por sucursal
   var cAnio = compras.filter(function(c){
-    return String(c.fecha||'').substring(0,4) === anio;
+    return String(c.fecha||'').substring(0,4) === anio &&
+           (suc === 'TODAS' || (c.sucursal||'MTY').toUpperCase() === suc);
   });
 
   // Acumular por mes
