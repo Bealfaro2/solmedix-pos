@@ -360,7 +360,7 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
         <div class="fr">
           <label>Escanear código de barras</label>
           <input type="text" id="barcode" placeholder="Escanea o escribe el código..." autocomplete="off"
-            onkeydown="if(event.key==='Enter'){event.preventDefault();onBarcodeInput();}" style="font-family:var(--mono)"/>
+            onkeydown="if(event.key==='Enter'){event.preventDefault();onBarcodeInput();}else{if(!/[0-9]/.test(event.key)&&event.key.length===1){event.preventDefault();}}" style="font-family:var(--mono)"/>
         </div>
         <div class="fr">
           <label>o seleccionar por nombre</label>
