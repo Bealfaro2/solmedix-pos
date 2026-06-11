@@ -392,8 +392,8 @@
       <div class="field">
         <label>Clave del ticket *</label>
         <div class="clave-wrap">
-          <input type="text" id="inp-clave" placeholder="SMX-MTY-260414-AND-0001-XX9" maxlength="40"
-            oninput="this.value=this.value.toUpperCase()"
+          <input type="text" id="inp-clave" placeholder="SMX-MTY-260414-AND-0001-XX9" maxlength="27"
+            oninput="(function(el){var v=el.value.replace(/-/g,'').toUpperCase();var p=[3,3,6,3,4,3];var r='';var i=0;p.forEach(function(l){if(v.length>i){r+=(r?'-':'')+v.substr(i,l);i+=l;}});el.value=r;})(this)"
             onkeydown="if(event.key==='Enter')buscarTicket()"/>
           <button class="btn" onclick="buscarTicket()" id="btn-buscar">Buscar</button>
         </div>
