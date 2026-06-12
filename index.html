@@ -354,6 +354,7 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
               oninput="acFilter()" onkeydown="acKey(event)" onfocus="acFilter()"/>
             <div class="ac-list" id="aclist"></div>
           </div>
+          <div id="info-fiscal" style="font-size:11px;margin-top:5px;min-height:16px"></div>
         </div>
         <div class="sep"></div>
         <div class="ptitle" style="margin-bottom:9px">Agregar medicamento</div>
@@ -537,6 +538,7 @@ var E = { rfc:'SSM180928AQ7', web:'www.solmedixfarmacia.com' };
 var sucursal=null, sucSelected=null;
 var configSistema={};
 var items=[], ventas=[], clientes=[], medicamentos=[], lotes=[];
+var clienteActual=null; // datos fiscales del cliente seleccionado
 var vActual=null, acIdx=-1;
 var pendientes=0, cargados=0;
 
@@ -1130,6 +1132,8 @@ function guardar() {
   if(!found){ clientes.push({nombre:cliente}); renderListaClientes(); }
   ventas.unshift(v);
   renderHist(); mostrarClave(v); limpiar();
+  clienteActual=null;
+  document.getElementById('info-fiscal').innerHTML='';
   alrt('Venta guardada. Ticket generado.','s');
   btn.disabled=false; btn.textContent='Guardar y generar ticket';
   // Abrir popup de impresión automáticamente
@@ -1370,7 +1374,24 @@ function acFilter(){
   }
   lst.innerHTML=html; lst.style.display='block'; acIdx=-1;
 }
-function acPick(val){document.getElementById('cli').value=val;document.getElementById('aclist').style.display='none';}
+function acPick(val){
+  document.getElementById('cli').value=val;
+  document.getElementById('aclist').style.display='none';
+  clienteActual=null;
+  for(var i=0;i<clientes.length;i++){
+    if(clientes[i].nombre===val){clienteActual=clientes[i];break;}
+  }
+  renderInfoFiscal();
+}
+function renderInfoFiscal(){
+  var el=document.getElementById('info-fiscal');
+  if(!el)return;
+  if(!clienteActual||!clienteActual.rfc){
+    el.innerHTML='<span style="color:var(--warn)">⚠ Sin RFC — se facturará como venta pública (XAXX010101000)</span>';
+  } else {
+    el.innerHTML='<span style="color:var(--ok)">✓ RFC: '+clienteActual.rfc+' | '+( clienteActual.regimen||'Sin régimen')+' | '+(clienteActual.uso_cfdi||'Sin uso CFDI')+'</span>';
+  }
+}
 function acKey(e){
   var lst=document.getElementById('aclist'),rows=lst.querySelectorAll('.ac-item');
   if(!rows.length)return;
@@ -1426,7 +1447,7 @@ function filtrarClientes(){
 
 /* MODAL */
 function abrirModalCliente(){document.getElementById('overlay').classList.add('show');document.getElementById('m-nombre').focus();}
-function cerrarModalBtn(){document.getElementById('overlay').classList.remove('show');['m-nombre','m-tel','m-rfc','m-correo'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('modal-alrt').style.display='none';}
+function cerrarModalBtn(){document.getElementById('overlay').classList.remove('show');['m-nombre','m-tel','m-rfc','m-correo','m-direccion','m-cp'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('m-regimen').value='';document.getElementById('m-uso').value='';document.getElementById('modal-alrt').style.display='none';}
 function cerrarModal(e){if(e.target===document.getElementById('overlay'))cerrarModalBtn();}
 
 function guardarCliente(){
@@ -2128,7 +2149,7 @@ function mostrarResumenCorte(diff, callback) {
 function cerrarSesionPosCorte() {
   sucursal=null; sucSelected=null;
   cajaDia=[]; cajaHoy=null; cajaCorteHoy=null; _cortePendienteFecha=null;
-  ventas=[]; clientes=[]; medicamentos=[]; lotes=[]; items=[];
+  ventas=[]; clientes=[]; medicamentos=[]; lotes=[]; items=[]; clienteActual=null;
   window.location.reload();
 }
 
