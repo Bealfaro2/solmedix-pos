@@ -463,6 +463,7 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
           <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end">
             <button class="btn btns" id="bimp" onclick="imprimir()">Imprimir ticket</button>
             <button class="btn btns" id="bcla" onclick="copiar()">Copiar clave</button>
+            <button class="btn btng" id="bfac" onclick="iniciarFacturacion()" style="display:none">⚡ Facturar</button>
           </div>
         </div>
       </div>
@@ -1172,6 +1173,12 @@ function mostrarClave(v) {
   vActual = v;
   document.getElementById('infoc').style.display = 'block';
   document.getElementById('ctxt').textContent = v.clave;
+  var btnFac = document.getElementById('bfac');
+  if(clienteActual && clienteActual.rfc && clienteActual.regimen && clienteActual.uso_cfdi){
+    btnFac.style.display = 'inline-flex';
+  } else {
+    btnFac.style.display = 'none';
+  }
 }
 
 /* TICKET */
@@ -1243,7 +1250,62 @@ function renderTicket(v) {
   document.getElementById('infoc').style.display='block';
   document.getElementById('ctxt').textContent=v.clave;
 }
+function iniciarFacturacion(){
+  if(!vActual){alrt('No hay venta activa','e');return;}
+  console.log('clienteActual:', JSON.stringify(clienteActual));
+  if(!clienteActual||!clienteActual.rfc){alrt('El cliente no tiene RFC registrado','e');return;}
+  if(!clienteActual.regimen){alrt('El cliente no tiene régimen fiscal registrado','e');return;}
+  if(!clienteActual.uso_cfdi){alrt('El cliente no tiene uso de CFDI registrado','e');return;}
+  if(!clienteActual.cp){alrt('El cliente no tiene código postal registrado','e');return;}
 
+  var msg = '¿Facturar a '+clienteActual.nombre+'?\n'+
+    'RFC: '+clienteActual.rfc+'\n'+
+    'Régimen: '+clienteActual.regimen+'\n'+
+    'Uso CFDI: '+clienteActual.uso_cfdi+'\n'+
+    'Total: $'+vActual.total.toLocaleString('es-MX',{minimumFractionDigits:2});
+
+  if(!confirm(msg)) return;
+
+  var btnFac = document.getElementById('bfac');
+  btnFac.disabled = true;
+  btnFac.innerHTML = '<span class="spinner"></span>Timbrando...';
+
+  // Construir conceptos desde los items de la venta
+  var conceptos = vActual.items.map(function(it){
+    return {
+      descripcion: it.nombre,
+      cantidad: it.qty,
+      valorUnitario: it.precio,
+      importe: it.total,
+      claveProdServ: it.clave_sat || '51201500',
+      claveUnidad: 'H87'
+    };
+  });
+
+  apiPost({
+    accion: 'timbrar_desde_pos',
+    receptor_nombre: clienteActual.nombre,
+    receptor_rfc: clienteActual.rfc,
+    receptor_regimen: clienteActual.regimen,
+    receptor_uso_cfdi: clienteActual.uso_cfdi,
+    receptor_cp: clienteActual.cp,
+    receptor_correo: clienteActual.correo||'',
+    total: vActual.total,
+    conceptos: JSON.stringify(conceptos),
+    sucursal: sucursal,
+    folio_pos: vActual.id
+  }, function(err, res){
+    btnFac.disabled = false;
+    btnFac.innerHTML = '⚡ Facturar';
+    if(err || !res || !res.ok){
+      alrt('Error al timbrar: '+(res&&res.error?res.error:'Intenta de nuevo'),'e');
+      return;
+    }
+    alrt('✓ CFDI timbrado correctamente. UUID: '+res.uuid,'s');
+    btnFac.style.display = 'none';
+    btnFac.innerHTML = '✓ Facturado';
+  });
+}
 
 function imprimir(){
   if(!vActual) return;
