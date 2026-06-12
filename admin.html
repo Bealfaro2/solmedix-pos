@@ -2272,6 +2272,10 @@ select option { background:var(--bg-2); color:var(--text); }
     <div class="fr"><label>Teléfono</label><input type="text" id="cli-tel"/></div>
     <div class="fr"><label>RFC</label><input type="text" id="cli-rfc" style="text-transform:uppercase"/></div>
     <div class="fr"><label>Correo</label><input type="email" id="cli-correo"/></div>
+    <div class="fr"><label>Régimen Fiscal</label><select id="cli-regimen"><option value="">— Selecciona —</option><option value="601">601 - General de Ley P.M.</option><option value="605">605 - Sueldos y Salarios</option><option value="606">606 - Arrendamiento</option><option value="612">612 - Act. Empresariales y Profesionales</option><option value="616">616 - Sin obligaciones fiscales</option><option value="621">621 - Incorporación Fiscal</option><option value="626">626 - RESICO</option></select></div>
+    <div class="fr"><label>Uso CFDI</label><select id="cli-uso"><option value="">— Selecciona —</option><option value="G01">G01 - Adquisición de mercancias</option><option value="G03">G03 - Gastos en general</option><option value="D01">D01 - Honorarios médicos y hospitalarios</option><option value="D02">D02 - Gastos médicos por incapacidad</option><option value="S01">S01 - Sin efectos fiscales</option></select></div>
+    <div class="fr"><label>Dirección</label><input type="text" id="cli-direccion" placeholder="Calle, número, colonia"/></div>
+    <div class="fr"><label>Código Postal</label><input type="text" id="cli-cp" placeholder="00000" maxlength="5" onkeypress="return /[0-9]/.test(event.key)"/></div>
     <input type="hidden" id="cli-editando-id"/>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
       <button class="btn" onclick="cerrarModalCliBtn()">Cancelar</button>
@@ -4325,10 +4329,10 @@ function renderClientesAdmin(lista){
   }
   var cont=document.getElementById('lista-cli-admin');
   if(!src.length){cont.innerHTML='<div class="es">No hay clientes</div>';return;}
-  var html='<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Nombre</th><th>Telefono</th><th>RFC</th><th>Correo</th><th></th></tr></thead><tbody>';
+  var html='<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Nombre</th><th>Teléfono</th><th>RFC</th><th>Correo</th><th>Régimen</th><th>Uso CFDI</th><th>Dirección</th><th>CP</th><th></th></tr></thead><tbody>';
   for(var i=0;i<src.length;i++){
     var c=src[i];
-    html+='<tr><td><strong>'+c.nombre+'</strong></td><td>'+(c.telefono||'—')+'</td><td style="font-family:monospace">'+(c.rfc||'—')+'</td><td>'+(c.correo||'—')+'</td>';
+    html+='<tr><td><strong>'+c.nombre+'</strong></td><td>'+(c.telefono||'—')+'</td><td style="font-family:monospace">'+(c.rfc||'—')+'</td><td>'+(c.correo||'—')+'</td><td>'+(c.regimen||'—')+'</td><td>'+(c.uso_cfdi||'—')+'</td><td>'+(c.direccion||'—')+'</td><td>'+(c.cp||'—')+'</td>';
     html+='<td><button class="btn btns btno" onclick="abrirEditarCliente(\''+String(c.id)+'\')" >Editar</button></td></tr>';
   }
   html+='</tbody></table></div>';
@@ -4348,13 +4352,17 @@ function abrirEditarCliente(id){
   document.getElementById('cli-tel').value=c.telefono||'';
   document.getElementById('cli-rfc').value=c.rfc||'';
   document.getElementById('cli-correo').value=c.correo||'';
+  document.getElementById('cli-regimen').value=c.regimen||'';
+  document.getElementById('cli-uso').value=c.uso_cfdi||'';
+  document.getElementById('cli-direccion').value=c.direccion||'';
+  document.getElementById('cli-cp').value=c.cp||'';
   document.getElementById('cli-editando-id').value=c.id||'';
   document.getElementById('cli-alrt').style.display='none';
   document.getElementById('modal-cli-overlay').classList.add('show');
   document.getElementById('cli-nombre').focus();
 }
 function cerrarModalCli(e){if(e.target===document.getElementById('modal-cli-overlay'))cerrarModalCliBtn();}
-function cerrarModalCliBtn(){document.getElementById('modal-cli-overlay').classList.remove('show');}
+function cerrarModalCliBtn(){document.getElementById('modal-cli-overlay').classList.remove('show');['cli-nombre','cli-tel','cli-rfc','cli-correo','cli-direccion','cli-cp'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('cli-regimen').value='';document.getElementById('cli-uso').value='';}
 
 function guardarEdicionCliente(){
   var nombre=document.getElementById('cli-nombre').value.trim();
@@ -4362,9 +4370,9 @@ function guardarEdicionCliente(){
   if(!nombre){cliAlrt('El nombre es obligatorio','e');return;}
   var btn=document.getElementById('btn-guardar-cli');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
-  var datos={accion:'editar_cliente',id:id,nombre:nombre,telefono:document.getElementById('cli-tel').value.trim(),rfc:document.getElementById('cli-rfc').value.trim().toUpperCase(),correo:document.getElementById('cli-correo').value.trim(),sucursal:perfilActual==='slp'?'SLP':'MTY'};
+  var datos={accion:'editar_cliente',id:id,nombre:nombre,telefono:document.getElementById('cli-tel').value.trim(),rfc:document.getElementById('cli-rfc').value.trim().toUpperCase(),correo:document.getElementById('cli-correo').value.trim(),regimen:document.getElementById('cli-regimen').value,uso_cfdi:document.getElementById('cli-uso').value,direccion:document.getElementById('cli-direccion').value.trim(),cp:document.getElementById('cli-cp').value.trim(),sucursal:perfilActual==='slp'?'SLP':'MTY'};
   apiPost(datos,function(err){
-    for(var i=0;i<clientes.length;i++){if(String(clientes[i].id)===String(id)){Object.assign(clientes[i],{nombre:datos.nombre,telefono:datos.telefono,rfc:datos.rfc,correo:datos.correo});break;}}
+    for(var i=0;i<clientes.length;i++){if(String(clientes[i].id)===String(id)){Object.assign(clientes[i],{nombre:datos.nombre,telefono:datos.telefono,rfc:datos.rfc,correo:datos.correo,regimen:datos.regimen,uso_cfdi:datos.uso_cfdi,direccion:datos.direccion,cp:datos.cp});break;}}
     renderClientesAdmin(); cerrarModalCliBtn();
     btn.disabled=false; btn.textContent='Guardar cambios';
   });
