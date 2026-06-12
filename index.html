@@ -477,6 +477,10 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
     <div class="fr"><label>Teléfono</label><input type="text" id="m-tel" placeholder="81 xxxx xxxx"/></div>
     <div class="fr"><label>RFC</label><input type="text" id="m-rfc" placeholder="XXXX000000XXX" style="text-transform:uppercase"/></div>
     <div class="fr"><label>Correo</label><input type="email" id="m-correo" placeholder="correo@ejemplo.com"/></div>
+    <div class="fr"><label>Régimen Fiscal</label><select id="m-regimen"><option value="">— Selecciona —</option><option value="601">601 - General de Ley P.M.</option><option value="605">605 - Sueldos y Salarios</option><option value="606">606 - Arrendamiento</option><option value="612">612 - Act. Empresariales y Profesionales</option><option value="616">616 - Sin obligaciones fiscales</option><option value="621">621 - Incorporación Fiscal</option><option value="626">626 - RESICO</option></select></div>
+    <div class="fr"><label>Uso CFDI</label><select id="m-uso"><option value="">— Selecciona —</option><option value="G01">G01 - Adquisición de mercancias</option><option value="G03">G03 - Gastos en general</option><option value="D01">D01 - Honorarios médicos y hospitalarios</option><option value="D02">D02 - Gastos médicos por incapacidad</option><option value="S01">S01 - Sin efectos fiscales</option></select></div>
+    <div class="fr"><label>Dirección</label><input type="text" id="m-direccion" placeholder="Calle, número, colonia"/></div>
+    <div class="fr"><label>Código Postal</label><input type="text" id="m-cp" placeholder="00000" maxlength="5" onkeypress="return /[0-9]/.test(event.key)"/></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
       <button class="btn" onclick="cerrarModalBtn()">Cancelar</button>
       <button class="btn btnp" id="btn-gc" onclick="guardarCliente()">Guardar cliente</button>
@@ -1430,8 +1434,8 @@ function guardarCliente(){
   if(!nombre){malrt('El nombre es obligatorio','e');return;}
   var btn=document.getElementById('btn-gc');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
-  apiPost({accion:'guardar_cliente',nombre:nombre,telefono:document.getElementById('m-tel').value.trim(),rfc:document.getElementById('m-rfc').value.trim().toUpperCase(),correo:document.getElementById('m-correo').value.trim(),sucursal:sucursal},function(err){
-    clientes.push({nombre:nombre,telefono:document.getElementById('m-tel').value.trim()});
+  apiPost({accion:'guardar_cliente',nombre:nombre,telefono:document.getElementById('m-tel').value.trim(),rfc:document.getElementById('m-rfc').value.trim().toUpperCase(),correo:document.getElementById('m-correo').value.trim(),regimen:document.getElementById('m-regimen').value,uso_cfdi:document.getElementById('m-uso').value,direccion:document.getElementById('m-direccion').value.trim(),cp:document.getElementById('m-cp').value.trim(),sucursal:sucursal},function(err){
+    clientes.push({nombre:nombre,telefono:document.getElementById('m-tel').value.trim(),rfc:document.getElementById('m-rfc').value.trim().toUpperCase(),correo:document.getElementById('m-correo').value.trim(),regimen:document.getElementById('m-regimen').value,uso_cfdi:document.getElementById('m-uso').value,direccion:document.getElementById('m-direccion').value.trim(),cp:document.getElementById('m-cp').value.trim()});
     renderListaClientes();
     document.getElementById('cli').value=nombre;
     cerrarModalBtn();
