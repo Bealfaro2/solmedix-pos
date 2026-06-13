@@ -1132,9 +1132,7 @@ function guardar() {
   for(var c=0;c<clientes.length;c++){ if((clientes[c].nombre||clientes[c]).toLowerCase()===cliente.toLowerCase()){found=true;break;} }
   if(!found){ clientes.push({nombre:cliente}); renderListaClientes(); }
   ventas.unshift(v);
-  renderHist(); mostrarClave(v); limpiar();
-  clienteActual=null;
-  document.getElementById('info-fiscal').innerHTML='';
+  renderHist(); limpiar(); mostrarClave(v);
   alrt('Venta guardada. Ticket generado.','s');
   btn.disabled=false; btn.textContent='Guardar y generar ticket';
   // Abrir popup de impresión automáticamente
