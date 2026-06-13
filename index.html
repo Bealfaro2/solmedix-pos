@@ -1174,13 +1174,9 @@ function mostrarClave(v) {
   document.getElementById('infoc').style.display = 'block';
   document.getElementById('ctxt').textContent = v.clave;
   var btnFac = document.getElementById('bfac');
-  console.log('mostrarClave — clienteActual:', JSON.stringify(clienteActual));
-  console.log('btnFac elemento:', btnFac);
   if(clienteActual && clienteActual.rfc && clienteActual.regimen && clienteActual.uso_cfdi){
-    console.log('Mostrando botón facturar');
     btnFac.style.display = 'inline-flex';
   } else {
-    console.log('Ocultando botón — falta:', !clienteActual, !clienteActual.rfc, !clienteActual.regimen, !clienteActual.uso_cfdi);
     btnFac.style.display = 'none';
   }
 }
