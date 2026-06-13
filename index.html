@@ -1442,6 +1442,8 @@ function acPick(val){
   for(var i=0;i<clientes.length;i++){
     if(clientes[i].nombre===val){clienteActual=clientes[i];break;}
   }
+  console.log('acPick val:', val);
+  console.log('clienteActual tras pick:', JSON.stringify(clienteActual));
   renderInfoFiscal();
 }
 function renderInfoFiscal(){
