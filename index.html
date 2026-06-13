@@ -1174,6 +1174,7 @@ function mostrarClave(v) {
   document.getElementById('infoc').style.display = 'block';
   document.getElementById('ctxt').textContent = v.clave;
   var btnFac = document.getElementById('bfac');
+  console.log('mostrarClave — clienteActual:', JSON.stringify(clienteActual));
   if(clienteActual && clienteActual.rfc && clienteActual.regimen && clienteActual.uso_cfdi){
     btnFac.style.display = 'inline-flex';
   } else {
