@@ -1279,7 +1279,7 @@ function iniciarFacturacion(){
     };
   });
 
-  apiPost({
+  apiPostViaJSONP({
     accion: 'timbrar_desde_pos',
     receptor_nombre: clienteActual.nombre,
     receptor_rfc: clienteActual.rfc,
