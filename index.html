@@ -540,6 +540,10 @@ var sucursal=null, sucSelected=null;
 var configSistema={};
 var items=[], ventas=[], clientes=[], medicamentos=[], lotes=[];
 var clienteActual=null; // datos fiscales del cliente seleccionado
+// ── CSD Solmedix ──────────────────────────────────────────────
+var NO_CERTIFICADO = '00001000000708258044';
+var CSD_CER = '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';
+var CSD_KEY = 'MIIEwAIBADANBgkqhkiG9w0BAQEFAASCBKowggSmAgEAAoIBAQDYJTn6oRpp5voGwq6DcvmVyem5aI/6s9Q5WpT8RWSmYVijJ4UIYH5sI1CL8YO+ELqnC93IZg1hxw/W0Z/IL1SdpYy7wpQlLxXsRs6iZOLZve00vEOdeMFHojO9ZEphGVN4xLkq0kc/V6pKV2Z/y+rjVHyuaQ63aGusBBVvoBn16O/dBb5f8d6xgYJh1MPSBFAYFS0MW9tHvPIqnuhB6okzXe/Qz2ihu7EzV2hzKEIBcLlMQulnA41xNJIjDYiLJWcKyHtJHZG5aCkQQgF6BkUtY0e2GROQ46MH6KqUZtwaVNYRqy6BFyndmlxdnyFqRafAUQ5hPU46OTocKCdsPBnLAgMBAAECggEBAMpvczHtGRP+pEUYqOGsGV3U0fY4nECtlCJzV/4979p0adPE+6+w0DbvjEzFUiH9ARPa5Uj/a6EcExWbFw8iZRmRJ5Hi12VMCDhWyMkHu/87BqLRgHJH2p4AqHzFJXRzh94gQVx9vQTyUid2XCVtEvz+8BdZhdL5FX7yBDGbvTS10OkFvEK+z4b5bzNwM1lI1JfiaUhc/+0e55HHo/K+GGmPBAo3KYkT1FQqm0zk2AXlpDf547twx/f2oTOudIGhYxwm8mENUB1nIlphVdQk/7FrgCtRaMLo0O1y64XyfDLds0OQcwXavB1873zgHKQFHH0WqCNO11qFmRMAjWNcxAECgYEA7gm51vP3/raTi4CyzTVQvVZyX5ifPpu5tdN6AoB7JaAq1jQXTbrUaPKdOWV2Eesn6n/HycIKXxCbVsrULseMPUhkZ1gGmC8in2E/hDulncyCrF+sytNRRwl1gn3SB9vYE+DQEOfjWlGnlbfP88J86FEcuP+BvRmWvI+CgLJ4gksCgYEA6HSXzlyqPNjGiJFsiozm5h4/SKkt8ClKM77unuBfnEPf4PfpWq4PFPgtctakRTrHn3IeBGmL6QXuuiRkOZ2acdLD2B3eOy0d+8nrrskvRd+FZPkGc3bYmGS70tFnyvZ1hqTjGJE4eUc1zdSbTgDMEMm6z0rqJrwMmIGt+XTwFoECgYEAhAq9HfHjhVW97sqLZK3Ihd7oPwMogtBbafNPYQfoR+zbFkt7CdEzdqvubyJLJpFtaPVM3CxZGHbb1H9ayEBFGNGJcJIxxkWPTR3i3/U+X5RMgFXqQfCKy38BwksNMPLQn+Y7RMV9JmLZNYHrRuqB41TrO+vwCfeh2CM7XyyhEJUCgYEAtlgncQBtphdh/WUeIL0QrzjQ6Z2UZIzvIRJIOqbFOV5g8ydljPV27TsU472N1KScTO4Gr+1fi+ZUcv3zBOMlcN4lNJWRaxgkKgwl7dDxXT1OdXuG3PJAS6LRVzle0u5sGLelUPMxuqjqgtChFxo2+YBVIyCf9sySkNtA7qsVXoECgYEAvQbIzmh9Kn1FTQ6FCY3ZCB8mCvgmwfvFDgO5ZByZOeJEM7/W9DTBt3qrbzn+B1cTelY0cPe3qdLdL0qtJC2z06QUpTDjUGh0gmSvTV/pdPSEEkUIwuf39vKMklFcGetDx3OK0s6B9wFe0ccLstvhQoMD8tjfZ5LmOGC36CMoKzU=';
 var vActual=null, acIdx=-1;
 var pendientes=0, cargados=0;
 
@@ -1247,6 +1251,173 @@ function renderTicket(v) {
   document.getElementById('infoc').style.display='block';
   document.getElementById('ctxt').textContent=v.clave;
 }
+// ── Firma CFDI con Web Crypto ─────────────────────────────────
+async function construirYFirmarXMLPOS(cliente, items, total, folio) {
+  var fecha = Utilities ? '' : '';
+  var now = new Date();
+  var pad = function(n){ return String(n).padStart(2,'0'); };
+  fecha = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+'T'+pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+
+  var esc = function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+
+  var subtotal = items.reduce(function(s,it){ return s + it.precio * it.qty; }, 0).toFixed(2);
+
+  var conceptosXML = items.map(function(it){
+    var imp = (it.precio * it.qty).toFixed(2);
+    return '<cfdi:Concepto ClaveProdServ="'+(it.clave_sat||'51201500')+'" '+
+      'Cantidad="'+it.qty+'" ClaveUnidad="H87" '+
+      'Descripcion="'+esc(it.nombre)+'" '+
+      'ValorUnitario="'+it.precio.toFixed(2)+'" '+
+      'Importe="'+imp+'" ObjetoImp="01"/>';
+  }).join('');
+
+  var xml =
+    '<?xml version="1.0" encoding="UTF-8"?>'+
+    '<cfdi:Comprobante '+
+      'xmlns:cfdi="http://www.sat.gob.mx/cfd/4" '+
+      'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '+
+      'xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd" '+
+      'Version="4.0" Serie="F" Folio="'+folio+'" Fecha="'+fecha+'" '+
+      'Sello="" '+
+      'FormaPago="99" '+
+      'NoCertificado="'+NO_CERTIFICADO+'" '+
+      'Certificado="'+CSD_CER+'" '+
+      'SubTotal="'+subtotal+'" Moneda="MXN" Total="'+subtotal+'" '+
+      'TipoDeComprobante="I" Exportacion="01" MetodoPago="PUE" '+
+      'LugarExpedicion="64610">'+
+    '<cfdi:Emisor Rfc="SSM180928AQ7" Nombre="SOLMEDIX SOLUCIONES MEDICAS" RegimenFiscal="601"/>'+
+    '<cfdi:Receptor '+
+      'Rfc="'+esc(cliente.rfc)+'" '+
+      'Nombre="'+esc(cliente.nombre)+'" '+
+      'DomicilioFiscalReceptor="'+esc(cliente.cp)+'" '+
+      'RegimenFiscalReceptor="'+esc(String(cliente.regimen))+'" '+
+      'UsoCFDI="'+esc(cliente.uso_cfdi)+'"/>'+
+    '<cfdi:Conceptos>'+conceptosXML+'</cfdi:Conceptos>'+
+    '</cfdi:Comprobante>';
+
+  var cadena = generarCadenaOriginalJS(xml);
+
+  var keyBytes = Uint8Array.from(atob(CSD_KEY), function(c){ return c.charCodeAt(0); });
+  var cryptoKey = await crypto.subtle.importKey(
+    'pkcs8',
+    keyBytes.buffer,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
+  var datos = new TextEncoder().encode(cadena);
+  var firma = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, datos);
+  var sello = btoa(String.fromCharCode.apply(null, new Uint8Array(firma)));
+  return xml.replace('Sello=""', 'Sello="'+sello+'"');
+}
+
+function generarCadenaOriginalJS(xmlStr) {
+  var comprobante = xmlStr.match(/<cfdi:Comprobante[^>]*>/);
+  var emisor = xmlStr.match(/<cfdi:Emisor[^>]*>/);
+  var receptor = xmlStr.match(/<cfdi:Receptor[^>]*>/);
+  var ga = function(block, attr) {
+    if (!block) return '';
+    var m = block.match(new RegExp('\\s' + attr + '="([^"]*)"'));
+    return m ? m[1] : '';
+  };
+  var c = '||' +
+    ga(comprobante,'Version') + '|' +
+    ga(comprobante,'Serie') + '|' +
+    ga(comprobante,'Folio') + '|' +
+    ga(comprobante,'Fecha') + '|' +
+    ga(comprobante,'FormaPago') + '|' +
+    ga(comprobante,'NoCertificado') + '|' +
+    ga(comprobante,'SubTotal') + '|' +
+    ga(comprobante,'Moneda') + '|' +
+    ga(comprobante,'Total') + '|' +
+    ga(comprobante,'TipoDeComprobante') + '|' +
+    ga(comprobante,'Exportacion') + '|' +
+    ga(comprobante,'MetodoPago') + '|' +
+    ga(comprobante,'LugarExpedicion') + '|';
+
+  c += ga(emisor,'Rfc') + '|' +
+    ga(emisor,'Nombre') + '|' +
+    ga(emisor,'RegimenFiscal') + '|' +
+    ga(receptor,'Rfc') + '|' +
+    ga(receptor,'Nombre') + '|' +
+    ga(receptor,'DomicilioFiscalReceptor') + '|' +
+    ga(receptor,'RegimenFiscalReceptor') + '|' +
+    ga(receptor,'UsoCFDI') + '|';
+
+  var conceptos = xmlStr.match(/<cfdi:Concepto\s[^>]*>/g) || [];
+  conceptos.forEach(function(con) {
+    var gc = function(a) {
+      var m = con.match(new RegExp('\\s' + a + '="([^"]*)"'));
+      return m ? m[1] : '';
+    };
+    c += gc('ClaveProdServ') + '|' +
+         gc('Cantidad') + '|' +
+         gc('ClaveUnidad') + '|' +
+         gc('Descripcion') + '|' +
+         gc('ValorUnitario') + '|' +
+         gc('Importe') + '|' +
+         gc('ObjetoImp') + '|';
+  });
+  c += '|';
+  return c;
+}
+
+function enviarXMLSelladoPOS(xmlSellado, cliente, folio, btnFac) {
+  var cbName = 'timbraPOS_' + Date.now();
+  window[cbName] = function(resp) {
+    delete window[cbName];
+    btnFac.disabled = false;
+    btnFac.innerHTML = '⚡ Facturar';
+    if (resp && resp.ok && resp.uuid) {
+      alrt('✓ CFDI timbrado. UUID: '+resp.uuid.toUpperCase(),'s');
+      btnFac.style.display = 'none';
+      btnFac.textContent = '✓ Facturado';
+    } else {
+      var msg = (resp && resp.error) ? resp.error : 'Error desconocido';
+      alrt('Error al timbrar: '+msg,'e');
+    }
+  };
+
+  var xmlB64 = btoa(unescape(encodeURIComponent(xmlSellado))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  var chunkSize = 800;
+  var chunks = [];
+  for (var i = 0; i < xmlB64.length; i += chunkSize) {
+    chunks.push(xmlB64.substring(i, i + chunkSize));
+  }
+  var totalChunks = chunks.length;
+  var tempKey = 'xml_pos_' + Date.now();
+
+  function enviarChunk(idx) {
+    if (idx >= totalChunks) {
+      setTimeout(function() {
+        var sc = document.createElement('script');
+        sc.src = API_URL +
+          '?accion=timbrar_cfdi_sellado' +
+          '&callback=' + cbName +
+          '&xml_key=' + encodeURIComponent(tempKey) +
+          '&correo=' + encodeURIComponent(cliente.correo||'') +
+          '&nombre_receptor=' + encodeURIComponent(cliente.nombre) +
+          '&sucursal=' + encodeURIComponent(sucursal) +
+          '&t=' + Date.now();
+        document.head.appendChild(sc);
+      }, 300);
+      return;
+    }
+    var sc = document.createElement('script');
+    sc.src = API_URL +
+      '?accion=guardar_xml_chunk' +
+      '&key=' + encodeURIComponent(tempKey) +
+      '&idx=' + idx +
+      '&total=' + totalChunks +
+      '&chunk=' + encodeURIComponent(chunks[idx]) +
+      '&t=' + Date.now();
+    sc.onload = function(){ sc.remove(); enviarChunk(idx+1); };
+    sc.onerror = function(){ sc.remove(); enviarChunk(idx+1); };
+    document.head.appendChild(sc);
+  }
+  enviarChunk(0);
+}
 function iniciarFacturacion(){
   if(!vActual){alrt('No hay venta activa','e');return;}
   console.log('clienteActual:', JSON.stringify(clienteActual));
@@ -1265,32 +1436,18 @@ function iniciarFacturacion(){
 
   var btnFac = document.getElementById('bfac');
   btnFac.disabled = true;
-  btnFac.innerHTML = '<span class="spinner"></span>Timbrando...';
+  btnFac.innerHTML = '<span class="spinner"></span>Firmando...';
 
-  // Construir conceptos desde los items de la venta
-  apiPostViaJSONP({
-    accion: 'timbrar_desde_pos',
-    receptor_nombre: clienteActual.nombre,
-    receptor_rfc: clienteActual.rfc,
-    receptor_regimen: clienteActual.regimen,
-    receptor_uso_cfdi: clienteActual.uso_cfdi,
-    receptor_cp: clienteActual.cp,
-    receptor_correo: clienteActual.correo||'',
-    total: vActual.total,
-    sucursal: sucursal,
-    folio_pos: vActual.id,
-    items: btoa(unescape(encodeURIComponent(JSON.stringify(vActual.items))))
-  }, function(err, res){
-    btnFac.disabled = false;
-    btnFac.innerHTML = '⚡ Facturar';
-    if(err || !res || !res.ok){
-      alrt('Error al timbrar: '+(res&&res.error?res.error:'Intenta de nuevo'),'e');
-      return;
-    }
-    alrt('✓ CFDI timbrado correctamente. UUID: '+res.uuid,'s');
-    btnFac.style.display = 'none';
-    btnFac.innerHTML = '✓ Facturado';
-  });
+  construirYFirmarXMLPOS(clienteActual, vActual.items, vActual.total, vActual.id)
+    .then(function(xmlSellado){
+      btnFac.innerHTML = '<span class="spinner"></span>Timbrando...';
+      enviarXMLSelladoPOS(xmlSellado, clienteActual, vActual.id, btnFac);
+    })
+    .catch(function(err){
+      btnFac.disabled = false;
+      btnFac.innerHTML = '⚡ Facturar';
+      alrt('Error al firmar: '+err.message,'e');
+    });
 }
 
 function imprimir(){
