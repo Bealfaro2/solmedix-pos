@@ -1253,7 +1253,6 @@ function renderTicket(v) {
 }
 // ── Firma CFDI con Web Crypto ─────────────────────────────────
 async function construirYFirmarXMLPOS(cliente, items, total, folio) {
-  var fecha = Utilities ? '' : '';
   var now = new Date();
   var pad = function(n){ return String(n).padStart(2,'0'); };
   fecha = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+'T'+pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
