@@ -1268,17 +1268,6 @@ function iniciarFacturacion(){
   btnFac.innerHTML = '<span class="spinner"></span>Timbrando...';
 
   // Construir conceptos desde los items de la venta
-  var conceptos = vActual.items.map(function(it){
-    return {
-      descripcion: it.nombre,
-      cantidad: it.qty,
-      valorUnitario: it.precio,
-      importe: it.total,
-      claveProdServ: it.clave_sat || '51201500',
-      claveUnidad: 'H87'
-    };
-  });
-
   apiPostViaJSONP({
     accion: 'timbrar_desde_pos',
     receptor_nombre: clienteActual.nombre,
@@ -1288,9 +1277,9 @@ function iniciarFacturacion(){
     receptor_cp: clienteActual.cp,
     receptor_correo: clienteActual.correo||'',
     total: vActual.total,
-    conceptos: JSON.stringify(conceptos),
     sucursal: sucursal,
-    folio_pos: vActual.id
+    folio_pos: vActual.id,
+    items: btoa(unescape(encodeURIComponent(JSON.stringify(vActual.items))))
   }, function(err, res){
     btnFac.disabled = false;
     btnFac.innerHTML = '⚡ Facturar';
