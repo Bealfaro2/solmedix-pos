@@ -1404,9 +1404,12 @@ function enviarXMLSelladoPOS(xmlSellado, cliente, folio, btnFac) {
       }, 300);
       return;
     }
+    var cbChunk = 'chunk_cb_'+Date.now()+'_'+idx;
+    window[cbChunk] = function(){ delete window[cbChunk]; };
     var sc = document.createElement('script');
     sc.src = API_URL +
       '?accion=guardar_xml_chunk' +
+      '&callback=' + cbChunk +
       '&key=' + encodeURIComponent(tempKey) +
       '&idx=' + idx +
       '&total=' + totalChunks +
