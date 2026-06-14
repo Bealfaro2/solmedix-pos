@@ -1317,7 +1317,8 @@ function generarCadenaOriginalJS(xmlStr) {
   var receptor = xmlStr.match(/<cfdi:Receptor[^>]*>/);
   var ga = function(block, attr) {
     if (!block) return '';
-    var m = block.match(new RegExp('\\s' + attr + '="([^"]*)"'));
+    var str = Array.isArray(block) ? block[0] : block;
+    var m = str.match(new RegExp('\\s' + attr + '="([^"]*)"'));
     return m ? m[1] : '';
   };
   var c = '||' +
