@@ -1409,7 +1409,10 @@ select option { background:var(--bg-2); color:var(--text); }
     <!-- CLIENTES -->
     <div id="sec-clientes" style="display:none">
       <div class="panel">
-        <div class="ptitle">Gestión de clientes</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="ptitle" style="margin:0">Gestión de clientes</div>
+          <button class="btn btnp" onclick="abrirEditarCliente(null)">+ Nuevo cliente</button>
+        </div>
         <div class="fr" style="margin-bottom:14px">
           <input type="text" id="bq-cli" placeholder="Buscar por nombre, teléfono o RFC..." oninput="filtrarClientesAdmin()"/>
         </div>
