@@ -1518,6 +1518,11 @@ function renderHist(){
     rows+='<div style="font-weight:600;font-size:13px;color:'+tc+'">$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
     if(!cancelada){
       rows+='<button class="btn btnw" style="display:block;margin-bottom:3px;width:100%" onclick="event.stopPropagation();ver('+vid+');imprimir()">Reimprimir</button>';
+      if(!v.uuid){
+        rows+='<button class="btn btng" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px" id="bfac_'+vid+'" onclick="event.stopPropagation();facturarDesdeHistorial(\''+vid+'\')">⚡ Facturar</button>';
+      } else {
+        rows+='<div style="font-size:9px;color:#6ee7b7;margin-bottom:3px">✓ Facturado</div>';
+      }
       rows+='<button class="btn btnd" style="font-size:10px;padding:2px 6px;width:100%" onclick="event.stopPropagation();pedirCancelar('+vid+')">Cancelar venta</button>';
     }
     rows+='</div></div>';
@@ -1593,6 +1598,110 @@ function acPick(val){
   console.log('clienteActual tras pick:', JSON.stringify(clienteActual));
   renderInfoFiscal();
 }
+function facturarDesdeHistorial(id) {
+  var venta = null;
+  for(var i=0;i<ventas.length;i++){
+    if(String(ventas[i].id)===String(id)){ venta=ventas[i]; break; }
+  }
+  if(!venta){ alrt('Venta no encontrada','e'); return; }
+  if(venta.uuid){ alrt('Esta venta ya fue facturada. UUID: '+venta.uuid,'i'); return; }
+
+  // Buscar cliente en el array de clientes cargados
+  var clienteHist = null;
+  for(var j=0;j<clientes.length;j++){
+    if((clientes[j].nombre||'').toLowerCase()===venta.cliente.toLowerCase()){
+      clienteHist=clientes[j]; break;
+    }
+  }
+
+  if(!clienteHist||!clienteHist.rfc){
+    alrt('El cliente "'+venta.cliente+'" no tiene RFC registrado. Actualiza sus datos fiscales primero.','e');
+    return;
+  }
+  if(!clienteHist.regimen){ alrt('El cliente no tiene régimen fiscal registrado.','e'); return; }
+  if(!clienteHist.uso_cfdi){ alrt('El cliente no tiene uso de CFDI registrado.','e'); return; }
+  if(!clienteHist.cp){ alrt('El cliente no tiene código postal registrado.','e'); return; }
+
+  var msg = '¿Facturar venta #'+String(id).padStart(4,'0')+' a '+clienteHist.nombre+'?\n'+
+    'RFC: '+clienteHist.rfc+'\n'+
+    'Régimen: '+clienteHist.regimen+'\n'+
+    'Uso CFDI: '+clienteHist.uso_cfdi+'\n'+
+    'Total: $'+Number(venta.total).toLocaleString('es-MX',{minimumFractionDigits:2});
+
+  if(!confirm(msg)) return;
+
+  var btnFac = document.getElementById('bfac_'+id);
+  if(btnFac){ btnFac.disabled=true; btnFac.innerHTML='<span class="spinner"></span>'; }
+
+  construirYFirmarXMLPOS(clienteHist, venta.items, venta.total, venta.id)
+    .then(function(xmlSellado){
+      var fakeBtnFac = {
+        disabled: false,
+        innerHTML: '',
+        style: { display: 'inline-flex' },
+        textContent: ''
+      };
+      // Callback personalizado para historial
+      var cbName = 'timbraHist_' + Date.now();
+      window[cbName] = function(resp) {
+        delete window[cbName];
+        if(btnFac){ btnFac.disabled=false; btnFac.innerHTML='⚡ Facturar'; }
+        if(resp && resp.ok && resp.uuid){
+          venta.uuid = resp.uuid;
+          alrt('✓ CFDI timbrado. UUID: '+resp.uuid.toUpperCase(),'s');
+          renderHist();
+          // Guardar UUID en Sheets
+          apiPostViaJSONP({accion:'guardar_uuid_venta', venta_id:venta.id, uuid:resp.uuid, sucursal:sucursal}, function(){});
+        } else {
+          var msg2 = (resp && resp.error) ? resp.error : 'Error desconocido';
+          alrt('Error al timbrar: '+msg2,'e');
+        }
+      };
+      enviarXMLSelladoConCB(xmlSellado, clienteHist, venta.id, cbName);
+    })
+    .catch(function(err){
+      if(btnFac){ btnFac.disabled=false; btnFac.innerHTML='⚡ Facturar'; }
+      alrt('Error al firmar: '+err.message,'e');
+    });
+}
+
+function enviarXMLSelladoConCB(xmlSellado, cliente, folio, cbName) {
+  var xmlB64 = btoa(unescape(encodeURIComponent(xmlSellado))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  var chunkSize = 800;
+  var chunks = [];
+  for(var i=0;i<xmlB64.length;i+=chunkSize){ chunks.push(xmlB64.substring(i,i+chunkSize)); }
+  var totalChunks = chunks.length;
+  var tempKey = 'xml_hist_' + Date.now();
+
+  var cbChunkBase = 'hchunk_'+Date.now();
+  function enviarChunk(idx){
+    if(idx>=totalChunks){
+      setTimeout(function(){
+        var sc=document.createElement('script');
+        sc.src=API_URL+'?accion=timbrar_cfdi_sellado&callback='+cbName+
+          '&xml_key='+encodeURIComponent(tempKey)+
+          '&correo='+encodeURIComponent(cliente.correo||'')+
+          '&nombre_receptor='+encodeURIComponent(cliente.nombre)+
+          '&sucursal='+encodeURIComponent(sucursal)+
+          '&t='+Date.now();
+        document.head.appendChild(sc);
+      },300);
+      return;
+    }
+    var cbChunk = cbChunkBase+'_'+idx;
+    window[cbChunk] = function(){ delete window[cbChunk]; };
+    var sc=document.createElement('script');
+    sc.src=API_URL+'?accion=guardar_xml_chunk&callback='+cbChunk+
+      '&key='+encodeURIComponent(tempKey)+
+      '&idx='+idx+'&total='+totalChunks+
+      '&chunk='+encodeURIComponent(chunks[idx])+'&t='+Date.now();
+    sc.onload=function(){ sc.remove(); enviarChunk(idx+1); };
+    sc.onerror=function(){ sc.remove(); enviarChunk(idx+1); };
+    document.head.appendChild(sc);
+  }
+  enviarChunk(0);
+}
+
 function renderInfoFiscal(){
   var el=document.getElementById('info-fiscal');
   if(!el)return;
