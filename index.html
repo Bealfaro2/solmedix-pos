@@ -1631,6 +1631,31 @@ function facturarDesdeHistorial(id) {
       defaultIdx=k; break;
     }
   }
+ // Construir contenido del modal según si el cliente tiene RFC
+  var headerContent = '';
+  var botonesContent = '';
+
+  if(clienteHist && clienteHist.rfc && clienteHist.regimen && clienteHist.uso_cfdi && clienteHist.cp){
+    headerContent =
+      '<div style="background:var(--bg-3);border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px">' +
+      '<div><strong>'+clienteHist.nombre+'</strong></div>' +
+      '<div style="color:var(--text-2)">RFC: '+clienteHist.rfc+'</div>' +
+      '<div style="color:var(--text-2)">Régimen: '+clienteHist.regimen+'</div>' +
+      '<div style="color:var(--text-2)">Uso CFDI: '+clienteHist.uso_cfdi+'</div>' +
+      '<div style="color:var(--text-2)">CP: '+clienteHist.cp+'</div>' +
+      '</div>';
+    botonesContent =
+      '<button id="btn-cambiar-fac" style="padding:8px 16px;border-radius:8px;border:1px solid rgba(148,163,184,.3);background:transparent;color:var(--text-1);cursor:pointer">Cambiar receptor</button>' +
+      '<button id="btn-confirmar-fac" style="padding:8px 16px;border-radius:8px;background:#185FA5;color:#fff;border:none;cursor:pointer;font-weight:600">⚡ Confirmar</button>';
+  } else {
+    headerContent =
+      '<div style="background:#fef3c7;border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;color:#92400e">' +
+      '⚠ Este cliente no tiene datos fiscales completos. Selecciona otro receptor.' +
+      '</div>';
+    botonesContent =
+      '<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="padding:8px 16px;border-radius:8px;border:1px solid rgba(148,163,184,.3);background:transparent;color:var(--text-1);cursor:pointer">Cancelar</button>' +
+      '<button id="btn-cambiar-fac" style="padding:8px 16px;border-radius:8px;background:#185FA5;color:#fff;border:none;cursor:pointer;font-weight:600">Seleccionar receptor</button>';
+  }
 
   // Mostrar selector
   var opciones = clientesConRFC.map(function(c,idx){
@@ -1641,19 +1666,38 @@ function facturarDesdeHistorial(id) {
   modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center';
   modal.innerHTML=
     '<div style="background:var(--bg-2);border-radius:12px;padding:24px;max-width:420px;width:90%;box-shadow:var(--shadow-lg)">' +
-    '<div style="font-weight:700;font-size:15px;margin-bottom:12px">¿A quién facturamos?</div>' +
-    '<div style="font-size:12px;color:var(--text-2);margin-bottom:8px">Venta #'+String(id).padStart(4,'0')+' — '+venta.cliente+' — $'+Number(venta.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>' +
-    '<select id="sel-cli-fac" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(148,163,184,.3);background:var(--bg-3);color:var(--text-1);margin-bottom:16px">'+opciones+'</select>' +
+    '<div style="font-weight:700;font-size:15px;margin-bottom:6px">¿A quién facturamos?</div>' +
+    '<div style="font-size:12px;color:var(--text-2);margin-bottom:12px">Venta #'+String(id).padStart(4,'0')+' — '+venta.cliente+' — $'+Number(venta.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>' +
+    headerContent +
+    '<select id="sel-cli-fac" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(148,163,184,.3);background:var(--bg-3);color:var(--text-1);margin-bottom:16px;display:none">'+opciones+'</select>' +
     '<div style="display:flex;gap:8px;justify-content:flex-end">' +
-    '<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="padding:8px 16px;border-radius:8px;border:1px solid rgba(148,163,184,.3);background:transparent;color:var(--text-1);cursor:pointer">Cancelar</button>' +
-    '<button id="btn-confirmar-fac" style="padding:8px 16px;border-radius:8px;background:#185FA5;color:#fff;border:none;cursor:pointer;font-weight:600">⚡ Facturar</button>' +
+    botonesContent +
     '</div></div>';
   document.body.appendChild(modal);
 
-  document.getElementById('btn-confirmar-fac').onclick = function(){
-    var idx = parseInt(document.getElementById('sel-cli-fac').value);
-    clienteHist = clientesConRFC[idx];
-    modal.remove();
+  // Botón cambiar receptor — muestra el select
+  var btnCambiar = document.getElementById('btn-cambiar-fac');
+  if(btnCambiar){
+    btnCambiar.onclick = function(){
+      var sel = document.getElementById('sel-cli-fac');
+      sel.style.display = 'block';
+      btnCambiar.style.display = 'none';
+      // Cambiar botón confirmar si existe
+      var btnConf = document.getElementById('btn-confirmar-fac');
+      if(btnConf) btnConf.textContent = '⚡ Facturar seleccionado';
+    };
+  }
+
+  // Botón confirmar
+  var btnConf2 = document.getElementById('btn-confirmar-fac');
+  if(btnConf2){
+    btnConf2.onclick = function(){
+      var sel = document.getElementById('sel-cli-fac');
+      if(sel.style.display !== 'none'){
+        var idx = parseInt(sel.value);
+        clienteHist = clientesConRFC[idx];
+      }
+      modal.remove();
     var msg = '¿Facturar venta #'+String(id).padStart(4,'0')+' a '+clienteHist.nombre+'?\n'+
       'RFC: '+clienteHist.rfc+'\n'+
       'Régimen: '+clienteHist.regimen+'\n'+
