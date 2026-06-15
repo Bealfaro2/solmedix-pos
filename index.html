@@ -1738,8 +1738,9 @@ function facturarDesdeHistorial(id) {
     .catch(function(err){
       if(btnFac){ btnFac.disabled=false; btnFac.innerHTML='⚡ Facturar'; }
       alrt('Error al firmar: '+err.message,'e');
-    });
+     });
   }; // cierra onclick btn-confirmar-fac
+  } // cierra if(btnConf2)
 } // cierra facturarDesdeHistorial
 
 function enviarXMLSelladoConCB(xmlSellado, cliente, folio, cbName) {
