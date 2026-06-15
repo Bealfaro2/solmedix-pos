@@ -1614,26 +1614,58 @@ function facturarDesdeHistorial(id) {
     }
   }
 
-  if(!clienteHist||!clienteHist.rfc){
-    alrt('El cliente "'+venta.cliente+'" no tiene RFC registrado. Actualiza sus datos fiscales primero.','e');
+  // Construir lista de clientes con RFC completo
+  var clientesConRFC = clientes.filter(function(c){
+    return c.rfc && c.regimen && c.uso_cfdi && c.cp;
+  });
+
+  if(!clientesConRFC.length){
+    alrt('No hay clientes con datos fiscales completos registrados.','e');
     return;
   }
-  if(!clienteHist.regimen){ alrt('El cliente no tiene régimen fiscal registrado.','e'); return; }
-  if(!clienteHist.uso_cfdi){ alrt('El cliente no tiene uso de CFDI registrado.','e'); return; }
-  if(!clienteHist.cp){ alrt('El cliente no tiene código postal registrado.','e'); return; }
 
-  var msg = '¿Facturar venta #'+String(id).padStart(4,'0')+' a '+clienteHist.nombre+'?\n'+
-    'RFC: '+clienteHist.rfc+'\n'+
-    'Régimen: '+clienteHist.regimen+'\n'+
-    'Uso CFDI: '+clienteHist.uso_cfdi+'\n'+
-    'Total: $'+Number(venta.total).toLocaleString('es-MX',{minimumFractionDigits:2});
+  // Si el cliente de la venta tiene RFC completo, usarlo por defecto
+  var defaultIdx = 0;
+  for(var k=0;k<clientesConRFC.length;k++){
+    if(clientesConRFC[k].nombre.toLowerCase()===venta.cliente.toLowerCase()){
+      defaultIdx=k; break;
+    }
+  }
 
-  if(!confirm(msg)) return;
+  // Mostrar selector
+  var opciones = clientesConRFC.map(function(c,idx){
+    return '<option value="'+idx+'"'+(idx===defaultIdx?' selected':'')+'>'+c.nombre+' — '+c.rfc+'</option>';
+  }).join('');
+
+  var modal = document.createElement('div');
+  modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML=
+    '<div style="background:var(--bg-2);border-radius:12px;padding:24px;max-width:420px;width:90%;box-shadow:var(--shadow-lg)">' +
+    '<div style="font-weight:700;font-size:15px;margin-bottom:12px">¿A quién facturamos?</div>' +
+    '<div style="font-size:12px;color:var(--text-2);margin-bottom:8px">Venta #'+String(id).padStart(4,'0')+' — '+venta.cliente+' — $'+Number(venta.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>' +
+    '<select id="sel-cli-fac" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(148,163,184,.3);background:var(--bg-3);color:var(--text-1);margin-bottom:16px">'+opciones+'</select>' +
+    '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+    '<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="padding:8px 16px;border-radius:8px;border:1px solid rgba(148,163,184,.3);background:transparent;color:var(--text-1);cursor:pointer">Cancelar</button>' +
+    '<button id="btn-confirmar-fac" style="padding:8px 16px;border-radius:8px;background:#185FA5;color:#fff;border:none;cursor:pointer;font-weight:600">⚡ Facturar</button>' +
+    '</div></div>';
+  document.body.appendChild(modal);
+
+  document.getElementById('btn-confirmar-fac').onclick = function(){
+    var idx = parseInt(document.getElementById('sel-cli-fac').value);
+    clienteHist = clientesConRFC[idx];
+    modal.remove();
+    var msg = '¿Facturar venta #'+String(id).padStart(4,'0')+' a '+clienteHist.nombre+'?\n'+
+      'RFC: '+clienteHist.rfc+'\n'+
+      'Régimen: '+clienteHist.regimen+'\n'+
+      'Uso CFDI: '+clienteHist.uso_cfdi+'\n'+
+      'Total: $'+Number(venta.total).toLocaleString('es-MX',{minimumFractionDigits:2});
+
+    if(!confirm(msg)){ return; }
 
   var btnFac = document.getElementById('bfac_'+id);
-  if(btnFac){ btnFac.disabled=true; btnFac.innerHTML='<span class="spinner"></span>'; }
+    if(btnFac){ btnFac.disabled=true; btnFac.innerHTML='<span class="spinner"></span>'; }
 
-  construirYFirmarXMLPOS(clienteHist, venta.items, venta.total, venta.id)
+    construirYFirmarXMLPOS(clienteHist, venta.items, venta.total, venta.id)
     .then(function(xmlSellado){
       var fakeBtnFac = {
         disabled: false,
@@ -1663,7 +1695,8 @@ function facturarDesdeHistorial(id) {
       if(btnFac){ btnFac.disabled=false; btnFac.innerHTML='⚡ Facturar'; }
       alrt('Error al firmar: '+err.message,'e');
     });
-}
+  }; // cierra onclick btn-confirmar-fac
+} // cierra facturarDesdeHistorial
 
 function enviarXMLSelladoConCB(xmlSellado, cliente, folio, cbName) {
   var xmlB64 = btoa(unescape(encodeURIComponent(xmlSellado))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
