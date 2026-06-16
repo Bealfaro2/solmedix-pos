@@ -4350,16 +4350,15 @@ function filtrarClientesAdmin(){
 function abrirEditarCliente(id){
   var c=null;
   for(var i=0;i<clientes.length;i++){if(String(clientes[i].id)===String(id)){c=clientes[i];break;}}
-  if(!c)return;
-  document.getElementById('cli-nombre').value=c.nombre||'';
-  document.getElementById('cli-tel').value=c.telefono||'';
-  document.getElementById('cli-rfc').value=c.rfc||'';
-  document.getElementById('cli-correo').value=c.correo||'';
-  document.getElementById('cli-regimen').value=c.regimen||'';
-  document.getElementById('cli-uso').value=c.uso_cfdi||'';
-  document.getElementById('cli-direccion').value=c.direccion||'';
-  document.getElementById('cli-cp').value=c.cp||'';
-  document.getElementById('cli-editando-id').value=c.id||'';
+  document.getElementById('cli-nombre').value=c?c.nombre||'':'';
+  document.getElementById('cli-tel').value=c?c.telefono||'':'';
+  document.getElementById('cli-rfc').value=c?c.rfc||'':'';
+  document.getElementById('cli-correo').value=c?c.correo||'':'';
+  document.getElementById('cli-regimen').value=c?c.regimen||'':'';
+  document.getElementById('cli-uso').value=c?c.uso_cfdi||'':'';
+  document.getElementById('cli-direccion').value=c?c.direccion||'':'';
+  document.getElementById('cli-cp').value=c?c.cp||'':'';
+  document.getElementById('cli-editando-id').value=c?c.id||'':'';
   document.getElementById('cli-alrt').style.display='none';
   document.getElementById('modal-cli-overlay').classList.add('show');
   document.getElementById('cli-nombre').focus();
