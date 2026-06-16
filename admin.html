@@ -4372,7 +4372,7 @@ function guardarEdicionCliente(){
   if(!nombre){cliAlrt('El nombre es obligatorio','e');return;}
   var btn=document.getElementById('btn-guardar-cli');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
-  var datos={accion:'editar_cliente',id:id,nombre:nombre,telefono:document.getElementById('cli-tel').value.trim(),rfc:document.getElementById('cli-rfc').value.trim().toUpperCase(),correo:document.getElementById('cli-correo').value.trim(),regimen:document.getElementById('cli-regimen').value,uso_cfdi:document.getElementById('cli-uso').value,direccion:document.getElementById('cli-direccion').value.trim(),cp:document.getElementById('cli-cp').value.trim(),sucursal:perfilActual==='slp'?'SLP':'MTY'};
+  var datos={accion:id?'editar_cliente':'guardar_cliente',id:id,nombre:nombre,telefono:document.getElementById('cli-tel').value.trim(),rfc:document.getElementById('cli-rfc').value.trim().toUpperCase(),correo:document.getElementById('cli-correo').value.trim(),regimen:document.getElementById('cli-regimen').value,uso_cfdi:document.getElementById('cli-uso').value,direccion:document.getElementById('cli-direccion').value.trim(),cp:document.getElementById('cli-cp').value.trim(),sucursal:perfilActual==='slp'?'SLP':'MTY'};
   apiPost(datos,function(err){
     for(var i=0;i<clientes.length;i++){if(String(clientes[i].id)===String(id)){Object.assign(clientes[i],{nombre:datos.nombre,telefono:datos.telefono,rfc:datos.rfc,correo:datos.correo,regimen:datos.regimen,uso_cfdi:datos.uso_cfdi,direccion:datos.direccion,cp:datos.cp});break;}}
     renderClientesAdmin(); cerrarModalCliBtn();
