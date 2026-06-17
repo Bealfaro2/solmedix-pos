@@ -1287,7 +1287,12 @@ select option { background:var(--bg-2); color:var(--text); }
         <div class="panel">
         <div class="ptitle">Gestión de ventas</div>
         <div class="fr" style="margin-bottom:14px">
-          <input type="text" id="bq-venta" placeholder="Buscar por cliente, folio o clave..." oninput="filtrarVentasAdmin()"/>
+          <input type="text" id="bq-venta" placeholder="Buscar por cliente o clave..." oninput="filtrarVentasAdmin()"/>
+        <select id="fil-suc-venta" onchange="filtrarVentasAdmin()" style="padding:7px 10px;border-radius:var(--radius);border:1px solid rgba(148,163,184,.2);background:var(--bg-2);color:var(--text-1);display:'+(perfilActual==='admin'?'inline-block':'none')+'">
+          <option value="">Todas las sucursales</option>
+          <option value="MTY">MTY</option>
+          <option value="SLP">SLP</option>
+        </select>
         </div>
         <div style="overflow-x:auto">
           <table class="tbl">
@@ -4390,8 +4395,9 @@ function renderVentasAdmin(lista){
   var html='';
   for(var i=0;i<src.length;i++){
     var v=src[i];
-    var cancelada=v.estado==='cancelada';
-    html+='<tr style="'+(cancelada?'background:rgba(239,68,68,.08);color:#aaa':'')+'"><td><strong>#'+String(v.id).padStart(4,'0')+'</strong></td><td>'+ff(v.fecha)+'</td><td>'+v.cliente+'</td>';
+   var cancelada=v.estado==='cancelada';
+    var tooltipProductos = (v.items||[]).map(function(it){ return it.qty+'x '+it.nombre+' — $'+Number(it.total).toLocaleString('es-MX',{minimumFractionDigits:2}); }).join('&#10;');
+    html+='<tr title="'+tooltipProductos+'" style="cursor:pointer;'+(cancelada?'background:rgba(239,68,68,.08);color:#aaa':'')+'"><td><strong>#'+String(v.id).padStart(4,'0')+'</strong></td><td>'+ff(v.fecha)+'</td><td>'+v.cliente+'</td>';
     html+='<td><strong>$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</strong></td>';
     // Calcular modo de pago dominante de los ítems
     var pagosMapa = {};
@@ -4421,7 +4427,12 @@ function renderVentasAdmin(lista){
 
 function filtrarVentasAdmin(){
   var q=document.getElementById('bq-venta').value.trim().toLowerCase();
-  renderVentasAdmin(q.length<2?null:ventas.filter(function(v){return v.cliente.toLowerCase().indexOf(q)>=0||v.clave.toLowerCase().indexOf(q)>=0||String(v.id).indexOf(q)>=0;}));
+  var selSuc=document.getElementById('fil-suc-venta');
+  var suc=selSuc?selSuc.value:'';
+  var src=ventas;
+  if(suc) src=src.filter(function(v){ return (v.sucursal||'MTY')===suc; });
+  if(q.length>=2) src=src.filter(function(v){ return v.cliente.toLowerCase().indexOf(q)>=0||v.clave.toLowerCase().indexOf(q)>=0||String(v.id).indexOf(q)>=0; });
+  renderVentasAdmin((q.length<2&&!suc)?null:src);
 }
 
 function pedirBorrarVenta(id){
