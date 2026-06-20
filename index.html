@@ -682,6 +682,12 @@ function iniciar() {
   var n = new Date();
   document.getElementById('fec').value = fechaHoy();
   document.getElementById('hor').value = pad(n.getHours()) + ':' + pad(n.getMinutes());
+   // Reloj en tiempo real — actualiza el campo hora cada minuto
+  if (window._horReloj) clearInterval(window._horReloj);
+  window._horReloj = setInterval(function() {
+    var ahora = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Monterrey' }));
+    document.getElementById('hor').value = pad(ahora.getHours()) + ':' + pad(ahora.getMinutes());
+  }, 60000);
   setSyncStatus('load','Conectando...');
   // Load config if not loaded
   if(!configSistema.pwd_mty) apiGet('config', function(e,d){ if(!e&&d) configSistema=d.config||{}; });
