@@ -1148,10 +1148,34 @@ function guardar() {
   // Abrir popup de impresión automáticamente
   imprimir();
 
-  // Guardar en Sheets + descontar en servidor (asíncrono con snapshot)
+  Aquí está el bloque completo y corregido:
+javascript// Guardar en Sheets + descontar en servidor (asíncrono con snapshot)
   apiPost({accion:'guardar_venta',fecha:fecha,hora:hora,cliente:cliente,total:total,clave:v.clave,sucursal:sucursal,items:itemsSnapshot}, function(err) {
     if(!err){
       setSyncStatus('ok','Guardado en Google Sheets');
+
+      // ── Comisión Mercado Pago → Gasto No Fiscal ──────────
+      var comisionMP = 0;
+      for (var ci = 0; ci < itemsSnapshot.length; ci++) {
+        if (itemsSnapshot[ci].pago === 'Tarjeta MP') {
+          comisionMP += itemsSnapshot[ci].total * 0.0406;
+        }
+      }
+      var comision = Math.round(comisionMP * 100) / 100;
+      if (comision > 0) {
+        apiPost({
+          accion: 'guardar_gasto_no_fiscal',
+          fecha: fecha,
+          concepto: 'Comisión MP folio #' + String(folio).padStart(4,'0'),
+          monto: comision,
+          sucursal: sucursal,
+          estado: 'activa'
+        }, function(errGnf) {
+          if (!errGnf) console.log('[MP] Comisión registrada: $' + comision);
+          else console.warn('[MP] Error al registrar comisión:', errGnf);
+        });
+      }
+      // ─────────────────────────────────────────────────────
       for(var i=0;i<itemsSnapshot.length;i++){
         if(itemsSnapshot[i].loteId){
           (function(lid, qty){
