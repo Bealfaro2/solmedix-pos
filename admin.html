@@ -3557,20 +3557,28 @@ function renderXmlResult() {
 }
 
 function autoMatch(descripcion) {
-  // Try to find matching medicamento by name similarity
-  var desc = descripcion.toLowerCase();
+  var desc = descripcion.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   var bestId = '';
   var bestScore = 0;
   for (var i = 0; i < medicamentos.length; i++) {
-    var nom = medicamentos[i].nombre.toLowerCase();
-    // Check if key words match
-    var words = nom.split(' ');
+    var nom = medicamentos[i].nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    var wordsDesc = desc.split(/\s+/).filter(function(w){ return w.length > 3; });
+    var wordsNom  = nom.split(/\s+/).filter(function(w){ return w.length > 3; });
+    if (!wordsNom.length) continue;
+    // Contar palabras del catálogo que aparecen en la descripción del XML
     var matches = 0;
-    for (var j = 0; j < words.length; j++) {
-      if (words[j].length > 3 && desc.indexOf(words[j]) >= 0) matches++;
+    for (var j = 0; j < wordsNom.length; j++) {
+      if (desc.indexOf(wordsNom[j]) >= 0) matches++;
     }
-    var score = matches / words.length;
-    if (score > bestScore && score > 0.3) {
+    // También contar palabras del XML que aparecen en el catálogo (bidireccional)
+    var matchesRev = 0;
+    for (var k = 0; k < wordsDesc.length; k++) {
+      if (nom.indexOf(wordsDesc[k]) >= 0) matchesRev++;
+    }
+    var scoreNom  = matches / wordsNom.length;
+    var scoreDesc = wordsDesc.length ? matchesRev / wordsDesc.length : 0;
+    var score = Math.max(scoreNom, scoreDesc);
+    if (score > bestScore && score >= 0.25) {
       bestScore = score;
       bestId = medicamentos[i].id;
     }
@@ -3704,8 +3712,15 @@ function aplicarEntrada() {
     var t=tareas[idx]; idx++;
     var c=t.concepto, fi=t.info;
     var medNombre='';
+    var medEnCatalogo = false;
     for (var ii=0;ii<medicamentos.length;ii++){
-      if(String(medicamentos[ii].id)===String(c.medId)){ medNombre=medicamentos[ii].nombre; break; }
+      if(String(medicamentos[ii].id)===String(c.medId)){ medNombre=medicamentos[ii].nombre; medEnCatalogo=true; break; }
+    }
+    if (!medEnCatalogo) {
+      console.error('[aplicarEntrada] medId no existe en catálogo:', c.medId, c.descripcion);
+      entradaAlrt('❌ Error: el medicamento "'+c.descripcion+'" no está vinculado correctamente al catálogo. Regresa y selecciónalo del dropdown antes de aplicar.','e');
+      if (btn) { btn.disabled=false; btn.textContent='Aplicar entrada al inventario'; }
+      return;
     }
     apiPost({ accion:'registrar_compra', sucursal:(perfilActual==='slp'?'SLP':'MTY'),
       fecha:fi.fecha, proveedor:fi.proveedor, rfc_proveedor:fi.rfcProv, folio:fi.folio, uuid:fi.uuid,
