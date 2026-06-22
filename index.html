@@ -1148,8 +1148,7 @@ function guardar() {
   // Abrir popup de impresión automáticamente
   imprimir();
 
-  Aquí está el bloque completo y corregido:
-javascript// Guardar en Sheets + descontar en servidor (asíncrono con snapshot)
+// Guardar en Sheets + descontar en servidor (asíncrono con snapshot)
   apiPost({accion:'guardar_venta',fecha:fecha,hora:hora,cliente:cliente,total:total,clave:v.clave,sucursal:sucursal,items:itemsSnapshot}, function(err) {
     if(!err){
       setSyncStatus('ok','Guardado en Google Sheets');
