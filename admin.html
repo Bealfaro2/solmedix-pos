@@ -4466,7 +4466,17 @@ function confirmarBorrado(){
   if(!ventaABorrar)return;
   var btn=document.getElementById('btn-confirmar-borrar');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Borrando...';
+  var venta = ventas.find(function(v){ return String(v.id)===String(ventaABorrar); });
+  var venta=ventas.find(function(v){return String(v.id)===String(ventaABorrar);});
   apiPost({accion:'borrar_venta',id:ventaABorrar},function(err){
+    // Revertir descuento de lotes
+    if(venta && venta.items){
+      venta.items.forEach(function(it){
+        if(it.loteId){
+          jsonp(API_URL+'?accion=restaurar_lote&lote_id='+it.loteId+'&cantidad='+it.qty, function(){});
+        }
+      });
+    }
     ventas=ventas.filter(function(v){return String(v.id)!==String(ventaABorrar);});
     renderVentasAdmin(); cerrarModalBorrarBtn();
     btn.disabled=false; btn.textContent='Si, borrar venta';
