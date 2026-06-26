@@ -5048,7 +5048,17 @@ function procesarGfFiles(files) {
           for (var k=0;k<gastosFiscales.length;k++) {
             if (gastosFiscales[k].uuid === g.uuid) { yaExiste=true; break; }
           }
+          // Verificar también contra hoja compras — evita duplicar facturas de medicamentos
+          var esCompra = false;
+          if (!yaExiste) {
+            for (var kc=0;kc<compras.length;kc++) {
+              if (compras[kc].uuid && String(compras[kc].uuid).toUpperCase() === String(g.uuid).toUpperCase()) {
+                esCompra=true; break;
+              }
+            }
+          }
           g._duplicate = yaExiste;
+          g._esCompra  = esCompra;
           g._rfc_ok    = (g.rfc_receptor === 'SSM180928AQ7');
           gfPendientes.push(g);
         } catch(err) {
@@ -5074,6 +5084,7 @@ function renderGfPreview() {
     }
     var rowBg = g._duplicate ? 'background:rgba(239,68,68,.08)' : !g._rfc_ok ? 'background:rgba(245,158,11,.08)' : '';
     var badge = g._duplicate ? '<span style="font-size:10px;background:rgba(239,68,68,.2);color:#fca5a5;padding:1px 6px;border-radius:99px;margin-left:4px">DUPLICADO</span>'
+              : g._esCompra  ? '<span style="font-size:10px;background:rgba(245,158,11,.2);color:#fcd34d;padding:1px 6px;border-radius:99px;margin-left:4px">COMPRA — se guardará como ref_compra</span>'
               : !g._rfc_ok ? '<span style="font-size:10px;background:rgba(245,158,11,.18);color:#fcd34d;padding:1px 6px;border-radius:99px;margin-left:4px">RFC genérico</span>' : '';
     html += '<tr style="'+rowBg+'">';
     html += '<td>'+g.fecha+'</td>';
@@ -7691,13 +7702,17 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
   function guardarNormales(cb) {
     if (!normales.length) { cb(); return; }
     var payload = normales.map(function(r){
+      var esCompraExistente = compras.some(function(c){
+        return c.uuid && String(c.uuid).toUpperCase() === String(r.uuid).toUpperCase();
+      });
       return {
         uuid:r.uuid, fecha:r.fecha, folio:r.folio,
         rfc_emisor:r.rfc_emisor, proveedor:r.emisor_nom, concepto:r.emisor_nom,
         subtotal:r.subtotal, descuento:r.descuento, iva:r.iva, total:r.total,
         metodo_pago:r.metodo_pago, forma_pago:r.forma_pago,
         uso_cfdi:r.uso_cfdi, sucursal:sucursal,
-        iva_retenido:r.iva_retenido||0, isr_retenido:r.isr_retenido||0
+        iva_retenido:r.iva_retenido||0, isr_retenido:r.isr_retenido||0,
+        estado: esCompraExistente ? 'ref_compra' : 'activa'
       };
     });
     apiPost({ accion:'guardar_gasto_fiscal_lote', registros:JSON.stringify(payload) }, function(e,d){
@@ -7708,6 +7723,7 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
       cb();
     });
   }
+
   guardarNormales(function(){ procesarComplementos(terminar); });
 }
     
