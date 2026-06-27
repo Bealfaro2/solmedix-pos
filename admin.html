@@ -1623,6 +1623,38 @@ select option { background:var(--bg-2); color:var(--text); }
         <button class="nav-tab on" id="ct-entrada" onclick="comprasTab('entrada')" style="border-radius:var(--radius-sm)">📥 Entrada XML</button>
         <button class="nav-tab" id="ct-credito" onclick="comprasTab('credito')" style="border-radius:var(--radius-sm)">💳 Pagos Crédito</button>
         <button class="nav-tab" id="ct-reporte" onclick="comprasTab('reporte')" style="border-radius:var(--radius-sm)">🧾 Reporte de Compras</button>
+        <button class="nav-tab" id="ct-recompra" onclick="comprasTab('recompra')" style="border-radius:var(--radius-sm)">🔄 Reporte de Recompra</button>
+      </div>
+
+      <!-- SUB-SECCIÓN: Reporte de Recompra -->
+      <div id="sc-recompra" style="display:none">
+        <div class="panel">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div>
+              <div style="font-weight:700;font-size:15px">🔄 Reporte de Recompra</div>
+              <div style="font-size:12px;color:var(--text-3);margin-top:2px">Generado cada miércoles · Sucursal MTY · Basado en ventas de los últimos 7 días</div>
+            </div>
+            <button class="btn btns btno" onclick="exportarRecompraCSV()">📥 Exportar CSV</button>
+          </div>
+          <div id="recompra-resumen" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
+          <div style="overflow-x:auto">
+            <table class="tbl" id="tbl-recompra">
+              <thead><tr>
+                <th style="min-width:220px">Medicamento</th>
+                <th style="text-align:center">Stock actual</th>
+                <th style="text-align:center">Óptimo</th>
+                <th style="text-align:center">Vendidas 7d</th>
+                <th style="text-align:center;min-width:80px">Días cobertura</th>
+                <th style="text-align:center;font-weight:700;color:var(--accent)">A pedir</th>
+                <th style="min-width:180px">Proveedor sugerido</th>
+                <th style="text-align:right">Costo estimado</th>
+                <th>Vence pronto</th>
+              </tr></thead>
+              <tbody id="recompra-body"></tbody>
+            </table>
+          </div>
+          <div id="recompra-empty" style="display:none;text-align:center;padding:40px;color:var(--text-3)">✅ No hay recompras necesarias esta semana</div>
+        </div>
       </div>
 
       <!-- SUB-SECCIÓN: Entrada XML -->
@@ -5550,13 +5582,200 @@ function cancelarGastoNFByIndex(idx) {
 
 /* Sub-tabs módulo Compras */
 function comprasTab(t) {
-  ['entrada','credito','reporte'].forEach(function(k){
-    document.getElementById('sc-'+k+(k==='reporte'?'-compras':'')).style.display = t===k?'block':'none';
+  ['entrada','credito','reporte','recompra'].forEach(function(k){
+    var sid = k==='reporte' ? 'sc-reporte-compras' : 'sc-'+k;
+    document.getElementById(sid).style.display = t===k?'block':'none';
     var btn = document.getElementById('ct-'+k);
     if(btn){ btn.className='nav-tab'+(t===k?' on':''); btn.style.borderRadius='var(--radius-sm)'; }
   });
-  if (t==='reporte') { renderCompras(); inicializarFechasCompras(); }
-  if (t==='credito') { hldInicializar(); }
+  if (t==='reporte')   { renderCompras(); inicializarFechasCompras(); }
+  if (t==='credito')   { hldInicializar(); }
+  if (t==='recompra')  { renderRecompra(); }
+}
+
+// ── MAPA DE PROVEEDORES PREFERENTES ─────────────────────────
+var PROVEEDORES_PREF = [
+  { clave:'benito',   display:'Benito Garza',      match:['benito','garza'] },
+  { clave:'hdl',      display:'HDL',               match:['hdl','comercializadora farmaceutica'] },
+  { clave:'demsa',    display:'DEMSA',             match:['demsa','distribucion especializada'] },
+  { clave:'difarmer', display:'Difarmer',          match:['difarmer'] },
+  { clave:'drogas',   display:'Drogas y Enseres',  match:['drogas','enseres'] }
+];
+
+function proveedorPreferente(medNombre) {
+  // Buscar en historial de compras el proveedor más barato de los permitidos
+  var nombre = medNombre.toLowerCase();
+  var candidatos = [];
+  compras.forEach(function(c) {
+    if ((c.medicamento||'').toLowerCase() !== nombre) return;
+    var provLow = (c.proveedor||'').toLowerCase();
+    PROVEEDORES_PREF.forEach(function(p) {
+      if (p.match.some(function(m){ return provLow.indexOf(m) >= 0; })) {
+        candidatos.push({ display: p.display, costo: Number(c.costo_unitario)||0 });
+      }
+    });
+  });
+  if (!candidatos.length) return { display: 'Cotizar manualmente', costo: 0 };
+  candidatos.sort(function(a,b){ return a.costo - b.costo; });
+  return candidatos[0];
+}
+
+function renderRecompra() {
+  var hoy      = new Date();
+  var hace7d   = new Date(hoy.getTime() - 7*24*60*60*1000);
+  var hace7str = fechaLocal(hace7d);
+  var sucursal = perfilActual === 'slp' ? 'SLP' : 'MTY';
+
+  // Ventas últimos 7 días por medicamento
+  var ventas7d = {};
+  ventas.forEach(function(v) {
+    if (v.estado === 'cancelada') return;
+    var fecha = String(v.fecha||'').split('T')[0];
+    if (fecha < hace7str) return;
+    if ((v.sucursal||'MTY').toUpperCase() !== sucursal) return;
+    (v.items||[]).forEach(function(it) {
+      var nom = it.nombre || '';
+      if (!nom) return;
+      ventas7d[nom] = (ventas7d[nom]||0) + (Number(it.qty)||1);
+    });
+  });
+
+  // Inventario actual por medicamento y lote más próximo a vencer
+  var stockPorMed = {};
+  var vencePorMed = {};
+  lotes.forEach(function(l) {
+    if ((l.sucursal||'MTY').toUpperCase() !== sucursal) return;
+    var nom = l.medicamento||'';
+    if (!nom) return;
+    stockPorMed[nom] = (stockPorMed[nom]||0) + (Number(l.existencias)||0);
+    // Detectar vencimiento próximo (< 60 días)
+    if (l.fecha_vencimiento) {
+      var fv = new Date(l.fecha_vencimiento);
+      var diasVenc = Math.round((fv - hoy) / (1000*60*60*24));
+      if (diasVenc > 0 && diasVenc <= 60) {
+        if (!vencePorMed[nom] || diasVenc < vencePorMed[nom]) vencePorMed[nom] = diasVenc;
+      }
+    }
+  });
+
+  // Generar filas de recompra
+  var filas = [];
+  var totalPiezas = 0, totalCosto = 0, totalMeds = 0;
+
+  // Unión de todos los medicamentos con ventas o en inventario
+  var todos = {};
+  Object.keys(ventas7d).forEach(function(n){ todos[n]=1; });
+  Object.keys(stockPorMed).forEach(function(n){ todos[n]=1; });
+
+  Object.keys(todos).forEach(function(nom) {
+    var stock    = stockPorMed[nom] || 0;
+    var vendido7 = ventas7d[nom] || 0;
+    var medId    = null;
+    for (var k=0;k<medicamentos.length;k++) {
+      if (medicamentos[k].nombre === nom) { medId = medicamentos[k].id; break; }
+    }
+    if (!medId) {
+      for (var k=0;k<lotes.length;k++) {
+        if (lotes[k].medicamento === nom && lotes[k].sucursal.toUpperCase()===sucursal) { medId = lotes[k].med_id; break; }
+      }
+    }
+    var optimo = medId ? calcularOptimo(medId) : Math.max(1, Math.ceil(vendido7 * 1.2));
+
+    // Lógica de recompra
+    var aPedir = 0;
+    if (vendido7 > 0 || stock < optimo) {
+      if (stock >= optimo) {
+        // Inventario en óptimo: reponer solo lo vendido
+        aPedir = vendido7;
+      } else {
+        // Inventario bajo óptimo: reponer vendido + 1 hasta alcanzar óptimo
+        aPedir = Math.max(vendido7, (optimo - stock) + vendido7);
+      }
+      // Regla d: si ajuste quedó por debajo del inventario actual, no reabastecer
+      if (stock > optimo && vendido7 === 0) aPedir = 0;
+    }
+
+    if (aPedir <= 0) return; // Sin recompra necesaria
+
+    // Días de cobertura
+    var diasCobertura = vendido7 > 0 ? Math.round((stock / vendido7) * 7) : 999;
+    var diasLabel = diasCobertura >= 999 ? '—' : diasCobertura + ' días';
+    var diasColor = diasCobertura < 7 ? '#fca5a5' : diasCobertura < 14 ? '#fcd34d' : '#6ee7b7';
+
+    // Proveedor sugerido
+    var prov = proveedorPreferente(nom);
+    var costoEst = prov.costo > 0 ? prov.costo * aPedir : 0;
+
+    // Vencimiento próximo
+    var venceLabel = vencePorMed[nom] ? '⚠️ ' + vencePorMed[nom] + 'd' : '';
+    var venceColor = vencePorMed[nom] && vencePorMed[nom] < 30 ? '#fca5a5' : '#fcd34d';
+
+    totalPiezas += aPedir;
+    totalCosto  += costoEst;
+    totalMeds++;
+
+    filas.push({
+      nom, stock, optimo, vendido7, diasLabel, diasColor,
+      aPedir, prov, costoEst, venceLabel, venceColor
+    });
+  });
+
+  // Ordenar: más urgentes primero (menor días cobertura)
+  filas.sort(function(a,b) { return a.diasCobertura - b.diasCobertura; });
+
+  // Renderizar
+  var tbody = document.getElementById('recompra-body');
+  var empty = document.getElementById('recompra-empty');
+  var tbl   = document.getElementById('tbl-recompra');
+
+  if (!filas.length) {
+    tbody.innerHTML = '';
+    tbl.style.display = 'none';
+    empty.style.display = 'block';
+    document.getElementById('recompra-resumen').innerHTML = '';
+    return;
+  }
+  tbl.style.display = '';
+  empty.style.display = 'none';
+
+  // Resumen ejecutivo
+  document.getElementById('recompra-resumen').innerHTML = [
+    ['🔢','Medicamentos a pedir', totalMeds],
+    ['📦','Total piezas', totalPiezas],
+    ['💰','Costo estimado', totalCosto > 0 ? '$'+totalCosto.toLocaleString('es-MX',{minimumFractionDigits:0}) : 'Por cotizar'],
+    ['📅','Próximo miércoles', (function(){ var d=new Date(); var diff=(3-d.getDay()+7)%7||7; d.setDate(d.getDate()+diff); return d.toLocaleDateString('es-MX',{day:'numeric',month:'short'}); })()]
+  ].map(function(r){
+    return '<div style="background:var(--surface-2);border-radius:8px;padding:10px 16px;min-width:140px">'
+      +'<div style="font-size:18px;margin-bottom:2px">'+r[0]+'</div>'
+      +'<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em">'+r[1]+'</div>'
+      +'<div style="font-size:16px;font-weight:700;color:var(--text-1)">'+r[2]+'</div></div>';
+  }).join('');
+
+  tbody.innerHTML = filas.map(function(f) {
+    return '<tr>'
+      +'<td style="font-size:12px">'+f.nom+'</td>'
+      +'<td style="text-align:center">'+f.stock+'</td>'
+      +'<td style="text-align:center;color:var(--text-3)">'+f.optimo+'</td>'
+      +'<td style="text-align:center">'+f.vendido7+'</td>'
+      +'<td style="text-align:center;color:'+f.diasColor+';font-weight:700">'+f.diasLabel+'</td>'
+      +'<td style="text-align:center;font-weight:700;font-size:14px;color:var(--accent)">'+f.aPedir+'</td>'
+      +'<td style="font-size:12px;color:var(--text-2)">'+f.prov.display+'</td>'
+      +'<td style="text-align:right;font-size:12px">'+(f.costoEst>0?'$'+f.costoEst.toLocaleString('es-MX',{minimumFractionDigits:0}):'—')+'</td>'
+      +'<td style="text-align:center;font-size:11px;color:'+f.venceColor+'">'+f.venceLabel+'</td>'
+      +'</tr>';
+  }).join('');
+}
+
+function exportarRecompraCSV() {
+  var rows = [['Medicamento','Stock actual','Óptimo','Vendidas 7d','Días cobertura','A pedir','Proveedor sugerido','Costo estimado','Vence pronto']];
+  document.querySelectorAll('#recompra-body tr').forEach(function(tr) {
+    rows.push(Array.from(tr.querySelectorAll('td')).map(function(td){ return td.textContent.trim(); }));
+  });
+  var csv = rows.map(function(r){ return r.map(function(c){ return '"'+c+'"'; }).join(','); }).join('\n');
+  var a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+  a.download = 'Recompra_' + fechaLocal(new Date()) + '.csv';
+  a.click();
 }
 
 /* ═══════════════════════════════════════════════
