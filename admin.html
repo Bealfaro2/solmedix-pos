@@ -5684,15 +5684,16 @@ function renderRecompra() {
     // Lógica de recompra
     var aPedir = 0;
     if (vendido7 > 0 || stock < optimo) {
-      if (stock >= optimo) {
+        if (stock >= optimo) {
         // Inventario en óptimo: reponer solo lo vendido
         aPedir = vendido7;
       } else {
-        // Inventario bajo óptimo: reponer vendido + 1 hasta alcanzar óptimo
-        aPedir = Math.max(vendido7, (optimo - stock) + vendido7);
+        // Inventario bajo óptimo: cubrir déficit + reponer lo vendido
+        var deficit = optimo - stock;
+        aPedir = deficit + vendido7;
       }
-      // Regla d: si ajuste quedó por debajo del inventario actual, no reabastecer
-      if (stock > optimo && vendido7 === 0) aPedir = 0;
+      // Regla d: si no hubo ventas y stock >= óptimo, no reabastecer
+      if (vendido7 === 0 && stock >= optimo) aPedir = 0;
     }
 
     if (aPedir <= 0) return; // Sin recompra necesaria
