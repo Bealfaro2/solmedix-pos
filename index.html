@@ -1041,26 +1041,24 @@ function pedirCancelar(id) {
   btn.disabled = true;
   btn.textContent = '...';
   apiPost({accion:'cancelar_venta', id:id}, function(err) {
-    // Update local ventas
+    btn.disabled=false; btn.textContent='Cancelar';
+    if(err){
+      // El fetch puede fallar por el 302 de Apps Script aunque la cancelación
+      // sí se procese. No marcar localmente sin confirmar: recargar y verificar.
+      alrt('No se pudo confirmar la cancelación. Recarga la página para verificar el estado real.','e');
+      return;
+    }
     for(var i=0;i<ventas.length;i++){
       if(String(ventas[i].id)===String(id)){ ventas[i].estado='cancelada'; break; }
     }
     renderHist();
     alrt('Venta cancelada correctamente.','s');
   });
-}
 
 function del(i){
-  var it=items[i];
-  // Restore local stock
-  if(it.loteId){
-    for(var lk=0;lk<lotes.length;lk++){
-      if(String(lotes[lk].id)===String(it.loteId)){
-        lotes[lk].existencias=Number(lotes[lk].existencias)+it.qty;
-        break;
-      }
-    }
-  }
+  // El stock local NO se descuenta al agregar al carrito (solo se valida),
+  // por lo tanto NO debe restaurarse al borrar. Restaurarlo inflaba el
+  // inventario en memoria y permitía vender piezas inexistentes.
   items.splice(i,1);renderItems();
 }
 function cambiarPago(i,val){items[i].pago=val;}
@@ -1148,7 +1146,22 @@ function guardar() {
   // Abrir popup de impresión automáticamente
   imprimir();
 
-// Guardar en Sheets + descontar en servidor (asíncrono con snapshot)
+// Descontar inventario en SERVIDOR de inmediato via JSONP (confiable).
+  // Antes esto dependía del callback de guardar_venta (fetch), que falla
+  // por el redirect 302 de Apps Script aunque la venta SÍ se guarde,
+  // dejando ventas registradas sin descuento de stock.
+  for(var si2=0;si2<itemsSnapshot.length;si2++){
+    if(itemsSnapshot[si2].loteId){
+      (function(lid, qty){
+        jsonp(API_URL+'?accion=descontar_lote&lote_id='+lid+'&cantidad='+qty, function(err2, res){
+          if(!err2 && res && res.ok) console.log('Lote descontado:', lid, 'stock:', res.nuevaExistencia);
+          else console.error('[descontar_lote] Falló para lote', lid, err2||res);
+        });
+      })(itemsSnapshot[si2].loteId, itemsSnapshot[si2].qty);
+    }
+  }
+
+  // Guardar en Sheets (asíncrono con snapshot)
   apiPost({accion:'guardar_venta',fecha:fecha,hora:hora,cliente:cliente,total:total,clave:v.clave,sucursal:sucursal,items:itemsSnapshot}, function(err) {
     if(!err){
       setSyncStatus('ok','Guardado en Google Sheets');
@@ -1175,15 +1188,6 @@ function guardar() {
         });
       }
       // ─────────────────────────────────────────────────────
-      for(var i=0;i<itemsSnapshot.length;i++){
-        if(itemsSnapshot[i].loteId){
-          (function(lid, qty){
-            jsonp(API_URL+'?accion=descontar_lote&lote_id='+lid+'&cantidad='+qty, function(err2, res){
-              if(!err2 && res && res.ok) console.log('Lote descontado:', lid, 'stock:', res.nuevaExistencia);
-            });
-          })(itemsSnapshot[i].loteId, itemsSnapshot[i].qty);
-        }
-      }
       setTimeout(function(){
         apiGet('lotes', function(e,d){ if(!e&&d){ lotes=d.lotes||[]; } });
       }, 3000);

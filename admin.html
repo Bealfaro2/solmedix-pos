@@ -3754,11 +3754,13 @@ function aplicarEntrada() {
       if (btn) { btn.disabled=false; btn.textContent='Aplicar entrada al inventario'; }
       return;
     }
-    apiPost({ accion:'registrar_compra', sucursal:(perfilActual==='slp'?'SLP':'MTY'),
+    apiPostViaJSONP({ accion:'registrar_compra', sucursal:(perfilActual==='slp'?'SLP':'MTY'),
       fecha:fi.fecha, proveedor:fi.proveedor, rfc_proveedor:fi.rfcProv, folio:fi.folio, uuid:fi.uuid,
       med_id:c.medId, medicamento:medNombre, lote:c.lote, cantidad:c.cantidad,
       costo_unitario:c.valorUnitario, importe:c.cantidad*c.valorUnitario,
-      total_factura:fi.total }, function(){});
+      total_factura:fi.total }, function(errC, resC){
+        if(errC || !resC || !resC.ok) console.error('[registrar_compra] Falló:', c.lote, errC||JSON.stringify(resC));
+    });
 
     var loteExistente=null;
 var sucursalActual = perfilActual==='slp' ? 'SLP' : 'MTY';
@@ -5459,18 +5461,54 @@ function calcularUtilidad() {
     var v=ventasFiltradas[i];
     for(var j=0;j<(v.items||[]).length;j++){
       var it=v.items[j];
-      // Find costo from lotes (match by loteNum)
+      // Match robusto: lote + nombre de medicamento, normalizando tipo (num/texto).
+      // Antes: === estricto solo por lote → costo $0 si el lote era numérico,
+      // y costo del medicamento equivocado en lotes compartidos (23 colisiones).
       var costo=0;
-      for(var k=0;k<lotes.length;k++){
-        if(lotes[k].lote===it.loteNum){ costo=Number(lotes[k].costo)||0; break; }
+      var loteBuscado = String(it.loteNum||'').trim().toUpperCase();
+      var nomItem = String(it.nombre||'').trim().toLowerCase();
+      if(loteBuscado){
+        // 1er intento: lote + medicamento
+        for(var k=0;k<lotes.length;k++){
+          if(String(lotes[k].lote||'').trim().toUpperCase()===loteBuscado &&
+             String(lotes[k].medicamento||'').trim().toLowerCase()===nomItem){
+            costo=Number(lotes[k].costo)||0; break;
+          }
+        }
+        // 2do intento: solo lote (fallback si el nombre cambió en catálogo)
+        if(!costo){
+          for(var k=0;k<lotes.length;k++){
+            if(String(lotes[k].lote||'').trim().toUpperCase()===loteBuscado){
+              costo=Number(lotes[k].costo)||0; break;
+            }
+          }
+        }
+      }
+      if(!costo && nomItem){
+        // 3er intento: costo promedio del catálogo por nombre
+        for(var k=0;k<medicamentos.length;k++){
+          if(String(medicamentos[k].nombre||'').trim().toLowerCase()===nomItem){
+            costo=Number(medicamentos[k].costo_promedio)||0; break;
+          }
+        }
       }
       costoVentas += costo * (Number(it.qty)||0);
-    }
   }
 
   // 3. Gastos fiscales del periodo
+  // Excluir facturas que son COMPRAS de medicamento: ya están contabilizadas
+  // como Costo de Ventas (CPP). Contarlas también como gasto operativo
+  // duplicaba el egreso (doble conteo detectado: ~$770K).
+  var uuidsCompras = {};
+  compras.forEach(function(c){
+    if(c.uuid) uuidsCompras[String(c.uuid).trim().toLowerCase()] = 1;
+  });
   var gfFiltrados = gastosFiscales.filter(function(g){
-    return g.estado!=='cancelada' && inRange(g.fecha) && (!suc||g.sucursal===suc);
+    if(g.estado==='cancelada') return false;
+    if(!inRange(g.fecha)) return false;
+    if(suc && g.sucursal!==suc) return false;
+    if(g.uuid && uuidsCompras[String(g.uuid).trim().toLowerCase()]) return false;
+    return true;
   });
   var totalGF = gfFiltrados.reduce(function(s,g){return s+Number(g.total);},0);
   var totalIVA = gfFiltrados.reduce(function(s,g){return s+Number(g.iva);},0);
@@ -5681,19 +5719,15 @@ function renderRecompra() {
     }
     var optimo = medId ? calcularOptimo(medId) : Math.max(1, Math.ceil(vendido7 * 1.2));
 
-    // Lógica de recompra
+    // Lógica de recompra (regla Solmedix):
+    // stock < óptimo  → reponer lo vendido + 10% adicional
+    // stock = óptimo  → reponer solo lo vendido
+    // stock > óptimo  → no reabastecer
     var aPedir = 0;
-    if (vendido7 > 0 || stock < optimo) {
-        if (stock >= optimo) {
-        // Inventario en óptimo: reponer solo lo vendido
-        aPedir = vendido7;
-      } else {
-        // Inventario bajo óptimo: cubrir déficit + reponer lo vendido
-        var deficit = optimo - stock;
-        aPedir = deficit + vendido7;
-      }
-      // Regla d: si no hubo ventas y stock >= óptimo, no reabastecer
-      if (vendido7 === 0 && stock >= optimo) aPedir = 0;
+    if (stock < optimo) {
+      aPedir = Math.ceil(vendido7 * 1.10);
+    } else if (stock === optimo) {
+      aPedir = vendido7;
     }
 
     if (aPedir <= 0) return; // Sin recompra necesaria
@@ -5716,9 +5750,10 @@ function renderRecompra() {
     totalMeds++;
 
     filas.push({
-      nom, stock, optimo, vendido7, diasLabel, diasColor,
+      nom, stock, optimo, vendido7, diasCobertura, diasLabel, diasColor,
       aPedir, prov, costoEst, venceLabel, venceColor
     });
+
   });
 
   // Ordenar: más urgentes primero (menor días cobertura)
