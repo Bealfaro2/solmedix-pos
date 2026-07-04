@@ -4400,9 +4400,21 @@ function guardarMedicamento(){
   if(!nombre||(!precio&&!precio_mty&&!precio_slp)){medAlrt('Nombre y precio son obligatorios','e');return;}
   var btn=document.getElementById('btn-guardar-med');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
-  apiPost({accion:editId?'editar_medicamento':'guardar_medicamento',id:editId,nombre:nombre,precio:precio,costo:costo,costo_mty:costo_mty,costo_slp:costo_slp,precio_mty:precio_mty,precio_slp:precio_slp,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad},function(err){
+  apiPostViaJSONP({accion:editId?'editar_medicamento':'guardar_medicamento',id:editId,nombre:nombre,precio:precio,costo:costo,costo_mty:costo_mty,costo_slp:costo_slp,precio_mty:precio_mty,precio_slp:precio_slp,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad},function(err,res){
     if(editId){for(var i=0;i<medicamentos.length;i++){if(String(medicamentos[i].id)===String(editId)){Object.assign(medicamentos[i],{nombre:nombre,precio:precio,costo:costo,costo_mty:costo_mty,costo_slp:costo_slp,precio_mty:precio_mty,precio_slp:precio_slp,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad});break;}}}
-    else{medicamentos.push({id:'m'+Date.now(),nombre:nombre,precio:precio,costo:costo,costo_mty:costo_mty,costo_slp:costo_slp,precio_mty:precio_mty,precio_slp:precio_slp,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad});}
+    else{
+      // Usar el ID REAL asignado por el servidor. El ID local 'm'+Date.now()
+      // creaba lotes huérfanos si se aplicaba una entrada XML en la misma sesión
+      // (8 lotes corrompidos entre abril y julio por esta causa).
+      var nuevoId = (res && (res.id || res.med_id)) ? String(res.id || res.med_id) : null;
+      if(nuevoId){
+        medicamentos.push({id:nuevoId,nombre:nombre,precio:precio,costo:costo,costo_mty:costo_mty,costo_slp:costo_slp,precio_mty:precio_mty,precio_slp:precio_slp,categoria:categoria,notas:notas,codigo_barras:codigo_barras,tipo:tipo,clave_sat:clave_sat,clave_unidad:clave_unidad});
+      } else {
+        medAlrt('Guardado. Recargando para sincronizar el catálogo...','s');
+        setTimeout(function(){ location.reload(); }, 1500);
+        return;
+      }
+    }
     renderMeds(); cerrarModalMedBtn();
     btn.disabled=false; btn.textContent='Guardar';
   });
