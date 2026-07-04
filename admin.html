@@ -722,6 +722,38 @@ select option { background:var(--bg-2); color:var(--text); }
           <button class="fis-nav-btn" onclick="FIS.showSub('banco',this)">🏦 Banco Albo</button>
         </div>
 
+        <!-- ── GUÍA DE CIERRE MENSUAL ── -->
+        <style>
+          .fisg-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--fis-bg2,#1e293b);border:1px solid var(--fis-border,rgba(148,163,184,.15));border-radius:10px;padding:9px 14px;margin:12px 0 4px}
+          .fisg-title{font-size:10px;font-weight:700;letter-spacing:.8px;color:var(--fis-accent,#38bdf8);text-transform:uppercase;margin-right:4px}
+          .fisg-paso{display:flex;align-items:center;gap:7px;background:var(--fis-bg3,#263348);border:1px solid var(--fis-border,rgba(148,163,184,.15));border-radius:8px;padding:5px 10px;cursor:pointer;transition:border-color .15s}
+          .fisg-paso:hover{border-color:var(--fis-accent,#38bdf8)}
+          .fisg-num{width:18px;height:18px;border-radius:50%;background:var(--fis-accent,#38bdf8);color:#0f172a;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+          .fisg-lbl{font-size:12px;font-weight:600;color:var(--fis-text,#f1f5f9);line-height:1.15}
+          .fisg-lbl small{display:block;font-size:10px;font-weight:400;color:rgba(148,163,184,.85)}
+          .fisg-sep{color:rgba(148,163,184,.45);font-size:13px}
+        </style>
+        <div class="fisg-bar">
+          <span class="fisg-title">Cierre mensual — orden</span>
+          <div class="fisg-paso" onclick="fisGuiaIr('ingresos')"><span class="fisg-num">1</span><span class="fisg-lbl">Ingresos CFDI<small>XMLs emitidos del mes</small></span></div>
+          <span class="fisg-sep">&#8594;</span>
+          <div class="fisg-paso" onclick="fisGuiaIr('egresos')"><span class="fisg-num">2</span><span class="fisg-lbl">Egresos / Gastos<small>XMLs recibidos</small></span></div>
+          <span class="fisg-sep">&#8594;</span>
+          <div class="fisg-paso" onclick="fisGuiaIr('banco')"><span class="fisg-num">3</span><span class="fisg-lbl">Banco Albo<small>CSV y cuadre</small></span></div>
+          <span class="fisg-sep">&#8594;</span>
+          <div class="fisg-paso" onclick="fisGuiaIr('ppd')"><span class="fisg-num">4</span><span class="fisg-lbl">PPD Pendientes<small>sin complemento no deduce</small></span></div>
+          <span class="fisg-sep">&#8594;</span>
+          <div class="fisg-paso" onclick="fisGuiaIr('reporte')"><span class="fisg-num">5</span><span class="fisg-lbl">Reporte Contador<small>declaraci&oacute;n + ZIP</small></span></div>
+        </div>
+        <script>
+          function fisGuiaIr(sub){
+            var b=document.querySelectorAll('#sec-fiscal .fis-nav-btn');
+            for(var i=0;i<b.length;i++){
+              if((b[i].getAttribute('onclick')||'').indexOf("'"+sub+"'")>-1){ b[i].click(); return; }
+            }
+          }
+        </script>
+
         <!-- ── RESUMEN ── -->
         <div class="fis-section active" id="fis-sub-resumen">
           <div id="fis-alertas-top"></div>
