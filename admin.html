@@ -1305,7 +1305,8 @@ select option { background:var(--bg-2); color:var(--text); }
             <table class="tbl">
               <thead><tr>
                 <th>Medicamento</th><th style="text-align:right">Piezas</th>
-                <th>Participación</th><th style="text-align:right">Importe</th>
+                <th>Participación</th><th style="text-align:right">Costo Unit.</th>
+                <th style="text-align:right">Costo Total</th><th style="text-align:right">Importe</th><th style="text-align:right">Margen %</th>
               </tr></thead>
               <tbody id="reporte-body"></tbody>
             </table>
@@ -2967,15 +2968,43 @@ function generarReporte(){
     for(var j=0;j<(v.items||[]).length;j++){
       var it=v.items[j];
       var nom=it.nombre||'Sin nombre';
-      if(!mapa[nom]) mapa[nom]={piezas:0, importe:0};
-      mapa[nom].piezas  += Number(it.qty)||1;
-      mapa[nom].importe += Number(it.precio||0) * (Number(it.qty)||1);
+      if(!mapa[nom]) mapa[nom]={piezas:0, importe:0, costoTotal:0};
+      var qtyIt = Number(it.qty)||1;
+      mapa[nom].piezas  += qtyIt;
+      mapa[nom].importe += Number(it.precio||0) * qtyIt;
+      // Costo con match robusto (mismo criterio que Utilidad): lote+med → lote → CPP
+      var costoU=0;
+      var loteB = String(it.loteNum||'').trim().toUpperCase();
+      var nomB  = String(it.nombre||'').trim().toLowerCase();
+      if(loteB){
+        for(var k2=0;k2<lotes.length;k2++){
+          if(String(lotes[k2].lote||'').trim().toUpperCase()===loteB &&
+             String(lotes[k2].medicamento||'').trim().toLowerCase()===nomB){
+            costoU=Number(lotes[k2].costo)||0; break;
+          }
+        }
+        if(!costoU){
+          for(var k2=0;k2<lotes.length;k2++){
+            if(String(lotes[k2].lote||'').trim().toUpperCase()===loteB){
+              costoU=Number(lotes[k2].costo)||0; break;
+            }
+          }
+        }
+      }
+      if(!costoU && nomB){
+        for(var k2=0;k2<medicamentos.length;k2++){
+          if(String(medicamentos[k2].nombre||'').trim().toLowerCase()===nomB){
+            costoU=Number(medicamentos[k2].costo_promedio)||0; break;
+          }
+        }
+      }
+      mapa[nom].costoTotal += costoU * qtyIt;
     }
   }
 
   // Ordenar por piezas descendente
   var filas = Object.keys(mapa).map(function(nom){
-    return {nom:nom, piezas:mapa[nom].piezas, importe:mapa[nom].importe};
+    return {nom:nom, piezas:mapa[nom].piezas, importe:mapa[nom].importe, costoTotal:mapa[nom].costoTotal||0};
   }).sort(function(a,b){ return b.piezas - a.piezas; });
 
   // ── Stats ──
@@ -3009,19 +3038,32 @@ function generarReporte(){
     tbody+='</div>';
     tbody+='<div style="font-size:10px;color:var(--text-3);margin-top:2px">'+pct.toFixed(1)+'% del total</div>';
     tbody+='</td>';
+    var costoUnitProm = r.piezas>0 ? r.costoTotal/r.piezas : 0;
+    var margenPct = r.importe>0 ? (r.importe-r.costoTotal)/r.importe*100 : 0;
+    // Regla 3 Solmedix: nada debajo de costo + 15%
+    var bajoRegla = r.costoTotal>0 && r.importe < r.costoTotal*1.15;
+    var colorM = bajoRegla ? '#e5484d' : (margenPct<25 ? '#f5a623' : '#30a46c');
+    tbody+='<td style="text-align:right;color:var(--text-3)">$'+costoUnitProm.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    tbody+='<td style="text-align:right;color:var(--text-3)">$'+r.costoTotal.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
     tbody+='<td style="text-align:right">$'+r.importe.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+    tbody+='<td style="text-align:right;font-weight:700;color:'+colorM+'">'+margenPct.toFixed(1)+'%'+(bajoRegla?' ⚠':'')+'</td>';
     tbody+='</tr>';
   }
   // Fila de totales
+  var totalCosto = filas.reduce(function(s,r){return s+r.costoTotal;},0);
   tbody+='<tr style="background:rgba(38,51,72,.8);font-weight:700">';
   tbody+='<td>TOTAL</td>';
   tbody+='<td style="text-align:right">'+totalPiezas+' pzas</td>';
   tbody+='<td></td>';
+  tbody+='<td></td>';
+  tbody+='<td style="text-align:right">$'+totalCosto.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
   tbody+='<td style="text-align:right">$'+totalIngresos.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
+  var margenTotal = totalIngresos>0 ? (totalIngresos-totalCosto)/totalIngresos*100 : 0;
+  tbody+='<td style="text-align:right">'+margenTotal.toFixed(1)+'%</td>';
   tbody+='</tr>';
 
   document.getElementById('reporte-body').innerHTML=tbody;
-  window._reporteData={filas:filas, desde:desde, hasta:hasta, suc:suc, totalPiezas:totalPiezas, totalIngresos:totalIngresos};
+  window._reporteData={filas:filas, desde:desde, hasta:hasta, suc:suc, totalPiezas:totalPiezas, totalIngresos:totalIngresos, totalCosto:totalCosto};
 }
 
 function exportarCSV(){
@@ -3029,13 +3071,16 @@ function exportarCSV(){
   var filas=d.filas||[];
   if(!filas.length){alert('Genera el reporte primero');return;}
   var q=function(s){return '"'+(String(s||'')).replace(/"/g,'')+'"';};
-  var lines=['Medicamento,Piezas,Importe,% del total'];
+  var lines=['Medicamento,Piezas,Costo Unit,Costo Total,Importe,Margen %,% del total'];
   for(var i=0;i<filas.length;i++){
     var r=filas[i];
     var pct=d.totalPiezas>0?(r.piezas/d.totalPiezas*100):0;
-    lines.push(q(r.nom)+','+r.piezas+','+r.importe.toFixed(2)+','+pct.toFixed(1)+'%');
+    var cu=r.piezas>0?(r.costoTotal||0)/r.piezas:0;
+    var mg=r.importe>0?(r.importe-(r.costoTotal||0))/r.importe*100:0;
+    lines.push(q(r.nom)+','+r.piezas+','+cu.toFixed(2)+','+(r.costoTotal||0).toFixed(2)+','+r.importe.toFixed(2)+','+mg.toFixed(1)+'%,'+pct.toFixed(1)+'%');
   }
-  lines.push('"TOTAL",'+d.totalPiezas+','+d.totalIngresos.toFixed(2)+',100%');
+  var mgT=d.totalIngresos>0?(d.totalIngresos-(d.totalCosto||0))/d.totalIngresos*100:0;
+  lines.push('"TOTAL",'+d.totalPiezas+',,'+(d.totalCosto||0).toFixed(2)+','+d.totalIngresos.toFixed(2)+','+mgT.toFixed(1)+'%,100%');
   var blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8'});
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
@@ -3058,7 +3103,10 @@ function exportarPDF(){
         '<div style="height:100%;width:'+pct.toFixed(1)+'%;background:#185FA5"></div></div>'+
         '<span style="font-size:9px;color:#888">'+pct.toFixed(1)+'%</span>'+
       '</td>'+
+      '<td style="text-align:right;color:#666">$'+(r.piezas>0?(r.costoTotal||0)/r.piezas:0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>'+
+      '<td style="text-align:right;color:#666">$'+(r.costoTotal||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>'+
       '<td style="text-align:right">$'+r.importe.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>'+
+      '<td style="text-align:right;font-weight:bold;color:'+((r.costoTotal||0)>0&&r.importe<(r.costoTotal||0)*1.15?'#c0392b':'#1e7e34')+'">'+(r.importe>0?((r.importe-(r.costoTotal||0))/r.importe*100):0).toFixed(1)+'%</td>'+
     '</tr>';
   }).join('');
   var suc=d.suc||'Todas las sucursales';
@@ -3076,12 +3124,18 @@ function exportarPDF(){
     '<th>Medicamento</th>'+
     '<th style="text-align:right">Piezas vendidas</th>'+
     '<th>Participación</th>'+
+    '<th style="text-align:right">Costo Unit.</th>'+
+    '<th style="text-align:right">Costo Total</th>'+
     '<th style="text-align:right">Importe</th>'+
+    '<th style="text-align:right">Margen %</th>'+
     '</tr></thead><tbody>'+filaHtml+'</tbody>'+
     '<tfoot><tr><td><strong>TOTAL</strong></td>'+
     '<td style="text-align:right">'+d.totalPiezas+' pzas</td>'+
     '<td>100%</td>'+
+    '<td></td>'+
+    '<td style="text-align:right">$'+(d.totalCosto||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>'+
     '<td style="text-align:right">$'+d.totalIngresos.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>'+
+    '<td style="text-align:right">'+(d.totalIngresos>0?((d.totalIngresos-(d.totalCosto||0))/d.totalIngresos*100):0).toFixed(1)+'%</td>'+
     '</tr></tfoot></table>');
   w.document.write('</body></html>');
   w.document.close();
