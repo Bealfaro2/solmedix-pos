@@ -5631,14 +5631,26 @@ function calcularUtilidad() {
   var totalGFneto = totalGF - totalIVA; // base deducible
 
   // 4. Gastos no fiscales del periodo
-  var gnfFiltrados = gastosNF.filter(function(g){
+  var gnfTodos = gastosNF.filter(function(g){
     return g.estado!=='cancelada' && inRange(g.fecha) && (!suc||g.sucursal===suc);
   });
-  var totalGNF = gnfFiltrados.reduce(function(s,g){return s+Number(g.monto);},0);
+  // Servicio de deuda separado del gasto operativo: los abonos a pasivos
+  // son movimiento de balance, no gasto. Regla: concepto inicia con "DEUDA"
+  // o contiene nombre de acreedor conocido (cubre registros históricos).
+  function esDeuda(g){
+    var c = String(g.concepto||'').toLowerCase();
+    if(c.indexOf('deuda')===0) return true;
+    return ['yavi','luma','carolina','anacleto','finiquito','prestamo','préstamo'].some(function(k){ return c.indexOf(k)!==-1; });
+  }
+  var gnfFiltrados = gnfTodos.filter(function(g){ return !esDeuda(g); });
+  var gnfDeuda     = gnfTodos.filter(esDeuda);
+  var totalGNF     = gnfFiltrados.reduce(function(s,g){return s+Number(g.monto);},0);
+  var totalDeuda   = gnfDeuda.reduce(function(s,g){return s+Number(g.monto);},0);
 
-  // 5. Utilidad bruta y neta
+  // 5. Utilidad bruta, operativa y flujo tras deuda
   var utilBruta = totalVentas - costoVentas;
   var utilNeta  = utilBruta - totalGFneto - totalGNF;
+  var flujoTrasDeuda = utilNeta - totalDeuda;
   var margen    = totalVentas>0 ? (utilNeta/totalVentas*100) : 0;
 
   // ── Render ──
@@ -5653,7 +5665,9 @@ function calcularUtilidad() {
     '<div class="stat-card"><div class="stat-label">Utilidad bruta</div><div class="stat-value" style="color:'+color(utilBruta)+'">'+sign(utilBruta)+fmt(utilBruta)+'</div></div>'+
     '<div class="stat-card"><div class="stat-label">Gastos fiscales</div><div class="stat-value" style="color:#fca5a5">'+fmt(totalGFneto)+'</div><div class="stat-sub">IVA: '+fmt(totalIVA)+'</div></div>'+
     '<div class="stat-card"><div class="stat-label">Gastos no fiscales</div><div class="stat-value" style="color:#fca5a5">'+fmt(totalGNF)+'</div></div>'+
-    '<div class="stat-card" style="border-color:'+color(utilNeta)+';box-shadow:0 0 0 1px '+color(utilNeta)+';"><div class="stat-label">UTILIDAD NETA</div><div class="stat-value" style="color:'+color(utilNeta)+'">'+sign(utilNeta)+fmt(utilNeta)+'</div><div class="stat-sub">Margen: '+margen.toFixed(1)+'%</div></div>';
+    '<div class="stat-card" style="border-color:'+color(utilNeta)+';box-shadow:0 0 0 1px '+color(utilNeta)+';"><div class="stat-label">UTILIDAD OPERATIVA</div><div class="stat-value" style="color:'+color(utilNeta)+'">'+sign(utilNeta)+fmt(utilNeta)+'</div><div class="stat-sub">Margen: '+margen.toFixed(1)+'%</div></div>'+
+    '<div class="stat-card"><div class="stat-label">Servicio de deuda</div><div class="stat-value" style="color:#fbbf24">'+fmt(totalDeuda)+'</div><div class="stat-sub">'+gnfDeuda.length+' abonos</div></div>'+
+    '<div class="stat-card" style="border-color:'+color(flujoTrasDeuda)+'"><div class="stat-label">FLUJO TRAS DEUDA</div><div class="stat-value" style="color:'+color(flujoTrasDeuda)+'">'+sign(flujoTrasDeuda)+fmt(flujoTrasDeuda)+'</div></div>';
 
   // Waterfall
   function wfRow(label, monto, tipo, acum) {
@@ -5676,7 +5690,9 @@ function calcularUtilidad() {
     wfRow('= Utilidad bruta',         utilBruta,    'total') +
     wfRow('(-) Gastos fiscales neto', totalGFneto,  'egreso') +
     wfRow('(-) Gastos no fiscales',   totalGNF,     'egreso') +
-    wfRow('= UTILIDAD NETA',          utilNeta,     'total');
+    wfRow('= UTILIDAD OPERATIVA',     utilNeta,     'total') +
+    wfRow('(-) Servicio de deuda',    totalDeuda,   'egreso') +
+    wfRow('= FLUJO TRAS DEUDA',       flujoTrasDeuda,'total');
 
   // Top 5 GF
   var provGF={};
@@ -5698,7 +5714,7 @@ function calcularUtilidad() {
 
   document.getElementById('ut-empty').style.display  = 'none';
   document.getElementById('ut-result').style.display = 'block';
-  window._utData = { desde,hasta,suc,totalVentas,costoVentas,utilBruta,totalGFneto,totalGNF,utilNeta,margen };
+  window._utData = { desde,hasta,suc,totalVentas,costoVentas,utilBruta,totalGFneto,totalGNF,utilNeta,margen,totalDeuda,flujoTrasDeuda };
 }
 
 function exportarUtilidadPDF(){
@@ -5715,7 +5731,9 @@ function exportarUtilidadPDF(){
   w.document.write('<div class="row total"><span>= Utilidad bruta</span><span>'+sign(d.utilBruta)+fmt(d.utilBruta)+'</span></div>');
   w.document.write('<div class="row"><span>(-) Gastos fiscales (neto s/IVA)</span><span>-'+fmt(d.totalGFneto)+'</span></div>');
   w.document.write('<div class="row"><span>(-) Gastos no fiscales</span><span>-'+fmt(d.totalGNF)+'</span></div>');
-  w.document.write('<div class="row final"><span>= UTILIDAD NETA</span><span>'+sign(d.utilNeta)+fmt(d.utilNeta)+' ('+d.margen.toFixed(1)+'%)</span></div>');
+  w.document.write('<div class="row total"><span>= UTILIDAD OPERATIVA</span><span>'+sign(d.utilNeta)+fmt(d.utilNeta)+' ('+d.margen.toFixed(1)+'%)</span></div>');
+  w.document.write('<div class="row"><span>(-) Servicio de deuda</span><span>-'+fmt(d.totalDeuda||0)+'</span></div>');
+  w.document.write('<div class="row final"><span>= FLUJO TRAS DEUDA</span><span>'+sign(d.flujoTrasDeuda||0)+fmt(d.flujoTrasDeuda||0)+'</span></div>');
   w.document.write('</body></html>'); w.document.close(); setTimeout(function(){w.print();},600);
 }
 
