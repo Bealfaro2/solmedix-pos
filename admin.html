@@ -3775,6 +3775,23 @@ function aplicarEntrada() {
   if (sinConfirmar.length) {
     entradaAlrt('Hay '+sinConfirmar.length+' factura(s) sin confirmar lotes. Confirma todas antes de aplicar.','e'); return;
   }
+  // CANDADO ANTI-DUPLICADO: rechazar facturas cuyo UUID ya está en compras
+  // o que vienen repetidas en la misma sesión (causa del duplicado DEMSA 01/jul).
+  var uuidsAplicados = {};
+  compras.forEach(function(c){ if(c.uuid) uuidsAplicados[String(c.uuid).trim().toLowerCase()]=1; });
+  var vistosSesion = {};
+  var yaAplicadas = [];
+  facturas.forEach(function(f){
+    var u = String((f.info&&f.info.uuid)||'').trim().toLowerCase();
+    if(!u) return;
+    if(uuidsAplicados[u] || vistosSesion[u]) yaAplicadas.push((f.info&&f.info.folio)||u);
+    vistosSesion[u]=1;
+  });
+  if(yaAplicadas.length){
+    entradaAlrt('Estas facturas YA fueron aplicadas al inventario o están duplicadas en esta sesión: '+yaAplicadas.join(', ')+'. Elimínalas antes de aplicar.','e');
+    return;
+  }
+
   var btn = document.getElementById('btn-aplicar-entrada');
   if (btn) { btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Aplicando...'; }
 
