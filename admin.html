@@ -4069,9 +4069,17 @@ function renderCompras(lista) {
     var cant=Number(c.cantidad)||0;
     totalImporte+=imp; totalPiezas+=cant;
     var bg=i%2===0?'':'background:rgba(148,163,184,.04)';
-    var btnDev = perfilActual==='admin'
-      ? '<button class="btn btnd btns" onclick="pedirDevolucionCompra('+i+')">&#8617; Devolver</button>'
-      : '';
+    // Permisos de reversa: Admin revierte cualquier sucursal; MTY solo compras MTY;
+    // SLP no revierte — ve leyenda para contactar al administrador.
+    var cSuc = (c.sucursal||'MTY');
+    var btnDev;
+    if (perfilActual==='admin' || (perfilActual==='mty' && cSuc==='MTY')) {
+      btnDev = '<button class="btn btnd btns" onclick="pedirDevolucionCompra('+i+')">&#8617; Corregir/Borrar</button>';
+    } else if (perfilActual==='slp') {
+      btnDev = '<span style="font-size:11px;color:var(--text-3);font-style:italic">En caso de error de registro de compras favor de contactar al administrador del sistema</span>';
+    } else {
+      btnDev = '';
+    }
     html+='<tr style="'+bg+'">';
     html+='<td>'+fecha+'</td><td style="font-weight:500">'+c.proveedor+'</td>';
     html+='<td style="font-family:monospace;font-size:11px">'+c.folio+'</td>';
