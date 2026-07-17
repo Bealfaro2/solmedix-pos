@@ -653,9 +653,8 @@ function confirmarSuc() {
     inicializarCaja();
   }
 
-  // Validación del lado del servidor — la contraseña NO se compara en el navegador
-  var urlLogin = API_URL + '?accion=verificar_acceso&perfil=' + encodeURIComponent(perfilVentas) + '&password=' + encodeURIComponent(pwd);
-  jsonp(urlLogin, function(err, res) {
+   // Validación del lado del servidor — la contraseña NO se compara en el navegador
+  apiPostViaJSONP({ accion: 'verificar_acceso', perfil: perfilVentas, password: pwd }, function(err, res) {
     if (err || !res || !res.ok) { mostrarErrorLogin('Sin conexion. Verifica tu internet.'); return; }
     if (!res.valido) {
       mostrarErrorLogin('Contrasena incorrecta');
