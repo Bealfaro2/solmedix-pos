@@ -639,16 +639,9 @@ function confirmarSuc() {
   var pwd = document.getElementById(pwdField).value;
   if (!pwd) { mostrarErrorLogin('Ingresa la contrasena'); return; }
 
-  function validar(cfg) {
-    var configKey = sucSelected==='MTY' ? 'pwd_mty_ventas' : 'pwd_slp_ventas';
-    var pwdCorrecta = cfg[configKey] || '';
-    if (!pwdCorrecta) { mostrarErrorLogin('Error al cargar configuracion. Intenta de nuevo.'); return; }
-    if (pwd !== pwdCorrecta) {
-      mostrarErrorLogin('Contrasena incorrecta');
-      document.getElementById(pwdField).value='';
-      document.getElementById(pwdField).focus();
-      return;
-    }
+  var perfilVentas = sucSelected==='MTY' ? 'mty_ventas' : 'slp_ventas';
+
+  function entrar() {
     sucursal = sucSelected;
     // Configurar chip y ocultar pantalla login ANTES de verificar caja
     var chip = document.getElementById('chip-suc');
@@ -660,14 +653,18 @@ function confirmarSuc() {
     inicializarCaja();
   }
 
-  if (configSistema.pwd_mty) {
-    validar(configSistema);
-  } else {
-    apiGet('config', function(e,d){
-      if(!e&&d&&d.config){ configSistema=d.config; validar(d.config); }
-      else { mostrarErrorLogin('Sin conexion. Verifica tu internet.'); }
-    });
-  }
+  // Validación del lado del servidor — la contraseña NO se compara en el navegador
+  var urlLogin = API_URL + '?accion=verificar_acceso&perfil=' + encodeURIComponent(perfilVentas) + '&password=' + encodeURIComponent(pwd);
+  jsonp(urlLogin, function(err, res) {
+    if (err || !res || !res.ok) { mostrarErrorLogin('Sin conexion. Verifica tu internet.'); return; }
+    if (!res.valido) {
+      mostrarErrorLogin('Contrasena incorrecta');
+      document.getElementById(pwdField).value='';
+      document.getElementById(pwdField).focus();
+      return;
+    }
+    entrar();
+  });
 }
 
 function mostrarErrorLogin(msg) {
