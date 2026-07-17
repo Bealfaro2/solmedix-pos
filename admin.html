@@ -4311,7 +4311,7 @@ function cambiarPwd(perfil) {
   var nuevaPwd = campo.value.trim();
   if(!nuevaPwd){alert('Ingresa la nueva contrasena');return;}
   var clave = 'pwd_'+perfil;
-  apiPost({accion:'guardar_config', clave:clave, valor:nuevaPwd}, function(err){
+  apiPost({accion:'guardar_password', clave:clave, valor:nuevaPwd}, function(err){
     configSistema[clave] = nuevaPwd;
     campo.value='';
     var alrt=document.getElementById('pwd-alrt');
