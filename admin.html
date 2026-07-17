@@ -2550,22 +2550,19 @@ function login() {
   if (!perfil) { mostrarErrLogin('Selecciona un perfil'); return; }
   if (!pwd) { mostrarErrLogin('Ingresa la contrasena'); return; }
 
-  // Load config first if needed
-  if (!configSistema.pwd_admin) {
-    apiGet('config', function(e,d){
-      if(!e&&d) configSistema=d.config||{};
-      login();
-    });
-    return;
-  }
+   // Validación del lado del servidor — la contraseña NO se compara en el navegador
+  apiPostViaJSONP({ accion: 'verificar_acceso', perfil: perfil, password: pwd }, function(err, res) {
+    if (err || !res || !res.ok) { mostrarErrLogin('Sin conexion. Verifica tu internet.'); return; }
+    if (!res.valido) {
+      mostrarErrLogin('Contrasena incorrecta');
+      document.getElementById('pwd').value='';
+      return;
+    }
+    loginExitoso(perfil);
+  });
+}
 
-  var pwdMap = { admin: configSistema.pwd_admin||'', mty: configSistema.pwd_mty||'', slp: configSistema.pwd_slp||'' };
-  if (!pwdMap[perfil] || pwd !== pwdMap[perfil]) {
-    mostrarErrLogin('Contrasena incorrecta');
-    document.getElementById('pwd').value='';
-    return;
-  }
-
+function loginExitoso(perfil) {
   perfilActual = perfil;
   document.getElementById('pantalla-login').style.display='none';
   document.getElementById('sistema').style.display='block';
