@@ -589,14 +589,21 @@ function apiPost(data, callback) {
 }
 function apiPostViaJSONP(data, callback) {
   var cbName = 'cb_' + Math.random().toString(36).slice(2);
+  // Escrituras NO se reintentan automáticamente: el reintento a los 8s creaba
+  // registros duplicados cuando el servidor tardaba pero SÍ escribía.
+  var esEscritura = data && /^(guardar_|registrar_|descontar_|cancelar_|editar_|eliminar_|devolver_)/.test(String(data.accion||''));
   var timeout = setTimeout(function() {
     if (window[cbName]) {
       delete window[cbName];
       var sc = document.getElementById('sc_'+cbName);
       if (sc) sc.remove();
-      apiPostViaJSONP(data, callback);
+      if (esEscritura) {
+        callback(new Error('timeout_escritura'));
+      } else {
+        apiPostViaJSONP(data, callback);
+      }
     }
-  }, 8000);
+  }, 20000);
   window[cbName] = function(res) {
     clearTimeout(timeout);
     delete window[cbName];
@@ -2173,6 +2180,8 @@ function guardarRetiro() {
                        retiro_monto:monto, retiro_nombre:nombre, notas:notas });
         document.getElementById('modal-retiro').classList.remove('show');
         alrt('Retiro registrado: $'+monto.toLocaleString('es-MX',{minimumFractionDigits:2})+' — '+nombre, 's');
+      } else if (err && err.message==='timeout_escritura') {
+        cajaAlrt('ret-alrt','El servidor tardó en responder. ANTES de reintentar, recarga la página y verifica si el retiro ya quedó registrado.','e');
       } else {
         cajaAlrt('ret-alrt','Error al guardar. Intenta de nuevo.','e');
       }
