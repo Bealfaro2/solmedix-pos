@@ -866,7 +866,7 @@ function enviarAPax(xml, correo, nombre, btn) {
     btn.textContent = 'Generar y enviar factura';
     showAlrt('alrt2','Error de conexión. Verifica tu internet.','e');
   };
-  script.src = API_URL + '?accion=sellar_timbrar&xml=' + encodeURIComponent(xml) + '&callback=' + cbName;
+  script.src = API_URL + '?accion=sellar_timbrar&xml=' + encodeURIComponent(xml) + '&correo=' + encodeURIComponent(correo || '') + '&callback=' + cbName;
   document.head.appendChild(script);
 }
 
