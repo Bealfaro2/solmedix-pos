@@ -548,7 +548,7 @@
 // CSD Solmedix
 var CSD_CER = '';
 var CSD_KEY = '';
-var NO_CERTIFICADO = 'a00001000000708258044';
+var NO_CERTIFICADO = '00001000000726614012';
 var API_URL = 'https://script.google.com/macros/s/AKfycbwIArZhtzInrluG0X6jsZiyz6CIWUBDKj2OhHYePY0rmSg0AJ6AmXuXW5WRcqf4kSeK/exec';
 
 // RFC y datos emisor Solmedix
@@ -747,6 +747,7 @@ function construirXML(rfc, nombre, regimen, uso, cp, correo, folio, fecha, total
       'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '+
       'xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd" '+
       'Version="4.0" Serie="F" Folio="'+folio+'" Fecha="'+fecha+'" '+
+      'Sello="" NoCertificado="'+NO_CERTIFICADO+'" Certificado="" '+
       'FormaPago="'+formaPago+'" '+
       'SubTotal="'+subtotal+'" Moneda="MXN" Total="'+subtotal+'" '+
       'TipoDeComprobante="I" Exportacion="01" MetodoPago="PUE" '+
