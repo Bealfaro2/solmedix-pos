@@ -630,6 +630,12 @@ function buscarTicket() {
       return;
     }
 
+    // Validar que no haya sido facturado antes
+    if (venta.uuid) {
+      showAlrt('alrt1','Este ticket ya fue facturado anteriormente. Si no recibiste tu factura, escríbenos al <strong>55 1660-9658</strong> y con gusto te la reenviamos.','e');
+      return;
+    }
+
     // Validar que sea del mes actual
     var fechaVenta = String(venta.fecha).split('T')[0];
     var hoy = new Date().toISOString().split('T')[0];
@@ -860,7 +866,7 @@ function enviarAPax(xml, correo, nombre, btn) {
     btn.textContent = 'Generar y enviar factura';
     showAlrt('alrt2','Error de conexión. Verifica tu internet.','e');
   };
-  script.src = API_URL + '?accion=sellar_timbrar&xml=' + encodeURIComponent(xml) + '&correo=' + encodeURIComponent(correo || '') + '&callback=' + cbName;
+  script.src = API_URL + '?accion=sellar_timbrar&xml=' + encodeURIComponent(xml) + '&correo=' + encodeURIComponent(correo || '') + '&venta_id=' + encodeURIComponent((_ventaData && _ventaData.id) || '') + '&callback=' + cbName;
   document.head.appendChild(script);
 }
 
