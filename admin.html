@@ -2226,6 +2226,16 @@ select option { background:var(--bg-2); color:var(--text); }
 
     <!-- UTILIDAD OPERATIVA -->
     <div id="sec-utilidad" style="display:none">
+
+      <!-- ── TABLERO DE DEUDAS ── -->
+      <div class="panel" style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="ptitle" style="margin:0">💳 Deuda por acreedor</div>
+          <button class="btn btns btno" onclick="cargarDeudas()">Actualizar</button>
+        </div>
+        <div id="deudas-box"><div style="color:var(--text-3);font-size:13px">Cargando…</div></div>
+      </div>
+
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
           <div class="ptitle" style="margin:0">Utilidad operativa</div>
@@ -5550,6 +5560,62 @@ function inicializarFechasUtilidad() {
   document.getElementById('ut-hasta').value = fechaLocal(hoy);
   document.getElementById('ut-empty').style.display = 'block';
   document.getElementById('ut-result').style.display = 'none';
+}
+
+// ── Tablero de deudas ──────────────────────────────────────────
+function cargarDeudas() {
+  var box = document.getElementById('deudas-box');
+  if (!box) return;
+  box.innerHTML = '<div style="color:var(--text-3);font-size:13px">Cargando…</div>';
+
+  apiGet('deudas', function(err, d) {
+    if (err || !d || !d.deudas) {
+      box.innerHTML = '<div style="color:var(--rojo,#f87171);font-size:13px">No se pudo cargar la información de deudas.</div>';
+      return;
+    }
+    var activas = d.deudas.filter(function(x){ return Number(x.saldo_actual) > 0; });
+    var liquidadas = d.deudas.filter(function(x){ return Number(x.saldo_actual) === 0; });
+    var total = activas.reduce(function(s,x){ return s + Number(x.saldo_actual||0); }, 0);
+    var mensual = activas.reduce(function(s,x){ return s + Number(x.abono_mensual||0); }, 0);
+
+    var h = '';
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px">';
+    h += '<div style="background:rgba(38,51,72,.6);border:1px solid var(--border);border-radius:10px;padding:14px">'
+       + '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">Deuda total</div>'
+       + '<div style="font-size:24px;font-weight:800;color:#fbbf24;margin-top:4px">$' + total.toLocaleString('es-MX') + '</div></div>';
+    h += '<div style="background:rgba(38,51,72,.6);border:1px solid var(--border);border-radius:10px;padding:14px">'
+       + '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">Compromiso mensual</div>'
+       + '<div style="font-size:24px;font-weight:800;margin-top:4px">$' + mensual.toLocaleString('es-MX') + '</div></div>';
+    h += '<div style="background:rgba(38,51,72,.6);border:1px solid var(--border);border-radius:10px;padding:14px">'
+       + '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">Acreedores activos</div>'
+       + '<div style="font-size:24px;font-weight:800;margin-top:4px">' + activas.length
+       + '<span style="font-size:13px;font-weight:400;color:var(--text-3)"> / ' + d.deudas.length + '</span></div></div>';
+    h += '</div>';
+
+    activas.sort(function(a,b){ return b.saldo_actual - a.saldo_actual; }).forEach(function(x){
+      var ini = Number(x.saldo_inicial) || 0;
+      var act = Number(x.saldo_actual) || 0;
+      var pct = ini > 0 ? Math.round((1 - act/ini) * 100) : 0;
+      var meses = x.meses_restantes;
+      h += '<div style="margin-bottom:14px">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">'
+         + '<span style="font-weight:600">' + x.acreedor + '</span>'
+         + '<span style="font-family:var(--mono);font-weight:700">$' + act.toLocaleString('es-MX') + '</span></div>';
+      h += '<div style="height:8px;background:rgba(148,163,184,.15);border-radius:99px;overflow:hidden">'
+         + '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,#4062AC,#38bdf8);border-radius:99px"></div></div>';
+      h += '<div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--text-3)">'
+         + '<span>' + pct + '% pagado · abonado $' + Number(x.abonado||0).toLocaleString('es-MX') + '</span>'
+         + '<span>' + (meses ? meses + ' meses restantes' : '') + '</span></div>';
+      h += '</div>';
+    });
+
+    if (liquidadas.length) {
+      h += '<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--text-3)">'
+         + '✅ Liquidadas: ' + liquidadas.map(function(x){ return x.acreedor; }).join(' · ') + '</div>';
+    }
+
+    box.innerHTML = h;
+  });
 }
 
 function calcularUtilidad() {
