@@ -541,7 +541,7 @@ var configSistema={};
 var items=[], ventas=[], clientes=[], medicamentos=[], lotes=[];
 var clienteActual=null; // datos fiscales del cliente seleccionado
 // ── CSD Solmedix ──────────────────────────────────────────────
-var NO_CERTIFICADO = '00001000000708258044';
+var NO_CERTIFICADO = '00001000000726614012';
 var CSD_CER = '';
 var CSD_KEY = '';
 var vActual=null, acIdx=-1;
@@ -1289,10 +1289,10 @@ function renderTicket(v) {
   document.getElementById('ctxt').textContent=v.clave;
 }
 // ── Firma CFDI con Web Crypto ─────────────────────────────────
-async function construirYFirmarXMLPOS(cliente, items, total, folio) {
+function construirXMLPOS(cliente, items, total, folio) {
   var now = new Date();
   var pad = function(n){ return String(n).padStart(2,'0'); };
-  fecha = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+'T'+pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+  var fecha = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+'T'+pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
 
   var esc = function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
 
@@ -1314,10 +1314,8 @@ async function construirYFirmarXMLPOS(cliente, items, total, folio) {
       'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '+
       'xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd" '+
       'Version="4.0" Serie="F" Folio="'+folio+'" Fecha="'+fecha+'" '+
-      'Sello="" '+
+      'Sello="" NoCertificado="'+NO_CERTIFICADO+'" Certificado="" '+
       'FormaPago="99" '+
-      'NoCertificado="'+NO_CERTIFICADO+'" '+
-      'Certificado="'+CSD_CER+'" '+
       'SubTotal="'+subtotal+'" Moneda="MXN" Total="'+subtotal+'" '+
       'TipoDeComprobante="I" Exportacion="01" MetodoPago="PUE" '+
       'LugarExpedicion="64610">'+
@@ -1331,21 +1329,48 @@ async function construirYFirmarXMLPOS(cliente, items, total, folio) {
     '<cfdi:Conceptos>'+conceptosXML+'</cfdi:Conceptos>'+
     '</cfdi:Comprobante>';
 
-  var cadena = generarCadenaOriginalJS(xml);
+  return xml;
+}
 
-  var keyBytes = Uint8Array.from(atob(CSD_KEY), function(c){ return c.charCodeAt(0); });
-  var cryptoKey = await crypto.subtle.importKey(
-    'pkcs8',
-    keyBytes.buffer,
-    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
+// ── Enviar XML sin sellar a PAX vía Apps Script ──
+function enviarAPaxPOS(xml, cliente, ventaId, btnFac, onExito) {
+  var cbName = 'paxpos_' + Math.random().toString(36).slice(2);
+  var timeout = setTimeout(function(){
+    delete window[cbName];
+    var sc = document.getElementById('sc_'+cbName); if (sc) sc.remove();
+    if (btnFac) { btnFac.disabled = false; btnFac.innerHTML = '⚡ Facturar'; }
+    alrt('Tiempo de espera agotado al timbrar.','e');
+  }, 60000);
 
-  var datos = new TextEncoder().encode(cadena);
-  var firma = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, datos);
-  var sello = btoa(String.fromCharCode.apply(null, new Uint8Array(firma)));
-  return xml.replace('Sello=""', 'Sello="'+sello+'"');
+  window[cbName] = function(res) {
+    clearTimeout(timeout);
+    delete window[cbName];
+    var sc = document.getElementById('sc_'+cbName); if (sc) sc.remove();
+    if (btnFac) { btnFac.disabled = false; btnFac.innerHTML = '⚡ Facturar'; }
+    if (res && res.ok && res.uuid) {
+      alrt('✓ CFDI timbrado. UUID: '+res.uuid.toUpperCase(),'s');
+      if (onExito) onExito(res.uuid);
+    } else {
+      alrt('Error al timbrar: '+((res && res.error) || 'desconocido'),'e');
+      console.error('PAX error:', res);
+    }
+  };
+
+  var script = document.createElement('script');
+  script.id = 'sc_'+cbName;
+  script.onerror = function(){
+    clearTimeout(timeout);
+    delete window[cbName];
+    script.remove();
+    if (btnFac) { btnFac.disabled = false; btnFac.innerHTML = '⚡ Facturar'; }
+    alrt('Error de conexión al timbrar.','e');
+  };
+  script.src = API_URL + '?accion=sellar_timbrar&xml=' + encodeURIComponent(xml) +
+               '&correo=' + encodeURIComponent(cliente.correo||'') +
+               '&venta_id=' + encodeURIComponent(ventaId||'') +
+               '&sucursal=' + encodeURIComponent(sucursal||'') +
+               '&callback=' + cbName;
+  document.head.appendChild(script);
 }
 
 function generarCadenaOriginalJS(xmlStr) {
@@ -1478,16 +1503,19 @@ function iniciarFacturacion(){
   btnFac.disabled = true;
   btnFac.innerHTML = '<span class="spinner"></span>Firmando...';
 
-  construirYFirmarXMLPOS(clienteActual, vActual.items, vActual.total, vActual.id)
-    .then(function(xmlSellado){
-      btnFac.innerHTML = '<span class="spinner"></span>Timbrando...';
-      enviarXMLSelladoPOS(xmlSellado, clienteActual, vActual.id, btnFac);
-    })
-    .catch(function(err){
-      btnFac.disabled = false;
-      btnFac.innerHTML = '⚡ Facturar';
-      alrt('Error al firmar: '+err.message,'e');
+  try {
+    btnFac.innerHTML = '<span class="spinner"></span>Timbrando...';
+    var xmlPOS = construirXMLPOS(clienteActual, vActual.items, vActual.total, vActual.id);
+    enviarAPaxPOS(xmlPOS, clienteActual, vActual.id, btnFac, function(uuid){
+      vActual.uuid = uuid;
+      btnFac.style.display = 'none';
+      renderHist();
     });
+  } catch(err) {
+    btnFac.disabled = false;
+    btnFac.innerHTML = '⚡ Facturar';
+    alrt('Error al construir XML: '+err.message,'e');
+  }
 }
 
 function imprimir(){
@@ -1746,36 +1774,16 @@ function facturarDesdeHistorial(id) {
   var btnFac = document.getElementById('bfac_'+id);
     if(btnFac){ btnFac.disabled=true; btnFac.innerHTML='<span class="spinner"></span>'; }
 
-    construirYFirmarXMLPOS(clienteHist, venta.items, venta.total, venta.id)
-    .then(function(xmlSellado){
-      var fakeBtnFac = {
-        disabled: false,
-        innerHTML: '',
-        style: { display: 'inline-flex' },
-        textContent: ''
-      };
-      // Callback personalizado para historial
-      var cbName = 'timbraHist_' + Date.now();
-      window[cbName] = function(resp) {
-        delete window[cbName];
-        if(btnFac){ btnFac.disabled=false; btnFac.innerHTML='⚡ Facturar'; }
-        if(resp && resp.ok && resp.uuid){
-          venta.uuid = resp.uuid;
-          alrt('✓ CFDI timbrado. UUID: '+resp.uuid.toUpperCase(),'s');
-          renderHist();
-          // Guardar UUID en Sheets
-          apiPostViaJSONP({accion:'guardar_uuid_venta', venta_id:venta.id, uuid:resp.uuid, sucursal:sucursal}, function(){});
-        } else {
-          var msg2 = (resp && resp.error) ? resp.error : 'Error desconocido';
-          alrt('Error al timbrar: '+msg2,'e');
-        }
-      };
-      enviarXMLSelladoConCB(xmlSellado, clienteHist, venta.id, cbName);
-    })
-    .catch(function(err){
+    try {
+      var xmlHist = construirXMLPOS(clienteHist, venta.items, venta.total, venta.id);
+      enviarAPaxPOS(xmlHist, clienteHist, venta.id, btnFac, function(uuid){
+        venta.uuid = uuid;
+        renderHist();
+      });
+    } catch(err) {
       if(btnFac){ btnFac.disabled=false; btnFac.innerHTML='⚡ Facturar'; }
-      alrt('Error al firmar: '+err.message,'e');
-     });
+      alrt('Error al construir XML: '+err.message,'e');
+    }
   }; // cierra onclick btn-confirmar-fac
   } // cierra if(btnConf2)
 } // cierra facturarDesdeHistorial
