@@ -426,6 +426,7 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
           <button class="tab" id="tb" onclick="tab('b')">Por cliente</button>
           <button class="tab" id="tc" onclick="tab('c')">Clientes</button>
           <button class="tab" id="tp" onclick="tab('p')">Precios</button>
+          <button class="tab" id="tped" onclick="tab('ped')">Pedidos</button>
         </div>
         <div id="vh"><div id="lista" class="es">Cargando ventas...</div></div>
         <div id="vb" style="display:none">
@@ -441,6 +442,17 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
         <div id="vp" style="display:none">
           <div class="fr"><input type="text" id="bqp" placeholder="Buscar medicamento..." oninput="buscarPrecio()" autocomplete="off"/></div>
           <div id="lista-precios" class="es">Escribe para buscar un medicamento</div>
+        </div>
+        <div id="vped" style="display:none">
+          <div class="fr"><label>Nombre del cliente</label><input type="text" id="ped-nombre" placeholder="Nombre completo"/></div>
+          <div class="fr"><label>Celular</label><input type="text" id="ped-tel" placeholder="10 dígitos" maxlength="10"/></div>
+          <div class="fr"><label>Medicamento que pasará a recoger</label><input type="text" id="ped-med" placeholder="Nombre del medicamento"/></div>
+          <div id="ped-dup" style="display:none;font-size:12px;color:#f0ad4e;margin-bottom:8px"></div>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+            <button class="btn btnp" id="btn-guardar-pedido" onclick="guardarPedido()">+ Registrar pedido</button>
+          </div>
+          <div id="ped-alrt" style="display:none;margin-bottom:10px"></div>
+          <div id="lista-pedidos" class="es">Cargando pedidos...</div>
         </div>
       </div>
     </div>
@@ -538,7 +550,7 @@ var SUCURSALES = {
 var E = { rfc:'SSM180928AQ7', web:'www.solmedixfarmacia.com' };
 var sucursal=null, sucSelected=null;
 var configSistema={};
-var items=[], ventas=[], clientes=[], medicamentos=[], lotes=[];
+var items=[], ventas=[], clientes=[], medicamentos=[], lotes=[], pedidos=[];
 var clienteActual=null; // datos fiscales del cliente seleccionado
 // ── CSD Solmedix ──────────────────────────────────────────────
 var NO_CERTIFICADO = '00001000000726614012';
@@ -694,8 +706,12 @@ function iniciar() {
   setSyncStatus('load','Conectando...');
   // Load config if not loaded
   if(!configSistema.pwd_mty) apiGet('config', function(e,d){ if(!e&&d) configSistema=d.config||{}; });
-  pendientes = 4; cargados = 0;
+  pendientes = 5; cargados = 0;
 
+  apiGet('pedidos', function(err, data) {
+    if (!err && data) pedidos = data.pedidos || [];
+    onCargado();
+  });
   apiGet('clientes', function(err, data) {
     if (!err && data) clientes = data.clientes || [];
     onCargado();
@@ -1146,6 +1162,13 @@ function guardar() {
   ventas.unshift(v);
   renderHist(); limpiar(); mostrarClave(v);
   alrt('Venta guardada. Ticket generado.','s');
+  if(window._pedidoEnConversion){
+    var pedC = window._pedidoEnConversion;
+    apiPostViaJSONP({accion:'marcar_pedido_convertido',id:pedC.id,folio:folio}, function(){});
+    pedidos = pedidos.filter(function(p){ return p.id!==pedC.id; });
+    window._pedidoEnConversion = null;
+    renderPedidos();
+  }
   btn.disabled=false; btn.textContent='Guardar y generar ticket';
   // Abrir popup de impresión automáticamente
   imprimir();
@@ -1909,9 +1932,114 @@ function guardarCliente(){
 
 /* TABS / ALERTAS */
 function tab(t){
-  ['h','b','c','p'].forEach(function(x){document.getElementById('v'+x).style.display=t===x?'block':'none';document.getElementById('t'+x).className='tab'+(t===x?' on':'');});
+  ['h','b','c','p','ped'].forEach(function(x){document.getElementById('v'+x).style.display=t===x?'block':'none';document.getElementById('t'+x).className='tab'+(t===x?' on':'');});
   if(t==='c')renderListaClientes();
   if(t==='p')buscarPrecio();
+  if(t==='ped')renderPedidos();
+}
+
+/* PEDIDOS MOSTRADOR */
+function normTel(t){ return String(t||'').replace(/\D/g,''); }
+
+function renderPedidos(){
+  var cont = document.getElementById('lista-pedidos');
+  var pend = pedidos.filter(function(p){ return p.estado==='pendiente' && (p.sucursal===sucursal||!p.sucursal); });
+  if(!pend.length){ cont.innerHTML='<div class="es">Sin pedidos pendientes</div>'; return; }
+  var html='';
+  pend.forEach(function(p){
+    html+='<div class="sc" style="cursor:default;flex-direction:column;align-items:stretch;gap:6px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
+        '<div><div style="font-weight:600">'+p.nombre+'</div>'+
+        (p.telefono?'<div class="sm">'+p.telefono+'</div>':'')+
+        '<div class="sm">'+p.medicamento+'</div></div>'+
+      '</div>'+
+      '<div style="display:flex;gap:8px;justify-content:flex-end">'+
+        '<button class="btn" style="font-size:11px;padding:5px 8px" onclick="cancelarPedido(\''+p.id+'\')">Cancelar</button>'+
+        '<button class="btn btnp" style="font-size:11px;padding:5px 8px" onclick="convertirPedido(\''+p.id+'\')">Convertir a venta</button>'+
+      '</div></div>';
+  });
+  cont.innerHTML=html;
+}
+
+function guardarPedido(){
+  var nombre = document.getElementById('ped-nombre').value.trim();
+  var tel = document.getElementById('ped-tel').value.trim();
+  var med = document.getElementById('ped-med').value.trim();
+  if(!nombre||!med){ pedAlrt('Nombre y medicamento son obligatorios','e'); return; }
+
+  // Verifica si el cliente ya existe (por nombre o teléfono) para no duplicar
+  var telN = normTel(tel);
+  var existente = clientes.find(function(c){
+    var cn = (typeof c==='string'?c:c.nombre||'').trim().toLowerCase();
+    var ct = normTel(typeof c==='string'?'':c.telefono);
+    return cn===nombre.toLowerCase() || (telN && ct && ct===telN);
+  });
+
+  var btn = document.getElementById('btn-guardar-pedido');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Guardando...';
+
+  function guardarPedidoFinal(){
+    apiPostViaJSONP({accion:'guardar_pedido',nombre:nombre,telefono:tel,medicamento:med,sucursal:sucursal}, function(err,res){
+      btn.disabled=false; btn.textContent='+ Registrar pedido';
+      if(err || !res || !res.ok){
+        pedAlrt('Error al guardar el pedido. Intenta de nuevo.','e'); return;
+      }
+      pedidos.unshift({id:res.id, nombre:nombre, telefono:tel, medicamento:med, sucursal:sucursal, estado:'pendiente'});
+      document.getElementById('ped-nombre').value='';
+      document.getElementById('ped-tel').value='';
+      document.getElementById('ped-med').value='';
+      document.getElementById('ped-dup').style.display='none';
+      renderPedidos();
+      pedAlrt('Pedido registrado.','s');
+    });
+  }
+
+  if(existente){
+    pedAlrt('Cliente ya existe en el catálogo — no se duplicará.','i');
+    guardarPedidoFinal();
+  } else {
+    // Cliente nuevo: se registra en el catálogo de clientes
+    apiPostViaJSONP({accion:'guardar_cliente',nombre:nombre,telefono:tel,rfc:'',correo:'',regimen:'',uso_cfdi:'',direccion:'',cp:'',sucursal:sucursal}, function(err2){
+      if(!err2){ clientes.push({nombre:nombre,telefono:tel}); }
+      guardarPedidoFinal();
+    });
+  }
+}
+
+function cancelarPedido(id){
+  if(!confirm('¿Cancelar este pedido?')) return;
+  apiPostViaJSONP({accion:'cancelar_pedido',id:id}, function(err,res){
+    if(err || !res || !res.ok){ pedAlrt('No se pudo cancelar. Intenta de nuevo.','e'); return; }
+    pedidos = pedidos.filter(function(p){ return p.id!==id; });
+    renderPedidos();
+  });
+}
+
+function convertirPedido(id){
+  var p = pedidos.find(function(x){ return x.id===id; });
+  if(!p) return;
+  window._pedidoEnConversion = p;
+  document.getElementById('cli').value = p.nombre;
+  // Intenta preseleccionar el medicamento si coincide con el catálogo
+  var match = medicamentos.find(function(m){ return m.nombre.toLowerCase().indexOf(p.medicamento.toLowerCase())>=0; });
+  if(match){
+    document.getElementById('msel').value = match.id;
+    document.getElementById('msel-input').value = match.nombre;
+    onMedChange();
+  } else {
+    document.getElementById('crow').style.display='';
+    document.getElementById('cnom').value = p.medicamento;
+  }
+  document.getElementById('cli').scrollIntoView({behavior:'smooth',block:'center'});
+  pedAlrt('Pedido cargado en Nueva Venta. Completa precio/cantidad y guarda.','i');
+}
+
+function pedAlrt(msg,tipo){
+  var el = document.getElementById('ped-alrt');
+  el.textContent = msg;
+  el.className = 'alrt alrt-'+tipo;
+  el.style.display = 'block';
+  setTimeout(function(){ el.style.display='none'; }, 4000);
 }
 
 function buscarPrecio(){
