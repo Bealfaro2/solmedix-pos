@@ -446,7 +446,33 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
         <div id="vped" style="display:none">
           <div class="fr"><label>Nombre del cliente</label><input type="text" id="ped-nombre" placeholder="Nombre completo"/></div>
           <div class="fr"><label>Celular</label><input type="text" id="ped-tel" placeholder="10 dígitos" maxlength="10"/></div>
-          <div class="fr"><label>Medicamento que pasará a recoger</label><input type="text" id="ped-med" placeholder="Nombre del medicamento"/></div>
+          <div class="fr" style="position:relative">
+            <label>Medicamento que pasará a recoger</label>
+            <input type="text" id="ped-med" placeholder="Escribe o selecciona del catálogo..." autocomplete="off" oninput="filtrarPedMed()" onfocus="filtrarPedMed()"/>
+            <div class="ac-list" id="ped-med-list" style="display:none"></div>
+          </div>
+
+          <div style="border:1px solid var(--border,#333);border-radius:8px;padding:10px;margin:12px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <label style="margin:0">¿Recibió anticipo?</label>
+              <button type="button" class="btn" style="font-size:11px;padding:4px 8px" onclick="toggleTransferInfo()">Ver datos para transferencia</button>
+            </div>
+            <div id="transfer-info" style="display:none;font-size:12px;background:rgba(255,255,255,.04);border-radius:6px;padding:8px;margin-bottom:8px">
+              <div>Transferencia (Mercado Pago) — CLABE: <b id="clabe-txt">722969020443746786</b> <button type="button" class="btn" style="font-size:10px;padding:2px 6px" onclick="copiarTexto('clabe-txt')">Copiar</button></div>
+              <div style="margin-top:4px">Depósito Oxxo — Tarjeta SPIN: <b id="spin-txt">2242170580064662</b> <button type="button" class="btn" style="font-size:10px;padding:2px 6px" onclick="copiarTexto('spin-txt')">Copiar</button></div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <input type="number" id="ped-anticipo-monto" placeholder="Monto del anticipo" style="flex:1" min="0" step="0.01"/>
+              <select id="ped-anticipo-metodo" style="flex:1">
+                <option value="">Método...</option>
+                <option value="Transferencia">Transferencia</option>
+                <option value="Efectivo">Efectivo</option>
+                <option value="Tarjeta">Tarjeta</option>
+              </select>
+            </div>
+            <input type="number" id="ped-total-estimado" placeholder="Total estimado del medicamento (opcional)" style="width:100%;margin-top:8px" min="0" step="0.01"/>
+          </div>
+
           <div id="ped-dup" style="display:none;font-size:12px;color:#f0ad4e;margin-bottom:8px"></div>
           <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
             <button class="btn btnp" id="btn-guardar-pedido" onclick="guardarPedido()">+ Registrar pedido</button>
@@ -548,6 +574,7 @@ var SUCURSALES = {
   SLP: { nombre:'San Luis Potosi', dir:'Sexta 335, Garita de Jalisco', dir2:'78294 San Luis, S.L.P.', cp:'', whatsapp:'WhatsApp: 444 443 3070', chipClass:'chip-slp', chipLabel:'Sucursal San Luis P.' }
 };
 var E = { rfc:'SSM180928AQ7', web:'www.solmedixfarmacia.com' };
+var PAGO = { clabe:'722969020443746786', spin:'2242170580064662' };
 var sucursal=null, sucSelected=null;
 var configSistema={};
 var items=[], ventas=[], clientes=[], medicamentos=[], lotes=[], pedidos=[];
@@ -1959,13 +1986,84 @@ function renderPedidos(){
       '</div></div>';
   });
   cont.innerHTML=html;
+}function renderPedidos(){
+  var cont = document.getElementById('lista-pedidos');
+  var pend = pedidos.filter(function(p){ return p.estado==='pendiente' && (p.sucursal===sucursal||!p.sucursal); });
+  if(!pend.length){ cont.innerHTML='<div class="es">Sin pedidos pendientes</div>'; return; }
+  var html='';
+  pend.forEach(function(p){
+    var tieneAnticipo = Number(p.anticipo_monto)>0;
+    html+='<div class="sc" style="cursor:default;flex-direction:column;align-items:stretch;gap:6px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
+        '<div><div style="font-weight:600">'+p.nombre+'</div>'+
+        (p.telefono?'<div class="sm">'+p.telefono+'</div>':'')+
+        '<div class="sm">'+p.medicamento+'</div>'+
+        (tieneAnticipo?'<div class="sm" style="color:#30a46c;font-weight:600">Anticipo: $'+Number(p.anticipo_monto).toLocaleString('es-MX',{minimumFractionDigits:2})+' ('+(p.anticipo_metodo||'')+')</div>':'')+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">'+
+        (tieneAnticipo
+          ? '<button class="btn" style="font-size:11px;padding:5px 8px" onclick="imprimirComprobante(\''+p.id+'\')">Comprobante</button>'
+          : '<button class="btn" style="font-size:11px;padding:5px 8px" onclick="registrarAnticipoInline(\''+p.id+'\')">+ Anticipo</button>') +
+        '<button class="btn" style="font-size:11px;padding:5px 8px" onclick="cancelarPedido(\''+p.id+'\')">Cancelar</button>'+
+        '<button class="btn btnp" style="font-size:11px;padding:5px 8px" onclick="convertirPedido(\''+p.id+'\')">Convertir a venta</button>'+
+      '</div></div>';
+  });
+  cont.innerHTML=html;
+}
+
+function toggleTransferInfo(){
+  var el = document.getElementById('transfer-info');
+  el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
+
+function copiarTexto(id){
+  var txt = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(txt).then(function(){ pedAlrt('Copiado: '+txt,'s'); });
+}
+
+function filtrarPedMed(){
+  var q = document.getElementById('ped-med').value.trim().toLowerCase();
+  var list = document.getElementById('ped-med-list');
+  if(!q){ list.style.display='none'; return; }
+  var matches = medicamentos.filter(function(m){ return m.nombre.toLowerCase().indexOf(q)>=0; }).slice(0,8);
+  if(!matches.length){ list.style.display='none'; return; }
+  list.innerHTML = matches.map(function(m){
+    return '<div class="ac-item" onclick="seleccionarPedMed(\''+m.nombre.replace(/'/g,"\\'")+'\')">'+m.nombre+'</div>';
+  }).join('');
+  list.style.display='block';
+}
+
+function seleccionarPedMed(nombre){
+  document.getElementById('ped-med').value = nombre;
+  document.getElementById('ped-med-list').style.display='none';
+}
+
+function registrarAnticipoInline(id){
+  var monto = prompt('¿Cuánto dejó de anticipo el cliente?');
+  if(monto===null) return;
+  var m = Number(monto);
+  if(!m || m<=0){ pedAlrt('Monto inválido.','e'); return; }
+  var metodo = prompt('Método de pago (Transferencia / Efectivo / Tarjeta):','Transferencia') || '';
+  apiPostViaJSONP({accion:'actualizar_anticipo_pedido', id:id, anticipo_monto:m, anticipo_metodo:metodo}, function(err,res){
+    if(err || !res || !res.ok){ pedAlrt('No se pudo registrar el anticipo.','e'); return; }
+    var p = pedidos.find(function(x){ return x.id===id; });
+    if(p){ p.anticipo_monto=m; p.anticipo_metodo=metodo; }
+    renderPedidos();
+    pedAlrt('Anticipo registrado.','s');
+    imprimirComprobante(id);
+  });
 }
 
 function guardarPedido(){
   var nombre = document.getElementById('ped-nombre').value.trim();
   var tel = document.getElementById('ped-tel').value.trim();
   var med = document.getElementById('ped-med').value.trim();
+  var antMonto = Number(document.getElementById('ped-anticipo-monto').value)||0;
+  var antMetodo = document.getElementById('ped-anticipo-metodo').value||'';
+  var totalEst = document.getElementById('ped-total-estimado').value||'';
   if(!nombre||!med){ pedAlrt('Nombre y medicamento son obligatorios','e'); return; }
+  if(antMonto>0 && !antMetodo){ pedAlrt('Selecciona el método del anticipo.','e'); return; }
 
   // Verifica si el cliente ya existe (por nombre o teléfono) para no duplicar
   var telN = normTel(tel);
@@ -1979,18 +2077,24 @@ function guardarPedido(){
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Guardando...';
 
   function guardarPedidoFinal(){
-    apiPostViaJSONP({accion:'guardar_pedido',nombre:nombre,telefono:tel,medicamento:med,sucursal:sucursal}, function(err,res){
+    var notas = totalEst ? ('Total estimado: $'+Number(totalEst).toLocaleString('es-MX',{minimumFractionDigits:2})) : '';
+    apiPostViaJSONP({accion:'guardar_pedido',nombre:nombre,telefono:tel,medicamento:med,sucursal:sucursal,anticipo_monto:antMonto,anticipo_metodo:antMetodo,notas:notas}, function(err,res){
       btn.disabled=false; btn.textContent='+ Registrar pedido';
       if(err || !res || !res.ok){
         pedAlrt('Error al guardar el pedido. Intenta de nuevo.','e'); return;
       }
-      pedidos.unshift({id:res.id, nombre:nombre, telefono:tel, medicamento:med, sucursal:sucursal, estado:'pendiente'});
+      var nuevoPed = {id:res.id, nombre:nombre, telefono:tel, medicamento:med, sucursal:sucursal, estado:'pendiente', anticipo_monto:antMonto, anticipo_metodo:antMetodo, notas:notas};
+      pedidos.unshift(nuevoPed);
       document.getElementById('ped-nombre').value='';
       document.getElementById('ped-tel').value='';
       document.getElementById('ped-med').value='';
+      document.getElementById('ped-anticipo-monto').value='';
+      document.getElementById('ped-anticipo-metodo').value='';
+      document.getElementById('ped-total-estimado').value='';
       document.getElementById('ped-dup').style.display='none';
       renderPedidos();
       pedAlrt('Pedido registrado.','s');
+      if(antMonto>0) imprimirComprobante(res.id, nuevoPed);
     });
   }
 
@@ -2031,7 +2135,45 @@ function convertirPedido(id){
     document.getElementById('cnom').value = p.medicamento;
   }
   document.getElementById('cli').scrollIntoView({behavior:'smooth',block:'center'});
+  if(Number(p.anticipo_monto)>0){
+    alert('⚠ Este pedido tiene un anticipo registrado de $'+Number(p.anticipo_monto).toLocaleString('es-MX',{minimumFractionDigits:2})+' ('+p.anticipo_metodo+').\n\nCobra SOLO la diferencia en mostrador.');
+  }
   pedAlrt('Pedido cargado en Nueva Venta. Completa precio/cantidad y guarda.','i');
+}
+
+function imprimirComprobante(id, pedidoDirecto){
+  var p = pedidoDirecto || pedidos.find(function(x){ return x.id===id; });
+  if(!p) return;
+  var suc = SUCURSALES[p.sucursal||sucursal||'MTY'];
+  var saldo = '';
+  if(p.notas && p.notas.indexOf('Total estimado')===0){
+    var totalNum = Number(p.notas.replace(/[^0-9.]/g,''))||0;
+    if(totalNum>0){
+      var rest = totalNum - Number(p.anticipo_monto);
+      saldo = '<div class="tp-row"><span>Saldo pendiente:</span><span class="tp-bold">$'+rest.toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>';
+    }
+  }
+  var html =
+    '<div class="tp">'+
+    '<div class="tp-center"><img src="'+LOGO_BN+'" style="max-width:160px;display:block;margin:0 auto 4px"/></div>'+
+    '<div class="tp-center" style="font-size:12pt;line-height:1.6">'+E.rfc+'<br>'+suc.dir+'<br>'+suc.whatsapp+'</div>'+
+    '<div class="tp-box tp-center" style="margin-top:6px;font-size:11pt;font-weight:bold;border:1px dashed #000;padding:4px">COMPROBANTE DE ANTICIPO<br><span style="font-size:9pt;font-weight:normal">NO ES TICKET DE VENTA</span></div>'+
+    '<div class="tp-box"><div>Cliente: <b>'+p.nombre+'</b></div>'+(p.telefono?'<div>Tel: '+p.telefono+'</div>':'')+
+      '<div>Medicamento: '+p.medicamento+'</div>'+
+      '<div>Fecha: '+new Date().toLocaleDateString('es-MX')+'</div>'+
+      '<div>Referencia: #'+String(p.id).slice(-6)+'</div></div>'+
+    '<div class="tp-box tp-bold" style="font-size:12pt"><div class="tp-row"><span>Anticipo recibido:</span><span>$'+Number(p.anticipo_monto).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
+      '<div class="tp-row"><span>Método:</span><span>'+(p.anticipo_metodo||'')+'</span></div>'+saldo+'</div>'+
+    '<div class="tp-center" style="margin-top:6px;font-size:10pt">Conserva este comprobante.<br>Se descontará al completar tu compra.</div>'+
+    '</div>';
+  var iframe = document.createElement('iframe');
+  iframe.style.cssText='position:fixed;width:0;height:0;border:0;left:0;top:0';
+  document.body.appendChild(iframe);
+  var iDoc = iframe.contentWindow.document;
+  iDoc.open();
+  iDoc.write('<!DOCTYPE html><html><head><style>@page{size:80mm auto;margin:2mm 4mm}body{font-family:"Courier New",monospace;font-size:12pt;margin:0;padding:6px;width:72mm}.tp{width:100%}.tp-center{text-align:center}.tp-bold{font-weight:bold}.tp-row{display:flex;justify-content:space-between}.tp-box{border-top:1px dashed #000;padding:6px 0;margin-top:4px}</style></head><body>'+html+'</body></html>');
+  iDoc.close();
+  setTimeout(function(){ iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(function(){document.body.removeChild(iframe);},1000); }, 300);
 }
 
 function pedAlrt(msg,tipo){
