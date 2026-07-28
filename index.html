@@ -385,14 +385,16 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
           <label>Nombre del medicamento</label>
           <input type="text" id="cnom" placeholder="Nombre completo del medicamento"/>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 80px;gap:8px;margin-bottom:9px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 80px;gap:8px;margin-bottom:9px">
           <div><label>Precio ($)</label><input type="number" id="pre" placeholder="0.00"/></div>
-          <div><label>Cantidad</label><input type="number" id="qty" value="1" min="1" oninput="validarCantidad()"/></div>
-          <div><label>Forma de pago</label>
-            <select id="pag">
-              <option value="">-- Seleccionar --</option>
-              <option>Tarjeta MP</option><option>Transferencia</option><option>Efectivo</option>
-            </select>
+          <div>
+            <label>Cantidad</label>
+            <div id="qty-slider-wrap" style="display:flex;align-items:center;gap:6px">
+              <input type="range" id="qty" value="1" min="1" max="10" step="1" oninput="syncQtyLabel();validarCantidad()" style="flex:1"/>
+              <span id="qty-label" style="min-width:22px;text-align:center;font-weight:600;font-size:13px">1</span>
+            </div>
+            <input type="number" id="qty-manual" value="1" min="1" oninput="validarCantidad()" style="display:none;margin-top:4px"/>
+            <a href="#" onclick="toggleQtyManual();return false;" id="qty-manual-link" style="font-size:10px;color:var(--text-3);display:block;margin-top:2px">¿Más de 10 piezas?</a>
           </div>
           <div style="display:flex;align-items:flex-end">
             <button class="btn btnp" style="width:100%;padding:8px 4px;font-size:11px" onclick="addItem()">+ Agregar</button>
@@ -401,15 +403,23 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
         <div id="eitem" class="es" style="padding:.8rem 0;font-size:12px">Agrega medicamentos a la venta</div>
         <table class="it" id="itab" style="display:none">
           <thead><tr>
-            <th style="width:30%">Medicamento</th><th style="width:13%">Lote</th>
-            <th style="width:7%">Cant</th><th style="width:12%">P.U.</th>
-            <th style="width:12%">Total</th><th style="width:18%">Pago</th><th style="width:8%"></th>
+            <th style="width:34%">Medicamento</th><th style="width:15%">Lote</th>
+            <th style="width:9%">Cant</th><th style="width:15%">P.U.</th>
+            <th style="width:15%">Total</th><th style="width:12%"></th>
           </tr></thead>
           <tbody id="ibody"></tbody>
         </table>
         <div id="trow" style="display:none;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid var(--border);margin-top:7px">
           <span style="font-size:13px;color:var(--text-2)">Total venta</span>
           <span style="font-size:22px;font-weight:700;color:var(--text);font-family:var(--mono)" id="tdis">$0.00</span>
+        </div>
+        <div id="pagos-block" style="display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <label style="margin:0;font-size:13px">Forma(s) de pago</label>
+            <button type="button" class="btn" style="font-size:11px;padding:4px 8px" onclick="agregarLineaPago()">+ Agregar</button>
+          </div>
+          <div id="pagos-list"></div>
+          <div id="pagos-msg" style="font-size:11px;color:#e5484d;margin-top:2px"></div>
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:13px">
           <button class="btn" onclick="limpiar()">Limpiar</button>
@@ -987,26 +997,76 @@ function onLoteChange() {
   }
 }
 
+var qtyEsManual=false;
+function syncQtyLabel(){ document.getElementById('qty-label').textContent=document.getElementById('qty').value; }
+function toggleQtyManual(){
+  qtyEsManual=!qtyEsManual;
+  document.getElementById('qty-slider-wrap').style.display=qtyEsManual?'none':'flex';
+  document.getElementById('qty-manual').style.display=qtyEsManual?'block':'none';
+  document.getElementById('qty-manual-link').textContent=qtyEsManual?'Usar deslizador (1-10)':'¿Más de 10 piezas?';
+  if(qtyEsManual){ document.getElementById('qty-manual').value=document.getElementById('qty').value; }
+  else { document.getElementById('qty').value=Math.min(10,parseInt(document.getElementById('qty-manual').value)||1); syncQtyLabel(); }
+}
+function qtyActual(){ return parseInt(document.getElementById(qtyEsManual?'qty-manual':'qty').value)||1; }
+
 function validarCantidad() {
   var loteId = document.getElementById('lsel').value;
   if (!loteId) return;
   for (var i=0;i<lotes.length;i++) {
     if (String(lotes[i].id)===String(loteId)) {
-      var qty = parseInt(document.getElementById('qty').value)||1;
+      var qty = qtyActual();
       var stock = Number(lotes[i].existencias);
-      if (qty>stock) { document.getElementById('qty').value=stock; alrt('Cantidad ajustada al maximo: '+stock+' pzas','i'); }
+      var campo = document.getElementById(qtyEsManual?'qty-manual':'qty');
+      if (qty>stock) { campo.value=stock; if(!qtyEsManual) syncQtyLabel(); alrt('Cantidad ajustada al maximo: '+stock+' pzas','i'); }
       return;
     }
   }
 }
 
+/* PAGOS A NIVEL DE VENTA */
+var pagosVenta = [{metodo:'', monto:0}];
+
+function renderPagos(){
+  var total = items.reduce(function(s,it){return s+it.total;},0);
+  document.getElementById('pagos-block').style.display = items.length ? 'block' : 'none';
+  // Con una sola línea (caso normal, sin split) el monto siempre es el total
+  if(pagosVenta.length===1) pagosVenta[0].monto = total;
+  var cont = document.getElementById('pagos-list');
+  var opts = ['Tarjeta MP','Transferencia','Efectivo'];
+  var html='';
+  pagosVenta.forEach(function(p,i){
+    html+='<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'+
+      '<select onchange="cambiarMetodoPago('+i+',this.value)" style="flex:1">'+
+        '<option value="">-- Método --</option>'+
+        opts.map(function(m){return '<option'+(p.metodo===m?' selected':'')+'>'+m+'</option>';}).join('')+
+      '</select>'+
+      '<input type="number" value="'+(p.monto||0).toFixed(2)+'" min="0" step="0.01" style="flex:1"'+
+        (pagosVenta.length===1?' readonly':' onchange="cambiarMontoPago('+i+',this.value)"')+'/>'+
+      (pagosVenta.length>1?'<button type="button" class="btn btns btnd" onclick="quitarLineaPago('+i+')">x</button>':'')+
+    '</div>';
+  });
+  cont.innerHTML = html;
+  var suma = pagosVenta.reduce(function(s,p){return s+(Number(p.monto)||0);},0);
+  var msg = document.getElementById('pagos-msg');
+  msg.textContent = (items.length && Math.abs(suma-total)>0.01)
+    ? 'La suma de los pagos ($'+suma.toFixed(2)+') no coincide con el total ($'+total.toFixed(2)+').' : '';
+}
+function agregarLineaPago(){
+  var total = items.reduce(function(s,it){return s+it.total;},0);
+  var asignado = pagosVenta.reduce(function(s,p){return s+(Number(p.monto)||0);},0);
+  pagosVenta.push({metodo:'', monto:Math.max(0, total-asignado)});
+  renderPagos();
+}
+function quitarLineaPago(i){ pagosVenta.splice(i,1); renderPagos(); }
+function cambiarMetodoPago(i,val){ pagosVenta[i].metodo=val; }
+function cambiarMontoPago(i,val){ pagosVenta[i].monto=Number(val)||0; renderPagos(); }
+
 /* AGREGAR ITEM */
 function addItem() {
   var medId=document.getElementById('msel').value;
   var loteId=document.getElementById('lsel').value;
-  var qty=parseInt(document.getElementById('qty').value)||1;
+  var qty=qtyActual();
   var precio=parseFloat(document.getElementById('pre').value)||0;
-  var pago=document.getElementById('pag').value;
   var nombre='', loteNum='';
   if (medId==='__c__') {
     nombre=document.getElementById('cnom').value.trim();
@@ -1025,7 +1085,6 @@ function addItem() {
     if (loteId) { for (var j=0;j<lotes.length;j++) { if (String(lotes[j].id)===String(loteId)) { loteNum=lotes[j].lote; break; } } }
   } else { alrt('Selecciona un medicamento','i'); return; }
   if (!precio) { alrt('Ingresa el precio unitario','i'); return; }
-  if (!pago) { alrt('Selecciona la forma de pago','i'); return; }
   // Check stock before adding - consider what's already in cart
   if(loteId){
     var yaEnCarrito=0;
@@ -1043,18 +1102,22 @@ function addItem() {
       }
     }
   }
-  items.push({nombre:nombre,loteId:loteId,loteNum:loteNum,qty:qty,precio:precio,pago:pago,total:qty*precio});
+  items.push({nombre:nombre,loteId:loteId,loteNum:loteNum,qty:qty,precio:precio,total:qty*precio});
   renderItems();
   document.getElementById('msel').value='';
   document.getElementById('pre').value='';
   document.getElementById('qty').value='1';
-  document.getElementById('qty').removeAttribute('max');
+  document.getElementById('qty-manual').value='1';
+  qtyEsManual=false;
+  document.getElementById('qty-slider-wrap').style.display='flex';
+  document.getElementById('qty-manual').style.display='none';
+  document.getElementById('qty-manual-link').textContent='¿Más de 10 piezas?';
+  syncQtyLabel();
   document.getElementById('lote-row').style.display='none';
   document.getElementById('crow').style.display='none';
   document.getElementById('cnom').value='';
   document.getElementById('lsel').innerHTML='<option value="">Seleccionar lote...</option>';
   document.getElementById('stock-info').textContent='';
-  document.getElementById('pag').value='';
 }
 
 function renderItems() {
@@ -1071,15 +1134,12 @@ function renderItems() {
     html+='<td><input type="number" value="'+it.qty+'" min="1" style="width:45px;padding:2px 4px;border:1px solid #ddd;border-radius:4px;font-size:12px;text-align:center" onchange="cambiarQty('+i+',this.value)"/></td>';
     html+='<td>$'+it.precio.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
     html+='<td>$'+it.total.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
-    html+='<td><select onchange="cambiarPago('+i+',this.value)" style="font-size:11px;padding:3px 4px;border-radius:6px;border:1px solid #ddd">';
-    var pagoOpts=['Tarjeta MP','Transferencia','Efectivo'];
-    for(var p=0;p<pagoOpts.length;p++) html+='<option'+(it.pago===pagoOpts[p]?' selected':'')+'>'+pagoOpts[p]+'</option>';
-    html+='</select></td>';
     html+='<td><button class="btn btns btnd" onclick="del('+i+')">x</button></td></tr>';
   }
   document.getElementById('ibody').innerHTML=html;
   var total=0; for (var k=0;k<items.length;k++) total+=items[k].total;
   document.getElementById('tdis').textContent='$'+total.toLocaleString('es-MX',{minimumFractionDigits:2});
+  renderPagos();
 }
 function pedirCancelar(id) {
   if(!confirm('Marcar esta venta como CANCELADA?\nLa venta quedara en el historial pero marcada como cancelada.')) return;
@@ -1108,7 +1168,7 @@ function del(i){
   // inventario en memoria y permitía vender piezas inexistentes.
   items.splice(i,1);renderItems();
 }
-function cambiarPago(i,val){items[i].pago=val;}
+
 function cambiarQty(i,val){
   var qty=parseInt(val)||1;
   if(qty<1)qty=1;
@@ -1142,6 +1202,11 @@ function guardar() {
   var cliente=document.getElementById('cli').value.trim();
   if (!fecha||!cliente||!items.length){alrt('Completa fecha, cliente y al menos un medicamento','i');return;}
 
+  var totalCheq = items.reduce(function(s,it){return s+it.total;},0);
+  var sumaPagos = pagosVenta.reduce(function(s,p){return s+(Number(p.monto)||0);},0);
+  if (Math.abs(sumaPagos-totalCheq)>0.01){ alrt('La suma de los pagos no coincide con el total de la venta.','e'); return; }
+  if (pagosVenta.some(function(p){return p.monto>0 && !p.metodo;})){ alrt('Selecciona el método para cada línea de pago.','e'); return; }
+
   // Validar stock
   var stockUsado={};
   for(var si=0;si<items.length;si++){
@@ -1165,7 +1230,11 @@ function guardar() {
 
   var folio=ventas.length+1;
   var total=0; for(var k=0;k<items.length;k++) total+=items[k].total;
-  var v={id:folio,fecha:fecha,hora:hora,cliente:cliente,sucursal:sucursal,items:items.slice(),total:total,clave:genClave(fecha,cliente,folio)};
+  var pagosSnapshot = pagosVenta.filter(function(p){return p.metodo&&p.monto>0;}).map(function(p){return {metodo:p.metodo,monto:p.monto};});
+  var pagoDominante = pagosSnapshot.slice().sort(function(a,b){return b.monto-a.monto;})[0];
+  var formaPagoTxt = pagoDominante ? pagoDominante.metodo + (pagosSnapshot.length>1?' y otro':'') : '';
+  var pagosResumen = pagosSnapshot.map(function(p){return p.metodo+':'+p.monto.toFixed(2);}).join('|');
+  var v={id:folio,fecha:fecha,hora:hora,cliente:cliente,sucursal:sucursal,items:items.slice(),total:total,clave:genClave(fecha,cliente,folio),pagos:pagosSnapshot,pagoDominante:formaPagoTxt};
 
   // Snapshot de items ANTES de limpiar la UI
   var itemsSnapshot = items.slice();
@@ -1216,17 +1285,16 @@ function guardar() {
   }
 
   // Guardar en Sheets (asíncrono con snapshot)
-  apiPost({accion:'guardar_venta',fecha:fecha,hora:hora,cliente:cliente,total:total,clave:v.clave,sucursal:sucursal,items:itemsSnapshot}, function(err) {
+  apiPost({accion:'guardar_venta',fecha:fecha,hora:hora,cliente:cliente,total:total,clave:v.clave,sucursal:sucursal,items:itemsSnapshot,forma_pago:pagosResumen}, function(err) {
     if(!err){
       setSyncStatus('ok','Guardado en Google Sheets');
 
       // ── Comisión Mercado Pago → Gasto No Fiscal ──────────
-      var comisionMP = 0;
-      for (var ci = 0; ci < itemsSnapshot.length; ci++) {
-        if (itemsSnapshot[ci].pago === 'Tarjeta MP') {
-          comisionMP += itemsSnapshot[ci].total * 0.0406;
-        }
-      }
+      // Ahora se calcula sobre el monto REAL pagado con Tarjeta MP a nivel
+      // de venta (pagosSnapshot), no por medicamento — más exacto en splits.
+      var montoTarjetaMP = pagosSnapshot.filter(function(p){return p.metodo==='Tarjeta MP';})
+        .reduce(function(s,p){return s+p.monto;},0);
+      var comisionMP = montoTarjetaMP * 0.0406;
       var comision = Math.round(comisionMP * 100) / 100;
       if (comision > 0) {
         apiPost({
@@ -1256,7 +1324,7 @@ function toggleOjo(inputId, btn) {
   else { inp.type='password'; btn.textContent='👁'; }
 }
 
-function limpiar(){items=[];renderItems();document.getElementById('cli').value='';document.getElementById('barcode').value='';document.getElementById('msel-input').value='';document.getElementById('msel').value='';document.getElementById('msel-list').style.display='none';document.getElementById('lote-row').style.display='none';document.getElementById('crow').style.display='none';document.getElementById('pre').value='';}
+function limpiar(){items=[];pagosVenta=[{metodo:'',monto:0}];renderItems();document.getElementById('cli').value='';document.getElementById('barcode').value='';document.getElementById('msel-input').value='';document.getElementById('msel').value='';document.getElementById('msel-list').style.display='none';document.getElementById('lote-row').style.display='none';document.getElementById('crow').style.display='none';document.getElementById('pre').value='';}
 
 function mostrarClave(v) {
   vActual = v;
@@ -1287,7 +1355,7 @@ function renderTicket(v) {
       '<div class="tp-bold">'+nom+'</div>'+
       (it.loteNum?'<div style="font-size:8.5px">Lote: '+it.loteNum+'</div>':'')+
       '<div class="tp-row">'+
-        '<span>'+it.qty+' x $'+it.precio.toLocaleString('es-MX',{minimumFractionDigits:2})+'  Pago: '+it.pago+'</span>'+
+        '<span>'+it.qty+' x $'+it.precio.toLocaleString('es-MX',{minimumFractionDigits:2})+'</span>'+
         '<span class="tp-bold">$'+it.total.toLocaleString('es-MX',{minimumFractionDigits:2})+'</span>'+
       '</div>'+
       '</div>';
@@ -1314,6 +1382,7 @@ function renderTicket(v) {
     // Total
     '<div class="tp-box tp-bold" style="font-size:12pt">'+
       '<div class="tp-row"><span>TOTAL:</span><span>'+totalFmt+'</span></div>'+
+      (v.pagoDominante?'<div class="tp-row" style="font-size:10pt;font-weight:normal"><span>Forma de pago:</span><span>'+v.pagoDominante+'</span></div>':'')+
     '</div>'+
     // Clave facturación
     '<div class="tp-box-dashed tp-center">'+
@@ -2419,12 +2488,20 @@ function guardarRetiro() {
   ventas.filter(function(v){
     return String(v.fecha).split('T')[0] === hoyChk && v.sucursal === sucursal && v.estado !== 'cancelada';
   }).forEach(function(v){
-    (v.items||[]).forEach(function(it){
-      var p = (it.pago||'').toLowerCase();
-      if (p === '' || p.indexOf('efectivo') >= 0 || p.indexOf('efec') >= 0) {
-        efecDisp += Number(it.total) || 0;
-      }
-    });
+    if (v.pagos && v.pagos.length) {
+      v.pagos.forEach(function(p){
+        var m=(p.metodo||'').toLowerCase();
+        if (m==='' || m.indexOf('efectivo')>=0) efecDisp += Number(p.monto)||0;
+      });
+    } else {
+      // Ventas guardadas antes de este cambio: siguen leyendo pago por item
+      (v.items||[]).forEach(function(it){
+        var p = (it.pago||'').toLowerCase();
+        if (p === '' || p.indexOf('efectivo') >= 0 || p.indexOf('efec') >= 0) {
+          efecDisp += Number(it.total) || 0;
+        }
+      });
+    }
   });
 
   var retiradoHoy = cajaDia.filter(function(r){
@@ -2522,14 +2599,25 @@ function abrirModalCorte() {
 
   var efec = 0, trans = 0, tarj = 0;
   ventasHoy.forEach(function(v) {
-    (v.items||[]).forEach(function(it) {
-      var p = (it.pago||'').toLowerCase();
-      var t = Number(it.total)||0;
-      if (p.indexOf('efectivo')>=0 || p.indexOf('efec')>=0) efec += t;
-      else if (p.indexOf('transferencia')>=0 || p.indexOf('trans')>=0) trans += t;
-      else if (p.indexOf('tarjeta')>=0 || p.indexOf('card')>=0) tarj += t;
-      else efec += t; // default efectivo
-    });
+    if (v.pagos && v.pagos.length) {
+      v.pagos.forEach(function(p){
+        var m=(p.metodo||'').toLowerCase(); var t=Number(p.monto)||0;
+        if (m.indexOf('efectivo')>=0) efec += t;
+        else if (m.indexOf('transferencia')>=0||m.indexOf('trans')>=0) trans += t;
+        else if (m.indexOf('tarjeta')>=0||m.indexOf('card')>=0) tarj += t;
+        else efec += t;
+      });
+    } else {
+      // Ventas guardadas antes de este cambio: siguen leyendo pago por item
+      (v.items||[]).forEach(function(it) {
+        var p = (it.pago||'').toLowerCase();
+        var t = Number(it.total)||0;
+        if (p.indexOf('efectivo')>=0 || p.indexOf('efec')>=0) efec += t;
+        else if (p.indexOf('transferencia')>=0 || p.indexOf('trans')>=0) trans += t;
+        else if (p.indexOf('tarjeta')>=0 || p.indexOf('card')>=0) tarj += t;
+        else efec += t;
+      });
+    }
   });
 
   var retiros = cajaDia.filter(function(r) {
