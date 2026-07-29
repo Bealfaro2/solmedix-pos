@@ -792,12 +792,13 @@ function setSyncStatus(t,m) {
 /* SELECTOR MEDICAMENTOS */
 function actualizarDatos() {
   setSyncStatus('load','Actualizando...');
-  var pending=4, done=0;
-  function check(){ done++; if(done>=pending){ cargarSelectMeds(); renderHist(); renderListaClientes(); setSyncStatus('ok','Conectado'); } }
+  var pending=5, done=0;
+  function check(){ done++; if(done>=pending){ cargarSelectMeds(); renderHist(); renderListaClientes(); renderPedidos(); setSyncStatus('ok','Conectado'); } }
   apiGet('clientes',     function(e,d){ if(!e&&d) clientes=d.clientes||[]; check(); });
   apiGet('ventas',       function(e,d){ if(!e&&d) ventas=(d.ventas||[]).reverse(); check(); });
   apiGet('medicamentos', function(e,d){ if(!e&&d) medicamentos=d.medicamentos||[]; check(); });
   apiGet('lotes',        function(e,d){ if(!e&&d) lotes=d.lotes||[]; check(); });
+  apiGet('pedidos',      function(e,d){ if(!e&&d) pedidos=d.pedidos||[]; check(); });
 }
 
 function onBarcodeInput() {
@@ -2038,24 +2039,6 @@ function tab(t){
 function normTel(t){ return String(t||'').replace(/\D/g,''); }
 
 function renderPedidos(){
-  var cont = document.getElementById('lista-pedidos');
-  var pend = pedidos.filter(function(p){ return p.estado==='pendiente' && (p.sucursal===sucursal||!p.sucursal); });
-  if(!pend.length){ cont.innerHTML='<div class="es">Sin pedidos pendientes</div>'; return; }
-  var html='';
-  pend.forEach(function(p){
-    html+='<div class="sc" style="cursor:default;flex-direction:column;align-items:stretch;gap:6px">'+
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
-        '<div><div style="font-weight:600">'+p.nombre+'</div>'+
-        (p.telefono?'<div class="sm">'+p.telefono+'</div>':'')+
-        '<div class="sm">'+p.medicamento+'</div></div>'+
-      '</div>'+
-      '<div style="display:flex;gap:8px;justify-content:flex-end">'+
-        '<button class="btn" style="font-size:11px;padding:5px 8px" onclick="cancelarPedido(\''+p.id+'\')">Cancelar</button>'+
-        '<button class="btn btnp" style="font-size:11px;padding:5px 8px" onclick="convertirPedido(\''+p.id+'\')">Convertir a venta</button>'+
-      '</div></div>';
-  });
-  cont.innerHTML=html;
-}function renderPedidos(){
   var cont = document.getElementById('lista-pedidos');
   var pend = pedidos.filter(function(p){ return p.estado==='pendiente' && (p.sucursal===sucursal||!p.sucursal); });
   if(!pend.length){ cont.innerHTML='<div class="es">Sin pedidos pendientes</div>'; return; }
