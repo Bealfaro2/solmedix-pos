@@ -4578,12 +4578,20 @@ function renderVentasAdmin(lista){
     var tooltipProductos = (v.items||[]).map(function(it){ return it.qty+'x '+it.nombre+' — $'+Number(it.total).toLocaleString('es-MX',{minimumFractionDigits:2}); }).join('&#10;');
     html+='<tr title="'+tooltipProductos+'" style="cursor:pointer;'+(cancelada?'background:rgba(239,68,68,.08);color:#aaa':'')+'"><td><strong>#'+String(v.id).padStart(4,'0')+'</strong></td><td>'+ff(v.fecha)+'</td><td>'+v.cliente+'</td>';
     html+='<td><strong>$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</strong></td>';
-    // Calcular modo de pago dominante de los ítems
+    // Calcular modo de pago — ahora a nivel de venta completa (v.pagos)
     var pagosMapa = {};
-    (v.items||[]).forEach(function(it){
-      var p = (it.pago||'Efectivo').trim();
-      pagosMapa[p] = (pagosMapa[p]||0) + (Number(it.total)||0);
-    });
+    if (v.pagos && v.pagos.length) {
+      v.pagos.forEach(function(p){
+        var m = (p.metodo||'Efectivo').trim();
+        pagosMapa[m] = (pagosMapa[m]||0) + (Number(p.monto)||0);
+      });
+    } else {
+      // Ventas guardadas antes del rediseño de pagos: leer por medicamento (legado)
+      (v.items||[]).forEach(function(it){
+        var p = (it.pago||'Efectivo').trim();
+        pagosMapa[p] = (pagosMapa[p]||0) + (Number(it.total)||0);
+      });
+    }
     var pagos = Object.keys(pagosMapa);
     var pagoLabel = pagos.length === 0 ? '—' : pagos.join(' + ');
     var pl = pagoLabel.toLowerCase();
