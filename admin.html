@@ -5582,6 +5582,9 @@ function inicializarFechasUtilidad() {
 function cargarRitmoGastos() {
   var box = document.getElementById('ritmo-gastos-box');
   if (!box) return;
+  var wrapRitmo = box.closest('.panel');
+  if (perfilActual === 'slp') { if (wrapRitmo) wrapRitmo.style.display = 'none'; return; }
+  if (wrapRitmo) wrapRitmo.style.display = '';
   box.innerHTML = '<div style="color:var(--text-3);font-size:13px">Cargando…</div>';
 
   apiGet('resumen_gastos_nf', function(err, d) {
@@ -5633,6 +5636,9 @@ function cargarRitmoGastos() {
 function cargarDeudas() {
   var box = document.getElementById('deudas-box');
   if (!box) return;
+  var wrapDeudas = box.closest('.panel');
+  if (perfilActual === 'slp') { if (wrapDeudas) wrapDeudas.style.display = 'none'; return; }
+  if (wrapDeudas) wrapDeudas.style.display = '';
   box.innerHTML = '<div style="color:var(--text-3);font-size:13px">Cargando…</div>';
 
   apiGet('deudas', function(err, d) {
