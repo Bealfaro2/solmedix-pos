@@ -2085,6 +2085,14 @@ select option { background:var(--bg-2); color:var(--text); }
       </div>
     <!-- GASTOS -->
     <div id="sec-gastos" style="display:none">
+      <!-- ── RITMO MENSUAL: SOLMEDIX VS ALFREDO ── -->
+      <div class="panel" style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="ptitle" style="margin:0">📊 Ritmo mensual de gastos</div>
+          <button class="btn btns btno" onclick="cargarRitmoGastos()">Actualizar</button>
+        </div>
+        <div id="ritmo-gastos-box"><div style="color:var(--text-3);font-size:13px">Cargando…</div></div>
+      </div>
 
       <!-- SUB-TABS -->
       <div style="display:flex;gap:4px;margin-bottom:18px">
@@ -2765,8 +2773,8 @@ function navTab(t) {
   if(t==='lotes'){ inventarioTab('lotes'); }
   if(t==='vencimientos'){ renderVencimientos(); }
   if(t==='compras'){ renderCompras(); comprasTab('entrada'); }
-  if(t==='gastos'){ inicializarFechasGastos(); filtrarGastosFiscales(); filtrarGastosNF(); }
-  if(t==='utilidad'){ inicializarFechasUtilidad(); }
+  if(t==='gastos'){ inicializarFechasGastos(); filtrarGastosFiscales(); filtrarGastosNF(); cargarRitmoGastos(); }
+  if(t==='utilidad'){ inicializarFechasUtilidad(); cargarDeudas(); }
   if(t==='precios'){ renderReportePrecios(); }
   if(t==='fiscal'){ FiscalModule.onLogin('Administrador'); }
 }
@@ -5568,6 +5576,57 @@ function inicializarFechasUtilidad() {
   document.getElementById('ut-hasta').value = fechaLocal(hoy);
   document.getElementById('ut-empty').style.display = 'block';
   document.getElementById('ut-result').style.display = 'none';
+}
+
+// ── Ritmo mensual de gastos: Solmedix vs Alfredo ────────────────
+function cargarRitmoGastos() {
+  var box = document.getElementById('ritmo-gastos-box');
+  if (!box) return;
+  box.innerHTML = '<div style="color:var(--text-3);font-size:13px">Cargando…</div>';
+
+  apiGet('resumen_gastos_nf', function(err, d) {
+    if (err || !d) {
+      box.innerHTML = '<div style="color:#f87171;font-size:13px">No se pudo cargar el resumen.</div>';
+      return;
+    }
+
+    var colores = {
+      verde: { bar:'linear-gradient(90deg,#22c55e,#4ade80)', txt:'#4ade80', bg:'rgba(34,197,94,.12)' },
+      ambar: { bar:'linear-gradient(90deg,#f59e0b,#fbbf24)', txt:'#fbbf24', bg:'rgba(245,158,11,.12)' },
+      rojo:  { bar:'linear-gradient(90deg,#ef4444,#f87171)', txt:'#f87171', bg:'rgba(239,68,68,.12)' }
+    };
+    var etiquetaEstado = { verde:'En buen ritmo', ambar:'Cerca del límite', rojo:'Ritmo excedido' };
+
+    function tarjeta(nombre, icono, x) {
+      var c = colores[x.estado];
+      var pctBarra = Math.min(x.pct_meta, 130); // tope visual
+      var h = '<div style="background:rgba(38,51,72,.6);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">';
+      h += '<span style="font-weight:700;font-size:14px">' + icono + ' ' + nombre + '</span>';
+      h += '<span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;background:' + c.bg + ';color:' + c.txt + '">' + etiquetaEstado[x.estado] + '</span>';
+      h += '</div>';
+      h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">';
+      h += '<span style="font-family:var(--mono);font-size:20px;font-weight:800">$' + Math.round(x.actual).toLocaleString('es-MX') + '</span>';
+      h += '<span style="font-size:12px;color:var(--text-3)">meta: $' + Math.round(x.meta).toLocaleString('es-MX') + '</span>';
+      h += '</div>';
+      h += '<div style="height:9px;background:rgba(148,163,184,.15);border-radius:99px;overflow:hidden;margin-bottom:6px">';
+      h += '<div style="height:100%;width:' + pctBarra + '%;background:' + c.bar + ';border-radius:99px"></div></div>';
+      h += '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-3)">';
+      h += '<span>' + x.pct_meta + '% de la meta mensual</span>';
+      h += '<span>esperado a hoy: $' + x.ritmo_esperado.toLocaleString('es-MX') + ' (' + x.pct_ritmo + '%)</span>';
+      h += '</div></div>';
+      return h;
+    }
+
+    var html = '<div style="font-size:12px;color:var(--text-3);margin-bottom:12px">';
+    html += 'Día ' + d.dia_hoy + ' de ' + d.dias_del_mes + ' · ' + d.mes_actual;
+    html += d.meses_referencia.length ? ' · Meta calculada sobre: ' + d.meses_referencia.join(', ') : ' · Sin meses de referencia aún';
+    html += '</div>';
+    html += tarjeta('Solmedix (operativo)', '🏢', d.solmedix);
+    html += tarjeta('Alfredo (personal)', '👤', d.alfredo);
+
+    box.innerHTML = html;
+  });
 }
 
 // ── Tablero de deudas ──────────────────────────────────────────
