@@ -1729,7 +1729,8 @@ function facturarDesdeHistorial(id) {
       '</div>';
     botonesContent =
       '<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="padding:8px 16px;border-radius:8px;border:1px solid rgba(148,163,184,.3);background:transparent;color:var(--text-1);cursor:pointer">Cancelar</button>' +
-      '<button id="btn-cambiar-fac" style="padding:8px 16px;border-radius:8px;background:#185FA5;color:#fff;border:none;cursor:pointer;font-weight:600">Seleccionar receptor</button>';
+      '<button id="btn-cambiar-fac" style="padding:8px 16px;border-radius:8px;background:#185FA5;color:#fff;border:none;cursor:pointer;font-weight:600">Seleccionar receptor</button>' +
+      '<button id="btn-confirmar-fac" style="display:none;padding:8px 16px;border-radius:8px;background:#185FA5;color:#fff;border:none;cursor:pointer;font-weight:600">⚡ Facturar seleccionado</button>';
   }
 
   // Mostrar selector
@@ -1757,9 +1758,9 @@ function facturarDesdeHistorial(id) {
       var sel = document.getElementById('sel-cli-fac');
       sel.style.display = 'block';
       btnCambiar.style.display = 'none';
-      // Cambiar botón confirmar si existe
+      // Mostrar y activar el botón confirmar
       var btnConf = document.getElementById('btn-confirmar-fac');
-      if(btnConf) btnConf.textContent = '⚡ Facturar seleccionado';
+      if(btnConf) { btnConf.style.display = ''; btnConf.textContent = '⚡ Facturar seleccionado'; }
     };
   }
 
