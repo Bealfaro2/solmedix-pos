@@ -462,6 +462,7 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
             <input type="text" id="ped-med" placeholder="Escribe o selecciona del catálogo..." autocomplete="off" oninput="filtrarPedMed()" onfocus="filtrarPedMed()"/>
             <div class="ac-list" id="ped-med-list" style="display:none"></div>
           </div>
+          <div class="fr"><label>Cantidad</label><input type="number" id="ped-cant" value="1" min="1" style="width:100px"/></div>
 
           <div style="border:1px solid var(--border,#333);border-radius:8px;padding:10px;margin:12px 0">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -500,6 +501,7 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
             <input type="text" id="pedom-med" placeholder="Escribe o selecciona del catálogo..." autocomplete="off" oninput="filtrarPedomMed()" onfocus="filtrarPedomMed()"/>
             <div class="ac-list" id="pedom-med-list" style="display:none"></div>
           </div>
+          <div class="fr"><label>Cantidad</label><input type="number" id="pedom-cant" value="1" min="1" style="width:100px"/></div>
 
           <div style="border:1px solid var(--border,#333);border-radius:8px;padding:10px;margin:12px 0">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -1947,7 +1949,7 @@ function renderPedidos(){
       '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
         '<div><div style="font-weight:600">'+p.nombre+'</div>'+
         (p.telefono?'<div class="sm">'+p.telefono+'</div>':'')+
-        '<div class="sm">'+p.medicamento+'</div>'+
+        '<div class="sm">'+(p.cantidad>1?'<b>'+p.cantidad+'x</b> ':'')+p.medicamento+'</div>'+
         (tieneAnticipo?'<div class="sm" style="color:#30a46c;font-weight:600">Anticipo: $'+Number(p.anticipo_monto).toLocaleString('es-MX',{minimumFractionDigits:2})+' ('+(p.anticipo_metodo||'')+')</div>':'')+
         '</div>'+
       '</div>'+
@@ -2009,6 +2011,7 @@ function guardarPedido(){
   var nombre = document.getElementById('ped-nombre').value.trim();
   var tel = document.getElementById('ped-tel').value.trim();
   var med = document.getElementById('ped-med').value.trim();
+  var cant = Math.max(1, parseInt(document.getElementById('ped-cant').value)||1);
   var antMonto = Number(document.getElementById('ped-anticipo-monto').value)||0;
   var antMetodo = document.getElementById('ped-anticipo-metodo').value||'';
   var totalEst = document.getElementById('ped-total-estimado').value||'';
@@ -2028,16 +2031,17 @@ function guardarPedido(){
 
   function guardarPedidoFinal(){
     var notas = totalEst ? ('Total estimado: $'+Number(totalEst).toLocaleString('es-MX',{minimumFractionDigits:2})) : '';
-    apiPostViaJSONP({accion:'guardar_pedido',nombre:nombre,telefono:tel,medicamento:med,sucursal:sucursal,anticipo_monto:antMonto,anticipo_metodo:antMetodo,notas:notas}, function(err,res){
+    apiPostViaJSONP({accion:'guardar_pedido',nombre:nombre,telefono:tel,medicamento:med,cantidad:cant,sucursal:sucursal,anticipo_monto:antMonto,anticipo_metodo:antMetodo,notas:notas}, function(err,res){
       btn.disabled=false; btn.textContent='+ Registrar pedido';
       if(err || !res || !res.ok){
         pedAlrt('Error al guardar el pedido. Intenta de nuevo.','e'); return;
       }
-      var nuevoPed = {id:res.id, nombre:nombre, telefono:tel, medicamento:med, sucursal:sucursal, estado:'pendiente', anticipo_monto:antMonto, anticipo_metodo:antMetodo, notas:notas};
+      var nuevoPed = {id:res.id, nombre:nombre, telefono:tel, medicamento:med, cantidad:cant, sucursal:sucursal, estado:'pendiente', anticipo_monto:antMonto, anticipo_metodo:antMetodo, notas:notas};
       pedidos.unshift(nuevoPed);
       document.getElementById('ped-nombre').value='';
       document.getElementById('ped-tel').value='';
       document.getElementById('ped-med').value='';
+      document.getElementById('ped-cant').value='1';
       document.getElementById('ped-anticipo-monto').value='';
       document.getElementById('ped-anticipo-metodo').value='';
       document.getElementById('ped-total-estimado').value='';
@@ -2083,6 +2087,14 @@ function convertirPedido(id){
   } else {
     document.getElementById('crow').style.display='';
     document.getElementById('cnom').value = p.medicamento;
+  }
+  var cantPed = Math.max(1, parseInt(p.cantidad)||1);
+  if(cantPed<=10){
+    document.getElementById('qty').value=cantPed;
+    syncQtyLabel();
+  } else {
+    if(!qtyEsManual) toggleQtyManual();
+    document.getElementById('qty-manual').value=cantPed;
   }
   document.getElementById('cli').scrollIntoView({behavior:'smooth',block:'center'});
   if(Number(p.anticipo_monto)>0){
@@ -2173,6 +2185,7 @@ function guardarPedidoDomicilio(){
   var tel = document.getElementById('pedom-tel').value.trim();
   var dir = document.getElementById('pedom-dir').value.trim();
   var med = document.getElementById('pedom-med').value.trim();
+  var cant = Math.max(1, parseInt(document.getElementById('pedom-cant').value)||1);
   var antMonto = Number(document.getElementById('pedom-anticipo-monto').value)||0;
   var antMetodo = document.getElementById('pedom-anticipo-metodo').value||'';
   var totalEst = document.getElementById('pedom-total-estimado').value||'';
@@ -2192,15 +2205,16 @@ function guardarPedidoDomicilio(){
 
   function guardarFinal(){
     var notas = totalEst ? ('Total estimado: $'+Number(totalEst).toLocaleString('es-MX',{minimumFractionDigits:2})) : '';
-    apiPostViaJSONP({accion:'guardar_pedido',nombre:nombre,telefono:tel,medicamento:med,sucursal:sucursal,anticipo_monto:antMonto,anticipo_metodo:antMetodo,notas:notas,tipo:'domicilio',direccion:dir}, function(err,res){
+    apiPostViaJSONP({accion:'guardar_pedido',nombre:nombre,telefono:tel,medicamento:med,cantidad:cant,sucursal:sucursal,anticipo_monto:antMonto,anticipo_metodo:antMetodo,notas:notas,tipo:'domicilio',direccion:dir}, function(err,res){
       btn.disabled=false; btn.textContent='+ Registrar envío';
       if(err || !res || !res.ok){ pedomAlrt('Error al guardar el envío. Intenta de nuevo.','e'); return; }
-      var nuevoPed = {id:res.id, nombre:nombre, telefono:tel, medicamento:med, sucursal:sucursal, estado:'pendiente', anticipo_monto:antMonto, anticipo_metodo:antMetodo, notas:notas, tipo:'domicilio', direccion:dir};
+      var nuevoPed = {id:res.id, nombre:nombre, telefono:tel, medicamento:med, cantidad:cant, sucursal:sucursal, estado:'pendiente', anticipo_monto:antMonto, anticipo_metodo:antMetodo, notas:notas, tipo:'domicilio', direccion:dir};
       pedidos.unshift(nuevoPed);
       document.getElementById('pedom-nombre').value='';
       document.getElementById('pedom-tel').value='';
       document.getElementById('pedom-dir').value='';
       document.getElementById('pedom-med').value='';
+      document.getElementById('pedom-cant').value='1';
       document.getElementById('pedom-anticipo-monto').value='';
       document.getElementById('pedom-anticipo-metodo').value='';
       document.getElementById('pedom-total-estimado').value='';
