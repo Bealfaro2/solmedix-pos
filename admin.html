@@ -1271,7 +1271,10 @@ select option { background:var(--bg-2); color:var(--text); }
     <!-- SOFÍA — panel WhatsApp-like -->
     <style>
       .sof-wrap{display:flex;height:72vh;min-height:520px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-      .sof-lista{width:300px;flex-shrink:0;border-right:1px solid var(--border);overflow-y:auto;background:var(--bg-2)}
+      .sof-lista-wrap{width:300px;flex-shrink:0;border-right:1px solid var(--border);background:var(--bg-2);display:flex;flex-direction:column}
+      .sof-buscar{margin:8px;width:calc(100% - 16px);box-sizing:border-box}
+      .sof-lista{flex:1;overflow-y:auto}
+      .sof-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px;vertical-align:middle;flex-shrink:0}
       .sof-item{padding:12px 14px;border-bottom:1px solid var(--border-soft);cursor:pointer;transition:background .15s}
       .sof-item:hover{background:rgba(148,163,184,.06)}
       .sof-item.on{background:rgba(24,95,165,.14)}
@@ -1298,8 +1301,11 @@ select option { background:var(--bg-2); color:var(--text); }
           <button class="btn" onclick="cargarConversacionesSofia()">↻ Actualizar</button>
         </div>
         <div class="sof-wrap">
-          <div class="sof-lista" id="sof-lista">
-            <div class="es">Cargando conversaciones...</div>
+          <div class="sof-lista-wrap">
+            <input type="text" id="sof-buscar" class="sof-buscar" placeholder="Buscar cliente o número..." oninput="sofFiltrar()"/>
+            <div class="sof-lista" id="sof-lista">
+              <div class="es">Cargando conversaciones...</div>
+            </div>
           </div>
           <div class="sof-chat">
             <div class="sof-chat-head" id="sof-chat-head">Selecciona una conversación</div>
@@ -2751,29 +2757,77 @@ function sofEsc(s) {
 }
 
 var sofClienteActual = null;
+var sofUltimaLista = [];
+var sofAutoRefreshIniciado = false;
+
+function sofUltimoVistoKey(numero) { return 'sof_visto_' + numero; }
+
+function sofEsNoVisto(c) {
+  var marca = c.fecha + '|' + c.hora;
+  var visto = localStorage.getItem(sofUltimoVistoKey(c.numero));
+  return visto !== marca;
+}
+
+function sofMarcarVisto(c) {
+  if (!c) return;
+  localStorage.setItem(sofUltimoVistoKey(c.numero), c.fecha + '|' + c.hora);
+}
 
 function cargarConversacionesSofia() {
   var cont = document.getElementById('sof-lista');
-  cont.innerHTML = '<div class="es">Cargando conversaciones...</div>';
+  if (!sofUltimaLista.length) cont.innerHTML = '<div class="es">Cargando conversaciones...</div>';
   apiGet('conversaciones_sofia', function(err, res) {
     if (err || !res || !res.ok) { cont.innerHTML = '<div class="es">Error al cargar</div>'; return; }
-    if (!res.conversaciones.length) { cont.innerHTML = '<div class="es">Sin conversaciones aún</div>'; return; }
-    cont.innerHTML = res.conversaciones.map(function(c){
-      var nombreMostrar = sofEsc(c.nombre || c.numero);
-      var prev = sofEsc((c.ultimo_mensaje || c.ultima_respuesta || '').slice(0,40));
-      return '<div class="sof-item" id="sof-item-'+c.numero+'" onclick="sofAbrirHilo(\''+c.numero+'\',\''+sofEsc(c.nombre||'').replace(/'/g,"")+'\')">' +
-        '<div class="sof-item-nombre"><span>'+nombreMostrar+(c.escalado?'<span class="sof-badge-esc">Escalado</span>':'')+'</span><span class="sof-item-hora">'+(c.hora||'')+'</span></div>' +
-        '<div class="sof-item-prev">'+prev+'</div>' +
-      '</div>';
-    }).join('');
+    sofUltimaLista = res.conversaciones || [];
+    // Si hay un chat abierto, se mantiene marcado como visto con su estado más reciente
+    if (sofClienteActual) {
+      var actual = sofUltimaLista.filter(function(c){ return c.numero === sofClienteActual.numero; })[0];
+      if (actual) sofMarcarVisto(actual);
+    }
+    sofRenderLista();
   });
+}
+
+function sofRenderLista() {
+  var cont = document.getElementById('sof-lista');
+  var filtro = (document.getElementById('sof-buscar').value || '').toLowerCase().trim();
+  var lista = sofUltimaLista;
+  if (filtro) {
+    lista = lista.filter(function(c){
+      return (c.nombre||'').toLowerCase().indexOf(filtro) > -1 || (c.numero||'').indexOf(filtro) > -1;
+    });
+  }
+  if (!lista.length) { cont.innerHTML = '<div class="es">Sin resultados</div>'; return; }
+  cont.innerHTML = lista.map(function(c){
+    var nombreMostrar = sofEsc(c.nombre || c.numero);
+    var prev = sofEsc((c.ultimo_mensaje || c.ultima_respuesta || '').slice(0,40));
+    var esActual = sofClienteActual && sofClienteActual.numero === c.numero;
+    var noVisto = !esActual && sofEsNoVisto(c);
+    return '<div class="sof-item'+(esActual?' on':'')+'" id="sof-item-'+c.numero+'" onclick="sofAbrirHilo(\''+c.numero+'\',\''+sofEsc(c.nombre||'').replace(/'/g,"")+'\')">' +
+      '<div class="sof-item-nombre"><span>'+(noVisto?'<span class="sof-dot"></span>':'')+nombreMostrar+(c.escalado?'<span class="sof-badge-esc">Escalado</span>':'')+'</span><span class="sof-item-hora">'+(c.hora||'')+'</span></div>' +
+      '<div class="sof-item-prev">'+prev+'</div>' +
+    '</div>';
+  }).join('');
+}
+
+function sofFiltrar() { sofRenderLista(); }
+
+function sofIniciarAutoRefresh() {
+  if (sofAutoRefreshIniciado) return;
+  sofAutoRefreshIniciado = true;
+  setInterval(function() {
+    var secSofia = document.getElementById('sec-sofia');
+    if (!secSofia || secSofia.style.display === 'none') return; // solo si la pestaña está activa
+    cargarConversacionesSofia();
+    if (sofClienteActual) sofAbrirHilo(sofClienteActual.numero, sofClienteActual.nombre);
+  }, 60000);
 }
 
 function sofAbrirHilo(numero, nombre) {
   sofClienteActual = { numero: numero, nombre: nombre };
-  document.querySelectorAll('.sof-item').forEach(function(el){ el.classList.remove('on'); });
-  var itemEl = document.getElementById('sof-item-'+numero);
-  if (itemEl) itemEl.classList.add('on');
+  var entradaLista = sofUltimaLista.filter(function(c){ return c.numero === numero; })[0];
+  if (entradaLista) sofMarcarVisto(entradaLista);
+  sofRenderLista();
   document.getElementById('sof-chat-head').textContent = (nombre || numero) + '  ·  ' + numero;
   var body = document.getElementById('sof-chat-body');
   body.innerHTML = '<div class="es">Cargando mensajes...</div>';
@@ -2923,7 +2977,7 @@ function navTab(t) {
   if(t==='compras'){ renderCompras(); comprasTab('entrada'); }
   if(t==='gastos'){ inicializarFechasGastos(); filtrarGastosFiscales(); filtrarGastosNF(); cargarRitmoGastos(); }
   if(t==='utilidad'){ inicializarFechasUtilidad(); cargarDeudas(); }
-  if(t==='sofia'){ cargarConversacionesSofia(); }
+  if(t==='sofia'){ cargarConversacionesSofia(); sofIniciarAutoRefresh(); }
   if(t==='precios'){ renderReportePrecios(); }
   if(t==='fiscal'){ FiscalModule.onLogin('Administrador'); }
 }
