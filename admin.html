@@ -2959,7 +2959,8 @@ function sofEnviarComando() {
     if (!payload.mensaje) { alert('Escribe el mensaje'); return; }
   } else if (tipo === 'pago_confirmado') {
     payload.entrega = document.getElementById('sof-entrega').value.trim();
-  
+  }
+
   var status = document.getElementById('sof-status');
   status.textContent = 'Enviando...';
   apiPostViaJSONP(payload, function(err, res) {
