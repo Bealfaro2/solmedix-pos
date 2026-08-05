@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Sofía Messenger — Solmedix</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1B2B4B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sofía">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+
+<style>
+:root{
+  --blue:#185FA5; --blue-bright:#2b7fd4; --green:#10b981; --red:#ef4444;
+  --bg:#0f172a; --bg-2:#1e293b; --bg-3:#263348;
+  --border:rgba(148,163,184,.15); --border-soft:rgba(148,163,184,.08);
+  --text:#f1f5f9; --text-2:#94a3b8; --text-3:#64748b;
+  --radius-sm:8px; --radius:14px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  overscroll-behavior:none; -webkit-tap-highlight-color:transparent;
+  padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom);
+}
+input,select,textarea,button{font-family:inherit;font-size:16px}
+input,select,textarea{
+  width:100%; background:var(--bg-3); border:1px solid var(--border); color:var(--text);
+  border-radius:var(--radius-sm); padding:11px 12px; outline:none;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--blue-bright)}
+button{cursor:pointer; border:none; border-radius:var(--radius-sm)}
+.btn{background:var(--bg-3); color:var(--text); border:1px solid var(--border); padding:11px 16px; font-weight:600}
+.btn-p{background:var(--blue); color:#fff}
+.btn-p:active{background:var(--blue-bright)}
+.hidden{display:none !important}
+
+/* ── LOGIN ── */
+#login{height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:24px}
+#login img{width:88px; height:88px; margin-bottom:18px; border-radius:22px}
+#login h1{font-size:20px; margin:0 0 4px}
+#login p{color:var(--text-3); font-size:13px; margin:0 0 28px}
+#login-form{width:100%; max-width:320px; display:flex; flex-direction:column; gap:12px}
+#login-err{color:var(--red); font-size:13px; text-align:center; display:none}
+
+/* ── APP SHELL ── */
+#app{height:100vh; display:flex; flex-direction:column}
+.topbar{
+  flex-shrink:0; padding:14px 16px; padding-top:calc(14px + env(safe-area-inset-top));
+  background:var(--bg-2); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:10px;
+}
+.topbar h2{font-size:16px; margin:0; flex:1}
+.topbar .sub{font-size:11px; color:var(--text-3); font-weight:400}
+.icon-btn{background:transparent; border:none; color:var(--text); font-size:20px; padding:4px 8px}
+
+/* ── LISTA ── */
+#vista-lista{flex:1; display:flex; flex-direction:column; overflow:hidden}
+#buscar-wrap{padding:10px 12px; background:var(--bg-2); border-bottom:1px solid var(--border)}
+#lista{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.item{padding:13px 16px; border-bottom:1px solid var(--border-soft); display:flex; flex-direction:column; gap:3px; active-opacity:.7}
+.item:active{background:var(--bg-3)}
+.item-top{display:flex; justify-content:space-between; align-items:center; gap:8px}
+.item-nombre{font-size:15px; font-weight:600; display:flex; align-items:center; gap:6px; min-width:0}
+.item-nombre span.txt{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.dot{width:9px; height:9px; border-radius:50%; background:var(--green); flex-shrink:0}
+.item-hora{font-size:11px; color:var(--text-3); flex-shrink:0}
+.item-prev{font-size:13px; color:var(--text-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.badge-esc{background:rgba(239,68,68,.18); color:#fca5a5; font-size:9px; padding:2px 7px; border-radius:8px; flex-shrink:0}
+.estado{padding:40px 16px; text-align:center; color:var(--text-3); font-size:14px}
+#fab-nuevo{
+  position:fixed; right:18px; bottom:calc(18px + env(safe-area-inset-bottom));
+  width:56px; height:56px; border-radius:50%; background:var(--blue); color:#fff;
+  font-size:26px; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 6px 20px rgba(0,0,0,.4); z-index:10;
+}
+#btn-marcar-leidos{margin:8px 12px; width:calc(100% - 24px); font-size:12px; padding:8px}
+
+/* ── CHAT ── */
+#vista-chat{flex:1; display:none; flex-direction:column; overflow:hidden}
+#vista-chat.on{display:flex}
+#vista-lista.off{display:none}
+.chat-body{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:14px; display:flex; flex-direction:column; gap:8px}
+.bub{max-width:78%; padding:9px 12px; border-radius:var(--radius); font-size:14.5px; line-height:1.4; white-space:pre-wrap}
+.bub-cli{align-self:flex-start; background:var(--bg-3); border-bottom-left-radius:3px}
+.bub-sof{align-self:flex-end; background:var(--blue); color:#fff; border-bottom-right-radius:3px}
+.bub-hora{font-size:9.5px; color:rgba(255,255,255,.55); margin-top:3px}
+.bub-cli .bub-hora{color:var(--text-3)}
+
+/* ── COMPOSE ── */
+.compose{flex-shrink:0; background:var(--bg-2); border-top:1px solid var(--border); padding:10px 12px; padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+.compose select{margin-bottom:8px}
+.campos{display:none}
+.campos.on{display:block}
+#estado-envio{font-size:12px; color:var(--text-3); margin-top:6px; text-align:center; min-height:16px}
+
+/* ── MODAL NUEVO CHAT ── */
+.overlay{position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:flex-end; z-index:50}
+.overlay.on{display:flex}
+.sheet{width:100%; background:var(--bg-2); border-radius:20px 20px 0 0; padding:20px 18px calc(20px + env(safe-area-inset-bottom))}
+.sheet h3{margin:0 0 14px}
+.sheet .fr{margin-bottom:10px}
+.sheet label{font-size:12px; color:var(--text-3); display:block; margin-bottom:4px}
+.hint{font-size:11px; color:var(--text-3); margin:-4px 0 12px}
+.sheet-actions{display:flex; gap:8px; margin-top:6px}
+.sheet-actions button{flex:1; padding:13px}
+</style>
+</head>
+<body>
+
+<!-- ═══════ LOGIN ═══════ -->
+<div id="login">
+  <img src="icon-192.png" alt="Sofía">
+  <h1>Sofía Messenger</h1>
+  <p>Solmedix Soluciones Médicas</p>
+  <div id="login-form">
+    <select id="login-perfil">
+      <option value="">Selecciona tu perfil</option>
+      <option value="admin">Administrador</option>
+      <option value="mty">Sucursal Monterrey</option>
+    </select>
+    <input type="password" id="login-pwd" placeholder="Contraseña" autocomplete="current-password">
+    <button class="btn btn-p" onclick="login()">Entrar</button>
+    <div id="login-err"></div>
+  </div>
+</div>
+
+<!-- ═══════ APP ═══════ -->
+<div id="app" class="hidden">
+
+  <!-- Vista lista -->
+  <div id="vista-lista">
+    <div class="topbar">
+      <div>
+        <h2>Sofía</h2>
+        <div class="sub" id="perfil-chip"></div>
+      </div>
+      <button class="icon-btn" onclick="cargarConversaciones()">↻</button>
+    </div>
+    <div id="buscar-wrap">
+      <input type="text" id="buscar" placeholder="Buscar cliente o número..." oninput="renderLista()">
+    </div>
+    <button class="btn" id="btn-marcar-leidos" onclick="marcarTodosLeidos()">✓ Marcar todos como leídos</button>
+    <div id="lista"><div class="estado">Cargando...</div></div>
+  </div>
+  <button id="fab-nuevo" onclick="abrirModalNuevo()">+</button>
+
+  <!-- Vista chat -->
+  <div id="vista-chat">
+    <div class="topbar">
+      <button class="icon-btn" onclick="volverALista()">←</button>
+      <div>
+        <h2 id="chat-nombre">—</h2>
+        <div class="sub" id="chat-numero"></div>
+      </div>
+      <button class="icon-btn" style="font-size:15px" onclick="reactivarChat()" title="Reiniciar conversación">🔄</button>
+    </div>
+    <div class="chat-body" id="chat-body"></div>
+    <div class="compose">
+      <select id="tipo" onchange="cambiarTipo()">
+        <option value="instruccion">💬 Instrucción — responder al cliente</option>
+        <option value="pago_confirmado">✅ Pago confirmado</option>
+      </select>
+      <div class="campos on" id="campos-instruccion">
+        <textarea id="c-mensaje" rows="2" placeholder="Mensaje para el cliente..."></textarea>
+      </div>
+      <div class="campos" id="campos-pago">
+        <input type="text" id="c-entrega" placeholder="Detalle de entrega (opcional)">
+      </div>
+      <button class="btn btn-p" style="width:100%" onclick="enviarComando()">Enviar</button>
+      <div id="estado-envio"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ MODAL: NUEVO CHAT ═══════ -->
+<div class="overlay" id="modal-nuevo" onclick="if(event.target===this)cerrarModalNuevo()">
+  <div class="sheet">
+    <h3>Nuevo chat</h3>
+    <div class="fr">
+      <label>Número de WhatsApp</label>
+      <input type="text" id="n-numero" placeholder="5218112345678" inputmode="numeric">
+    </div>
+    <div class="hint">521 + 10 dígitos, sin espacios. Ej: 81 1234 5678 → 5218112345678</div>
+    <div class="fr"><label>Nombre</label><input type="text" id="n-nombre" placeholder="Solo el primer nombre"></div>
+    <div class="fr"><label>Medicamento</label><input type="text" id="n-medicamento" placeholder="Ej: Enbrel 50mg"></div>
+    <div id="n-alerta" style="font-size:12px; margin-top:4px; min-height:16px"></div>
+    <div class="sheet-actions">
+      <button class="btn" onclick="cerrarModalNuevo()">Cancelar</button>
+      <button class="btn btn-p" id="n-btn-enviar" onclick="enviarNuevoChat()">Enviar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var API_URL = 'https://script.google.com/macros/s/AKfycbwIArZhtzInrluG0X6jsZiyz6CIWUBDKj2OhHYePY0rmSg0AJ6AmXuXW5WRcqf4kSeK/exec';
+var perfilActual = '';
+var clienteActual = null;
+var ultimaLista = [];
+
+// ── JSONP genérico ──
+function jsonp(url, callback) {
+  var cbName = 'cb_' + Math.random().toString(36).slice(2);
+  var timeout = setTimeout(function() {
+    if (window[cbName]) { delete window[cbName]; var sc=document.getElementById('sc_'+cbName); if(sc) sc.remove(); callback(new Error('Timeout')); }
+  }, 10000);
+  window[cbName] = function(res) {
+    clearTimeout(timeout); delete window[cbName];
+    var sc = document.getElementById('sc_'+cbName); if(sc) sc.remove();
+    callback(null, res);
+  };
+  var script = document.createElement('script');
+  script.id = 'sc_'+cbName;
+  script.onerror = function(){ clearTimeout(timeout); delete window[cbName]; script.remove(); callback(new Error('Error de red')); };
+  script.src = url + (url.indexOf('?')>-1?'&':'?') + 'callback=' + cbName + '&t=' + Date.now();
+  document.head.appendChild(script);
+}
+function apiGet(accion, callback) { jsonp(API_URL+'?accion='+accion, function(err,res){ callback(err,res); }); }
+function apiPost(data, callback) {
+  var encoded = encodeURIComponent(JSON.stringify(data));
+  jsonp(API_URL+'?_data='+encoded, function(err,res){ callback(err,res); });
+}
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── LOGIN ──
+function login() {
+  var perfil = document.getElementById('login-perfil').value;
+  var pwd = document.getElementById('login-pwd').value;
+  if (!perfil) { mostrarErrLogin('Selecciona tu perfil'); return; }
+  if (!pwd) { mostrarErrLogin('Ingresa la contraseña'); return; }
+  apiPost({ accion:'verificar_acceso', perfil:perfil, password:pwd }, function(err, res) {
+    if (err || !res || !res.ok) { mostrarErrLogin('Sin conexión. Verifica tu internet.'); return; }
+    if (!res.valido) { mostrarErrLogin('Contraseña incorrecta'); document.getElementById('login-pwd').value=''; return; }
+    perfilActual = perfil;
+    document.getElementById('login').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    var chips = { admin:'Administrador', mty:'Sucursal Monterrey' };
+    document.getElementById('perfil-chip').textContent = chips[perfil] || perfil;
+    cargarConversaciones();
+  });
+}
+function mostrarErrLogin(msg) {
+  var el = document.getElementById('login-err');
+  el.textContent = msg; el.style.display='block';
+  setTimeout(function(){ el.style.display='none'; }, 3000);
+}
+
+// ── LISTA DE CONVERSACIONES ──
+function vistoKey(numero) { return 'sofapp_visto_' + numero; }
+function esNoVisto(c) { return localStorage.getItem(vistoKey(c.numero)) !== (c.fecha+'|'+c.hora); }
+function marcarVisto(c) { if(c) localStorage.setItem(vistoKey(c.numero), c.fecha+'|'+c.hora); }
+
+function cargarConversaciones() {
+  var cont = document.getElementById('lista');
+  if (!ultimaLista.length) cont.innerHTML = '<div class="estado">Cargando conversaciones...</div>';
+  apiGet('conversaciones_sofia', function(err, res) {
+    if (err || !res || !res.ok) { cont.innerHTML = '<div class="estado">Error al cargar</div>'; return; }
+    ultimaLista = res.conversaciones || [];
+    renderLista();
+  });
+}
+function renderLista() {
+  var cont = document.getElementById('lista');
+  var filtro = (document.getElementById('buscar').value||'').toLowerCase().trim();
+  var lista = ultimaLista;
+  if (filtro) lista = lista.filter(function(c){ return (c.nombre||'').toLowerCase().indexOf(filtro)>-1 || (c.numero||'').indexOf(filtro)>-1; });
+  if (!lista.length) { cont.innerHTML = '<div class="estado">Sin conversaciones</div>'; return; }
+  cont.innerHTML = lista.map(function(c){
+    var nombre = esc(c.nombre || c.numero);
+    var prev = esc((c.ultimo_mensaje || c.ultima_respuesta || '').slice(0,45));
+    var noVisto = esNoVisto(c);
+    return '<div class="item" onclick="abrirChat(\''+c.numero+'\',\''+esc(c.nombre||'').replace(/\'/g,"")+'\')">'+
+      '<div class="item-top"><div class="item-nombre">'+(noVisto?'<span class="dot"></span>':'')+'<span class="txt">'+nombre+'</span></div>'+
+      '<div style="display:flex;align-items:center;gap:6px">'+(c.escalado?'<span class="badge-esc">Escalado</span>':'')+'<span class="item-hora">'+(c.hora||'')+'</span></div></div>'+
+      '<div class="item-prev">'+prev+'</div></div>';
+  }).join('');
+}
+function marcarTodosLeidos() { ultimaLista.forEach(marcarVisto); renderLista(); }
+
+// ── CHAT ──
+function abrirChat(numero, nombre) {
+  clienteActual = { numero:numero, nombre:nombre };
+  var entrada = ultimaLista.filter(function(c){ return c.numero===numero; })[0];
+  if (entrada) marcarVisto(entrada);
+  document.getElementById('chat-nombre').textContent = nombre || numero;
+  document.getElementById('chat-numero').textContent = numero;
+  document.getElementById('vista-lista').classList.add('off');
+  document.getElementById('vista-chat').classList.add('on');
+  var body = document.getElementById('chat-body');
+  body.innerHTML = '<div class="estado">Cargando mensajes...</div>';
+  jsonp(API_URL+'?accion=hilo_sofia&numero='+encodeURIComponent(numero), function(err, res) {
+    if (err || !res || !res.ok) { body.innerHTML = '<div class="estado">Error al cargar</div>'; return; }
+    body.innerHTML = res.hilo.map(function(m){
+      var b = '';
+      if (m.mensaje_cliente) b += '<div class="bub bub-cli">'+esc(m.mensaje_cliente)+'<div class="bub-hora">'+m.hora+'</div></div>';
+      if (m.respuesta_sofia) b += '<div class="bub bub-sof">'+esc(m.respuesta_sofia)+'<div class="bub-hora">'+m.hora+'</div></div>';
+      return b;
+    }).join('');
+    body.scrollTop = body.scrollHeight;
+  });
+}
+function volverALista() {
+  document.getElementById('vista-chat').classList.remove('on');
+  document.getElementById('vista-lista').classList.remove('off');
+  cargarConversaciones();
+}
+function cambiarTipo() {
+  var tipo = document.getElementById('tipo').value;
+  document.getElementById('campos-instruccion').classList.toggle('on', tipo==='instruccion');
+  document.getElementById('campos-pago').classList.toggle('on', tipo==='pago_confirmado');
+}
+function enviarComando() {
+  if (!clienteActual) return;
+  var tipo = document.getElementById('tipo').value;
+  var payload = { accion:'enviar_comando_sofia', tipo:tipo, cliente:clienteActual.numero };
+  if (tipo==='instruccion') {
+    payload.mensaje = document.getElementById('c-mensaje').value.trim();
+    if (!payload.mensaje) { alert('Escribe el mensaje'); return; }
+  } else {
+    payload.entrega = document.getElementById('c-entrega').value.trim();
+  }
+  var estado = document.getElementById('estado-envio');
+  estado.textContent = 'Enviando...';
+  apiPost(payload, function(err, res) {
+    if (err || !res || !res.ok) { estado.textContent = '❌ Error: '+((res&&res.error)||err); return; }
+    estado.textContent = '✅ Enviado';
+    document.getElementById('c-mensaje').value = '';
+    document.getElementById('c-entrega').value = '';
+    setTimeout(function(){ abrirChat(clienteActual.numero, clienteActual.nombre); estado.textContent=''; }, 1000);
+  });
+}
+function reactivarChat() {
+  if (!clienteActual) return;
+  var nombre = clienteActual.nombre || clienteActual.numero;
+  if (!confirm('¿Reactivar conversación con ' + nombre + '? Se enviará la plantilla de seguimiento aprobada por WhatsApp.')) return;
+  apiPost({ accion:'reactivar_chat_sofia', numero:clienteActual.numero, nombre:clienteActual.nombre||'' }, function(err, res) {
+    if (err || !res || !res.ok) { alert('❌ Error: '+((res&&res.error)||err)); return; }
+    alert('✅ Plantilla enviada.');
+  });
+}
+
+// ── NUEVO CHAT ──
+function abrirModalNuevo() {
+  document.getElementById('n-numero').value=''; document.getElementById('n-nombre').value='';
+  document.getElementById('n-medicamento').value=''; document.getElementById('n-alerta').textContent='';
+  document.getElementById('modal-nuevo').classList.add('on');
+}
+function cerrarModalNuevo() { document.getElementById('modal-nuevo').classList.remove('on'); }
+function enviarNuevoChat() {
+  var numero = document.getElementById('n-numero').value.trim();
+  var nombre = document.getElementById('n-nombre').value.trim();
+  var medicamento = document.getElementById('n-medicamento').value.trim();
+  var alerta = document.getElementById('n-alerta');
+  if (!/^\d{12,13}$/.test(numero)) { alerta.style.color='#fca5a5'; alerta.textContent='Número inválido: 521 + 10 dígitos, solo números.'; return; }
+  if (!nombre || !medicamento) { alerta.style.color='#fca5a5'; alerta.textContent='Nombre y medicamento son obligatorios.'; return; }
+  var btn = document.getElementById('n-btn-enviar');
+  btn.disabled = true; alerta.style.color='var(--text-3)'; alerta.textContent='Enviando...';
+  apiPost({ accion:'enviar_comando_sofia', tipo:'nota_interna', cliente:numero, nombre:nombre, medicamento:medicamento, lo_que_pregunto:'' }, function(err, res) {
+    btn.disabled = false;
+    if (err || !res || !res.ok) { alerta.style.color='#fca5a5'; alerta.textContent='❌ '+((res&&res.error)||err); return; }
+    alerta.style.color='#86efac'; alerta.textContent='✅ Enviado';
+    setTimeout(function(){ cerrarModalNuevo(); cargarConversaciones(); }, 900);
+  });
+}
+
+// ── Service Worker ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
+</script>
+</body>
+</html>
