@@ -1314,7 +1314,7 @@ select option { background:var(--bg-2); color:var(--text); }
           <div class="sof-chat">
             <div class="sof-chat-head" id="sof-chat-head" style="display:flex;justify-content:space-between;align-items:center">
               <span id="sof-chat-head-txt">Selecciona una conversación</span>
-              <button class="btn" id="sof-btn-reiniciar" style="display:none;font-size:11px;padding:4px 10px" onclick="sofAbrirModalReiniciar()">🔄 Reiniciar conversación</button>
+              <button class="btn" id="sof-btn-reiniciar" style="display:none;font-size:11px;padding:4px 10px" onclick="sofReactivarChat()">🔄 Reiniciar conversación</button>
             </div>
             <div class="sof-chat-body" id="sof-chat-body"></div>
             <div class="sof-compose">
@@ -2847,15 +2847,23 @@ function sofAbrirModalNuevo() {
   document.getElementById('modal-sof-nuevo-overlay').classList.add('show');
 }
 
-function sofAbrirModalReiniciar() {
+function sofReactivarChat() {
   if (!sofClienteActual) return;
-  document.getElementById('sof-modal-titulo').textContent = 'Reiniciar conversación';
-  document.getElementById('sof-nuevo-numero').value = sofClienteActual.numero;
-  document.getElementById('sof-nuevo-numero').disabled = true;
-  document.getElementById('sof-nuevo-nombre').value = sofClienteActual.nombre || '';
-  document.getElementById('sof-nuevo-medicamento').value = '';
-  document.getElementById('sof-nuevo-alrt').style.display = 'none';
-  document.getElementById('modal-sof-nuevo-overlay').classList.add('show');
+  var nombre = sofClienteActual.nombre || sofClienteActual.numero;
+  if (!confirm('¿Reactivar conversación con ' + nombre + '? Se enviará la plantilla de seguimiento aprobada por WhatsApp.')) return;
+  var btn = document.getElementById('sof-btn-reiniciar');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  apiPostViaJSONP({
+    accion: 'reactivar_chat_sofia',
+    numero: sofClienteActual.numero,
+    nombre: sofClienteActual.nombre || ''
+  }, function(err, res) {
+    btn.disabled = false;
+    btn.textContent = '🔄 Reiniciar conversación';
+    if (err || !res || !res.ok) { alert('❌ Error: ' + ((res && res.error) || err)); return; }
+    alert('✅ Plantilla enviada. Si el cliente responde, la conversación se reabre normal.');
+  });
 }
 
 function sofCerrarModalNuevo() {
