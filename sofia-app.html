@@ -167,12 +167,16 @@ button{cursor:pointer; border:none; border-radius:var(--radius-sm)}
       <select id="tipo" onchange="cambiarTipo()">
         <option value="instruccion">💬 Instrucción — responder al cliente</option>
         <option value="pago_confirmado">✅ Pago confirmado</option>
+        <option value="disponibilidad_confirmada">📦 Disponibilidad confirmada</option>
       </select>
       <div class="campos on" id="campos-instruccion">
         <textarea id="c-mensaje" rows="2" placeholder="Mensaje para el cliente..."></textarea>
       </div>
       <div class="campos" id="campos-pago">
         <input type="text" id="c-entrega" placeholder="Detalle de entrega (opcional)">
+      </div>
+      <div class="campos" id="campos-disp">
+        <input type="text" id="c-detalle-disp" placeholder="Detalle (opcional, ej: 2 piezas, entrega en 2 días)">
       </div>
       <button class="btn btn-p" style="width:100%" onclick="enviarComando()">Enviar</button>
       <div id="estado-envio"></div>
@@ -315,6 +319,7 @@ function cambiarTipo() {
   var tipo = document.getElementById('tipo').value;
   document.getElementById('campos-instruccion').classList.toggle('on', tipo==='instruccion');
   document.getElementById('campos-pago').classList.toggle('on', tipo==='pago_confirmado');
+  document.getElementById('campos-disp').classList.toggle('on', tipo==='disponibilidad_confirmada');
 }
 function enviarComando() {
   if (!clienteActual) return;
@@ -323,8 +328,10 @@ function enviarComando() {
   if (tipo==='instruccion') {
     payload.mensaje = document.getElementById('c-mensaje').value.trim();
     if (!payload.mensaje) { alert('Escribe el mensaje'); return; }
-  } else {
+  } else if (tipo==='pago_confirmado') {
     payload.entrega = document.getElementById('c-entrega').value.trim();
+  } else if (tipo==='disponibilidad_confirmada') {
+    payload.detalle = document.getElementById('c-detalle-disp').value.trim();
   }
   var estado = document.getElementById('estado-envio');
   estado.textContent = 'Enviando...';
@@ -333,6 +340,7 @@ function enviarComando() {
     estado.textContent = '✅ Enviado';
     document.getElementById('c-mensaje').value = '';
     document.getElementById('c-entrega').value = '';
+    document.getElementById('c-detalle-disp').value = '';
     setTimeout(function(){ abrirChat(clienteActual.numero, clienteActual.nombre); estado.textContent=''; }, 1000);
   });
 }
