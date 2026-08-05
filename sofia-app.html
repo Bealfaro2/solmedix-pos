@@ -274,16 +274,24 @@ function renderLista() {
   var cont = document.getElementById('lista');
   var filtro = (document.getElementById('buscar').value||'').toLowerCase().trim();
   var lista = ultimaLista;
-  if (filtro) lista = lista.filter(function(c){ return (c.nombre||'').toLowerCase().indexOf(filtro)>-1 || (c.numero||'').indexOf(filtro)>-1; });
+  if (filtro) {
+    lista = lista.filter(function(c){
+      c._matchMed = (c.medicamentos||[]).filter(function(m){ return m.toLowerCase().indexOf(filtro)>-1; });
+      var matchNombre = (c.nombre||'').toLowerCase().indexOf(filtro)>-1;
+      var matchNumero = (c.numero||'').indexOf(filtro)>-1;
+      return matchNombre || matchNumero || c._matchMed.length>0;
+    });
+  }
   if (!lista.length) { cont.innerHTML = '<div class="estado">Sin conversaciones</div>'; return; }
   cont.innerHTML = lista.map(function(c){
     var nombre = esc(c.nombre || c.numero);
     var prev = esc((c.ultimo_mensaje || c.ultima_respuesta || '').slice(0,45));
     var noVisto = esNoVisto(c);
+    var matchTag = (filtro && c._matchMed && c._matchMed.length) ? '<div style="font-size:11px;color:var(--blue-bright);margin-top:2px">🔎 '+esc(c._matchMed.join(', '))+'</div>' : '';
     return '<div class="item" onclick="abrirChat(\''+c.numero+'\',\''+esc(c.nombre||'').replace(/\'/g,"")+'\')">'+
       '<div class="item-top"><div class="item-nombre">'+(noVisto?'<span class="dot"></span>':'')+'<span class="txt">'+nombre+'</span></div>'+
       '<div style="display:flex;align-items:center;gap:6px">'+(c.escalado?'<span class="badge-esc">Escalado</span>':'')+'<span class="item-hora">'+(c.hora||'')+'</span></div></div>'+
-      '<div class="item-prev">'+prev+'</div></div>';
+      '<div class="item-prev">'+prev+'</div>'+matchTag+'</div>';
   }).join('');
 }
 function marcarTodosLeidos() { ultimaLista.forEach(marcarVisto); renderLista(); }

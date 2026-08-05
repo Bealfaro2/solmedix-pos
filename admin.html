@@ -2818,7 +2818,10 @@ function sofRenderLista() {
   var lista = sofUltimaLista;
   if (filtro) {
     lista = lista.filter(function(c){
-      return (c.nombre||'').toLowerCase().indexOf(filtro) > -1 || (c.numero||'').indexOf(filtro) > -1;
+      c._matchMed = (c.medicamentos||[]).filter(function(m){ return m.toLowerCase().indexOf(filtro)>-1; });
+      var matchNombre = (c.nombre||'').toLowerCase().indexOf(filtro) > -1;
+      var matchNumero = (c.numero||'').indexOf(filtro) > -1;
+      return matchNombre || matchNumero || c._matchMed.length>0;
     });
   }
   if (!lista.length) { cont.innerHTML = '<div class="es">Sin resultados</div>'; return; }
@@ -2827,9 +2830,10 @@ function sofRenderLista() {
     var prev = sofEsc((c.ultimo_mensaje || c.ultima_respuesta || '').slice(0,40));
     var esActual = sofClienteActual && sofClienteActual.numero === c.numero;
     var noVisto = !esActual && sofEsNoVisto(c);
+    var matchTag = (filtro && c._matchMed && c._matchMed.length) ? '<div style="font-size:11px;color:var(--blue-bright);margin-top:2px">🔎 '+sofEsc(c._matchMed.join(', '))+'</div>' : '';
     return '<div class="sof-item'+(esActual?' on':'')+'" id="sof-item-'+c.numero+'" onclick="sofAbrirHilo(\''+c.numero+'\',\''+sofEsc(c.nombre||'').replace(/'/g,"")+'\')">' +
       '<div class="sof-item-nombre"><span>'+(noVisto?'<span class="sof-dot"></span>':'')+nombreMostrar+(c.escalado?'<span class="sof-badge-esc">Escalado</span>':'')+'</span><span class="sof-item-hora">'+(c.hora||'')+'</span></div>' +
-      '<div class="sof-item-prev">'+prev+'</div>' +
+      '<div class="sof-item-prev">'+prev+'</div>'+matchTag+
     '</div>';
   }).join('');
 }
