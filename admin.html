@@ -1275,6 +1275,7 @@ select option { background:var(--bg-2); color:var(--text); }
       .sof-buscar{margin:8px;width:calc(100% - 16px);box-sizing:border-box}
       .sof-lista{flex:1;overflow-y:auto}
       .sof-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px;vertical-align:middle;flex-shrink:0}
+      .sof-hint{font-size:11px;color:var(--text-3);margin-top:-4px;margin-bottom:10px}
       .sof-item{padding:12px 14px;border-bottom:1px solid var(--border-soft);cursor:pointer;transition:background .15s}
       .sof-item:hover{background:rgba(148,163,184,.06)}
       .sof-item.on{background:rgba(24,95,165,.14)}
@@ -1298,7 +1299,10 @@ select option { background:var(--bg-2); color:var(--text); }
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
           <div class="ptitle" style="margin:0">Sofía — WhatsApp</div>
-          <button class="btn" onclick="cargarConversacionesSofia()">↻ Actualizar</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btnp" onclick="sofAbrirModalNuevo()">+ Nuevo chat</button>
+            <button class="btn" onclick="cargarConversacionesSofia()">↻ Actualizar</button>
+          </div>
         </div>
         <div class="sof-wrap">
           <div class="sof-lista-wrap">
@@ -1308,7 +1312,10 @@ select option { background:var(--bg-2); color:var(--text); }
             </div>
           </div>
           <div class="sof-chat">
-            <div class="sof-chat-head" id="sof-chat-head">Selecciona una conversación</div>
+            <div class="sof-chat-head" id="sof-chat-head" style="display:flex;justify-content:space-between;align-items:center">
+              <span id="sof-chat-head-txt">Selecciona una conversación</span>
+              <button class="btn" id="sof-btn-reiniciar" style="display:none;font-size:11px;padding:4px 10px" onclick="sofAbrirModalReiniciar()">🔄 Reiniciar conversación</button>
+            </div>
             <div class="sof-chat-body" id="sof-chat-body"></div>
             <div class="sof-compose">
               <select id="sof-tipo" onchange="sofCambiarTipo()">
@@ -1336,6 +1343,24 @@ select option { background:var(--bg-2); color:var(--text); }
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="modal-sof-nuevo-overlay" onclick="if(event.target===this)sofCerrarModalNuevo()">
+      <div class="modal" style="max-width:420px">
+        <h2 id="sof-modal-titulo">Nuevo chat</h2>
+        <div class="fr">
+          <label>Número de WhatsApp *</label>
+          <input type="text" id="sof-nuevo-numero" placeholder="5218112345678"/>
+        </div>
+        <div class="sof-hint">Escríbelo como 521 + tu número a 10 dígitos, sin espacios ni guiones. Ej: si es 81 1234 5678 → 5218112345678</div>
+        <div class="fr"><label>Nombre *</label><input type="text" id="sof-nuevo-nombre" placeholder="Solo el primer nombre"/></div>
+        <div class="fr"><label>Medicamento *</label><input type="text" id="sof-nuevo-medicamento" placeholder="Ej: Enbrel 50mg"/></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+          <button class="btn" onclick="sofCerrarModalNuevo()">Cancelar</button>
+          <button class="btn btnp" id="sof-btn-nuevo-enviar" onclick="sofEnviarNuevoChat()">Enviar</button>
+        </div>
+        <div id="sof-nuevo-alrt" style="display:none;margin-top:8px;font-size:12px"></div>
       </div>
     </div>
 
@@ -2812,6 +2837,74 @@ function sofRenderLista() {
 
 function sofFiltrar() { sofRenderLista(); }
 
+function sofAbrirModalNuevo() {
+  document.getElementById('sof-modal-titulo').textContent = 'Nuevo chat';
+  document.getElementById('sof-nuevo-numero').value = '';
+  document.getElementById('sof-nuevo-numero').disabled = false;
+  document.getElementById('sof-nuevo-nombre').value = '';
+  document.getElementById('sof-nuevo-medicamento').value = '';
+  document.getElementById('sof-nuevo-alrt').style.display = 'none';
+  document.getElementById('modal-sof-nuevo-overlay').classList.add('show');
+}
+
+function sofAbrirModalReiniciar() {
+  if (!sofClienteActual) return;
+  document.getElementById('sof-modal-titulo').textContent = 'Reiniciar conversación';
+  document.getElementById('sof-nuevo-numero').value = sofClienteActual.numero;
+  document.getElementById('sof-nuevo-numero').disabled = true;
+  document.getElementById('sof-nuevo-nombre').value = sofClienteActual.nombre || '';
+  document.getElementById('sof-nuevo-medicamento').value = '';
+  document.getElementById('sof-nuevo-alrt').style.display = 'none';
+  document.getElementById('modal-sof-nuevo-overlay').classList.add('show');
+}
+
+function sofCerrarModalNuevo() {
+  document.getElementById('modal-sof-nuevo-overlay').classList.remove('show');
+  document.getElementById('sof-nuevo-numero').disabled = false;
+}
+
+function sofEnviarNuevoChat() {
+  var numero = document.getElementById('sof-nuevo-numero').value.trim();
+  var nombre = document.getElementById('sof-nuevo-nombre').value.trim();
+  var medicamento = document.getElementById('sof-nuevo-medicamento').value.trim();
+  var alrt = document.getElementById('sof-nuevo-alrt');
+
+  if (!/^\d{12,13}$/.test(numero)) {
+    alrt.style.display = 'block'; alrt.style.color = '#fca5a5';
+    alrt.textContent = 'El número debe ser solo dígitos, empezando con 521 (12-13 dígitos en total). Revísalo.';
+    return;
+  }
+  if (!nombre || !medicamento) {
+    alrt.style.display = 'block'; alrt.style.color = '#fca5a5';
+    alrt.textContent = 'Nombre y medicamento son obligatorios.';
+    return;
+  }
+
+  var btn = document.getElementById('sof-btn-nuevo-enviar');
+  btn.disabled = true;
+  alrt.style.display = 'block'; alrt.style.color = 'var(--text-3)';
+  alrt.textContent = 'Enviando...';
+
+  apiPostViaJSONP({
+    accion: 'enviar_comando_sofia',
+    tipo: 'nota_interna',
+    cliente: numero,
+    nombre: nombre,
+    medicamento: medicamento,
+    lo_que_pregunto: ''
+  }, function(err, res) {
+    btn.disabled = false;
+    if (err || !res || !res.ok) {
+      alrt.style.color = '#fca5a5';
+      alrt.textContent = '❌ Error: ' + ((res && res.error) || err);
+      return;
+    }
+    alrt.style.color = '#86efac';
+    alrt.textContent = '✅ Enviado';
+    setTimeout(function() { sofCerrarModalNuevo(); cargarConversacionesSofia(); }, 900);
+  });
+}
+
 function sofIniciarAutoRefresh() {
   if (sofAutoRefreshIniciado) return;
   sofAutoRefreshIniciado = true;
@@ -2828,7 +2921,8 @@ function sofAbrirHilo(numero, nombre) {
   var entradaLista = sofUltimaLista.filter(function(c){ return c.numero === numero; })[0];
   if (entradaLista) sofMarcarVisto(entradaLista);
   sofRenderLista();
-  document.getElementById('sof-chat-head').textContent = (nombre || numero) + '  ·  ' + numero;
+  document.getElementById('sof-chat-head-txt').textContent = (nombre || numero) + '  ·  ' + numero;
+  document.getElementById('sof-btn-reiniciar').style.display = '';
   var body = document.getElementById('sof-chat-body');
   body.innerHTML = '<div class="es">Cargando mensajes...</div>';
   jsonp(API_URL+'?accion=hilo_sofia&numero='+encodeURIComponent(numero)+'&t='+Date.now(), function(err, res) {
