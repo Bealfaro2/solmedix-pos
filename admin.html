@@ -1307,6 +1307,7 @@ select option { background:var(--bg-2); color:var(--text); }
         <div class="sof-wrap">
           <div class="sof-lista-wrap">
             <input type="text" id="sof-buscar" class="sof-buscar" placeholder="Buscar cliente o número..." oninput="sofFiltrar()"/>
+            <button class="btn" style="width:calc(100% - 16px);margin:0 8px 8px;font-size:11px;padding:5px" onclick="sofMarcarTodosLeidos()">✓ Marcar todos como leídos</button>
             <div class="sof-lista" id="sof-lista">
               <div class="es">Cargando conversaciones...</div>
             </div>
@@ -1321,7 +1322,6 @@ select option { background:var(--bg-2); color:var(--text); }
               <select id="sof-tipo" onchange="sofCambiarTipo()">
                 <option value="instruccion">💬 Instrucción — responder al cliente</option>
                 <option value="pago_confirmado">✅ Pago confirmado</option>
-                <option value="nota_interna">📞 Nota interna — viene de llamada</option>
               </select>
 
               <div class="sof-campos on" id="sof-campos-instruccion">
@@ -1330,12 +1330,6 @@ select option { background:var(--bg-2); color:var(--text); }
 
               <div class="sof-campos" id="sof-campos-pago">
                 <input type="text" id="sof-entrega" placeholder="Detalle de entrega (opcional, ej: Listo mañana antes de la 1pm)"/>
-              </div>
-
-              <div class="sof-campos" id="sof-campos-nota">
-                <input type="text" id="sof-nombre" placeholder="Nombre del cliente (solo primer nombre)"/>
-                <input type="text" id="sof-medicamento" placeholder="Medicamento"/>
-                <input type="text" id="sof-pregunto" placeholder="Lo que preguntó"/>
               </div>
 
               <button class="btn btnp" style="width:100%" onclick="sofEnviarComando()">Enviar</button>
@@ -2837,6 +2831,11 @@ function sofRenderLista() {
 
 function sofFiltrar() { sofRenderLista(); }
 
+function sofMarcarTodosLeidos() {
+  sofUltimaLista.forEach(function(c){ sofMarcarVisto(c); });
+  sofRenderLista();
+}
+
 function sofAbrirModalNuevo() {
   document.getElementById('sof-modal-titulo').textContent = 'Nuevo chat';
   document.getElementById('sof-nuevo-numero').value = '';
@@ -2947,10 +2946,8 @@ function sofAbrirHilo(numero, nombre) {
 
 function sofCambiarTipo() {
   var tipo = document.getElementById('sof-tipo').value;
-  ['instruccion','pago','nota'].forEach(function(t){
-    document.getElementById('sof-campos-'+t).classList.toggle('on',
-      (t==='instruccion'&&tipo==='instruccion') || (t==='pago'&&tipo==='pago_confirmado') || (t==='nota'&&tipo==='nota_interna'));
-  });
+  document.getElementById('sof-campos-instruccion').classList.toggle('on', tipo==='instruccion');
+  document.getElementById('sof-campos-pago').classList.toggle('on', tipo==='pago_confirmado');
 }
 
 function sofEnviarComando() {
@@ -2962,12 +2959,7 @@ function sofEnviarComando() {
     if (!payload.mensaje) { alert('Escribe el mensaje'); return; }
   } else if (tipo === 'pago_confirmado') {
     payload.entrega = document.getElementById('sof-entrega').value.trim();
-  } else if (tipo === 'nota_interna') {
-    payload.nombre = document.getElementById('sof-nombre').value.trim();
-    payload.medicamento = document.getElementById('sof-medicamento').value.trim();
-    payload.lo_que_pregunto = document.getElementById('sof-pregunto').value.trim();
-    if (!payload.nombre || !payload.medicamento) { alert('Nombre y medicamento son obligatorios'); return; }
-  }
+  
   var status = document.getElementById('sof-status');
   status.textContent = 'Enviando...';
   apiPostViaJSONP(payload, function(err, res) {
@@ -2975,9 +2967,6 @@ function sofEnviarComando() {
     status.textContent = '✅ Enviado';
     document.getElementById('sof-mensaje').value = '';
     document.getElementById('sof-entrega').value = '';
-    document.getElementById('sof-nombre').value = '';
-    document.getElementById('sof-medicamento').value = '';
-    document.getElementById('sof-pregunto').value = '';
     setTimeout(function(){ sofAbrirHilo(sofClienteActual.numero, sofClienteActual.nombre); status.textContent=''; }, 1200);
   });
 }
