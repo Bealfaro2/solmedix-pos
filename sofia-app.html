@@ -160,6 +160,7 @@ button{cursor:pointer; border:none; border-radius:var(--radius-sm)}
         <h2 id="chat-nombre">—</h2>
         <div class="sub" id="chat-numero"></div>
       </div>
+      <button class="icon-btn" style="font-size:18px" onclick="enviarUbicacion()" title="Enviar ubicación">📍</button>
       <button class="icon-btn" style="font-size:15px" onclick="reactivarChat()" title="Reiniciar conversación">🔄</button>
     </div>
     <div class="chat-body" id="chat-body"></div>
@@ -352,6 +353,16 @@ function enviarComando() {
     setTimeout(function(){ abrirChat(clienteActual.numero, clienteActual.nombre); estado.textContent=''; }, 1000);
   });
 }
+
+function enviarUbicacion() {
+  if (!clienteActual) return;
+  var mensaje = '📍 Estamos en Paseo de los Leones 1629, Las Cumbres 1er sector, Monterrey, Nuevo León.\nAquí está la ubicación en Google Maps: https://maps.app.goo.gl/CEg1BnYUYcdcJrj27';
+  apiPost({ accion:'enviar_comando_sofia', tipo:'instruccion', cliente: clienteActual.numero, mensaje: mensaje }, function(err, res) {
+    if (err || !res || !res.ok) { alert('❌ Error: ' + ((res&&res.error)||err)); return; }
+    abrirChat(clienteActual.numero, clienteActual.nombre);
+  });
+}
+
 function reactivarChat() {
   if (!clienteActual) return;
   var nombre = clienteActual.nombre || clienteActual.numero;
