@@ -2929,7 +2929,7 @@ function sofIniciarAutoRefresh() {
     if (!secSofia || secSofia.style.display === 'none') return; // solo si la pestaña está activa
     cargarConversacionesSofia();
     if (sofClienteActual) sofAbrirHilo(sofClienteActual.numero, sofClienteActual.nombre);
-  }, 60000);
+  }, 180000);
 }
 
 function sofAbrirHilo(numero, nombre) {
