@@ -386,6 +386,13 @@ function enviarNuevoChat() {
   });
 }
 
+// ── Auto-actualización cada 3 minutos ──
+setInterval(function() {
+  if (!perfilActual) return; // solo si ya inició sesión
+  cargarConversaciones();
+  if (clienteActual) abrirChat(clienteActual.numero, clienteActual.nombre);
+}, 180000);
+
 // ── Service Worker ──
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
