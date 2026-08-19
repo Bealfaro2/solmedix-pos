@@ -1117,6 +1117,14 @@ function addItem() {
     // Verificar si hay lotes disponibles y si se seleccionó uno
     var lotesDisp=lotes.filter(function(l){return String(l.med_id)===String(medId)&&Number(l.existencias)>0;});
     if (lotesDisp.length>0 && !loteId) { alrt('Debes seleccionar el lote del medicamento','e'); return; }
+    if (lotesDisp.length===0) {
+      // El catálogo lo tiene, pero NINGÚN lote tiene stock — vender así es una
+      // decisión que debe ser visible, no un colado silencioso (posible compra
+      // sin registrar, como en el caso Zoladex 10.8mg de folio 825).
+      if (!confirm('⚠ "'+nombre+'" tiene 0 piezas registradas en TODOS sus lotes.\n\n¿Es una pieza que llegó y aún no se registra la compra? Vender así NO descuenta inventario y el costo se calculará por catálogo, no por lote real.\n\n¿Continuar de todas formas?')) {
+        return;
+      }
+    }
     // Verificar stock disponible del lote seleccionado
     if (loteId) {
       var loteSelec=null;
@@ -1263,6 +1271,17 @@ function guardar() {
         break;
       }
     }
+  }
+
+  // Candado anti-duplicado: venta idéntica (cliente + total + día) ya registrada
+  var posibleDup = ventas.find(function(vv){
+    return vv.estado!=='cancelada' &&
+      String(vv.cliente||'').trim().toLowerCase()===cliente.toLowerCase() &&
+      Math.abs(Number(vv.total)-totalCheq)<0.01 &&
+      String(vv.fecha||'').slice(0,10)===fecha;
+  });
+  if (posibleDup && !confirm('Ya existe una venta de $'+totalCheq.toLocaleString('es-MX',{minimumFractionDigits:2})+' para '+cliente+' registrada hoy (folio #'+String(posibleDup.id).padStart(4,'0')+').\n\n¿Es una venta DIFERENTE y quieres guardarla de todas formas?')) {
+    return;
   }
 
   var btn=document.getElementById('btn-guardar');
