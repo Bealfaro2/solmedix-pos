@@ -160,6 +160,7 @@ button{cursor:pointer; border:none; border-radius:var(--radius-sm)}
         <h2 id="chat-nombre">—</h2>
         <div class="sub" id="chat-numero"></div>
       </div>
+      <button class="icon-btn" style="font-size:18px" onclick="enviarDatosPago()" title="Enviar datos de pago">💳</button>
       <button class="icon-btn" style="font-size:18px" onclick="enviarUbicacion()" title="Enviar ubicación">📍</button>
       <button class="icon-btn" style="font-size:15px" onclick="reactivarChat()" title="Reiniciar conversación">🔄</button>
     </div>
@@ -351,6 +352,18 @@ function enviarComando() {
     document.getElementById('c-entrega').value = '';
     document.getElementById('c-detalle-disp').value = '';
     setTimeout(function(){ abrirChat(clienteActual.numero, clienteActual.nombre); estado.textContent=''; }, 1000);
+  });
+}
+
+function enviarDatosPago() {
+  if (!clienteActual) return;
+  var mensaje = 'Puedes pagar de dos formas:\n\n' +
+    '💳 Transferencia (Mercado Pago)\nCLABE: 7229 6902 0443 7467 86\nTitular: Solmedix Soluciones Médicas SA de CV\n\n' +
+    '🏪 Depósito en efectivo en Oxxo\nTarjeta SPIN: 2242 1705 8006 4662\n\n' +
+    'En cuanto hagas el pago, mándame el comprobante por aquí mismo 😊';
+  apiPost({ accion:'enviar_comando_sofia', tipo:'instruccion', cliente: clienteActual.numero, mensaje: mensaje }, function(err, res) {
+    if (err || !res || !res.ok) { alert('❌ Error: ' + ((res&&res.error)||err)); return; }
+    abrirChat(clienteActual.numero, clienteActual.nombre);
   });
 }
 
