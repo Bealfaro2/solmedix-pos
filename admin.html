@@ -3640,7 +3640,7 @@ function _procesarArchivosXML(files) {
   function siguiente() {
     if (idx >= files.length) return;
     var file = files[idx++];
-    if (!file.name.endsWith('.xml')) { siguiente(); return; }
+    if (!/\.xml$/i.test(file.name)) { siguiente(); return; }
     var reader = new FileReader();
     reader.onload = function(e) {
       try {
@@ -3915,7 +3915,7 @@ var _xmlCola = []; var _xmlColaIdx = 0;
 function _procesarSiguienteXML(){}  // deprecated — ahora todo va por _procesarArchivosXML
 
 function procesarXML(file) {
-  if (!file.name.endsWith('.xml')) {
+  if (!/\.xml$/i.test(file.name)) {
     alert('Solo se aceptan archivos .xml');
     return;
   }
