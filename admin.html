@@ -1315,6 +1315,7 @@ select option { background:var(--bg-2); color:var(--text); }
           <div class="sof-chat">
             <div class="sof-chat-head" id="sof-chat-head" style="display:flex;justify-content:space-between;align-items:center">
               <span id="sof-chat-head-txt">Selecciona una conversación</span>
+              <button class="btn" id="sof-btn-pago" style="display:none;font-size:11px;padding:4px 10px;margin-right:6px" onclick="sofEnviarDatosPago()">💳 Pago</button>
               <button class="btn" id="sof-btn-ubicacion" style="display:none;font-size:11px;padding:4px 10px;margin-right:6px" onclick="sofEnviarUbicacion()">📍 Ubicación</button>
               <button class="btn" id="sof-btn-reiniciar" style="display:none;font-size:11px;padding:4px 10px" onclick="sofReactivarChat()">🔄 Reiniciar conversación</button>
             </div>
@@ -2856,6 +2857,21 @@ function sofAbrirModalNuevo() {
   document.getElementById('modal-sof-nuevo-overlay').classList.add('show');
 }
 
+function sofEnviarDatosPago() {
+  if (!sofClienteActual) return;
+  var mensaje = 'Puedes pagar de dos formas:\n\n' +
+    '💳 Transferencia (Mercado Pago)\nCLABE: 7229 6902 0443 7467 86\nTitular: Solmedix Soluciones Médicas SA de CV\n\n' +
+    '🏪 Depósito en efectivo en Oxxo\nTarjeta SPIN: 2242 1705 8006 4662\n\n' +
+    'En cuanto hagas el pago, mándame el comprobante por aquí mismo 😊';
+  var btn = document.getElementById('sof-btn-pago');
+  btn.disabled = true;
+  apiPostViaJSONP({ accion:'enviar_comando_sofia', tipo:'instruccion', cliente: sofClienteActual.numero, mensaje: mensaje }, function(err, res) {
+    btn.disabled = false;
+    if (err || !res || !res.ok) { alert('❌ Error: ' + ((res && res.error) || err)); return; }
+    sofAbrirHilo(sofClienteActual.numero, sofClienteActual.nombre);
+  });
+}
+
 function sofEnviarUbicacion() {
   if (!sofClienteActual) return;
   var mensaje = '📍 Estamos en Paseo de los Leones 1629, Las Cumbres 1er sector, Monterrey, Nuevo León.\nAquí está la ubicación en Google Maps: https://maps.app.goo.gl/CEg1BnYUYcdcJrj27';
@@ -2953,6 +2969,7 @@ function sofAbrirHilo(numero, nombre) {
   document.getElementById('sof-chat-head-txt').textContent = (nombre || numero) + '  ·  ' + numero;
   document.getElementById('sof-btn-reiniciar').style.display = '';
   document.getElementById('sof-btn-ubicacion').style.display = '';
+  document.getElementById('sof-btn-pago').style.display = '';
   var body = document.getElementById('sof-chat-body');
   body.innerHTML = '<div class="es">Cargando mensajes...</div>';
   jsonp(API_URL+'?accion=hilo_sofia&numero='+encodeURIComponent(numero)+'&t='+Date.now(), function(err, res) {
