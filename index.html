@@ -1352,7 +1352,13 @@ function guardar() {
   }
 
   // Guardar en Sheets (asíncrono con snapshot)
-  apiPost({accion:'guardar_venta',fecha:fecha,hora:hora,cliente:cliente,total:total,clave:v.clave,sucursal:sucursal,items:itemsSnapshot,forma_pago:pagosResumen}, function(err) {
+    apiPostViaJSONP({accion:'guardar_venta',fecha:fecha,hora:hora,cliente:cliente,total:total,clave:v.clave,sucursal:sucursal,items:itemsSnapshot,forma_pago:pagosResumen}, function(err, resVenta) {
+    if (resVenta && resVenta.ok===false && resVenta.error==='duplicado') {
+      btn.disabled=false; btn.textContent='Guardar y generar ticket';
+      alert('🚫 VENTA NO GUARDADA — DUPLICADA\n\n'+resVenta.mensaje+'\n\nEsta venta ya existe en el sistema (probablemente registrada desde otra pestaña o dispositivo). No se generó ticket ni se descontó inventario.');
+      setSyncStatus('err','Venta duplicada — no guardada');
+      return;
+    }
     if(!err){
       setSyncStatus('ok','Guardado en Google Sheets');
 
