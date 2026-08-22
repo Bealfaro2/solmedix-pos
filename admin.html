@@ -1325,6 +1325,7 @@ select option { background:var(--bg-2); color:var(--text); }
                 <option value="instruccion">💬 Instrucción — responder al cliente</option>
                 <option value="pago_confirmado">✅ Pago confirmado</option>
                 <option value="disponibilidad_confirmada">📦 Disponibilidad confirmada</option>
+                <option value="producto_listo">🏪 Producto listo para recoger</option>
               </select>
 
               <div class="sof-campos on" id="sof-campos-instruccion">
@@ -1337,6 +1338,10 @@ select option { background:var(--bg-2); color:var(--text); }
 
               <div class="sof-campos" id="sof-campos-disp">
                 <input type="text" id="sof-detalle-disp" placeholder="Detalle (opcional, ej: 2 piezas, entrega en 2 días)"/>
+              </div>
+
+              <div class="sof-campos" id="sof-campos-listo">
+                <input type="text" id="sof-detalle-listo" placeholder="Detalle (opcional, ej: Trae el resto: $850)"/>
               </div>
 
               <button class="btn btnp" style="width:100%" onclick="sofEnviarComando()">Enviar</button>
@@ -2989,6 +2994,7 @@ function sofCambiarTipo() {
   document.getElementById('sof-campos-instruccion').classList.toggle('on', tipo==='instruccion');
   document.getElementById('sof-campos-pago').classList.toggle('on', tipo==='pago_confirmado');
   document.getElementById('sof-campos-disp').classList.toggle('on', tipo==='disponibilidad_confirmada');
+  document.getElementById('sof-campos-listo').classList.toggle('on', tipo==='producto_listo');
 }
 
 function sofEnviarComando() {
@@ -3000,8 +3006,10 @@ function sofEnviarComando() {
     if (!payload.mensaje) { alert('Escribe el mensaje'); return; }
   } else if (tipo === 'pago_confirmado') {
     payload.entrega = document.getElementById('sof-entrega').value.trim();
-  } else if (tipo === 'disponibilidad_confirmada') {
+    } else if (tipo === 'disponibilidad_confirmada') {
     payload.detalle = document.getElementById('sof-detalle-disp').value.trim();
+  } else if (tipo === 'producto_listo') {
+    payload.detalle = document.getElementById('sof-detalle-listo').value.trim();
   }
 
   var status = document.getElementById('sof-status');

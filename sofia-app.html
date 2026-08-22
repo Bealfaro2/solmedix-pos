@@ -170,6 +170,7 @@ button{cursor:pointer; border:none; border-radius:var(--radius-sm)}
         <option value="instruccion">💬 Instrucción — responder al cliente</option>
         <option value="pago_confirmado">✅ Pago confirmado</option>
         <option value="disponibilidad_confirmada">📦 Disponibilidad confirmada</option>
+        <option value="producto_listo">🏪 Producto listo para recoger</option>
       </select>
       <div class="campos on" id="campos-instruccion">
         <textarea id="c-mensaje" rows="2" placeholder="Mensaje para el cliente..."></textarea>
@@ -177,8 +178,11 @@ button{cursor:pointer; border:none; border-radius:var(--radius-sm)}
       <div class="campos" id="campos-pago">
         <input type="text" id="c-entrega" placeholder="Detalle de entrega (opcional)">
       </div>
-      <div class="campos" id="campos-disp">
+            <div class="campos" id="campos-disp">
         <input type="text" id="c-detalle-disp" placeholder="Detalle (opcional, ej: 2 piezas, entrega en 2 días)">
+      </div>
+      <div class="campos" id="campos-listo">
+        <input type="text" id="c-detalle-listo" placeholder="Detalle (opcional, ej: Trae el resto: $850)">
       </div>
       <button class="btn btn-p" style="width:100%" onclick="enviarComando()">Enviar</button>
       <div id="estado-envio"></div>
@@ -330,6 +334,7 @@ function cambiarTipo() {
   document.getElementById('campos-instruccion').classList.toggle('on', tipo==='instruccion');
   document.getElementById('campos-pago').classList.toggle('on', tipo==='pago_confirmado');
   document.getElementById('campos-disp').classList.toggle('on', tipo==='disponibilidad_confirmada');
+  document.getElementById('campos-listo').classList.toggle('on', tipo==='producto_listo');
 }
 function enviarComando() {
   if (!clienteActual) return;
@@ -342,6 +347,8 @@ function enviarComando() {
     payload.entrega = document.getElementById('c-entrega').value.trim();
   } else if (tipo==='disponibilidad_confirmada') {
     payload.detalle = document.getElementById('c-detalle-disp').value.trim();
+  } else if (tipo==='producto_listo') {
+    payload.detalle = document.getElementById('c-detalle-listo').value.trim();
   }
   var estado = document.getElementById('estado-envio');
   estado.textContent = 'Enviando...';
