@@ -2966,6 +2966,22 @@ function sofIniciarAutoRefresh() {
   }, 180000);
 }
 
+function sofFechaEtiqueta(fechaStr) {
+  var partes = (fechaStr || '').split('/');
+  if (partes.length !== 3) return fechaStr || '';
+  var d = parseInt(partes[0],10), m = parseInt(partes[1],10)-1, y = parseInt(partes[2],10);
+  var fecha = new Date(y, m, d);
+  var hoy = new Date(); hoy.setHours(0,0,0,0);
+  var ayer = new Date(hoy); ayer.setDate(ayer.getDate()-1);
+  fecha.setHours(0,0,0,0);
+  if (fecha.getTime() === hoy.getTime()) return 'Hoy';
+  if (fecha.getTime() === ayer.getTime()) return 'Ayer';
+  var diffDias = Math.round((hoy - fecha) / 86400000);
+  var diasSemana = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  if (diffDias > 1 && diffDias < 7) return diasSemana[fecha.getDay()];
+  return fechaStr;
+}
+
 function sofAbrirHilo(numero, nombre) {
   sofClienteActual = { numero: numero, nombre: nombre };
   var entradaLista = sofUltimaLista.filter(function(c){ return c.numero === numero; })[0];
@@ -2979,8 +2995,13 @@ function sofAbrirHilo(numero, nombre) {
   body.innerHTML = '<div class="es">Cargando mensajes...</div>';
   jsonp(API_URL+'?accion=hilo_sofia&numero='+encodeURIComponent(numero)+'&t='+Date.now(), function(err, res) {
     if (err || !res || !res.ok) { body.innerHTML = '<div class="es">Error al cargar el hilo</div>'; return; }
+    var fechaAnterior = null;
     body.innerHTML = res.hilo.map(function(m){
       var bloques = '';
+      if (m.fecha !== fechaAnterior) {
+        fechaAnterior = m.fecha;
+        bloques += '<div style="text-align:center;margin:10px 0"><span style="background:var(--bg-3);color:var(--text-3);font-size:11px;padding:3px 12px;border-radius:10px">'+sofFechaEtiqueta(m.fecha)+'</span></div>';
+      }
       if (m.mensaje_cliente) bloques += '<div class="sof-bub sof-bub-cli">'+sofEsc(m.mensaje_cliente)+'<div class="sof-bub-hora">'+m.hora+'</div></div>';
       if (m.respuesta_sofia) bloques += '<div class="sof-bub sof-bub-sof">'+sofEsc(m.respuesta_sofia)+'<div class="sof-bub-hora">'+m.hora+'</div></div>';
       return bloques;
