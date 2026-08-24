@@ -29,3 +29,27 @@ self.addEventListener('fetch', (event) => {
     fetch(event.request).catch(() => caches.match(event.request))
   );
 });
+
+// ── Notificaciones push (Fase 2) ──
+self.addEventListener('push', (event) => {
+  const data = event.data ? event.data.json() : {};
+  const opciones = {
+    body: data.body || '',
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+    data: { url: data.url || './sofia-app.html' }
+  };
+  event.waitUntil(self.registration.showNotification(data.title || 'Sofía Messenger', opciones));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window' }).then((lista) => {
+      for (const c of lista) {
+        if (c.url.includes('sofia-app.html') && 'focus' in c) return c.focus();
+      }
+      if (clients.openWindow) return clients.openWindow(event.notification.data.url || './sofia-app.html');
+    })
+  );
+});

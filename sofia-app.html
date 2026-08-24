@@ -142,6 +142,7 @@ button{cursor:pointer; border:none; border-radius:var(--radius-sm)}
         <h2>Sofía</h2>
         <div class="sub" id="perfil-chip"></div>
       </div>
+            <button class="icon-btn" onclick="activarNotificaciones()" title="Activar notificaciones">🔔</button>
       <button class="icon-btn" onclick="cargarConversaciones()">↻</button>
     </div>
     <div id="buscar-wrap">
@@ -437,6 +438,44 @@ function enviarNuevoChat() {
     setTimeout(function(){ cerrarModalNuevo(); cargarConversaciones(); }, 900);
   });
 }
+
+var VAPID_PUBLIC_KEY = 'BHLNhO_SYXfuAchsKJm98dcpRvglj1pU0h89vYpJKgV4P1Mt6mnNqlQANUiq9QOg6ryMnw17aJ9JUj_cbyodASc';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
+async function activarNotificaciones() {
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      alert('Este dispositivo no soporta notificaciones push, o no la abriste desde el ícono instalado en tu pantalla de inicio.');
+      return;
+    }
+    const permiso = await Notification.requestPermission();
+    if (permiso !== 'granted') {
+      alert('No se activaron. Puedes darle permiso después desde Ajustes de iPhone → Notificaciones → Sofía.');
+      return;
+    }
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+    apiPost({ accion: 'suscribir_push_sofia', perfil: perfilActual, subscription: sub.toJSON() }, function(err, res) {
+      if (err || !res || !res.ok) { alert('❌ No se pudo activar: ' + ((res && res.error) || err)); return; }
+      alert('✅ Notificaciones activadas');
+    });
+  } catch (e) {
+    alert('❌ Error: ' + e.message);
+  }
+}
+
+// ── Auto-actualización cada 3 minutos ──
 
 // ── Auto-actualización cada 3 minutos ──
 setInterval(function() {
