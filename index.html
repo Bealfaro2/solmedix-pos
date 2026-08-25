@@ -1481,7 +1481,7 @@ function renderTicket(v) {
   document.getElementById('ctxt').textContent=v.clave;
 }
 // ── Firma CFDI con Web Crypto ─────────────────────────────────
-function construirXMLPOS(cliente, items, total, folio) {
+function construirXMLPOS(cliente, items, total, folio, pagos) {
   var now = new Date();
   var pad = function(n){ return String(n).padStart(2,'0'); };
   var fecha = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+'T'+pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
@@ -1507,7 +1507,11 @@ function construirXMLPOS(cliente, items, total, folio) {
       'xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd" '+
       'Version="4.0" Serie="F" Folio="'+folio+'" Fecha="'+fecha+'" '+
       'Sello="" NoCertificado="'+NO_CERTIFICADO+'" Certificado="" '+
-      'FormaPago="99" '+
+            'FormaPago="'+(function(){
+        var MAPA_FORMA_PAGO = { 'Efectivo':'01', 'Transferencia':'03', 'Tarjeta MP':'04' };
+        var dominante = (pagos && pagos.length) ? pagos.slice().sort(function(a,b){return b.monto-a.monto;})[0] : null;
+        return (dominante && MAPA_FORMA_PAGO[dominante.metodo]) || '99';
+      })()+'" '+
       'SubTotal="'+subtotal+'" Moneda="MXN" Total="'+subtotal+'" '+
       'TipoDeComprobante="I" Exportacion="01" MetodoPago="PUE" '+
       'LugarExpedicion="64610">'+
@@ -1587,7 +1591,7 @@ function iniciarFacturacion(){
 
   try {
     btnFac.innerHTML = '<span class="spinner"></span>Timbrando...';
-    var xmlPOS = construirXMLPOS(clienteActual, vActual.items, vActual.total, vActual.id);
+        var xmlPOS = construirXMLPOS(clienteActual, vActual.items, vActual.total, vActual.id, vActual.pagos);
     enviarAPaxPOS(xmlPOS, clienteActual, vActual.id, btnFac, function(uuid){
       vActual.uuid = uuid;
       btnFac.style.display = 'none';
@@ -1858,7 +1862,7 @@ function facturarDesdeHistorial(id) {
     if(btnFac){ btnFac.disabled=true; btnFac.innerHTML='<span class="spinner"></span>'; }
 
     try {
-      var xmlHist = construirXMLPOS(clienteHist, venta.items, venta.total, venta.id);
+            var xmlHist = construirXMLPOS(clienteHist, venta.items, venta.total, venta.id, venta.pagos);
       enviarAPaxPOS(xmlHist, clienteHist, venta.id, btnFac, function(uuid){
         venta.uuid = uuid;
         renderHist();
