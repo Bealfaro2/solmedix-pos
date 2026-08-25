@@ -1671,8 +1671,9 @@ function renderHist(){
       rows+='<button class="btn btnw" style="display:block;margin-bottom:3px;width:100%" onclick="event.stopPropagation();ver('+vid+');imprimir()">Reimprimir</button>';
       if(!v.uuid){
         rows+='<button class="btn btng" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px" id="bfac_'+vid+'" onclick="event.stopPropagation();facturarDesdeHistorial(\''+vid+'\')">⚡ Facturar</button>';
-      } else {
+            } else {
         rows+='<div style="font-size:9px;color:#6ee7b7;margin-bottom:3px">✓ Facturado</div>';
+        rows+='<button class="btn btnw" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px;color:#c00;border-color:#fecaca" id="bcanf_'+vid+'" onclick="event.stopPropagation();cancelarFacturaDesdeHistorial(\''+vid+'\')">✕ Cancelar factura</button>';
       }
       rows+='<button class="btn btnd" style="font-size:10px;padding:2px 6px;width:100%" onclick="event.stopPropagation();pedirCancelar('+vid+')">Cancelar venta</button>';
     }
@@ -1874,6 +1875,51 @@ function facturarDesdeHistorial(id) {
   }; // cierra onclick btn-confirmar-fac
   } // cierra if(btnConf2)
 } // cierra facturarDesdeHistorial
+
+
+function cancelarFacturaDesdeHistorial(id) {
+  var venta = ventas.find(function(v){ return String(v.id)===String(id); });
+  if (!venta || !venta.uuid) { alrt('Esta venta no tiene factura para cancelar.','e'); return; }
+
+  if (!confirm('¿Cancelar la factura de '+venta.cliente+' (UUID: '+venta.uuid+')?\n\nEsta acción es ante el SAT y no se puede deshacer fácilmente. Después de cancelar, podrás volver a facturar esta venta si es necesario.')) return;
+
+  var btn = document.getElementById('bcanf_'+id);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Cancelando...'; }
+
+  var cbName = 'cancelcb_' + Math.random().toString(36).slice(2);
+  var timeout = setTimeout(function(){
+    delete window[cbName];
+    var sc = document.getElementById('sc_'+cbName); if (sc) sc.remove();
+    if (btn) { btn.disabled = false; btn.innerHTML = '✕ Cancelar factura'; }
+    alrt('Tiempo de espera agotado al cancelar.','e');
+  }, 30000);
+
+  window[cbName] = function(res) {
+    clearTimeout(timeout);
+    delete window[cbName];
+    var sc = document.getElementById('sc_'+cbName); if (sc) sc.remove();
+    if (res && res.ok) {
+      venta.uuid = '';
+      alrt('✓ Factura cancelada correctamente.','s');
+      renderHist();
+    } else {
+      if (btn) { btn.disabled = false; btn.innerHTML = '✕ Cancelar factura'; }
+      alrt('Error al cancelar: '+((res && res.error) || 'desconocido'),'e');
+    }
+  };
+
+  var script = document.createElement('script');
+  script.id = 'sc_'+cbName;
+  script.onerror = function(){
+    clearTimeout(timeout);
+    delete window[cbName];
+    script.remove();
+    if (btn) { btn.disabled = false; btn.innerHTML = '✕ Cancelar factura'; }
+    alrt('Error de conexión al cancelar.','e');
+  };
+  script.src = API_URL + '?accion=cancelar_cfdi&uuid=' + encodeURIComponent(venta.uuid) + '&callback=' + cbName;
+  document.head.appendChild(script);
+}
 
 function renderInfoFiscal(){
   var el=document.getElementById('info-fiscal');
