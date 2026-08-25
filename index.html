@@ -1711,8 +1711,15 @@ function buscar(){
       html+='<div style="flex:1;min-width:0"><div style="font-weight:500">'+v.cliente+'</div>';
       html+='<div class="sm">'+ff(v.fecha)+' · Folio #'+String(v.id).padStart(4,'0')+'</div>';
       html+='<span class="ck">'+v.clave+'</span></div>';
-      html+='<div style="text-align:right"><div style="font-weight:600;color:#185FA5">$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
-      html+='<button class="btn btnw" onclick="event.stopPropagation();ver(\''+v.id+'\');imprimir()">Reimprimir</button></div></div>';
+            html+='<div style="text-align:right;min-width:100px"><div style="font-weight:600;color:#185FA5">$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
+      html+='<button class="btn btnw" style="display:block;margin-bottom:3px;width:100%" onclick="event.stopPropagation();ver(\''+v.id+'\');imprimir()">Reimprimir</button>';
+      if(!v.uuid){
+        html+='<button class="btn btng" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px" id="bfac_'+v.id+'" onclick="event.stopPropagation();facturarDesdeHistorial(\''+v.id+'\')">⚡ Facturar</button>';
+      } else {
+        html+='<div style="font-size:9px;color:#6ee7b7;margin-bottom:3px">✓ Facturado</div>';
+        html+='<button class="btn btnw" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px;color:#c00;border-color:#fecaca" id="bcanf_'+v.id+'" onclick="event.stopPropagation();cancelarFacturaDesdeHistorial(\''+v.id+'\')">✕ Cancelar factura</button>';
+      }
+      html+='</div></div>';
     }
   }
   cont.innerHTML=found?html:'<div class="es">Sin resultados</div>';
