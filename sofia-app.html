@@ -164,6 +164,8 @@ button{cursor:pointer; border:none; border-radius:var(--radius-sm)}
       <button class="icon-btn" style="font-size:18px" onclick="enviarDatosPago()" title="Enviar datos de pago">💳</button>
       <button class="icon-btn" style="font-size:18px" onclick="enviarUbicacion()" title="Enviar ubicación">📍</button>
       <button class="icon-btn" style="font-size:15px" onclick="reactivarChat()" title="Reiniciar conversación">🔄</button>
+      <button class="icon-btn" style="font-size:18px" onclick="document.getElementById('input-archivo').click()" title="Adjuntar imagen o PDF">📎</button>
+      <input type="file" id="input-archivo" accept="image/*,application/pdf" style="display:none" onchange="adjuntarArchivo(this)">
     </div>
     <div class="chat-body" id="chat-body"></div>
     <div class="compose">
@@ -212,6 +214,47 @@ button{cursor:pointer; border:none; border-radius:var(--radius-sm)}
 
 <script>
 var API_URL = 'https://script.google.com/macros/s/AKfycbwIArZhtzInrluG0X6jsZiyz6CIWUBDKj2OhHYePY0rmSg0AJ6AmXuXW5WRcqf4kSeK/exec';
+var RAILWAY_URL = 'https://solmedix-sofia-agent-production.up.railway.app';
+var PANEL_SECRET = 'd9b321d854362b5bfe6bca18153f302c6d741ff39e12993e2722362b6c0d953e';
+
+function adjuntarArchivo(input) {
+  if (!clienteActual) { alert('Selecciona un chat primero'); return; }
+  var file = input.files[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) { alert('El archivo es muy grande (máximo 10MB)'); input.value=''; return; }
+
+  var estado = document.getElementById('estado-envio');
+  estado.textContent = 'Subiendo archivo...';
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var base64 = e.target.result.split(',')[1];
+    fetch(RAILWAY_URL + '/panel/subir-archivo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-panel-secret': PANEL_SECRET },
+      body: JSON.stringify({
+        base64: base64,
+        nombreArchivo: file.name,
+        mimeType: file.type,
+        numero: clienteActual.numero
+      })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(res){
+      if (res && res.ok) {
+        estado.textContent = '✅ Archivo enviado';
+        setTimeout(function(){ abrirChat(clienteActual.numero, clienteActual.nombre); estado.textContent=''; }, 1000);
+      } else {
+        estado.textContent = '❌ Error: ' + ((res && res.error) || 'desconocido');
+      }
+    })
+    .catch(function(){
+      estado.textContent = '❌ Error de conexión al subir archivo';
+    });
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
 var perfilActual = '';
 var clienteActual = null;
 var ultimaLista = [];
