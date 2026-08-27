@@ -1318,6 +1318,8 @@ select option { background:var(--bg-2); color:var(--text); }
               <button class="btn" id="sof-btn-pago" style="display:none;font-size:11px;padding:4px 10px;margin-right:6px" onclick="sofEnviarDatosPago()">💳 Pago</button>
               <button class="btn" id="sof-btn-ubicacion" style="display:none;font-size:11px;padding:4px 10px;margin-right:6px" onclick="sofEnviarUbicacion()">📍 Ubicación</button>
               <button class="btn" id="sof-btn-reiniciar" style="display:none;font-size:11px;padding:4px 10px" onclick="sofReactivarChat()">🔄 Reiniciar conversación</button>
+              <button class="btn" style="font-size:11px;padding:4px 10px" onclick="document.getElementById('sof-input-archivo').click()">📎 Adjuntar</button>
+              <input type="file" id="sof-input-archivo" accept="image/*,application/pdf" style="display:none" onchange="sofAdjuntarArchivo(this)">
             </div>
             <div class="sof-chat-body" id="sof-chat-body"></div>
             <div class="sof-compose">
@@ -3016,6 +3018,48 @@ function sofCambiarTipo() {
   document.getElementById('sof-campos-pago').classList.toggle('on', tipo==='pago_confirmado');
   document.getElementById('sof-campos-disp').classList.toggle('on', tipo==='disponibilidad_confirmada');
   document.getElementById('sof-campos-listo').classList.toggle('on', tipo==='producto_listo');
+}
+
+var RAILWAY_URL = 'https://solmedix-sofia-agent-production.up.railway.app';
+var PANEL_SECRET = 'd9b321d854362b5bfe6bca18153f302c6d741ff39e12993e2722362b6c0d953e';
+
+function sofAdjuntarArchivo(input) {
+  if (!sofClienteActual) { alert('Selecciona primero una conversación'); return; }
+  var file = input.files[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) { alert('El archivo es muy grande (máximo 10MB)'); input.value=''; return; }
+
+  var status = document.getElementById('sof-status');
+  status.textContent = 'Subiendo archivo...';
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var base64 = e.target.result.split(',')[1];
+    fetch(RAILWAY_URL + '/panel/subir-archivo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-panel-secret': PANEL_SECRET },
+      body: JSON.stringify({
+        base64: base64,
+        nombreArchivo: file.name,
+        mimeType: file.type,
+        numero: sofClienteActual.numero
+      })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(res){
+      if (res && res.ok) {
+        status.textContent = '✅ Archivo enviado';
+        setTimeout(function(){ sofAbrirHilo(sofClienteActual.numero, sofClienteActual.nombre); status.textContent=''; }, 1200);
+      } else {
+        status.textContent = '❌ Error: ' + ((res && res.error) || 'desconocido');
+      }
+    })
+    .catch(function(){
+      status.textContent = '❌ Error de conexión al subir archivo';
+    });
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
 }
 
 function sofEnviarComando() {
