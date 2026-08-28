@@ -164,6 +164,7 @@ button{cursor:pointer; border:none; border-radius:var(--radius-sm)}
       <div>
         <h2 id="chat-nombre">—</h2>
         <div class="sub" id="chat-numero"></div>
+        <div id="presencia-otros" style="display:none;font-size:11px;color:#f59e0b;margin-top:2px"></div>
       </div>
       <button class="icon-btn" style="font-size:18px" onclick="enviarDatosPago()" title="Enviar datos de pago">💳</button>
       <button class="icon-btn" style="font-size:18px" onclick="enviarUbicacion()" title="Enviar ubicación">📍</button>
@@ -309,15 +310,20 @@ function login() {
 var sseConexion = null;
 
 function conectarSSE() {
-  var url = RAILWAY_URL + '/panel/eventos?secret=' + encodeURIComponent(PANEL_SECRET);
+  var url = RAILWAY_URL + '/panel/eventos?secret=' + encodeURIComponent(PANEL_SECRET) + '&perfil=' + encodeURIComponent(perfilActual);
   sseConexion = new EventSource(url);
 
   sseConexion.onopen = function() {
     actualizarEstadoSSE(true);
   };
   sseConexion.onmessage = function(e) {
-    var numero = '';
-    try { numero = JSON.parse(e.data).numero || ''; } catch (err) {}
+    var datos = {};
+    try { datos = JSON.parse(e.data); } catch (err) {}
+    if (datos.tipo === 'presencia') {
+      actualizarPresencia(datos.numero, datos.viendo);
+      return;
+    }
+    var numero = datos.numero || '';
     if (clienteActual && (!numero || numero === clienteActual.numero)) {
       abrirChat(clienteActual.numero, clienteActual.nombre);
     }
@@ -326,6 +332,28 @@ function conectarSSE() {
   sseConexion.onerror = function() {
     actualizarEstadoSSE(false);
   };
+}
+
+function actualizarPresencia(numero, viendo) {
+  if (!clienteActual || clienteActual.numero !== numero) return;
+  var otros = (viendo || []).filter(function(p){ return p !== perfilActual; });
+  var el = document.getElementById('presencia-otros');
+  if (!el) return;
+  if (otros.length > 0) {
+    el.textContent = '👀 También viendo: ' + otros.join(', ');
+    el.style.display = '';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+function avisarViendoChat(numero) {
+  if (!perfilActual) return;
+  fetch(RAILWAY_URL + '/panel/viendo', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-panel-secret': PANEL_SECRET },
+    body: JSON.stringify({ numero: numero, perfil: perfilActual })
+  }).catch(function(){});
 }
 
 function actualizarEstadoSSE(conectado) {
@@ -423,6 +451,7 @@ function abrirChat(numero, nombre) {
     document.getElementById('chat-numero').textContent = numero;
     document.getElementById('vista-lista').classList.add('off');
     document.getElementById('vista-chat').classList.add('on');
+    avisarViendoChat(numero);
   }
   var body = document.getElementById('chat-body');
   if (!esRefrescoMismoChat) {
