@@ -1298,7 +1298,11 @@ select option { background:var(--bg-2); color:var(--text); }
     <div id="sec-sofia" style="display:none">
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-          <div class="ptitle" style="margin:0">Sofía — WhatsApp</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="ptitle" style="margin:0">Sofía — WhatsApp</div>
+            <span id="sof-sse-dot" style="width:7px;height:7px;border-radius:50%;background:#9ca3af;display:inline-block"></span>
+            <span id="sof-sse-texto" style="font-size:10px;color:var(--text-3)">Conectando</span>
+          </div>
           <div style="display:flex;gap:8px">
             <button class="btn btnp" onclick="sofAbrirModalNuevo()">+ Nuevo chat</button>
             <button class="btn" onclick="cargarConversacionesSofia()">↻ Actualizar</button>
@@ -2973,10 +2977,16 @@ function sofIniciarAutoRefresh() {
   }, 180000);
 }
 
+var sofSseConexion = null;
+
 function sofConectarSSE() {
   var url = RAILWAY_URL + '/panel/eventos?secret=' + encodeURIComponent(PANEL_SECRET);
-  var es = new EventSource(url);
-  es.onmessage = function(e) {
+  sofSseConexion = new EventSource(url);
+
+  sofSseConexion.onopen = function() {
+    sofActualizarEstadoSSE(true);
+  };
+  sofSseConexion.onmessage = function(e) {
     var secSofia = document.getElementById('sec-sofia');
     if (!secSofia || secSofia.style.display === 'none') return;
     var numero = '';
@@ -2986,10 +2996,30 @@ function sofConectarSSE() {
     }
     cargarConversacionesSofia();
   };
-  es.onerror = function() {
-    console.log('[SSE] Conexión perdida, el navegador reintentará solo');
+  sofSseConexion.onerror = function() {
+    sofActualizarEstadoSSE(false);
   };
 }
+
+function sofActualizarEstadoSSE(conectado) {
+  var dot = document.getElementById('sof-sse-dot');
+  var texto = document.getElementById('sof-sse-texto');
+  if (!dot || !texto) return;
+  dot.style.background = conectado ? '#22c55e' : '#9ca3af';
+  texto.textContent = conectado ? 'En vivo' : 'Reconectando...';
+}
+
+function sofReconectarSSE() {
+  if (sofSseConexion) { try { sofSseConexion.close(); } catch(e) {} }
+  sofConectarSSE();
+}
+
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible' && sofAutoRefreshIniciado) sofReconectarSSE();
+});
+window.addEventListener('online', function() {
+  if (sofAutoRefreshIniciado) sofReconectarSSE();
+});
 
 function sofFechaEtiqueta(fechaStr) {
   var partes = (fechaStr || '').split('/');

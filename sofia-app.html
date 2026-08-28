@@ -141,6 +141,10 @@ button{cursor:pointer; border:none; border-radius:var(--radius-sm)}
       <div>
         <h2>Sofía</h2>
         <div class="sub" id="perfil-chip"></div>
+        <div id="sse-estado" style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-3);margin-top:2px">
+          <span id="sse-dot" style="width:7px;height:7px;border-radius:50%;background:#9ca3af;display:inline-block"></span>
+          <span id="sse-texto">Conectando</span>
+        </div>
       </div>
             <button class="icon-btn" onclick="activarNotificaciones()" title="Activar notificaciones">🔔</button>
       <button class="icon-btn" onclick="cargarConversaciones()">↻</button>
@@ -302,10 +306,16 @@ function login() {
   });
 }
 
+var sseConexion = null;
+
 function conectarSSE() {
   var url = RAILWAY_URL + '/panel/eventos?secret=' + encodeURIComponent(PANEL_SECRET);
-  var es = new EventSource(url);
-  es.onmessage = function(e) {
+  sseConexion = new EventSource(url);
+
+  sseConexion.onopen = function() {
+    actualizarEstadoSSE(true);
+  };
+  sseConexion.onmessage = function(e) {
     var numero = '';
     try { numero = JSON.parse(e.data).numero || ''; } catch (err) {}
     if (clienteActual && (!numero || numero === clienteActual.numero)) {
@@ -313,10 +323,30 @@ function conectarSSE() {
     }
     cargarConversaciones();
   };
-  es.onerror = function() {
-    console.log('[SSE] Conexión perdida, el navegador reintentará solo');
+  sseConexion.onerror = function() {
+    actualizarEstadoSSE(false);
   };
 }
+
+function actualizarEstadoSSE(conectado) {
+  var dot = document.getElementById('sse-dot');
+  var texto = document.getElementById('sse-texto');
+  if (!dot || !texto) return;
+  dot.style.background = conectado ? '#22c55e' : '#9ca3af';
+  texto.textContent = conectado ? 'En vivo' : 'Reconectando...';
+}
+
+function reconectarSSE() {
+  if (sseConexion) { try { sseConexion.close(); } catch(e) {} }
+  conectarSSE();
+}
+
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible' && perfilActual) reconectarSSE();
+});
+window.addEventListener('online', function() {
+  if (perfilActual) reconectarSSE();
+});
 function mostrarErrLogin(msg) {
   var el = document.getElementById('login-err');
   el.textContent = msg; el.style.display='block';
