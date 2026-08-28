@@ -363,30 +363,57 @@ function fechaEtiqueta(fechaStr) {
   return fechaStr;
 }
 
+var chatHiloLength = 0;
+var chatUltimaFecha = null;
+
 function abrirChat(numero, nombre) {
+  var esRefrescoMismoChat = clienteActual && clienteActual.numero === numero && document.getElementById('vista-chat').classList.contains('on');
   clienteActual = { numero:numero, nombre:nombre };
-  var entrada = ultimaLista.filter(function(c){ return c.numero===numero; })[0];
-  if (entrada) marcarVisto(entrada);
-  document.getElementById('chat-nombre').textContent = nombre || numero;
-  document.getElementById('chat-numero').textContent = numero;
-  document.getElementById('vista-lista').classList.add('off');
-  document.getElementById('vista-chat').classList.add('on');
+  if (!esRefrescoMismoChat) {
+    var entrada = ultimaLista.filter(function(c){ return c.numero===numero; })[0];
+    if (entrada) marcarVisto(entrada);
+    document.getElementById('chat-nombre').textContent = nombre || numero;
+    document.getElementById('chat-numero').textContent = numero;
+    document.getElementById('vista-lista').classList.add('off');
+    document.getElementById('vista-chat').classList.add('on');
+  }
   var body = document.getElementById('chat-body');
-  body.innerHTML = '<div class="estado">Cargando mensajes...</div>';
+  if (!esRefrescoMismoChat) {
+    body.innerHTML = '<div class="estado">Cargando mensajes...</div>';
+    chatHiloLength = 0;
+    chatUltimaFecha = null;
+  }
   jsonp(API_URL+'?accion=hilo_sofia&numero='+encodeURIComponent(numero), function(err, res) {
-    if (err || !res || !res.ok) { body.innerHTML = '<div class="estado">Error al cargar</div>'; return; }
-    var fechaAnteriorApp = null;
-    body.innerHTML = res.hilo.map(function(m){
+    if (err || !res || !res.ok) {
+      if (!esRefrescoMismoChat) body.innerHTML = '<div class="estado">Error al cargar</div>';
+      return;
+    }
+    if (esRefrescoMismoChat && res.hilo.length <= chatHiloLength) return;
+
+    var cercaDelFinal = body.scrollHeight - body.scrollTop - body.clientHeight < 120;
+    var mensajesAPintar = esRefrescoMismoChat ? res.hilo.slice(chatHiloLength) : res.hilo;
+
+    var htmlNuevo = mensajesAPintar.map(function(m){
       var b = '';
-      if (m.fecha !== fechaAnteriorApp) {
-        fechaAnteriorApp = m.fecha;
+      if (m.fecha !== chatUltimaFecha) {
+        chatUltimaFecha = m.fecha;
         b += '<div style="text-align:center;margin:10px 0"><span style="background:var(--bg-3);color:var(--text-3);font-size:11px;padding:3px 12px;border-radius:10px">'+fechaEtiqueta(m.fecha)+'</span></div>';
       }
       if (m.mensaje_cliente) b += '<div class="bub bub-cli">'+esc(m.mensaje_cliente)+'<div class="bub-hora">'+m.hora+'</div></div>';
       if (m.respuesta_sofia) b += '<div class="bub bub-sof">'+esc(m.respuesta_sofia)+'<div class="bub-hora">'+m.hora+'</div></div>';
       return b;
     }).join('');
-    body.scrollTop = body.scrollHeight;
+
+    if (esRefrescoMismoChat) {
+      body.insertAdjacentHTML('beforeend', htmlNuevo);
+    } else {
+      body.innerHTML = htmlNuevo;
+    }
+    chatHiloLength = res.hilo.length;
+
+    if (!esRefrescoMismoChat || cercaDelFinal) {
+      body.scrollTop = body.scrollHeight;
+    }
   });
 }
 function volverALista() {

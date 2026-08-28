@@ -2984,31 +2984,58 @@ function sofFechaEtiqueta(fechaStr) {
   return fechaStr;
 }
 
+var sofHiloLength = 0;
+var sofUltimaFecha = null;
+
 function sofAbrirHilo(numero, nombre) {
+  var esRefrescoMismoChat = sofClienteActual && sofClienteActual.numero === numero;
   sofClienteActual = { numero: numero, nombre: nombre };
-  var entradaLista = sofUltimaLista.filter(function(c){ return c.numero === numero; })[0];
-  if (entradaLista) sofMarcarVisto(entradaLista);
-  sofRenderLista();
-  document.getElementById('sof-chat-head-txt').textContent = (nombre || numero) + '  ·  ' + numero;
-  document.getElementById('sof-btn-reiniciar').style.display = '';
-  document.getElementById('sof-btn-ubicacion').style.display = '';
-  document.getElementById('sof-btn-pago').style.display = '';
+  if (!esRefrescoMismoChat) {
+    var entradaLista = sofUltimaLista.filter(function(c){ return c.numero === numero; })[0];
+    if (entradaLista) sofMarcarVisto(entradaLista);
+    sofRenderLista();
+    document.getElementById('sof-chat-head-txt').textContent = (nombre || numero) + '  ·  ' + numero;
+    document.getElementById('sof-btn-reiniciar').style.display = '';
+    document.getElementById('sof-btn-ubicacion').style.display = '';
+    document.getElementById('sof-btn-pago').style.display = '';
+  }
   var body = document.getElementById('sof-chat-body');
-  body.innerHTML = '<div class="es">Cargando mensajes...</div>';
+  if (!esRefrescoMismoChat) {
+    body.innerHTML = '<div class="es">Cargando mensajes...</div>';
+    sofHiloLength = 0;
+    sofUltimaFecha = null;
+  }
   jsonp(API_URL+'?accion=hilo_sofia&numero='+encodeURIComponent(numero)+'&t='+Date.now(), function(err, res) {
-    if (err || !res || !res.ok) { body.innerHTML = '<div class="es">Error al cargar el hilo</div>'; return; }
-    var fechaAnterior = null;
-    body.innerHTML = res.hilo.map(function(m){
+    if (err || !res || !res.ok) {
+      if (!esRefrescoMismoChat) body.innerHTML = '<div class="es">Error al cargar el hilo</div>';
+      return;
+    }
+    if (esRefrescoMismoChat && res.hilo.length <= sofHiloLength) return;
+
+    var cercaDelFinal = body.scrollHeight - body.scrollTop - body.clientHeight < 120;
+    var mensajesAPintar = esRefrescoMismoChat ? res.hilo.slice(sofHiloLength) : res.hilo;
+
+    var htmlNuevo = mensajesAPintar.map(function(m){
       var bloques = '';
-      if (m.fecha !== fechaAnterior) {
-        fechaAnterior = m.fecha;
+      if (m.fecha !== sofUltimaFecha) {
+        sofUltimaFecha = m.fecha;
         bloques += '<div style="text-align:center;margin:10px 0"><span style="background:var(--bg-3);color:var(--text-3);font-size:11px;padding:3px 12px;border-radius:10px">'+sofFechaEtiqueta(m.fecha)+'</span></div>';
       }
       if (m.mensaje_cliente) bloques += '<div class="sof-bub sof-bub-cli">'+sofEsc(m.mensaje_cliente)+'<div class="sof-bub-hora">'+m.hora+'</div></div>';
       if (m.respuesta_sofia) bloques += '<div class="sof-bub sof-bub-sof">'+sofEsc(m.respuesta_sofia)+'<div class="sof-bub-hora">'+m.hora+'</div></div>';
       return bloques;
     }).join('');
-    body.scrollTop = body.scrollHeight;
+
+    if (esRefrescoMismoChat) {
+      body.insertAdjacentHTML('beforeend', htmlNuevo);
+    } else {
+      body.innerHTML = htmlNuevo;
+    }
+    sofHiloLength = res.hilo.length;
+
+    if (!esRefrescoMismoChat || cercaDelFinal) {
+      body.scrollTop = body.scrollHeight;
+    }
   });
 }
 
