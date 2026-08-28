@@ -298,7 +298,20 @@ function login() {
     var chips = { admin:'Administrador', mty:'Sucursal Monterrey' };
     document.getElementById('perfil-chip').textContent = chips[perfil] || perfil;
     cargarConversaciones();
+    conectarSSE();
   });
+}
+
+function conectarSSE() {
+  var url = RAILWAY_URL + '/panel/eventos?secret=' + encodeURIComponent(PANEL_SECRET);
+  var es = new EventSource(url);
+  es.onmessage = function(e) {
+    if (clienteActual) abrirChat(clienteActual.numero, clienteActual.nombre);
+    cargarConversaciones();
+  };
+  es.onerror = function() {
+    console.log('[SSE] Conexión perdida, el navegador reintentará solo');
+  };
 }
 function mostrarErrLogin(msg) {
   var el = document.getElementById('login-err');
@@ -547,11 +560,11 @@ async function activarNotificaciones() {
 
 // ── Auto-actualización cada 3 minutos ──
 
-// ── Auto-actualización del chat abierto — cada 8 segundos ──
+// ── Respaldo por si el canal en tiempo real se corta — cada 60 segundos ──
 setInterval(function() {
   if (!perfilActual) return;
   if (clienteActual) abrirChat(clienteActual.numero, clienteActual.nombre);
-}, 8000);
+}, 60000);
 
 // ── Auto-actualización de la lista de conversaciones — cada 3 minutos ──
 setInterval(function() {
