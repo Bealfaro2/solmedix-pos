@@ -1319,6 +1319,7 @@ select option { background:var(--bg-2); color:var(--text); }
           <div class="sof-chat">
             <div class="sof-chat-head" id="sof-chat-head" style="display:flex;justify-content:space-between;align-items:center">
               <span id="sof-chat-head-txt">Selecciona una conversación</span>
+              <span id="sof-presencia-otros" style="display:none;font-size:11px;color:#f59e0b;margin-left:10px">👀 También viendo: <span id="sof-presencia-nombres"></span></span>
               <button class="btn" id="sof-btn-pago" style="display:none;font-size:11px;padding:4px 10px;margin-right:6px" onclick="sofEnviarDatosPago()">💳 Pago</button>
               <button class="btn" id="sof-btn-ubicacion" style="display:none;font-size:11px;padding:4px 10px;margin-right:6px" onclick="sofEnviarUbicacion()">📍 Ubicación</button>
               <button class="btn" id="sof-btn-reiniciar" style="display:none;font-size:11px;padding:4px 10px" onclick="sofReactivarChat()">🔄 Reiniciar conversación</button>
@@ -2980,7 +2981,7 @@ function sofIniciarAutoRefresh() {
 var sofSseConexion = null;
 
 function sofConectarSSE() {
-  var url = RAILWAY_URL + '/panel/eventos?secret=' + encodeURIComponent(PANEL_SECRET);
+  var url = RAILWAY_URL + '/panel/eventos?secret=' + encodeURIComponent(PANEL_SECRET) + '&perfil=' + encodeURIComponent(perfilActual);
   sofSseConexion = new EventSource(url);
 
   sofSseConexion.onopen = function() {
@@ -2989,8 +2990,13 @@ function sofConectarSSE() {
   sofSseConexion.onmessage = function(e) {
     var secSofia = document.getElementById('sec-sofia');
     if (!secSofia || secSofia.style.display === 'none') return;
-    var numero = '';
-    try { numero = JSON.parse(e.data).numero || ''; } catch (err) {}
+    var datos = {};
+    try { datos = JSON.parse(e.data); } catch (err) {}
+    if (datos.tipo === 'presencia') {
+      sofActualizarPresencia(datos.numero, datos.viendo);
+      return;
+    }
+    var numero = datos.numero || '';
     if (sofClienteActual && (!numero || numero === sofClienteActual.numero)) {
       sofAbrirHilo(sofClienteActual.numero, sofClienteActual.nombre);
     }
@@ -2999,6 +3005,29 @@ function sofConectarSSE() {
   sofSseConexion.onerror = function() {
     sofActualizarEstadoSSE(false);
   };
+}
+
+function sofActualizarPresencia(numero, viendo) {
+  if (!sofClienteActual || sofClienteActual.numero !== numero) return;
+  var otros = (viendo || []).filter(function(p){ return p !== perfilActual; });
+  var el = document.getElementById('sof-presencia-otros');
+  var nombres = document.getElementById('sof-presencia-nombres');
+  if (!el || !nombres) return;
+  if (otros.length > 0) {
+    nombres.textContent = otros.join(', ');
+    el.style.display = '';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+function sofAvisarViendoChat(numero) {
+  if (!perfilActual) return;
+  fetch(RAILWAY_URL + '/panel/viendo', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-panel-secret': PANEL_SECRET },
+    body: JSON.stringify({ numero: numero, perfil: perfilActual })
+  }).catch(function(){});
 }
 
 function sofActualizarEstadoSSE(conectado) {
@@ -3051,6 +3080,7 @@ function sofAbrirHilo(numero, nombre) {
     document.getElementById('sof-btn-reiniciar').style.display = '';
     document.getElementById('sof-btn-ubicacion').style.display = '';
     document.getElementById('sof-btn-pago').style.display = '';
+    sofAvisarViendoChat(numero);
   }
   var body = document.getElementById('sof-chat-body');
   if (!esRefrescoMismoChat) {
