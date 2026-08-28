@@ -2979,7 +2979,11 @@ function sofConectarSSE() {
   es.onmessage = function(e) {
     var secSofia = document.getElementById('sec-sofia');
     if (!secSofia || secSofia.style.display === 'none') return;
-    if (sofClienteActual) sofAbrirHilo(sofClienteActual.numero, sofClienteActual.nombre);
+    var numero = '';
+    try { numero = JSON.parse(e.data).numero || ''; } catch (err) {}
+    if (sofClienteActual && (!numero || numero === sofClienteActual.numero)) {
+      sofAbrirHilo(sofClienteActual.numero, sofClienteActual.nombre);
+    }
     cargarConversacionesSofia();
   };
   es.onerror = function() {

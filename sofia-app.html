@@ -306,7 +306,11 @@ function conectarSSE() {
   var url = RAILWAY_URL + '/panel/eventos?secret=' + encodeURIComponent(PANEL_SECRET);
   var es = new EventSource(url);
   es.onmessage = function(e) {
-    if (clienteActual) abrirChat(clienteActual.numero, clienteActual.nombre);
+    var numero = '';
+    try { numero = JSON.parse(e.data).numero || ''; } catch (err) {}
+    if (clienteActual && (!numero || numero === clienteActual.numero)) {
+      abrirChat(clienteActual.numero, clienteActual.nombre);
+    }
     cargarConversaciones();
   };
   es.onerror = function() {
