@@ -547,11 +547,16 @@ async function activarNotificaciones() {
 
 // ── Auto-actualización cada 3 minutos ──
 
-// ── Auto-actualización cada 3 minutos ──
+// ── Auto-actualización del chat abierto — cada 8 segundos ──
 setInterval(function() {
-  if (!perfilActual) return; // solo si ya inició sesión
-  cargarConversaciones();
+  if (!perfilActual) return;
   if (clienteActual) abrirChat(clienteActual.numero, clienteActual.nombre);
+}, 8000);
+
+// ── Auto-actualización de la lista de conversaciones — cada 3 minutos ──
+setInterval(function() {
+  if (!perfilActual) return;
+  cargarConversaciones();
 }, 180000);
 
 // ── Service Worker ──

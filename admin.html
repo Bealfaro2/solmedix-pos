@@ -2962,9 +2962,13 @@ function sofIniciarAutoRefresh() {
   sofAutoRefreshIniciado = true;
   setInterval(function() {
     var secSofia = document.getElementById('sec-sofia');
-    if (!secSofia || secSofia.style.display === 'none') return; // solo si la pestaña está activa
-    cargarConversacionesSofia();
+    if (!secSofia || secSofia.style.display === 'none') return;
     if (sofClienteActual) sofAbrirHilo(sofClienteActual.numero, sofClienteActual.nombre);
+  }, 8000);
+  setInterval(function() {
+    var secSofia = document.getElementById('sec-sofia');
+    if (!secSofia || secSofia.style.display === 'none') return;
+    cargarConversacionesSofia();
   }, 180000);
 }
 
