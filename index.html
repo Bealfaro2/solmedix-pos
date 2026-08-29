@@ -1726,18 +1726,30 @@ function buscar(){
 }
 
 /* CLIENTES */
+function normalizarTexto(s){
+  return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+
 function acFilter(){
-  var q=document.getElementById('cli').value.trim().toLowerCase();
+  var q = normalizarTexto(document.getElementById('cli').value.trim());
   var lst=document.getElementById('aclist');
-  var matches=[],count=0;
-  for(var i=0;i<clientes.length&&count<8;i++){
+  var palabras = q.split(/\s+/).filter(function(w){return w;});
+  var candidatos=[];
+  for(var i=0;i<clientes.length;i++){
     var c=typeof clientes[i]==='string'?{nombre:clientes[i]}:clientes[i];
     // Filtrar por sucursal activa
     var cs=c.sucursal||'';
     var sucOk=(sucursal==='MTY'&&cs==='MTY')||(sucursal==='SLP'&&cs==='SLP')||(!sucursal);
     if(!sucOk) continue;
-    if(q.length===0||c.nombre.toLowerCase().indexOf(q)>=0){matches.push(c);count++;}
+    var nombreNorm = normalizarTexto(c.nombre);
+    if(q.length===0){ candidatos.push({c:c, score:0}); continue; }
+    // score 0: empieza igual | 1: aparece contiguo | 2: todas las palabras están, en cualquier orden
+    if(nombreNorm.indexOf(q)===0){ candidatos.push({c:c, score:0}); continue; }
+    if(nombreNorm.indexOf(q)>=0){ candidatos.push({c:c, score:1}); continue; }
+    if(palabras.every(function(p){ return nombreNorm.indexOf(p)>=0; })){ candidatos.push({c:c, score:2}); continue; }
   }
+  candidatos.sort(function(a,b){ return a.score-b.score; });
+  var matches = candidatos.slice(0,8).map(function(x){return x.c;});
   if(!matches.length){lst.style.display='none';return;}
   var html='';
   for(var j=0;j<matches.length;j++){
