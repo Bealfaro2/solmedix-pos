@@ -267,7 +267,14 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
 </style>
 </head>
 <body>
-
+<div id="banner-exito" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#0d1f14;border:3px solid #30a46c;border-radius:16px;padding:32px 40px;text-align:center;max-width:90vw">
+    <div style="font-size:48px">✅</div>
+    <div style="font-size:22px;font-weight:700;color:#30a46c;margin-top:8px">VENTA GUARDADA</div>
+    <div id="banner-exito-detalle" style="font-size:16px;color:#fff;margin-top:6px"></div>
+    <button onclick="document.getElementById('banner-exito').style.display='none'" style="margin-top:18px;padding:8px 24px;border-radius:8px;border:none;background:#30a46c;color:#fff;font-weight:600;cursor:pointer">Entendido</button>
+  </div>
+</div>
 <!-- LOGIN / SUCURSAL -->
 <div id="pantalla-sucursal">
   <div class="suc-card">
@@ -1361,6 +1368,7 @@ function guardar() {
     }
     if(!err){
       setSyncStatus('ok','Guardado en Google Sheets');
+      bannerExito(folio, cliente, total);
 
       // ── Comisión Mercado Pago → Gasto No Fiscal ──────────
       // Ahora se calcula sobre el monto REAL pagado con Tarjeta MP a nivel
@@ -2401,6 +2409,12 @@ function buscarPrecio(){
   cont.innerHTML=html;
 }
 function alrt(msg,tipo){var el=document.getElementById('alrt');el.className='alrt '+(tipo==='s'?'als':tipo==='e'?'ale':'ali');el.textContent=msg;el.style.display='block';setTimeout(function(){el.style.display='none';},4500);}
+function bannerExito(folio, cliente, total){
+  var det = document.getElementById('banner-exito-detalle');
+  det.innerHTML = 'Folio #'+String(folio).padStart(4,'0')+' — '+cliente+'<br>$'+Number(total).toLocaleString('es-MX',{minimumFractionDigits:2});
+  document.getElementById('banner-exito').style.display = 'flex';
+  setTimeout(function(){ document.getElementById('banner-exito').style.display='none'; }, 6000);
+}
 function malrt(msg,tipo){var el=document.getElementById('modal-alrt');el.className='alrt '+(tipo==='s'?'als':tipo==='e'?'ale':'ali');el.textContent=msg;el.style.display='block';}
 
 
