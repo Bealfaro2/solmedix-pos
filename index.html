@@ -1073,7 +1073,7 @@ function renderPagos(){
   // Con una sola línea (caso normal, sin split) el monto siempre es el total
   if(pagosVenta.length===1) pagosVenta[0].monto = total;
   var cont = document.getElementById('pagos-list');
-  var opts = ['Tarjeta MP','Transferencia','Efectivo'];
+    var opts = ['Tarjeta MP','Transferencia','Efectivo','Crédito'];
   var html='';
   pagosVenta.forEach(function(p,i){
     html+='<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'+
@@ -2701,6 +2701,7 @@ function abrirModalCorte() {
         if (m.indexOf('efectivo')>=0) efec += t;
         else if (m.indexOf('transferencia')>=0||m.indexOf('trans')>=0) trans += t;
         else if (m.indexOf('tarjeta')>=0||m.indexOf('card')>=0) tarj += t;
+        else if (m.indexOf('crédito')>=0||m.indexOf('credito')>=0) { /* no es efectivo en caja */ }
         else efec += t;
       });
     } else {

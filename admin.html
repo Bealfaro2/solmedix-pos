@@ -1556,15 +1556,35 @@ select option { background:var(--bg-2); color:var(--text); }
     
     <!-- CLIENTES -->
     <div id="sec-clientes" style="display:none">
-      <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-          <div class="ptitle" style="margin:0">Gestión de clientes</div>
-          <button class="btn btnp" onclick="abrirEditarCliente(null)">+ Nuevo cliente</button>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="nav-tab on" id="clt-lista" onclick="clientesTab('lista')" style="border-radius:var(--radius-sm)">👤 Clientes</button>
+        <button class="nav-tab" id="clt-creditos" onclick="clientesTab('creditos')" style="border-radius:var(--radius-sm)">💳 Créditos</button>
+      </div>
+      <div id="cl-lista">
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div class="ptitle" style="margin:0">Gestión de clientes</div>
+            <button class="btn btnp" onclick="abrirEditarCliente(null)">+ Nuevo cliente</button>
+          </div>
+          <div class="fr" style="margin-bottom:14px">
+            <input type="text" id="bq-cli" placeholder="Buscar por nombre, teléfono o RFC..." oninput="filtrarClientesAdmin()"/>
+          </div>
+          <div id="lista-cli-admin" class="es">Cargando clientes...</div>
         </div>
-        <div class="fr" style="margin-bottom:14px">
-          <input type="text" id="bq-cli" placeholder="Buscar por nombre, teléfono o RFC..." oninput="filtrarClientesAdmin()"/>
+      </div>
+      <div id="cl-creditos" style="display:none">
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div class="ptitle" style="margin:0">Cuentas por cobrar</div>
+            <button class="btn" style="font-size:12px" onclick="nuevoClienteCredito()">+ Nuevo cliente con saldo inicial</button>
+          </div>
+          <div class="fr" style="margin-bottom:14px">
+            <select id="credito-cliente-sel" onchange="renderCreditoCliente()" style="width:100%">
+              <option value="">-- Selecciona un cliente --</option>
+            </select>
+          </div>
+          <div id="credito-detalle"><div class="es">Selecciona un cliente para ver su cuenta</div></div>
         </div>
-        <div id="lista-cli-admin" class="es">Cargando clientes...</div>
       </div>
     </div>
 
@@ -3249,6 +3269,7 @@ function cargarTodo() {
       gastosFiscales = (d.gastos_fiscales)||[];
       gastosNF       = (d.gastos_no_fiscales)||[];
       pagosCompras   = (d.pagos_compras)||[];
+      creditos       = (d.creditos)||[];
     }
     // Fallback individual si get_all no disponible
     else {
@@ -3259,6 +3280,7 @@ function cargarTodo() {
       apiGet('compras',      function(e2,d2){ compras=(d2&&d2.compras)||[]; });
       apiGet('gastos_fiscales',   function(e2,d2){ gastosFiscales=(d2&&d2.gastos_fiscales)||[]; });
       apiGet('gastos_no_fiscales',function(e2,d2){ gastosNF=(d2&&d2.gastos_no_fiscales)||[]; });
+      apiGet('creditos', function(e2,d2){ creditos=(d2&&d2.creditos)||[]; });
     }
     listo=total; check();
   });
@@ -5039,6 +5061,123 @@ function guardarMedicamento(){
   });
 }
 function medAlrt(msg,tipo){var el=document.getElementById('med-alrt');el.className='alrt '+(tipo==='e'?'ale':'als');el.textContent=msg;el.style.display='block';}
+
+var creditos = [];
+
+function clientesTab(t){
+  document.getElementById('cl-lista').style.display = t==='lista' ? 'block':'none';
+  document.getElementById('cl-creditos').style.display = t==='creditos' ? 'block':'none';
+  ['lista','creditos'].forEach(function(x){
+    var el=document.getElementById('clt-'+x);
+    if(el) el.className='nav-tab'+(t===x?' on':'');
+  });
+  if(t==='creditos') renderCreditosTab();
+}
+
+function renderCreditosTab(){
+  var sel = document.getElementById('credito-cliente-sel');
+  var nombresUnicos = {};
+  creditos.forEach(function(c){ nombresUnicos[c.cliente]=1; });
+  var actual = sel.value;
+  sel.innerHTML = '<option value="">-- Selecciona un cliente --</option>' +
+    Object.keys(nombresUnicos).sort().map(function(n){ return '<option'+(n===actual?' selected':'')+'>'+n+'</option>'; }).join('');
+  if(actual && nombresUnicos[actual]) renderCreditoCliente();
+}
+
+// FIFO: los abonos se aplican a los cargos más antiguos primero.
+// Se recalcula siempre desde el historial completo — nunca se modifica un
+// registro histórico, así que es imposible que se corrompa el rastro.
+function calcularCreditoCliente(nombre){
+  var movs = creditos.filter(function(c){ return c.cliente===nombre; })
+    .slice().sort(function(a,b){ return new Date(a.fecha)-new Date(b.fecha); });
+  var cargos = movs.filter(function(m){ return m.tipo==='cargo'||m.tipo==='saldo_inicial'; })
+    .map(function(m){ return {fecha:m.fecha, monto:m.monto, folio:m.folio_venta, notas:m.notas, restante:m.monto}; });
+  var totalAbonos = movs.filter(function(m){ return m.tipo==='abono'; }).reduce(function(s,m){ return s+m.monto; },0);
+  var disponible = totalAbonos;
+  cargos.forEach(function(c){
+    var aplicar = Math.min(c.restante, disponible);
+    c.restante -= aplicar;
+    disponible -= aplicar;
+  });
+  var pendientes = cargos.filter(function(c){ return c.restante>0.01; });
+  var saldoTotal = pendientes.reduce(function(s,c){ return s+c.restante; },0);
+  return { pendientes:pendientes, saldoTotal:saldoTotal };
+}
+
+function renderCreditoCliente(){
+  var nombre = document.getElementById('credito-cliente-sel').value;
+  var cont = document.getElementById('credito-detalle');
+  if(!nombre){ cont.innerHTML='<div class="es">Selecciona un cliente para ver su cuenta</div>'; return; }
+  var r = calcularCreditoCliente(nombre);
+  var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'+
+    '<div><div style="font-size:13px;color:var(--text-3)">Saldo actual</div>'+
+    '<div style="font-size:28px;font-weight:700;color:'+(r.saldoTotal>0?'#e5484d':'#30a46c')+'">$'+r.saldoTotal.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div></div>'+
+    '<button class="btn btnp" onclick="copiarEstadoCuenta(\''+nombre.replace(/'/g,"\\'")+'\')">📋 Copiar estado de cuenta</button>'+
+    '</div>';
+  html += '<div style="display:flex;gap:8px;margin-bottom:16px">'+
+    '<input type="number" id="abono-monto" placeholder="Monto del abono" style="flex:1" min="0" step="0.01"/>'+
+    '<input type="text" id="abono-notas" placeholder="Nota (opcional)" style="flex:1"/>'+
+    '<button class="btn btnp" onclick="registrarAbono(\''+nombre.replace(/'/g,"\\'")+'\')">+ Registrar abono</button>'+
+    '</div>';
+  html += '<div style="font-size:13px;color:var(--text-3);margin-bottom:8px">Cargos pendientes (más antiguo primero)</div>';
+  if(!r.pendientes.length){
+    html += '<div class="es">Sin cargos pendientes 🎉</div>';
+  } else {
+    r.pendientes.forEach(function(c){
+      var fechaFmt = new Date(c.fecha).toLocaleDateString('es-MX');
+      html += '<div class="sc" style="cursor:default">'+
+        '<div><div style="font-weight:600">'+(c.folio?'Folio #'+c.folio:c.notas||'Saldo inicial')+'</div>'+
+        '<div class="sm">'+fechaFmt+(c.restante<c.monto?' — abonado parcial':'')+'</div></div>'+
+        '<div style="text-align:right"><div style="font-weight:700">$'+c.restante.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>'+
+        (c.restante<c.monto?'<div class="sm" style="text-decoration:line-through;color:var(--text-3)">$'+c.monto.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>':'')+
+        '</div></div>';
+    });
+  }
+  cont.innerHTML = html;
+}
+
+function registrarAbono(nombre){
+  var monto = Number(document.getElementById('abono-monto').value)||0;
+  var notas = document.getElementById('abono-notas').value.trim();
+  if(!monto || monto<=0){ alert('Ingresa un monto válido'); return; }
+  apiPostViaJSONP({accion:'registrar_abono_credito', cliente:nombre, monto:monto, notas:notas}, function(err,res){
+    if(err || !res || !res.ok){ alert('No se pudo registrar el abono. Intenta de nuevo.'); return; }
+    creditos.push({id:res.id, fecha:new Date().toISOString(), cliente:nombre, tipo:'abono', monto:monto, folio_venta:'', notas:notas});
+    document.getElementById('abono-monto').value='';
+    document.getElementById('abono-notas').value='';
+    renderCreditoCliente();
+  });
+}
+
+function nuevoClienteCredito(){
+  var nombre = prompt('Nombre exacto del cliente (como aparece en sus ventas):');
+  if(!nombre) return;
+  var monto = Number(prompt('Saldo inicial (lo que te debe hoy):'));
+  if(!monto || monto<0){ alert('Monto inválido'); return; }
+  apiPostViaJSONP({accion:'registrar_saldo_inicial_credito', cliente:nombre.trim(), monto:monto}, function(err,res){
+    if(err || !res || !res.ok){ alert('No se pudo registrar. Intenta de nuevo.'); return; }
+    creditos.push({id:res.id, fecha:new Date().toISOString(), cliente:nombre.trim(), tipo:'saldo_inicial', monto:monto, folio_venta:'', notas:'Saldo inicial'});
+    renderCreditosTab();
+    document.getElementById('credito-cliente-sel').value = nombre.trim();
+    renderCreditoCliente();
+  });
+}
+
+function copiarEstadoCuenta(nombre){
+  var r = calcularCreditoCliente(nombre);
+  var hoy = new Date().toLocaleDateString('es-MX');
+  var txt = '*Estado de cuenta — Solmedix*\n'+nombre+'\nFecha: '+hoy+'\n\n';
+  if(!r.pendientes.length){
+    txt += 'Sin cargos pendientes. ¡Cuenta al corriente! 🎉';
+  } else {
+    r.pendientes.forEach(function(c){
+      var fechaFmt = new Date(c.fecha).toLocaleDateString('es-MX');
+      txt += '• '+fechaFmt+(c.folio?' (folio #'+c.folio+')':'')+': $'+c.restante.toLocaleString('es-MX',{minimumFractionDigits:2})+'\n';
+    });
+    txt += '\n*Total a pagar: $'+r.saldoTotal.toLocaleString('es-MX',{minimumFractionDigits:2})+'*';
+  }
+  navigator.clipboard.writeText(txt).then(function(){ alert('Estado de cuenta copiado. Pégalo en WhatsApp.'); });
+}
 
 function renderClientesAdmin(lista){
   var src=(lista||clientes).slice().sort(function(a,b){return a.nombre.localeCompare(b.nombre,'es');});
