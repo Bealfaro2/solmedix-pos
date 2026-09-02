@@ -4454,6 +4454,24 @@ function aplicarEntrada() {
     return;
   }
 
+  // CANDADO ANTI-DUPLICADO INTERNO: detecta conceptos idénticos repetidos
+  // DENTRO de la misma factura (mismo lote+cantidad+costo) — causa real del
+  // duplicado NIVOLUMAB OPDIVO folio H409 (mismo UUID, mismo segundo exacto,
+  // no un reintento espaciado como los de venta).
+  var conceptosDup = [];
+  facturas.forEach(function(f){
+    var vistos = {};
+    (f.conceptos||[]).filter(function(c){return c.medId&&c.lote;}).forEach(function(c){
+      var k = String(c.medId)+'|'+String(c.lote).trim().toUpperCase()+'|'+c.cantidad+'|'+c.valorUnitario;
+      if(vistos[k]) conceptosDup.push((f.info&&f.info.folio)+' — lote '+c.lote+' x'+c.cantidad);
+      vistos[k]=1;
+    });
+  });
+  if(conceptosDup.length){
+    entradaAlrt('⚠ Conceptos duplicados dentro de la factura: '+conceptosDup.join(', ')+'. Revisa el mapeo de lotes — probablemente el mismo renglón se confirmó dos veces antes de aplicar.','e');
+    return;
+  }
+
   var btn = document.getElementById('btn-aplicar-entrada');
   if (btn) { btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Aplicando...'; }
 
