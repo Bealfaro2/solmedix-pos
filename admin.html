@@ -541,6 +541,7 @@ select option { background:var(--bg-2); color:var(--text); }
     <button class="nav-tab"     id="nt-meds"      onclick="navTab('meds')">💊 Medicamentos</button>
     <button class="nav-tab"     id="nt-clientes"  onclick="navTab('clientes')">👤 Clientes</button>
     <button class="nav-tab"     id="nt-lotes"     onclick="navTab('lotes')">📦 Inventario</button>
+    <button class="nav-tab"     id="nt-antimicrobianos" onclick="navTab('antimicrobianos')">⚠️ Antimicrobianos</button>
     <button class="nav-tab" id="nt-vencimientos" onclick="navTab('vencimientos')" style="background:rgba(239,68,68,.15);color:#fca5a5;border-color:rgba(239,68,68,.3)">⚠️ Vencimientos</button>
     <button class="nav-tab"     id="nt-compras"   onclick="navTab('compras')">🧾 Compras</button>
     <button class="nav-tab"     id="nt-gastos"    onclick="navTab('gastos')">💸 Gastos</button>
@@ -3290,7 +3291,7 @@ function setSyncStatus(t,m){ var el=document.getElementById('sync-status'); el.c
 
 /* NAV */
 function navTab(t) {
-  ['dashboard','reporte','meds','clientes','lotes','vencimientos','compras','gastos','utilidad','precios','pwds','fiscal','bi','sofia'].forEach(function(x){
+  ['dashboard','reporte','meds','clientes','lotes','antimicrobianos','vencimientos','compras','gastos','utilidad','precios','pwds','fiscal','bi','sofia'].forEach(function(x){
     var secEl=document.getElementById('sec-'+x);
     if(secEl) secEl.style.display=t===x?'block':'none';
     var tabEl=document.getElementById('nt-'+x);
@@ -3320,6 +3321,7 @@ function navTab(t) {
   if(t==='sofia'){ cargarConversacionesSofia(); sofIniciarAutoRefresh(); }
   if(t==='precios'){ renderReportePrecios(); }
   if(t==='fiscal'){ FiscalModule.onLogin('Administrador'); }
+  if(t==='antimicrobianos'){ cargarRegistroAntimicrobianos(); }
 }
 
 /* DASHBOARD MAESTRO */

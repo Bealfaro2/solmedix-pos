@@ -1158,7 +1158,18 @@ function addItem() {
       }
     }
   }
-  items.push({nombre:nombre,loteId:loteId,loteNum:loteNum,qty:qty,precio:precio,total:qty*precio});
+  var itemNuevo = {nombre:nombre,loteId:loteId,loteNum:loteNum,qty:qty,precio:precio,total:qty*precio};
+  var medInfoAM = null;
+  for (var mi=0; mi<medicamentos.length; mi++) { if (String(medicamentos[mi].id)===String(medId)) { medInfoAM = medicamentos[mi]; break; } }
+  if (medInfoAM && medInfoAM.es_antimicrobiano) {
+    abrirModalAntimicrobiano(itemNuevo, medInfoAM);
+  } else {
+    agregarItemFinal(itemNuevo);
+  }
+}
+
+function agregarItemFinal(itemNuevo) {
+  items.push(itemNuevo);
   renderItems();
   document.getElementById('msel').value='';
   document.getElementById('pre').value='';
@@ -1173,6 +1184,64 @@ function addItem() {
   document.getElementById('cnom').value='';
   document.getElementById('lsel').innerHTML='<option value="">Seleccionar lote...</option>';
   document.getElementById('stock-info').textContent='';
+}
+
+function escAM(s) {
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function abrirModalAntimicrobiano(itemPendiente, medInfo) {
+  var html = ''
+    +'<div id="modal-am-bg" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px">'
+    +'<div style="background:#fff;border-radius:12px;padding:20px;max-width:420px;width:100%;max-height:90vh;overflow-y:auto">'
+    +'<h3 style="margin:0 0 4px">⚠ Antimicrobiano: '+escAM(itemPendiente.nombre)+'</h3>'
+    +'<div style="font-size:12px;color:#666;margin-bottom:14px">Clasificación AWaRe: '+escAM(medInfo.clasificacion_aware||'—')+'. Por regulación (Suplemento 7.0), se requiere esta información antes de completar la venta.</div>'
+    +'<label style="display:block;font-size:12px;margin-bottom:2px">Nombre del paciente *</label>'
+    +'<input id="am-paciente" style="width:100%;padding:8px;margin-bottom:10px;border:1px solid #ccc;border-radius:6px;box-sizing:border-box" placeholder="A quién se le suministra">'
+    +'<label style="display:block;font-size:12px;margin-bottom:2px">Nombre del médico *</label>'
+    +'<input id="am-medico" style="width:100%;padding:8px;margin-bottom:10px;border:1px solid #ccc;border-radius:6px;box-sizing:border-box">'
+    +'<label style="display:block;font-size:12px;margin-bottom:2px">Cédula profesional *</label>'
+    +'<input id="am-cedula" style="width:100%;padding:8px;margin-bottom:10px;border:1px solid #ccc;border-radius:6px;box-sizing:border-box">'
+    +'<label style="display:block;font-size:12px;margin-bottom:2px">Domicilio del médico *</label>'
+    +'<input id="am-domicilio" style="width:100%;padding:8px;margin-bottom:10px;border:1px solid #ccc;border-radius:6px;box-sizing:border-box">'
+    +'<label style="display:flex;align-items:center;gap:6px;font-size:13px;margin-bottom:14px"><input type="checkbox" id="am-retenida"> Se retiene la receta (última pieza del tratamiento)</label>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button onclick="cerrarModalAntimicrobiano()" style="flex:1;padding:10px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer">Cancelar</button>'
+    +'<button onclick="confirmarModalAntimicrobiano()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#185FA5;color:#fff;font-weight:600;cursor:pointer">Confirmar</button>'
+    +'</div>'
+    +'</div></div>';
+  var div = document.createElement('div');
+  div.innerHTML = html;
+  document.body.appendChild(div.firstChild);
+  window._itemPendienteAM = itemPendiente;
+}
+
+function cerrarModalAntimicrobiano() {
+  var bg = document.getElementById('modal-am-bg');
+  if (bg) bg.remove();
+  window._itemPendienteAM = null;
+}
+
+function confirmarModalAntimicrobiano() {
+  var paciente = document.getElementById('am-paciente').value.trim();
+  var medico = document.getElementById('am-medico').value.trim();
+  var cedula = document.getElementById('am-cedula').value.trim();
+  var domicilio = document.getElementById('am-domicilio').value.trim();
+  var retenida = document.getElementById('am-retenida').checked;
+  if (!paciente || !medico || !cedula || !domicilio) {
+    alrt('Completa todos los campos obligatorios (*)','e');
+    return;
+  }
+  var itemPendiente = window._itemPendienteAM;
+  itemPendiente.antimicrobiano = {
+    nombre_paciente: paciente,
+    nombre_medico: medico,
+    cedula_profesional: cedula,
+    domicilio_medico: domicilio,
+    receta_retenida: retenida ? 'SI' : 'NO'
+  };
+  cerrarModalAntimicrobiano();
+  agregarItemFinal(itemPendiente);
 }
 
 function renderItems() {
@@ -1256,6 +1325,16 @@ function guardar() {
   var hora=document.getElementById('hor').value;
   var cliente=document.getElementById('cli').value.trim();
   if (!fecha||!cliente||!items.length){alrt('Completa fecha, cliente y al menos un medicamento','i');return;}
+
+  for (var iam=0; iam<items.length; iam++) {
+    var itAM = items[iam];
+    var medAM = null;
+    for (var mai=0; mai<medicamentos.length; mai++) { if (medicamentos[mai].nombre===itAM.nombre) { medAM = medicamentos[mai]; break; } }
+    if (medAM && medAM.es_antimicrobiano && !itAM.antimicrobiano) {
+      alrt('Falta información obligatoria de "'+itAM.nombre+'" (antimicrobiano). Elimínalo del carrito y agrégalo de nuevo para completar sus datos.','e');
+      return;
+    }
+  }
 
   var totalCheq = items.reduce(function(s,it){return s+it.total;},0);
   var sumaPagos = pagosVenta.reduce(function(s,p){return s+(Number(p.monto)||0);},0);
