@@ -3552,7 +3552,9 @@ function generarReporte(){
       if(!costoU && nomB){
         for(var k2=0;k2<medicamentos.length;k2++){
           if(String(medicamentos[k2].nombre||'').trim().toLowerCase()===nomB){
-            costoU=Number(medicamentos[k2].costo_promedio)||0; break;
+            var mk2=medicamentos[k2];
+            costoU = perfilActual==='slp' ? (Number(mk2.costo_slp)||Number(mk2.costo)||0) : (Number(mk2.costo_mty)||Number(mk2.costo)||0);
+            break;
           }
         }
       }
@@ -6408,10 +6410,14 @@ function calcularUtilidad() {
         }
       }
       if(!costo && nomItem){
-        // 3er intento: costo promedio del catálogo por nombre
+        // 3er intento: costo del catálogo por nombre (campo correcto: costo_mty/costo_slp,
+        // no "costo_promedio" — ese nombre no existe en la respuesta de Apps Script,
+        // así que este respaldo devolvía $0 en silencio desde que se construyó).
         for(var k=0;k<medicamentos.length;k++){
           if(String(medicamentos[k].nombre||'').trim().toLowerCase()===nomItem){
-            costo=Number(medicamentos[k].costo_promedio)||0; break;
+            var mk=medicamentos[k];
+            costo = perfilActual==='slp' ? (Number(mk.costo_slp)||Number(mk.costo)||0) : (Number(mk.costo_mty)||Number(mk.costo)||0);
+            break;
           }
         }
       }
