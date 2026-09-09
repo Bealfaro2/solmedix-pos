@@ -126,7 +126,10 @@ button{cursor:pointer; border:none; border-radius:var(--radius-sm)}
       <option value="admin">Administrador</option>
       <option value="mty">Sucursal Monterrey</option>
     </select>
-    <input type="password" id="login-pwd" placeholder="Contraseña" autocomplete="current-password">
+    <div style="position:relative">
+      <input type="password" id="login-pwd" placeholder="Contraseña" autocomplete="current-password" style="width:100%;box-sizing:border-box;padding-right:40px">
+      <button type="button" onclick="toggleOjoLogin()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;cursor:pointer;padding:4px">👁</button>
+    </div>
     <button class="btn btn-p" onclick="login()">Entrar</button>
     <div id="login-err"></div>
   </div>
@@ -289,6 +292,13 @@ function apiPost(data, callback) {
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ── LOGIN ──
+function toggleOjoLogin() {
+  var inp = document.getElementById('login-pwd');
+  var btn = event.target;
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁'; }
+}
+
 function login() {
   var perfil = document.getElementById('login-perfil').value;
   var pwd = document.getElementById('login-pwd').value;
