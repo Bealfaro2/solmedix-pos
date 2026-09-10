@@ -2790,7 +2790,7 @@ function aplicarPermisos() {
 function actualizarDatos() {
   setSyncStatus('load','Actualizando...');
   var total=7, listo=0;
-  function done(){ listo++; if(listo>=total){ setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); var sc=document.getElementById('sec-compras'); if(sc&&sc.style.display==='block') renderCompras(); var si=document.getElementById('sec-inventario')||document.getElementById('sec-lotes'); if(si&&si.style.display==='block') renderInventario(); } }
+  function done(){ listo++; if(listo>=total){ setSyncStatus('ok','Conectado'); renderMeds(); renderClientesAdmin(); renderVentasAdmin(); renderLotesAdmin(); var sc=document.getElementById('sec-compras'); if(sc&&sc.style.display==='block') renderCompras(); var si=document.getElementById('sec-inventario')||document.getElementById('sec-lotes'); if(si&&si.style.display==='block') renderInventario(); var ccr=document.getElementById('cl-creditos'); if(ccr&&ccr.style.display==='block') renderCreditosTab(); } }
   apiGet('get_all', function(e,d){
     if(!e && d){
       clientes=(d.clientes)||[]; ventas=((d.ventas)||[]).reverse();
@@ -2798,6 +2798,7 @@ function actualizarDatos() {
       compras=(d.compras)||[]; gastosFiscales=(d.gastos_fiscales)||[];
       gastosNF=(d.gastos_no_fiscales)||[]; caja=(d.caja)||[];
       pagosCompras=(d.pagos_compras)||[];
+      creditos=(d.creditos)||[];
     }
     listo=total; done();
   });
