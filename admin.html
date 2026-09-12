@@ -1607,6 +1607,9 @@ select option { background:var(--bg-2); color:var(--text); }
         </div>
         <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
           <input type="text" id="bq-lote" placeholder="Buscar medicamento o lote..." oninput="filtrarLotes()" style="flex:1;min-width:200px"/>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-3);white-space:nowrap">
+            <input type="checkbox" id="chk-mostrar-agotados" onchange="filtrarLotes()"/> Mostrar lotes agotados (0 pzas)
+          </label>
           <select id="lote-filtro-suc" onchange="filtrarLotes()" style="padding:8px 12px;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px">
             <option value="TODAS">🏪 Todas las sucursales</option>
             <option value="MTY">📍 Monterrey</option>
@@ -5529,6 +5532,12 @@ function renderLotesAdmin(lista){
     var filtroSuc = selSuc ? selSuc.value : 'TODAS';
     if(filtroSuc === 'MTY') src=src.filter(function(l){ return l.sucursal==='MTY'||!l.sucursal; });
     else if(filtroSuc === 'SLP') src=src.filter(function(l){ return l.sucursal==='SLP'; });
+  }
+  var chkAgotados = document.getElementById('chk-mostrar-agotados');
+  if(!(chkAgotados && chkAgotados.checked)){
+    // Ocultos por default: siguen intactos en Sheets y en Trazabilidad por lote,
+    // solo no se dibujan aquí para no saturar la tabla con lotes ya vencidos/agotados.
+    src = src.filter(function(l){ return Number(l.existencias)>0; });
   }
   src.sort(function(a,b){ return a.medicamento.localeCompare(b.medicamento,'es'); });
   var tbody=document.getElementById('lotes-body');
