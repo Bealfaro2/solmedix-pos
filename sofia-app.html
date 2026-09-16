@@ -169,6 +169,7 @@ button{cursor:pointer; border:none; border-radius:var(--radius-sm)}
         <div class="sub" id="chat-numero"></div>
         <div id="presencia-otros" style="display:none;font-size:11px;color:#f59e0b;margin-top:2px"></div>
       </div>
+      <button class="icon-btn" style="font-size:18px" onclick="abrirModalGuia()" title="Generar guía de envío">📦</button>
       <button class="icon-btn" style="font-size:18px" onclick="enviarDatosPago()" title="Enviar datos de pago">💳</button>
       <button class="icon-btn" style="font-size:18px" onclick="enviarUbicacion()" title="Enviar ubicación">📍</button>
       <button class="icon-btn" style="font-size:15px" onclick="reactivarChat()" title="Reiniciar conversación">🔄</button>
@@ -197,6 +198,25 @@ button{cursor:pointer; border:none; border-radius:var(--radius-sm)}
       </div>
       <button class="btn btn-p" style="width:100%" onclick="enviarComando()">Enviar</button>
       <div id="estado-envio"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ MODAL: GENERAR GUÍA ═══════ -->
+<div class="overlay" id="modal-guia" onclick="if(event.target===this)cerrarModalGuia()">
+  <div class="sheet">
+    <h3>Generar guía de envío</h3>
+    <div class="fr"><label>Medicamento</label><input type="text" id="g-medicamento" placeholder="Nombre exacto del catálogo"></div>
+    <div class="fr"><label>Calle y número</label><input type="text" id="g-calle" placeholder="Insurgentes Sur 1234"></div>
+    <div class="fr"><label>Código Postal</label><input type="text" id="g-cp" placeholder="06600"></div>
+    <div class="fr"><label>Estado</label><input type="text" id="g-estado" placeholder="Ciudad de Mexico"></div>
+    <div class="fr"><label>Municipio</label><input type="text" id="g-municipio" placeholder="Cuauhtemoc"></div>
+    <div class="fr"><label>Colonia</label><input type="text" id="g-colonia" placeholder="Juarez"></div>
+    <div class="hint">Estafeta (más rápida) con DHL de respaldo. Puede tardar unos segundos.</div>
+    <div id="g-alerta" style="font-size:12px; margin-top:4px; min-height:16px"></div>
+    <div class="sheet-actions">
+      <button class="btn" onclick="cerrarModalGuia()">Cancelar</button>
+      <button class="btn btn-p" id="g-btn-enviar" onclick="enviarGuia()">Generar</button>
     </div>
   </div>
 </div>
@@ -537,6 +557,43 @@ function enviarComando() {
     document.getElementById('c-entrega').value = '';
     document.getElementById('c-detalle-disp').value = '';
     setTimeout(function(){ abrirChat(clienteActual.numero, clienteActual.nombre); estado.textContent=''; }, 1000);
+  });
+}
+
+function abrirModalGuia() {
+  if (!clienteActual) return;
+  document.getElementById('g-medicamento').value = '';
+  document.getElementById('g-calle').value = '';
+  document.getElementById('g-cp').value = '';
+  document.getElementById('g-estado').value = '';
+  document.getElementById('g-municipio').value = '';
+  document.getElementById('g-colonia').value = '';
+  document.getElementById('g-alerta').textContent = '';
+  document.getElementById('modal-guia').classList.add('on');
+}
+function cerrarModalGuia() { document.getElementById('modal-guia').classList.remove('on'); }
+function enviarGuia() {
+  if (!clienteActual) return;
+  var medicamento = document.getElementById('g-medicamento').value.trim();
+  var calle = document.getElementById('g-calle').value.trim();
+  var cp = document.getElementById('g-cp').value.trim();
+  var estado = document.getElementById('g-estado').value.trim();
+  var municipio = document.getElementById('g-municipio').value.trim();
+  var colonia = document.getElementById('g-colonia').value.trim();
+  var alerta = document.getElementById('g-alerta');
+  if (!medicamento || !calle || !cp || !estado || !municipio || !colonia) {
+    alerta.style.color = '#fca5a5'; alerta.textContent = 'Todos los campos son obligatorios.'; return;
+  }
+  var btn = document.getElementById('g-btn-enviar');
+  btn.disabled = true; alerta.style.color = 'var(--text-3)'; alerta.textContent = 'Cotizando y generando guía...';
+  apiPost({
+    accion: 'enviar_comando_sofia', tipo: 'generar_guia', cliente: clienteActual.numero,
+    medicamento: medicamento, calle: calle, cp: cp, estado: estado, municipio: municipio, colonia: colonia
+  }, function(err, res) {
+    btn.disabled = false;
+    if (err || !res || !res.ok) { alerta.style.color = '#fca5a5'; alerta.textContent = '❌ ' + ((res&&res.error)||err); return; }
+    alerta.style.color = '#86efac'; alerta.textContent = '✅ Guía generada';
+    setTimeout(function(){ cerrarModalGuia(); abrirChat(clienteActual.numero, clienteActual.nombre); }, 1200);
   });
 }
 

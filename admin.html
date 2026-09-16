@@ -1321,6 +1321,7 @@ select option { background:var(--bg-2); color:var(--text); }
             <div class="sof-chat-head" id="sof-chat-head" style="display:flex;justify-content:space-between;align-items:center">
               <span id="sof-chat-head-txt">Selecciona una conversación</span>
               <span id="sof-presencia-otros" style="display:none;font-size:11px;color:#f59e0b;margin-left:10px">👀 También viendo: <span id="sof-presencia-nombres"></span></span>
+              <button class="btn" id="sof-btn-guia" style="display:none;font-size:11px;padding:4px 10px;margin-right:6px" onclick="sofAbrirModalGuia()">📦 Generar Guía</button>
               <button class="btn" id="sof-btn-pago" style="display:none;font-size:11px;padding:4px 10px;margin-right:6px" onclick="sofEnviarDatosPago()">💳 Pago</button>
               <button class="btn" id="sof-btn-ubicacion" style="display:none;font-size:11px;padding:4px 10px;margin-right:6px" onclick="sofEnviarUbicacion()">📍 Ubicación</button>
               <button class="btn" id="sof-btn-reiniciar" style="display:none;font-size:11px;padding:4px 10px" onclick="sofReactivarChat()">🔄 Reiniciar conversación</button>
@@ -1375,6 +1376,24 @@ select option { background:var(--bg-2); color:var(--text); }
           <button class="btn btnp" id="sof-btn-nuevo-enviar" onclick="sofEnviarNuevoChat()">Enviar</button>
         </div>
         <div id="sof-nuevo-alrt" style="display:none;margin-top:8px;font-size:12px"></div>
+      </div>
+    </div>
+
+    <div class="overlay" id="modal-sof-guia-overlay" onclick="if(event.target===this)sofCerrarModalGuia()">
+      <div class="modal" style="max-width:440px">
+        <h2>Generar guía de envío</h2>
+        <div class="fr"><label>Medicamento *</label><input type="text" id="sof-guia-medicamento" placeholder="Nombre exacto del catálogo"/></div>
+        <div class="fr"><label>Calle y número *</label><input type="text" id="sof-guia-calle" placeholder="Insurgentes Sur 1234"/></div>
+        <div class="fr"><label>Código Postal *</label><input type="text" id="sof-guia-cp" placeholder="06600"/></div>
+        <div class="fr"><label>Estado *</label><input type="text" id="sof-guia-estado" placeholder="Ciudad de Mexico"/></div>
+        <div class="fr"><label>Municipio *</label><input type="text" id="sof-guia-municipio" placeholder="Cuauhtemoc"/></div>
+        <div class="fr"><label>Colonia *</label><input type="text" id="sof-guia-colonia" placeholder="Juarez"/></div>
+        <div class="sof-hint">Se genera con Estafeta (la más rápida) o DHL como respaldo. Puede tardar unos segundos en confirmar el número de rastreo.</div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+          <button class="btn" onclick="sofCerrarModalGuia()">Cancelar</button>
+          <button class="btn btnp" id="sof-btn-guia-enviar" onclick="sofEnviarGuia()">Generar</button>
+        </div>
+        <div id="sof-guia-alrt" style="display:none;margin-top:8px;font-size:12px"></div>
       </div>
     </div>
 
@@ -2932,6 +2951,61 @@ function sofAbrirModalNuevo() {
   document.getElementById('modal-sof-nuevo-overlay').classList.add('show');
 }
 
+function sofAbrirModalGuia() {
+  if (!sofClienteActual) return;
+  document.getElementById('sof-guia-medicamento').value = '';
+  document.getElementById('sof-guia-calle').value = '';
+  document.getElementById('sof-guia-cp').value = '';
+  document.getElementById('sof-guia-estado').value = '';
+  document.getElementById('sof-guia-municipio').value = '';
+  document.getElementById('sof-guia-colonia').value = '';
+  document.getElementById('sof-guia-alrt').style.display = 'none';
+  document.getElementById('modal-sof-guia-overlay').classList.add('show');
+}
+
+function sofCerrarModalGuia() {
+  document.getElementById('modal-sof-guia-overlay').classList.remove('show');
+}
+
+function sofEnviarGuia() {
+  if (!sofClienteActual) return;
+  var medicamento = document.getElementById('sof-guia-medicamento').value.trim();
+  var calle = document.getElementById('sof-guia-calle').value.trim();
+  var cp = document.getElementById('sof-guia-cp').value.trim();
+  var estado = document.getElementById('sof-guia-estado').value.trim();
+  var municipio = document.getElementById('sof-guia-municipio').value.trim();
+  var colonia = document.getElementById('sof-guia-colonia').value.trim();
+  var alrt = document.getElementById('sof-guia-alrt');
+
+  if (!medicamento || !calle || !cp || !estado || !municipio || !colonia) {
+    alrt.style.display = 'block'; alrt.style.color = '#fca5a5';
+    alrt.textContent = 'Todos los campos son obligatorios.';
+    return;
+  }
+
+  var btn = document.getElementById('sof-btn-guia-enviar');
+  btn.disabled = true;
+  alrt.style.display = 'block'; alrt.style.color = 'var(--text-3)';
+  alrt.textContent = 'Cotizando y generando guía, puede tardar unos segundos...';
+
+  apiPostViaJSONP({
+    accion: 'enviar_comando_sofia',
+    tipo: 'generar_guia',
+    cliente: sofClienteActual.numero,
+    medicamento: medicamento, calle: calle, cp: cp, estado: estado, municipio: municipio, colonia: colonia
+  }, function(err, res) {
+    btn.disabled = false;
+    if (err || !res || !res.ok) {
+      alrt.style.color = '#fca5a5';
+      alrt.textContent = '❌ Error: ' + ((res && res.error) || err);
+      return;
+    }
+    alrt.style.color = '#86efac';
+    alrt.textContent = '✅ Guía generada';
+    setTimeout(function() { sofCerrarModalGuia(); sofAbrirHilo(sofClienteActual.numero, sofClienteActual.nombre); }, 1200);
+  });
+}
+
 function sofEnviarDatosPago() {
   if (!sofClienteActual) return;
   var mensaje = 'Puedes pagar de dos formas:\n\n' +
@@ -3142,6 +3216,7 @@ function sofAbrirHilo(numero, nombre) {
     document.getElementById('sof-chat-head-txt').textContent = (nombre || numero) + '  ·  ' + numero;
     document.getElementById('sof-btn-reiniciar').style.display = '';
     document.getElementById('sof-btn-ubicacion').style.display = '';
+  document.getElementById('sof-btn-guia').style.display = '';
     document.getElementById('sof-btn-pago').style.display = '';
     sofAvisarViendoChat(numero);
   }
