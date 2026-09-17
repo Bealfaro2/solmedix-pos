@@ -3336,7 +3336,7 @@ function sofEnviarComando() {
   });
 }
 
-function apiPostViaJSONP(data, callback) {
+function apiPostViaJSONP(data, callback, _intentoReintento) {
   var encoded = encodeURIComponent(JSON.stringify(data));
   var cbName = 'cb_' + Math.random().toString(36).slice(2);
   var timeout = setTimeout(function() {
@@ -3344,9 +3344,13 @@ function apiPostViaJSONP(data, callback) {
       delete window[cbName];
       var sc = document.getElementById('sc_'+cbName);
       if (sc) sc.remove();
-      console.warn('[apiPostViaJSONP] Timeout — reintentando:', data.accion);
-      // Reintentar una vez
-      apiPostViaJSONP(data, callback);
+      if (_intentoReintento) {
+        console.error('[apiPostViaJSONP] Timeout de nuevo tras reintentar — se detiene, no se reintenta más:', data.accion);
+        callback(new Error('Tiempo de espera agotado (dos intentos)'));
+        return;
+      }
+      console.warn('[apiPostViaJSONP] Timeout — reintentando UNA sola vez:', data.accion);
+      apiPostViaJSONP(data, callback, true);
     }
   }, 8000);
   window[cbName] = function(res) {
