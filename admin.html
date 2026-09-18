@@ -2953,12 +2953,13 @@ function sofAbrirModalNuevo() {
 
 function sofAbrirModalGuia() {
   if (!sofClienteActual) return;
+  var est = sofClienteActual.direccionEstructurada;
   document.getElementById('sof-guia-medicamento').value = '';
-  document.getElementById('sof-guia-calle').value = sofClienteActual.direccion || '';
-  document.getElementById('sof-guia-cp').value = '';
-  document.getElementById('sof-guia-estado').value = '';
-  document.getElementById('sof-guia-municipio').value = '';
-  document.getElementById('sof-guia-colonia').value = '';
+  document.getElementById('sof-guia-calle').value = est ? est.calle : (sofClienteActual.direccion || '');
+  document.getElementById('sof-guia-cp').value = est ? est.cp : '';
+  document.getElementById('sof-guia-estado').value = est ? est.estado : '';
+  document.getElementById('sof-guia-municipio').value = est ? est.municipio : '';
+  document.getElementById('sof-guia-colonia').value = est ? est.colonia : '';
   document.getElementById('sof-guia-alrt').style.display = 'none';
   document.getElementById('modal-sof-guia-overlay').classList.add('show');
 }
@@ -3209,7 +3210,7 @@ var sofUltimaFecha = null;
 function sofAbrirHilo(numero, nombre) {
   var esRefrescoMismoChat = sofClienteActual && sofClienteActual.numero === numero;
   var entradaDireccion = sofUltimaLista.filter(function(c){ return c.numero === numero; })[0];
-  sofClienteActual = { numero: numero, nombre: nombre, direccion: entradaDireccion ? entradaDireccion.direccion : '' };
+  sofClienteActual = { numero: numero, nombre: nombre, direccion: entradaDireccion ? entradaDireccion.direccion : '', direccionEstructurada: entradaDireccion ? entradaDireccion.direccion_estructurada : null };
   if (!esRefrescoMismoChat) {
     var entradaLista = sofUltimaLista.filter(function(c){ return c.numero === numero; })[0];
     if (entradaLista) sofMarcarVisto(entradaLista);
