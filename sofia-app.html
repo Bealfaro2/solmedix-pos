@@ -474,7 +474,7 @@ var chatUltimaFecha = null;
 function abrirChat(numero, nombre) {
   var esRefrescoMismoChat = clienteActual && clienteActual.numero === numero && document.getElementById('vista-chat').classList.contains('on');
   var entradaDireccion = ultimaLista.filter(function(c){ return c.numero === numero; })[0];
-  clienteActual = { numero:numero, nombre:nombre, direccion: entradaDireccion ? entradaDireccion.direccion : '' };
+  clienteActual = { numero:numero, nombre:nombre, direccion: entradaDireccion ? entradaDireccion.direccion : '', direccionEstructurada: entradaDireccion ? entradaDireccion.direccion_estructurada : null };
   if (!esRefrescoMismoChat) {
     var entrada = ultimaLista.filter(function(c){ return c.numero===numero; })[0];
     if (entrada) marcarVisto(entrada);
@@ -563,12 +563,13 @@ function enviarComando() {
 
 function abrirModalGuia() {
   if (!clienteActual) return;
+  var est = clienteActual.direccionEstructurada;
   document.getElementById('g-medicamento').value = '';
-  document.getElementById('g-calle').value = clienteActual.direccion || '';
-  document.getElementById('g-cp').value = '';
-  document.getElementById('g-estado').value = '';
-  document.getElementById('g-municipio').value = '';
-  document.getElementById('g-colonia').value = '';
+  document.getElementById('g-calle').value = est ? est.calle : (clienteActual.direccion || '');
+  document.getElementById('g-cp').value = est ? est.cp : '';
+  document.getElementById('g-estado').value = est ? est.estado : '';
+  document.getElementById('g-municipio').value = est ? est.municipio : '';
+  document.getElementById('g-colonia').value = est ? est.colonia : '';
   document.getElementById('g-alerta').textContent = '';
   document.getElementById('modal-guia').classList.add('on');
 }
