@@ -2954,7 +2954,7 @@ function sofAbrirModalNuevo() {
 function sofAbrirModalGuia() {
   if (!sofClienteActual) return;
   document.getElementById('sof-guia-medicamento').value = '';
-  document.getElementById('sof-guia-calle').value = '';
+  document.getElementById('sof-guia-calle').value = sofClienteActual.direccion || '';
   document.getElementById('sof-guia-cp').value = '';
   document.getElementById('sof-guia-estado').value = '';
   document.getElementById('sof-guia-municipio').value = '';
@@ -3208,7 +3208,8 @@ var sofUltimaFecha = null;
 
 function sofAbrirHilo(numero, nombre) {
   var esRefrescoMismoChat = sofClienteActual && sofClienteActual.numero === numero;
-  sofClienteActual = { numero: numero, nombre: nombre };
+  var entradaDireccion = sofUltimaLista.filter(function(c){ return c.numero === numero; })[0];
+  sofClienteActual = { numero: numero, nombre: nombre, direccion: entradaDireccion ? entradaDireccion.direccion : '' };
   if (!esRefrescoMismoChat) {
     var entradaLista = sofUltimaLista.filter(function(c){ return c.numero === numero; })[0];
     if (entradaLista) sofMarcarVisto(entradaLista);

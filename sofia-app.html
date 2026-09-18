@@ -473,7 +473,8 @@ var chatUltimaFecha = null;
 
 function abrirChat(numero, nombre) {
   var esRefrescoMismoChat = clienteActual && clienteActual.numero === numero && document.getElementById('vista-chat').classList.contains('on');
-  clienteActual = { numero:numero, nombre:nombre };
+  var entradaDireccion = ultimaLista.filter(function(c){ return c.numero === numero; })[0];
+  clienteActual = { numero:numero, nombre:nombre, direccion: entradaDireccion ? entradaDireccion.direccion : '' };
   if (!esRefrescoMismoChat) {
     var entrada = ultimaLista.filter(function(c){ return c.numero===numero; })[0];
     if (entrada) marcarVisto(entrada);
@@ -563,7 +564,7 @@ function enviarComando() {
 function abrirModalGuia() {
   if (!clienteActual) return;
   document.getElementById('g-medicamento').value = '';
-  document.getElementById('g-calle').value = '';
+  document.getElementById('g-calle').value = clienteActual.direccion || '';
   document.getElementById('g-cp').value = '';
   document.getElementById('g-estado').value = '';
   document.getElementById('g-municipio').value = '';
