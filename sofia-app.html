@@ -203,8 +203,8 @@ button{cursor:pointer; border:none; border-radius:var(--radius-sm)}
 </div>
 
 <!-- ═══════ MODAL: GENERAR GUÍA ═══════ -->
-<div class="overlay" id="modal-guia" onclick="if(event.target===this)cerrarModalGuia()">
-  <div class="sheet">
+<div class="overlay" id="modal-guia" onclick="if(event.target===this)cerrarModalGuia()" style="background:rgba(0,0,0,.2)">
+  <div class="sheet" style="max-height:65vh;overflow-y:auto">
     <h3>Generar guía de envío</h3>
     <div class="fr"><label>Medicamento</label><input type="text" id="g-medicamento" placeholder="Nombre exacto del catálogo"></div>
     <div class="fr"><label>Calle y número</label><input type="text" id="g-calle" placeholder="Insurgentes Sur 1234"></div>

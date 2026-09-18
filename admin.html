@@ -1379,8 +1379,8 @@ select option { background:var(--bg-2); color:var(--text); }
       </div>
     </div>
 
-    <div class="overlay" id="modal-sof-guia-overlay" onclick="if(event.target===this)sofCerrarModalGuia()">
-      <div class="modal" style="max-width:440px">
+    <div class="overlay" id="modal-sof-guia-overlay" onclick="if(event.target===this)sofCerrarModalGuia()" style="background:rgba(0,0,0,.15);justify-content:flex-end;align-items:flex-start;padding:20px">
+      <div class="modal" style="max-width:360px;box-shadow:0 10px 40px rgba(0,0,0,.5);margin-top:60px">
         <h2>Generar guía de envío</h2>
         <div class="fr"><label>Medicamento *</label><input type="text" id="sof-guia-medicamento" placeholder="Nombre exacto del catálogo"/></div>
         <div class="fr"><label>Calle y número *</label><input type="text" id="sof-guia-calle" placeholder="Insurgentes Sur 1234"/></div>
