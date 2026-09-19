@@ -208,68 +208,222 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
   background: transparent;
 }
 
-/* ── Firma agencia ── */
-.agencia-firma {
-  position: absolute;
-  bottom: 1.5rem;
-  left: 0; right: 0;
-  text-align: center;
-  pointer-events: none;
-  user-select: none;
+/* ═══════════════════════════════════════════════════════════════
+   SOLMEDIX — REDISEÑO VISUAL INTEGRAL 2026
+   Capa visual: no altera lógica de negocio.
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#0b1220;
+  --bg-2:#111c2d;
+  --bg-3:#172337;
+  --surface:#111c2d;
+  --surface-2:#172337;
+  --surface-3:#1d2b41;
+  --border:rgba(148,163,184,.14);
+  --border-soft:rgba(148,163,184,.075);
+  --text:#f4f7fb;
+  --text-2:#a7b4c7;
+  --text-3:#718096;
+  --radius-sm:8px;
+  --radius:10px;
+  --radius-lg:16px;
+  --radius-xl:20px;
+  --shadow:0 3px 14px rgba(0,0,0,.22);
+  --shadow-lg:0 16px 40px rgba(0,0,0,.34);
 }
-.agencia-firma .agencia-nombre {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  background: linear-gradient(90deg, #2b7fd4, #60a5fa, #2b7fd4);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: shimmer 3s linear infinite;
-}
-.agencia-firma .agencia-sub {
-  font-size: 9px;
-  letter-spacing: .22em;
-  text-transform: uppercase;
-  color: var(--text-3);
-  margin-top: 2px;
-}
-@keyframes shimmer { to { background-position: 200% center; } }
+body{background:var(--bg)}
+body::before{background:radial-gradient(ellipse 78% 58% at 78% -12%,rgba(43,127,212,.075) 0%,rgba(43,127,212,.025) 38%,transparent 68%)}
 
-/* ── Firma agencia ── */
-.agencia-firma {
-  text-align: center;
-  margin-top: 2rem;
-  pointer-events: none;
+/* Iconografía lineal consistente */
+.ui-icon,.section-icon,.scan-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.ui-icon{width:15px;height:15px;margin-right:6px}
+.ui-icon svg,.section-icon svg,.scan-icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ui-icon-brand{width:19px;height:19px;color:var(--blue-bright);margin-right:0}
+
+/* Login sobrio */
+#pantalla-sucursal{padding:2rem 1.5rem}
+.suc-card{background:var(--surface);backdrop-filter:none;border-radius:20px;padding:2.65rem 2.4rem 2.3rem;box-shadow:0 18px 46px rgba(0,0,0,.34);border-color:rgba(148,163,184,.13)}
+.suc-card img{max-width:185px;margin-bottom:1.7rem}
+.suc-card h2{font-size:23px;letter-spacing:-.025em}
+.suc-card p{font-size:13px;color:var(--text-2);margin-bottom:1.8rem}
+.suc-btns{gap:12px}
+.suc-btn{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:1.2rem 1rem;min-height:124px;gap:4px;box-shadow:none}
+.suc-btn:hover{border-color:rgba(43,127,212,.55);background:#1a2a41;transform:translateY(-2px);box-shadow:0 10px 22px rgba(0,0,0,.18)}
+.suc-btn.selected{border-color:var(--blue-bright);background:rgba(43,127,212,.10);box-shadow:0 0 0 3px rgba(43,127,212,.08)}
+.suc-code{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.12em;color:#7fb5ea;margin-bottom:3px}
+.suc-ciudad{font-size:16px}
+.suc-dir{font-size:10.5px;line-height:1.45;color:var(--text-3);max-width:180px}
+.suc-confirm{border-radius:10px;min-height:44px;box-shadow:none}
+
+/* Firma de agencia: estática y secundaria */
+.agencia-firma{position:absolute!important;bottom:1.2rem!important;left:0!important;right:0!important;margin-top:0!important;text-align:center;opacity:.46;pointer-events:none;user-select:none}
+.agencia-firma .agencia-nombre{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;background:none!important;background-size:auto!important;-webkit-background-clip:initial!important;-webkit-text-fill-color:#7f92aa!important;background-clip:initial!important;color:#7f92aa!important;animation:none!important}
+.agencia-firma .agencia-nombre img{opacity:.72;filter:saturate(.72);height:30px!important}
+.agencia-firma .agencia-sub{font-size:8px;letter-spacing:.18em;color:#596b82;margin-top:1px}
+
+/* Barra superior */
+.topbar{height:64px;padding:0 1.35rem;background:rgba(11,18,32,.97);backdrop-filter:blur(8px);box-shadow:0 1px 0 rgba(255,255,255,.025);gap:18px}
+.topbar-brand{display:flex;align-items:center;min-width:245px}
+.topbar h1{font-size:14px;gap:9px;letter-spacing:-.01em}
+.topbar-center{display:flex;align-items:center;justify-content:center;gap:8px;flex:1}
+.topbar-actions{display:flex;align-items:center;gap:7px;margin-left:auto}
+.chip-suc,.sync{font-size:10.5px;padding:4px 9px}
+.t-btn{min-height:34px;padding:6px 11px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;gap:0;font-size:11.5px}
+.t-btn-primary{box-shadow:none}
+.t-btn-cash{background:rgba(245,158,11,.09);border:1px solid rgba(245,158,11,.26);color:#f6c86c}
+.t-btn-cash:hover{background:rgba(245,158,11,.14)}
+.t-btn-danger{background:transparent;color:#e99a9a;border:1px solid rgba(239,68,68,.20)}
+.t-btn-danger:hover{background:rgba(239,68,68,.08);color:#f5b2b2}
+.cash-menu-wrap{position:relative;display:inline-block}
+.cash-dropdown{position:absolute;top:calc(100% + 7px);right:0;background:var(--surface-3);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-lg);min-width:170px;z-index:300;overflow:hidden;padding:5px}
+.cash-dropdown button{display:flex;align-items:center;width:100%;padding:9px 10px;text-align:left;background:none;border:none;color:var(--text);font:500 12px var(--font);cursor:pointer;border-radius:7px}
+.cash-dropdown button:hover{background:rgba(148,163,184,.09)}
+
+/* Layout y superficies */
+.app{grid-template-columns:minmax(0,1fr) 372px;gap:20px;padding:1.4rem;max-width:1460px}
+.panel{background:var(--surface);backdrop-filter:none;border:1px solid var(--border);border-radius:16px;padding:1.3rem;box-shadow:0 3px 14px rgba(0,0,0,.18)}
+.sale-panel{border-top:2px solid rgba(43,127,212,.72);box-shadow:0 7px 26px rgba(0,0,0,.22)}
+.search-panel{background:#101a2a}
+.ptitle{font-size:12px;font-weight:650;color:var(--text);text-transform:none;letter-spacing:0;margin-bottom:12px}
+.ptitle-main{font-size:15px;font-weight:700;margin:0;color:var(--text);letter-spacing:-.015em}
+.section-title-row{display:flex;align-items:center;gap:11px;margin-bottom:16px}
+.section-title-row.compact{margin-bottom:13px}
+.section-icon{width:34px;height:34px;border-radius:9px;background:rgba(43,127,212,.11);border:1px solid rgba(43,127,212,.20);color:#78afe4;padding:8px}
+.section-icon.muted{background:rgba(148,163,184,.07);border-color:var(--border);color:#9badc3}
+.section-subtitle{font-size:11px;color:var(--text-3);margin-top:2px}
+.sep{margin:14px 0;background:var(--border-soft)}
+
+/* Formularios */
+.fr{margin-bottom:12px}
+label{font-size:12.5px;font-weight:550;color:#b5c0d0;margin-bottom:6px}
+input,select,textarea{background:var(--surface-2)!important;border:1px solid rgba(148,163,184,.15)!important;border-radius:8px!important;color:var(--text)!important;font-size:13px!important;min-height:38px}
+textarea{font-family:var(--font);padding:9px 11px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:rgba(43,127,212,.72)!important;box-shadow:0 0 0 3px rgba(43,127,212,.11)!important}
+select option{background:var(--surface-3)}
+.ac-list{background:var(--surface-3);border-color:rgba(148,163,184,.16);border-radius:10px;box-shadow:0 14px 34px rgba(0,0,0,.34)}
+.ac-item{min-height:38px;padding:9px 11px}
+.ac-item:hover,.ac-item.sel{background:#26364f}
+
+/* Medicamento por pasos */
+.med-title{margin:0 0 10px;color:#aebbd0;font-size:12px}
+.med-step{border:1px solid var(--border);border-radius:12px;background:#0f1929;padding:12px;margin-bottom:10px}
+.med-step-primary{border-color:rgba(43,127,212,.18)}
+.med-step-secondary{padding-bottom:11px}
+.med-step-head{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+.med-step-head .step-number{width:23px;height:23px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;background:rgba(43,127,212,.14);color:#8abbe9;font:700 11px var(--mono);border:1px solid rgba(43,127,212,.18)}
+.med-step-head strong{display:block;font-size:12px;font-weight:650;color:var(--text)}
+.med-step-head small{display:block;font-size:10.5px;color:var(--text-3);margin-top:2px}
+.scan-group{margin-bottom:8px}
+.scan-field{position:relative}
+.scan-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:19px;height:19px;color:#7693b5;z-index:2}
+.scan-field input{padding-left:40px!important;min-height:44px;font-size:13.5px!important;border-color:rgba(43,127,212,.25)!important;background:#132137!important}
+.search-divider{display:flex;align-items:center;gap:9px;color:var(--text-3);font-size:10px;margin:9px 0}
+.search-divider::before,.search-divider::after{content:"";height:1px;background:var(--border-soft);flex:1}
+.med-controls{display:grid;grid-template-columns:minmax(120px,1fr) minmax(120px,1fr) 126px;gap:9px;margin-bottom:0}
+.med-add-wrap{display:flex;align-items:flex-end}
+.med-add-btn{width:100%;height:39px;padding:8px 10px!important;font-size:12px!important}
+#qty-manual-link{font-size:10.5px!important;color:#7e93ad!important}
+
+/* Botones */
+.btn{border-radius:9px;min-height:36px}
+.btnp{box-shadow:none}
+.btn-clear{background:transparent;border-color:transparent;color:var(--text-2);padding-left:18px;padding-right:18px}
+.btn-clear:hover{background:rgba(148,163,184,.06);border-color:var(--border);color:var(--text)}
+.sale-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:14px}
+.btn-save{min-height:46px;padding:10px 20px;font-weight:650;font-size:13px;min-width:225px}
+
+/* Carrito, total y pagos */
+#eitem{background:rgba(148,163,184,.035);border:1px dashed var(--border);border-radius:10px;margin-top:4px;color:var(--text-3)!important}
+table.it{font-size:12px;margin-top:6px}
+.it th{height:36px;padding:7px 8px;color:#8292a8;font-size:10.5px;text-transform:none;letter-spacing:.015em;background:rgba(148,163,184,.025)}
+.it td{height:43px;padding:8px;color:#e7edf5}
+.it tbody tr{transition:background .12s}
+.it tbody tr:hover{background:rgba(148,163,184,.035)}
+.it th:nth-child(3),.it th:nth-child(4),.it th:nth-child(5),.it td:nth-child(3),.it td:nth-child(4),.it td:nth-child(5){text-align:right}
+.it td:nth-child(4),.it td:nth-child(5){font-family:var(--mono);font-size:11.5px}
+.lote-badge{font-size:9.5px;background:rgba(245,158,11,.09);border-color:rgba(245,158,11,.16);color:#e9be69}
+.total-band{justify-content:space-between;align-items:center;margin-top:12px;padding:13px 14px!important;border:1px solid rgba(43,127,212,.17)!important;border-radius:11px;background:linear-gradient(90deg,rgba(43,127,212,.09),rgba(43,127,212,.025));}
+.total-band>div{display:flex;flex-direction:column;gap:2px}
+.total-label{font-size:12px;font-weight:650;color:#aebdd1}
+.total-band small{font-size:10px;color:var(--text-3)}
+.total-amount{font-family:var(--mono);font-size:28px;font-weight:700;color:#f8fbff;letter-spacing:-.035em}
+#pagos-block{border-top:0!important;background:#0f1929;border:1px solid var(--border);border-radius:10px;padding:11px!important;margin-top:10px!important}
+
+/* Tabs segmentadas */
+.segmented-tabs{display:inline-flex;gap:3px;padding:4px;border:1px solid var(--border);background:#0d1726;border-radius:11px;margin-bottom:14px;max-width:100%;overflow-x:auto;flex-wrap:nowrap}
+.segmented-tabs .tab{border:0;background:transparent;border-radius:7px;padding:7px 11px;white-space:nowrap;display:inline-flex;align-items:center;color:#8999ad;font-size:11.5px;box-shadow:none}
+.segmented-tabs .tab:hover{background:rgba(148,163,184,.055);color:#dce5ef}
+.segmented-tabs .tab.on{background:#1b3554;color:#dceeff;box-shadow:inset 0 0 0 1px rgba(43,127,212,.18)}
+.segmented-tabs .tab-orders.on{background:rgba(245,158,11,.12);color:#f3c66f;box-shadow:inset 0 0 0 1px rgba(245,158,11,.16)}
+.segmented-tabs .tab-delivery.on{background:rgba(16,185,129,.10);color:#78d6b6;box-shadow:inset 0 0 0 1px rgba(16,185,129,.14)}
+.segmented-tabs .ui-icon{width:14px;height:14px;margin-right:5px}
+
+/* Columna derecha / resumen */
+.right-column{min-width:0}
+.summary-panel{position:sticky;top:82px;padding:1.15rem}
+.summary-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:13px}
+.summary-status{font-size:9.5px;font-weight:650;color:#84acd2;background:rgba(43,127,212,.09);border:1px solid rgba(43,127,212,.16);padding:4px 7px;border-radius:99px;white-space:nowrap}
+.summary-client{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--border-soft);border-bottom:1px solid var(--border-soft)}
+.summary-client span,.summary-row span{font-size:10.5px;color:var(--text-3)}
+.summary-client strong{font-size:11px;font-weight:600;text-align:right;color:#d9e3ef;max-width:65%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.summary-items{padding:9px 0;min-height:54px;border-bottom:1px solid var(--border-soft)}
+.summary-empty{font-size:10.5px;color:#66778e;padding:6px 0}
+.summary-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:5px 0}
+.summary-item-name{font-size:10.5px;color:#b8c5d6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.summary-item-meta{font:500 10px var(--mono);color:#8193aa}
+.summary-more{font-size:9.5px;color:#71839a;padding-top:4px}
+.summary-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.summary-stats>div{background:#0f1929;border:1px solid var(--border-soft);border-radius:9px;padding:9px 10px}
+.summary-stats span{display:block;font-size:9.5px;color:var(--text-3);margin-bottom:3px}
+.summary-stats strong{font:650 15px var(--mono);color:#dbe6f2}
+.summary-row{display:flex;justify-content:space-between;align-items:center;padding:6px 1px}
+.summary-row strong{font-size:10.5px;color:#bdcada;font-weight:600;text-align:right}
+.summary-row#x{display:none}
+.summary-total{display:flex;justify-content:space-between;align-items:center;background:rgba(43,127,212,.08);border:1px solid rgba(43,127,212,.15);border-radius:10px;padding:11px 12px;margin-top:5px}
+.summary-total span{font-size:11px;font-weight:650;color:#9fb4ca}
+.summary-total strong{font:700 22px var(--mono);letter-spacing:-.035em;color:#f5f9ff}
+.logo-panel-wrap.compact-logo{padding:14px 0 0;border-bottom:0;border-top:1px solid var(--border-soft);margin:13px 0 0}
+.logo-panel-wrap.compact-logo img{max-width:112px;margin:0 auto 8px;opacity:.72}
+.logo-panel-meta{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;font:500 8.5px var(--mono);color:#53647b}
+#infoc{margin-top:14px;padding-top:14px;border-top:1px solid var(--border-soft)}
+.tw{background:#0c1524;border:1px solid var(--border-soft);border-radius:10px;padding:12px;min-height:160px}
+.clave-box{background:rgba(43,127,212,.07);border-color:rgba(43,127,212,.15);border-radius:10px}
+.clave-box strong{color:#87b8e8;text-transform:none;letter-spacing:0;font-size:10.5px}
+
+/* Estados y colores: azul dominante; semánticos solo cuando corresponde */
+.ck{background:rgba(43,127,212,.10);color:#8ec0ed;border-color:rgba(43,127,212,.18)}
+.chip-slp{background:rgba(43,127,212,.10);color:#9bc7ed;border-color:rgba(43,127,212,.18)}
+
+/* Modales menos redondeados y menos "glass" */
+.overlay{backdrop-filter:blur(2px)}
+.modal{background:var(--surface);border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.42)}
+.modal h2{font-size:16px}
+
+/* Responsive */
+@media(max-width:1080px){
+  .topbar-brand{min-width:auto}.topbar-center{justify-content:flex-start}.topbar{gap:10px}.t-btn{padding:6px 9px}.t-btn .ui-icon{margin-right:0}.t-btn{font-size:0}.t-btn::after{font-size:0}
+  .topbar-actions .t-btn .ui-icon{width:16px;height:16px}
 }
-.agencia-firma .agencia-nombre {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  background: linear-gradient(90deg, #2b7fd4, #60a5fa, #2b7fd4);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: shimmer 3s linear infinite;
+@media(max-width:900px){
+  .app{grid-template-columns:1fr;padding:1rem}.summary-panel{position:static}.topbar-center{display:none}.topbar-actions{gap:5px}.topbar{padding:0 1rem}.med-controls{grid-template-columns:1fr 1fr}.med-add-wrap{grid-column:1/-1}.med-add-btn{min-height:42px}
 }
-.agencia-firma .agencia-sub {
-  font-size: 9px;
-  letter-spacing: .22em;
-  text-transform: uppercase;
-  color: rgba(148,163,184,.5);
-  margin-top: 3px;
+@media(max-width:560px){
+  .suc-btns{grid-template-columns:1fr}.suc-card{padding:2rem 1.25rem}.panel{padding:1rem}.med-controls{grid-template-columns:1fr}.sale-actions{flex-direction:column-reverse}.btn-save,.btn-clear{width:100%;min-width:0}.segmented-tabs{width:100%}.topbar h1{font-size:12px}.section-subtitle{display:none}
 }
-@keyframes shimmer { to { background-position: 200% center; } }
+
+.eye-icon{display:inline-flex;width:17px;height:17px;color:var(--text-2)}
+.eye-icon svg,.modal-icon svg,.modal-title-icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.modal-icon{width:42px;height:42px;margin:0 auto 11px;padding:10px;border-radius:12px;color:#86b8e5;background:rgba(43,127,212,.09);border:1px solid rgba(43,127,212,.16)}
+.modal-icon.success{color:#6ed0ad;background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.15)}
+.modal-title-row{display:flex;align-items:center;gap:8px}
+.modal-title-icon{display:inline-flex;width:19px;height:19px;color:#8eb5da}
+
 </style>
 </head>
 <body>
 <div id="banner-exito" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center">
   <div style="background:#0d1f14;border:3px solid #30a46c;border-radius:16px;padding:32px 40px;text-align:center;max-width:90vw">
-    <div style="font-size:48px">✅</div>
+    <div class="modal-icon success"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg></div>
     <div style="font-size:22px;font-weight:700;color:#30a46c;margin-top:8px">VENTA GUARDADA</div>
     <div id="banner-exito-detalle" style="font-size:16px;color:#fff;margin-top:6px"></div>
     <button onclick="document.getElementById('banner-exito').style.display='none'" style="margin-top:18px;padding:8px 24px;border-radius:8px;border:none;background:#30a46c;color:#fff;font-weight:600;cursor:pointer">Entendido</button>
@@ -279,33 +433,35 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
 <div id="pantalla-sucursal">
   <div class="suc-card">
     <img id="logo-inicio" src="" alt="Solmedix" class="logo-blend"/>
-    <h2>Acceso al Sistema de Ventas</h2>
-    <p>Selecciona tu sucursal e ingresa tu contraseña para continuar.</p>
+    <h2>Selecciona una sucursal</h2>
+    <p>Elige dónde estás operando e ingresa la contraseña correspondiente.</p>
     <div class="suc-btns">
       <div style="display:flex;flex-direction:column;gap:8px">
         <button class="suc-btn" id="btn-mty" onclick="selSuc('MTY')" style="margin-bottom:0">
+          <span class="suc-code">MTY</span>
           <span class="suc-ciudad">Monterrey</span>
-          <span class="suc-dir">Paseo de los Leones 1629<br>Las Cumbres 1er Sector</span>
+          <span class="suc-dir">Paseo de los Leones 1629 · Las Cumbres 1er Sector</span>
         </button>
         <div style="display:none;position:relative" id="wrap-pwd-mty">
           <input type="password" id="pwd-mty" placeholder="Contraseña MTY"
             style="text-align:center;letter-spacing:.1em;font-size:14px;padding-right:36px"
             onkeydown="if(event.key==='Enter')confirmarSuc()"/>
           <button type="button" onclick="toggleOjo('pwd-mty',this)"
-            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-2);padding:2px">👁</button>
+            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-2);padding:2px"><span class="eye-icon"><svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></span></button>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px">
         <button class="suc-btn" id="btn-slp" onclick="selSuc('SLP')" style="margin-bottom:0">
-          <span class="suc-ciudad">San Luis P.</span>
-          <span class="suc-dir">Sexta 335<br>Garita de Jalisco</span>
+          <span class="suc-code">SLP</span>
+          <span class="suc-ciudad">San Luis Potosí</span>
+          <span class="suc-dir">Sexta 335 · Garita de Jalisco</span>
         </button>
         <div style="display:none;position:relative" id="wrap-pwd-slp">
           <input type="password" id="pwd-slp" placeholder="Contraseña SLP"
             style="text-align:center;letter-spacing:.1em;font-size:14px;padding-right:36px"
             onkeydown="if(event.key==='Enter')confirmarSuc()"/>
           <button type="button" onclick="toggleOjo('pwd-slp',this)"
-            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-2);padding:2px">👁</button>
+            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-2);padding:2px"><span class="eye-icon"><svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></span></button>
         </div>
       </div>
     </div>
@@ -321,33 +477,38 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
 <!-- SISTEMA PRINCIPAL -->
 <div id="sistema">
   <div class="topbar">
-    <h1>
-      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#2b7fd4" stroke-width="2"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
-      Sistema de Ventas Solmedix
-    </h1>
-    <span class="chip">RFC: SSM180928AQ7</span>
-    <span id="chip-suc" class="chip-suc"></span>
-    <span id="sync-status" class="sync sync-load">Conectando...</span>
-    <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
-      <a href="admin.html" target="_blank" rel="noopener noreferrer" class="t-btn t-btn-ghost" title="Acceso administrador" onclick="window.open('admin.html','_blank');return false;">⚙ Admin</a>
-      <div style="position:relative;display:inline-block">
-        <button id="btn-caja-menu" onclick="toggleMenuCaja()" style="padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.15);color:#fcd34d">💰 Caja</button>
-        <div id="caja-menu-dropdown" style="display:none;position:absolute;top:110%;right:0;background:#1e293b;border:1px solid rgba(148,163,184,.15);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.4);min-width:160px;z-index:300;overflow:hidden">
-          <button onclick="abrirModalRetiro();document.getElementById('caja-menu-dropdown').style.display='none'" style="display:block;width:100%;padding:10px 14px;text-align:left;background:none;border:none;color:#f1f5f9;font-size:13px;cursor:pointer;border-bottom:1px solid rgba(148,163,184,.1)">💸 Retiro</button>
-          <button onclick="abrirModalAbono();document.getElementById('caja-menu-dropdown').style.display='none'" style="display:block;width:100%;padding:10px 14px;text-align:left;background:none;border:none;color:#f1f5f9;font-size:13px;cursor:pointer;border-bottom:1px solid rgba(148,163,184,.1)">💵 Abonar</button>
-          <button onclick="abrirModalCorte();document.getElementById('caja-menu-dropdown').style.display='none'" style="display:block;width:100%;padding:10px 14px;text-align:left;background:none;border:none;color:#f1f5f9;font-size:13px;cursor:pointer">🔒 Corte</button>
+    <div class="topbar-brand">
+      <h1>
+        <span class="ui-icon ui-icon-brand" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg></span>
+        Sistema de Ventas Solmedix
+      </h1>
+    </div>
+    <div class="topbar-center">
+      <span id="chip-suc" class="chip-suc"></span>
+      <span id="sync-status" class="sync sync-load">Conectando...</span>
+    </div>
+    <div class="topbar-actions">
+      <a href="admin.html" target="_blank" rel="noopener noreferrer" class="t-btn t-btn-ghost" title="Acceso administrador" onclick="window.open('admin.html','_blank');return false;"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21H9.6v-.1A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3V9.6h.1A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.1A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.1.4.3.7.6 1 .3.2.7.4 1.1.4h.1v4h-.1c-.4 0-.8.2-1.1.6-.3.2-.5.6-.6 1Z"/></svg></span>Admin</a>
+      <div class="cash-menu-wrap">
+        <button id="btn-caja-menu" onclick="toggleMenuCaja()" class="t-btn t-btn-cash"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M7 10h4m6 0h.01M7 15h10"/></svg></span>Caja</button>
+        <div id="caja-menu-dropdown" class="cash-dropdown" style="display:none">
+          <button onclick="abrirModalRetiro();document.getElementById('caja-menu-dropdown').style.display='none'"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 21h14"/></svg></span>Retiro</button>
+          <button onclick="abrirModalAbono();document.getElementById('caja-menu-dropdown').style.display='none'"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21V9m0 0 4 4m-4-4-4 4"/><path d="M5 3h14"/></svg></span>Abonar</button>
+          <button onclick="abrirModalCorte();document.getElementById('caja-menu-dropdown').style.display='none'"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>Corte</button>
         </div>
       </div>
-      <button onclick="actualizarDatos()" class="t-btn t-btn-primary" title="Actualizar datos">↻ Actualizar</button>
-      <button onclick="cerrarSesionManual()" class="t-btn" style="background:rgba(239,68,68,.15);color:#fca5a5;border-color:rgba(239,68,68,.3)" title="Cerrar sesión">⏻ Salir</button>
+      <button onclick="actualizarDatos()" class="t-btn t-btn-primary" title="Actualizar datos"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 6v5h-5"/><path d="M4 18v-5h5"/><path d="M6.1 9A7 7 0 0 1 18 6l2 5M4 13l2 5a7 7 0 0 0 11.9-3"/></svg></span>Actualizar</button>
+      <button onclick="cerrarSesionManual()" class="t-btn t-btn-danger" title="Cerrar sesión"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5m5 5H3"/><path d="M14 3h4a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-4"/></svg></span>Salir</button>
     </div>
   </div>
-
   <div class="app">
     <div>
       <!-- NUEVA VENTA -->
-      <div class="panel">
-        <div class="ptitle">Nueva venta</div>
+      <div class="panel sale-panel">
+        <div class="section-title-row">
+          <div class="section-icon"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+          <div><div class="ptitle ptitle-main">Nueva venta</div><div class="section-subtitle">Captura cliente, medicamentos y forma de pago.</div></div>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div class="fr" style="margin:0"><label>Fecha</label><input type="date" id="fec"/></div>
           <div class="fr" style="margin:0"><label>Hora</label><input type="time" id="hor"/></div>
@@ -364,14 +525,17 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
           <div id="info-fiscal" style="font-size:11px;margin-top:5px;min-height:16px"></div>
         </div>
         <div class="sep"></div>
-        <div class="ptitle" style="margin-bottom:9px">Agregar medicamento</div>
-        <div class="fr">
-          <label>Escanear código de barras</label>
-          <input type="text" id="barcode" placeholder="Escanea o escribe el código..." autocomplete="off"
-            onkeydown="if(event.key==='Enter'){event.preventDefault();onBarcodeInput();}else{if(!/[0-9]/.test(event.key)&&event.key.length===1){event.preventDefault();}}" style="font-family:var(--mono)"/>
-        </div>
-        <div class="fr">
-          <label>o seleccionar por nombre</label>
+        <div class="ptitle med-title">Agregar medicamento</div>
+        <div class="med-step med-step-primary">
+          <div class="med-step-head"><span class="step-number">1</span><div><strong>Buscar medicamento</strong><small>Escanea el código o busca en el catálogo.</small></div></div>
+          <div class="fr scan-group">
+            <label>Escanear código de barras</label>
+            <div class="scan-field"><span class="scan-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5v14M7 5v14M11 5v14M14 5v14M18 5v14M20 5v14"/></svg></span><input type="text" id="barcode" placeholder="Escanea o escribe el código..." autocomplete="off"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();onBarcodeInput();}else{if(!/[0-9]/.test(event.key)&&event.key.length===1){event.preventDefault();}}" style="font-family:var(--mono)"/></div>
+          </div>
+          <div class="search-divider"><span>o buscar por nombre</span></div>
+          <div class="fr" style="margin-bottom:0">
+            <label>Medicamento</label>
           <div class="ac-wrap" id="msel-wrap">
             <input type="text" id="msel-input" placeholder="Escribe para buscar medicamento..."
               autocomplete="off"
@@ -383,6 +547,7 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
             <input type="hidden" id="msel" value=""/>
           </div>
         </div>
+        </div>
         <div id="lote-row" style="display:none" class="fr">
           <label>Lote disponible</label>
           <select id="lsel" onchange="onLoteChange()"><option value="">Seleccionar lote...</option></select>
@@ -392,7 +557,9 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
           <label>Nombre del medicamento</label>
           <input type="text" id="cnom" placeholder="Nombre completo del medicamento"/>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 80px;gap:8px;margin-bottom:9px">
+        <div class="med-step med-step-secondary">
+          <div class="med-step-head"><span class="step-number">2</span><div><strong>Cantidad y precio</strong><small>Confirma los datos antes de agregarlo a la venta.</small></div></div>
+        <div class="med-controls">
           <div><label>Precio ($)</label><input type="number" id="pre" placeholder="0.00"/></div>
           <div>
             <label>Cantidad</label>
@@ -407,9 +574,10 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
             <input type="number" id="qty-manual" value="1" min="1" oninput="validarCantidad()" style="display:none;margin-top:4px"/>
             <a href="#" onclick="toggleQtyManual();return false;" id="qty-manual-link" style="font-size:10px;color:var(--text-3);display:block;margin-top:2px">¿Más de 10 piezas?</a>
           </div>
-          <div style="display:flex;align-items:flex-end">
-            <button class="btn btnp" style="width:100%;padding:8px 4px;font-size:11px" onclick="addItem()">+ Agregar</button>
+          <div class="med-add-wrap">
+            <button class="btn btnp med-add-btn" onclick="addItem()"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>Agregar</button>
           </div>
+        </div>
         </div>
         <div id="eitem" class="es" style="padding:.8rem 0;font-size:12px">Agrega medicamentos a la venta</div>
         <table class="it" id="itab" style="display:none">
@@ -420,9 +588,9 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
           </tr></thead>
           <tbody id="ibody"></tbody>
         </table>
-        <div id="trow" style="display:none;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid var(--border);margin-top:7px">
-          <span style="font-size:13px;color:var(--text-2)">Total venta</span>
-          <span style="font-size:22px;font-weight:700;color:var(--text);font-family:var(--mono)" id="tdis">$0.00</span>
+        <div id="trow" class="total-band" style="display:none">
+          <div><span class="total-label">Total</span><small>Importe de la venta</small></div>
+          <span class="total-amount" id="tdis">$0.00</span>
         </div>
         <div id="pagos-block" style="display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -432,23 +600,23 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
           <div id="pagos-list"></div>
           <div id="pagos-msg" style="font-size:11px;color:#e5484d;margin-top:2px"></div>
         </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:13px">
-          <button class="btn" onclick="limpiar()">Limpiar</button>
-          <button class="btn btnp" id="btn-guardar" onclick="guardar()">Guardar y generar ticket</button>
+        <div class="sale-actions">
+          <button class="btn btn-clear" onclick="limpiar()">Limpiar</button>
+          <button class="btn btnp btn-save" id="btn-guardar" onclick="guardar()"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h12l2 2v14H5z"/><path d="M8 4v6h8V4M8 16h8"/></svg></span>Guardar y generar ticket</button>
         </div>
         <div id="alrt" style="display:none"></div>
       </div>
 
       <!-- BÚSQUEDAS / HISTORIAL -->
-      <div class="panel">
-        <label style="margin-bottom:8px;font-size:14px;font-weight:600;color:var(--text);display:block">Búsquedas</label>
-        <div class="tabs">
+      <div class="panel search-panel">
+        <div class="section-title-row compact"><div class="section-icon muted"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></div><div><div class="ptitle ptitle-main">Búsquedas</div><div class="section-subtitle">Consulta ventas, clientes, precios y pedidos.</div></div></div>
+        <div class="tabs segmented-tabs">
           <button class="tab on" id="th" onclick="tab('h')">Historial</button>
           <button class="tab" id="tb" onclick="tab('b')">Por cliente</button>
           <button class="tab" id="tc" onclick="tab('c')">Clientes</button>
           <button class="tab" id="tp" onclick="tab('p')">Precios</button>
-          <button class="tab" id="tped" onclick="tab('ped')">Pedidos</button>
-          <button class="tab" id="tpedom" onclick="tab('pedom')">Domicilio</button>
+          <button class="tab tab-orders" id="tped" onclick="tab('ped')"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h12v18H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></span>Pedidos</button>
+          <button class="tab tab-delivery" id="tpedom" onclick="tab('pedom')"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 6h11v11H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg></span>Domicilio</button>
         </div>
         <div id="vh"><div id="lista" class="es">Cargando ventas...</div></div>
         <div id="vb" style="display:none">
@@ -542,12 +710,21 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
     </div>
 
     <!-- COLUMNA DERECHA -->
-    <div>
-      <div class="panel">
-        <div class="logo-panel-wrap">
+    <div class="right-column">
+      <div class="panel summary-panel">
+        <div class="summary-heading"><div><div class="ptitle ptitle-main">Resumen de venta</div><div class="section-subtitle">Vista rápida antes de guardar.</div></div><span class="summary-status" id="summary-status">En captura</span></div>
+        <div class="summary-client"><span>Cliente</span><strong id="summary-client">Público general</strong></div>
+        <div class="summary-items" id="summary-items"><div class="summary-empty">Aún no hay medicamentos agregados.</div></div>
+        <div class="summary-stats">
+          <div><span>Productos</span><strong id="summary-products">0</strong></div>
+          <div><span>Piezas</span><strong id="summary-pieces">0</strong></div>
+        </div>
+        <div class="summary-row"><span>Subtotal</span><strong id="summary-subtotal">$0.00</strong></div>
+        <div class="summary-row"><span>Pago</span><strong id="summary-payment">Por definir</strong></div>
+        <div class="summary-total"><span>Total</span><strong id="summary-total">$0.00</strong></div>
+        <div class="logo-panel-wrap compact-logo">
           <img id="logo-panel" src="" alt="Solmedix" class="logo-blend-dark"/>
-          <div class="logo-panel-rfc">RFC: SSM180928AQ7</div>
-          <div class="logo-panel-web">www.solmedixfarmacia.com</div>
+          <div class="logo-panel-meta"><span>RFC SSM180928AQ7</span><span>solmedixfarmacia.com</span></div>
         </div>
         <div id="infoc" style="display:none">
           <div class="tw" id="tw"></div>
@@ -559,7 +736,7 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
           <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end">
             <button class="btn btns" id="bimp" onclick="imprimir()">Imprimir ticket</button>
             <button class="btn btns" id="bcla" onclick="copiar()">Copiar clave</button>
-            <button class="btn btng" id="bfac" onclick="iniciarFacturacion()" style="display:none">⚡ Facturar</button>
+            <button class="btn btng" id="bfac" onclick="iniciarFacturacion()" style="display:none">Facturar</button>
           </div>
         </div>
       </div>
@@ -1098,6 +1275,7 @@ function renderPagos(){
   var msg = document.getElementById('pagos-msg');
   msg.textContent = (items.length && Math.abs(suma-total)>0.01)
     ? 'La suma de los pagos ($'+suma.toFixed(2)+') no coincide con el total ($'+total.toFixed(2)+').' : '';
+  if(typeof actualizarResumenVenta==='function') actualizarResumenVenta();
 }
 function agregarLineaPago(){
   var total = items.reduce(function(s,it){return s+it.total;},0);
@@ -1106,7 +1284,7 @@ function agregarLineaPago(){
   renderPagos();
 }
 function quitarLineaPago(i){ pagosVenta.splice(i,1); renderPagos(); }
-function cambiarMetodoPago(i,val){ pagosVenta[i].metodo=val; }
+function cambiarMetodoPago(i,val){ pagosVenta[i].metodo=val; actualizarResumenVenta(); }
 function cambiarMontoPago(i,val){ pagosVenta[i].monto=Number(val)||0; renderPagos(); }
 
 /* AGREGAR ITEM */
@@ -1194,7 +1372,7 @@ function abrirModalAntimicrobiano(itemPendiente, medInfo) {
   var html = ''
     +'<div id="modal-am-bg" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px">'
     +'<div style="background:#fff;border-radius:12px;padding:20px;max-width:420px;width:100%;max-height:90vh;overflow-y:auto">'
-    +'<h3 style="margin:0 0 4px">⚠ Antimicrobiano: '+escAM(itemPendiente.nombre)+'</h3>'
+    +'<h3 style="margin:0 0 4px">Antimicrobiano · '+escAM(itemPendiente.nombre)+'</h3>'
     +'<div style="font-size:12px;color:#666;margin-bottom:14px">Clasificación AWaRe: '+escAM(medInfo.clasificacion_aware||'—')+'. Por regulación (Suplemento 7.0), se requiere esta información antes de completar la venta.</div>'
     +'<label style="display:block;font-size:12px;margin-bottom:2px">Nombre del paciente *</label>'
     +'<input id="am-paciente" style="width:100%;padding:8px;margin-bottom:10px;border:1px solid #ccc;border-radius:6px;box-sizing:border-box" placeholder="A quién se le suministra">'
@@ -1246,7 +1424,7 @@ function confirmarModalAntimicrobiano() {
 
 function renderItems() {
   var t=document.getElementById('itab'),e=document.getElementById('eitem'),tr=document.getElementById('trow');
-  if (!items.length){t.style.display='none';e.style.display='block';tr.style.display='none';return;}
+  if (!items.length){t.style.display='none';e.style.display='block';tr.style.display='none';renderPagos();actualizarResumenVenta();return;}
   t.style.display='table';e.style.display='none';tr.style.display='flex';
   var html='';
   for (var i=0;i<items.length;i++) {
@@ -1264,6 +1442,7 @@ function renderItems() {
   var total=0; for (var k=0;k<items.length;k++) total+=items[k].total;
   document.getElementById('tdis').textContent='$'+total.toLocaleString('es-MX',{minimumFractionDigits:2});
   renderPagos();
+  actualizarResumenVenta();
 }
 function pedirCancelar(id) {
   if(!confirm('Marcar esta venta como CANCELADA?\nLa venta quedara en el historial pero marcada como cancelada.')) return;
@@ -1441,7 +1620,7 @@ function guardar() {
     apiPostViaJSONP({accion:'guardar_venta',fecha:fecha,hora:hora,cliente:cliente,total:total,clave:v.clave,sucursal:sucursal,items:itemsSnapshot,forma_pago:pagosResumen}, function(err, resVenta) {
     if (resVenta && resVenta.ok===false && resVenta.error==='duplicado') {
       btn.disabled=false; btn.textContent='Guardar y generar ticket';
-      alert('🚫 VENTA NO GUARDADA — DUPLICADA\n\n'+resVenta.mensaje+'\n\nEsta venta ya existe en el sistema (probablemente registrada desde otra pestaña o dispositivo). No se generó ticket ni se descontó inventario.');
+      alert('VENTA NO GUARDADA — DUPLICADA\n\n'+resVenta.mensaje+'\n\nEsta venta ya existe en el sistema (probablemente registrada desde otra pestaña o dispositivo). No se generó ticket ni se descontó inventario.');
       setSyncStatus('err','Venta duplicada — no guardada');
       return;
     }
@@ -1480,8 +1659,8 @@ function guardar() {
 }
 function toggleOjo(inputId, btn) {
   var inp = document.getElementById(inputId);
-  if (inp.type==='password') { inp.type='text'; btn.textContent='🙈'; }
-  else { inp.type='password'; btn.textContent='👁'; }
+  if (inp.type==='password') { inp.type='text'; btn.innerHTML='<span class="eye-icon"><svg viewBox="0 0 24 24"><path d="m3 3 18 18"/><path d="M10.6 6.2A10.8 10.8 0 0 1 12 6c6 0 9.5 6 9.5 6a15.8 15.8 0 0 1-2.2 2.8M6.1 6.1C3.7 8 2.5 12 2.5 12s3.5 6 9.5 6c1.3 0 2.5-.3 3.6-.7"/></svg></span>'; }
+  else { inp.type='password'; btn.innerHTML='<span class="eye-icon"><svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></span>'; }
 }
 
 function limpiar(){items=[];pagosVenta=[{metodo:'',monto:0}];renderItems();document.getElementById('cli').value='';document.getElementById('barcode').value='';document.getElementById('msel-input').value='';document.getElementById('msel').value='';document.getElementById('msel-list').style.display='none';document.getElementById('lote-row').style.display='none';document.getElementById('crow').style.display='none';document.getElementById('pre').value='';}
@@ -1757,7 +1936,7 @@ function renderHist(){
     if(!cancelada){
       rows+='<button class="btn btnw" style="display:block;margin-bottom:3px;width:100%" onclick="event.stopPropagation();ver('+vid+');imprimir()">Reimprimir</button>';
       if(!v.uuid){
-        rows+='<button class="btn btng" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px" id="bfac_'+vid+'" onclick="event.stopPropagation();facturarDesdeHistorial(\''+vid+'\')">⚡ Facturar</button>';
+        rows+='<button class="btn btng" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px" id="bfac_'+vid+'" onclick="event.stopPropagation();facturarDesdeHistorial(\''+vid+'\')">Facturar</button>';
             } else {
         rows+='<div style="font-size:9px;color:#6ee7b7;margin-bottom:3px">✓ Facturado</div>';
         rows+='<button class="btn btnw" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px;color:#c00;border-color:#fecaca" id="bcanf_'+vid+'" onclick="event.stopPropagation();cancelarFacturaDesdeHistorial(\''+vid+'\')">✕ Cancelar factura</button>';
@@ -1801,7 +1980,7 @@ function buscar(){
             html+='<div style="text-align:right;min-width:100px"><div style="font-weight:600;color:#185FA5">$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
       html+='<button class="btn btnw" style="display:block;margin-bottom:3px;width:100%" onclick="event.stopPropagation();ver(\''+v.id+'\');imprimir()">Reimprimir</button>';
       if(!v.uuid){
-        html+='<button class="btn btng" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px" id="bfac_'+v.id+'" onclick="event.stopPropagation();facturarDesdeHistorial(\''+v.id+'\')">⚡ Facturar</button>';
+        html+='<button class="btn btng" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px" id="bfac_'+v.id+'" onclick="event.stopPropagation();facturarDesdeHistorial(\''+v.id+'\')">Facturar</button>';
       } else {
         html+='<div style="font-size:9px;color:#6ee7b7;margin-bottom:3px">✓ Facturado</div>';
         html+='<button class="btn btnw" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px;color:#c00;border-color:#fecaca" id="bcanf_'+v.id+'" onclick="event.stopPropagation();cancelarFacturaDesdeHistorial(\''+v.id+'\')">✕ Cancelar factura</button>';
@@ -2348,7 +2527,7 @@ function renderPedidosDomicilio(){
       '<div><div style="font-weight:600">'+p.nombre+'</div>'+
       (p.telefono?'<div class="sm">'+p.telefono+'</div>':'')+
       '<div class="sm">'+p.medicamento+'</div>'+
-      '<div class="sm" style="color:var(--text-3)">📍 '+(p.direccion||'Sin dirección')+'</div>'+
+      '<div class="sm" style="color:var(--text-3)">Dirección: '+(p.direccion||'Sin dirección')+'</div>'+
       (tieneAnticipo?'<div class="sm" style="color:#30a46c;font-weight:600">Anticipo: $'+Number(p.anticipo_monto).toLocaleString('es-MX',{minimumFractionDigits:2})+' ('+(p.anticipo_metodo||'')+')</div>':'')+
       '</div>'+
       '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">'+
@@ -2423,7 +2602,7 @@ function pedomAlrt(msg,tipo){
 function imprimirDatosEnvio(pedido){
   var html =
     '<div class="tp">'+
-    '<div class="tp-box tp-center" style="font-size:12pt;font-weight:bold;border:2px solid #000;padding:6px">📦 ENVÍO A DOMICILIO</div>'+
+    '<div class="tp-box tp-center" style="font-size:12pt;font-weight:bold;border:2px solid #000;padding:6px">ENVÍO A DOMICILIO</div>'+
     '<div class="tp-box"><div style="font-size:13pt;font-weight:bold">'+pedido.nombre+'</div>'+
       (pedido.telefono?'<div style="font-size:12pt">Tel: '+pedido.telefono+'</div>':'')+
       '<div style="margin-top:6px;font-size:12pt;white-space:pre-wrap">'+(pedido.direccion||'SIN DIRECCIÓN — CONFIRMAR CON CLIENTE')+'</div></div>'+
@@ -3166,12 +3345,49 @@ function cerrarSesionManual() {
   window.location.reload();
 }
 
+/* ── Resumen visual de venta (solo presentación) ───────────── */
+function actualizarResumenVenta(){
+  var box=document.getElementById('summary-items');
+  if(!box) return;
+  var total=0,piezas=0;
+  for(var i=0;i<items.length;i++){ total+=Number(items[i].total)||0; piezas+=Number(items[i].qty)||0; }
+  var cliEl=document.getElementById('cli');
+  var cliente=(cliEl&&cliEl.value.trim())?cliEl.value.trim():'Público general';
+  document.getElementById('summary-client').textContent=cliente;
+  document.getElementById('summary-products').textContent=items.length;
+  document.getElementById('summary-pieces').textContent=piezas;
+  var dinero='$'+total.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('summary-subtotal').textContent=dinero;
+  document.getElementById('summary-total').textContent=dinero;
+  var metodos=[];
+  if(typeof pagosVenta!=='undefined'){
+    for(var p=0;p<pagosVenta.length;p++) if(pagosVenta[p].metodo && metodos.indexOf(pagosVenta[p].metodo)<0) metodos.push(pagosVenta[p].metodo);
+  }
+  document.getElementById('summary-payment').textContent=metodos.length?metodos.join(' + '):'Por definir';
+  document.getElementById('summary-status').textContent=items.length?'En captura':'En captura';
+  if(!items.length){box.innerHTML='<div class="summary-empty">Aún no hay medicamentos agregados.</div>';return;}
+  var html='';
+  var max=Math.min(items.length,4);
+  for(var j=0;j<max;j++){
+    var it=items[j];
+    html+='<div class="summary-item"><div class="summary-item-name" title="'+escAM(it.nombre)+'">'+escAM(it.nombre)+'</div><div class="summary-item-meta">'+it.qty+' × $'+Number(it.precio).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div>';
+  }
+  if(items.length>max) html+='<div class="summary-more">+'+(items.length-max)+' producto(s) más</div>';
+  box.innerHTML=html;
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  var cli=document.getElementById('cli');
+  if(cli) cli.addEventListener('input',actualizarResumenVenta);
+  actualizarResumenVenta();
+});
+
 </script>
 
 <!-- BLOQUEO DE CAJA -->
 <div id="caja-bloqueo" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.97);z-index:1000;align-items:center;justify-content:center;flex-direction:column">
   <div style="background:#1e293b;border:1px solid rgba(148,163,184,.15);border-radius:20px;padding:2.5rem;width:90%;max-width:420px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,.5)">
-    <div style="font-size:48px;margin-bottom:12px">🔒</div>
+    <div class="modal-icon"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
     <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;color:#f1f5f9">Apertura de Caja</h2>
     <p style="font-size:13px;color:#94a3b8;margin-bottom:16px">Debes registrar la apertura de caja antes de iniciar operaciones.</p>
     <div id="caja-bloqueo-msg"></div>
@@ -3183,7 +3399,7 @@ function cerrarSesionManual() {
 <!-- MODAL APERTURA -->
 <div class="overlay" id="modal-apertura" onclick="if(event.target===this){}" style="z-index:1100">
   <div class="modal" style="max-width:400px;text-align:center">
-    <div style="font-size:40px;margin-bottom:10px">🟢</div>
+    <div class="modal-icon success"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M7 10h4m6 0h.01M7 15h10"/></svg></div>
     <h2 style="margin-bottom:16px">Apertura de caja</h2>
     <div class="fr"><label>Nombre del cajero *</label>
       <input type="text" id="ap-cajero" placeholder="Tu nombre completo"/></div>
@@ -3197,7 +3413,7 @@ function cerrarSesionManual() {
 <!-- MODAL RETIRO -->
 <div class="overlay" id="modal-retiro" onclick="if(event.target===this)this.classList.remove('show')" style="z-index:1100">
   <div class="modal" style="max-width:400px">
-    <h2 style="margin-bottom:16px">💸 Registrar retiro</h2>
+    <h2 class="modal-title-row" style="margin-bottom:16px"><span class="modal-title-icon"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 21h14"/></svg></span>Registrar retiro</h2>
     <div class="fr"><label>Nombre de quien retira *</label>
       <input type="text" id="ret-nombre" placeholder="Nombre completo"/></div>
     <div class="fr"><label>Monto a retirar ($) *</label>
@@ -3215,7 +3431,7 @@ function cerrarSesionManual() {
 <!-- MODAL ABONO -->
 <div class="overlay" id="modal-abono" onclick="if(event.target===this)this.classList.remove('show')" style="z-index:1100">
   <div class="modal" style="max-width:400px">
-    <h2 style="margin-bottom:16px">💵 Registrar abono a caja</h2>
+    <h2 class="modal-title-row" style="margin-bottom:16px"><span class="modal-title-icon"><svg viewBox="0 0 24 24"><path d="M12 21V9m0 0 4 4m-4-4-4 4"/><path d="M5 3h14"/></svg></span>Registrar abono a caja</h2>
     <div class="fr"><label>Nombre de quien abona *</label>
       <input type="text" id="abo-nombre" placeholder="Nombre completo"/></div>
     <div class="fr"><label>Monto a abonar ($) *</label>
@@ -3233,7 +3449,7 @@ function cerrarSesionManual() {
 <!-- MODAL CORTE -->
 <div class="overlay" id="modal-corte" onclick="if(event.target===this)this.classList.remove('show')" style="z-index:1100">
   <div class="modal" style="max-width:460px">
-    <div style="font-size:36px;text-align:center;margin-bottom:8px">🔒</div>
+    <div class="modal-icon"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
     <h2 style="text-align:center;margin-bottom:4px">Corte de caja</h2>
     <div id="cort-fecha-label" style="text-align:center;font-size:13px;color:#fcd34d;margin-bottom:16px;font-weight:600"></div>
     <!-- Resumen automático -->
@@ -3265,7 +3481,5 @@ function cerrarSesionManual() {
     </div>
   </div>
 </div>
-</body>
-</html>
 </body>
 </html>
