@@ -895,7 +895,7 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
       <input type="password" id="pwd" placeholder="Contraseña" onkeydown="if(event.key==='Enter')login()"
         style="text-align:center;letter-spacing:.1em;padding-right:40px"/>
       <button type="button" onclick="toggleOjo('pwd',this)"
-        style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-2);padding:2px">👁</button>
+        class="icon-btn password-toggle login-eye" aria-label="Mostrar contraseña"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></button>
     </div>
     <button class="btn btnp" style="width:100%;margin-top:10px;padding:12px;font-size:15px" onclick="login()">Entrar</button>
   </div>
@@ -984,123 +984,85 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
         <h2 class="module-title">Inteligencia de negocio</h2>
         <p class="module-subtitle">Indicadores, tendencias y comparativos para apoyar decisiones comerciales.</p>
       </header>
-      <!-- Toolbar -->
-      <div class="module-toolbar" style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-        <label style="font-size:12px;color:var(--text-2);font-weight:600">AÑO:</label>
-        <select id="bi-anio" onchange="renderBI()" style="font-size:12px;padding:5px 10px;background:var(--bg-3);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm)"></select>
-        <label style="font-size:12px;color:var(--text-2);font-weight:600">SUCURSAL:</label>
-        <select id="bi-suc" onchange="renderBI()" style="font-size:12px;padding:5px 10px;background:var(--bg-3);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm)">
-          <option value="TODAS">Todas</option><option value="MTY">MTY</option><option value="SLP">SLP</option>
-        </select>
-        <div style="flex:1"></div>
-        <button class="btn btns btno" onclick="exportBIExcel()" style="font-size:12px;padding:5px 12px">📊 Excel</button>
+
+      <div class="module-toolbar bi-toolbar">
+        <div class="toolbar-field">
+          <label for="bi-anio">Año</label>
+          <select id="bi-anio" onchange="renderBI()"></select>
+        </div>
+        <div class="toolbar-field">
+          <label for="bi-suc">Sucursal</label>
+          <select id="bi-suc" onchange="renderBI()">
+            <option value="TODAS">Todas</option><option value="MTY">MTY</option><option value="SLP">SLP</option>
+          </select>
+        </div>
+        <div class="toolbar-spacer"></div>
+        <button class="btn btns" onclick="exportBIExcel()">Exportar Excel</button>
       </div>
 
-      <!-- KPIs — fila compacta -->
-      <div id="bi-kpis" style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:12px"></div>
+      <div id="bi-kpis" class="bi-kpi-grid"></div>
 
-      <!-- Fila 1: Ventas y Compras (altura reducida) -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-        <div class="card" style="padding:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">📈 Ventas mensuales</div>
-          <div style="height:180px;position:relative"><canvas id="bi-chart-ventas"></canvas></div>
-        </div>
-        <div class="card" style="padding:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">🛒 Compras mensuales</div>
-          <div style="height:180px;position:relative"><canvas id="bi-chart-compras"></canvas></div>
-        </div>
+      <div class="bi-grid-2">
+        <section class="bi-card">
+          <div class="bi-card-head"><div><h3>Ventas mensuales</h3><p>Evolución de ingresos y tendencia del periodo.</p></div></div>
+          <div class="bi-chart"><canvas id="bi-chart-ventas"></canvas></div>
+        </section>
+        <section class="bi-card">
+          <div class="bi-card-head"><div><h3>Compras mensuales</h3><p>Importe de compras registrado por mes.</p></div></div>
+          <div class="bi-chart"><canvas id="bi-chart-compras"></canvas></div>
+        </section>
+        <section class="bi-card">
+          <div class="bi-card-head"><div><h3>Margen bruto</h3><p>Diferencia mensual entre ventas y compras.</p></div></div>
+          <div class="bi-chart"><canvas id="bi-chart-margen"></canvas></div>
+        </section>
+        <section class="bi-card">
+          <div class="bi-card-head"><div><h3>Ticket promedio</h3><p>Valor promedio por operación de venta.</p></div></div>
+          <div class="bi-chart"><canvas id="bi-chart-ticket"></canvas></div>
+        </section>
+        <section class="bi-card">
+          <div class="bi-card-head"><div><h3>Top 10 por ingreso</h3><p>Medicamentos con mayor importe vendido.</p></div></div>
+          <div class="bi-chart bi-chart-tall"><canvas id="bi-chart-top-meds"></canvas></div>
+        </section>
+        <section class="bi-card">
+          <div class="bi-card-head"><div><h3>Ventas por día de la semana</h3><p>Distribución del ingreso según el día.</p></div></div>
+          <div class="bi-chart bi-chart-tall"><canvas id="bi-chart-diasemana"></canvas></div>
+        </section>
+        <section class="bi-card">
+          <div class="bi-card-head"><div><h3>Top 10 por unidades</h3><p>Medicamentos con mayor número de piezas vendidas.</p></div></div>
+          <div class="bi-chart bi-chart-tall"><canvas id="bi-chart-top-uds"></canvas></div>
+        </section>
+        <section class="bi-card">
+          <div class="bi-card-head"><div><h3>Top 10 por frecuencia</h3><p>Medicamentos presentes en mayor número de tickets.</p></div></div>
+          <div class="bi-chart bi-chart-tall"><canvas id="bi-chart-top-freq"></canvas></div>
+        </section>
+        <section class="bi-card">
+          <div class="bi-card-head"><div><h3>Ventas por franja horaria</h3><p>Número de tickets según la hora del día.</p></div></div>
+          <div class="bi-chart"><canvas id="bi-chart-franja"></canvas></div>
+        </section>
+        <section class="bi-card">
+          <div class="bi-card-head"><div><h3>Estacionalidad mensual</h3><p>Promedio histórico de tickets por mes del año.</p></div></div>
+          <div class="bi-chart"><canvas id="bi-chart-estacional"></canvas></div>
+        </section>
       </div>
 
-      <!-- Fila 2: Margen y Ticket -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-        <div class="card" style="padding:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">💰 Margen bruto (Ventas − Compras)</div>
-          <div style="height:180px;position:relative"><canvas id="bi-chart-margen"></canvas></div>
-        </div>
-        <div class="card" style="padding:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">🎫 Ticket promedio</div>
-          <div style="height:180px;position:relative"><canvas id="bi-chart-ticket"></canvas></div>
-        </div>
-      </div>
+      <section class="bi-card bi-card-wide">
+        <div class="bi-card-head"><div><h3>Ventas por semana del mes</h3><p>Promedio histórico: S1 (1–7), S2 (8–14), S3 (15–21), S4 (22–28), S5 (29+).</p></div></div>
+        <div class="bi-chart bi-chart-wide"><canvas id="bi-chart-semana-mes"></canvas></div>
+      </section>
 
-      <!-- Fila 3: Top meds + Día semana -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-        <div class="card" style="padding:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">💊 Top 10 medicamentos</div>
-          <div style="height:200px;position:relative"><canvas id="bi-chart-top-meds"></canvas></div>
-        </div>
-        <div class="card" style="padding:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">📅 Ventas por día de la semana</div>
-          <div style="height:200px;position:relative"><canvas id="bi-chart-diasemana"></canvas></div>
-        </div>
-      </div>
-
-      <!-- Fila 3b: Top 10 más vendidos por unidades -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-        <div class="card" style="padding:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">🏆 Top 10 más vendidos (por unidades)</div>
-          <div style="font-size:10px;color:var(--text-3);margin-bottom:6px">Medicamentos con mayor número de piezas vendidas en el periodo</div>
-          <div style="height:200px;position:relative"><canvas id="bi-chart-top-uds"></canvas></div>
-        </div>
-        <div class="card" style="padding:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">🔁 Top 10 más frecuentes (por tickets)</div>
-          <div style="font-size:10px;color:var(--text-3);margin-bottom:6px">Medicamentos que aparecen en más tickets de venta</div>
-          <div style="height:200px;position:relative"><canvas id="bi-chart-top-freq"></canvas></div>
-        </div>
-      </div>
-
-      <!-- Fila 4: Franja horaria, Estacionalidad mensual histórica, Día+Hora heatmap -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-        <div class="card" style="padding:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">⏰ Ventas por franja horaria</div>
-          <div style="font-size:10px;color:var(--text-3);margin-bottom:6px">Número de tickets según la hora del día</div>
-          <div style="height:180px;position:relative"><canvas id="bi-chart-franja"></canvas></div>
-        </div>
-        <div class="card" style="padding:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">📆 Estacionalidad — tickets por mes del año</div>
-          <div style="font-size:10px;color:var(--text-3);margin-bottom:6px">Promedio histórico de tickets vendidos por mes (todos los años)</div>
-          <div style="height:180px;position:relative"><canvas id="bi-chart-estacional"></canvas></div>
-        </div>
-      </div>
-      <!-- Fila 5: Ventas por semana del mes -->
-      <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px">
-        <div class="card" style="padding:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">📅 Ventas por semana del mes (histórico)</div>
-          <div style="font-size:10px;color:var(--text-3);margin-bottom:6px">Promedio de ventas según la semana del mes — S1 (días 1–7), S2 (8–14), S3 (15–21), S4 (22–28), S5 (29+)</div>
-          <div style="height:200px;position:relative"><canvas id="bi-chart-semana-mes"></canvas></div>
-        </div>
-      </div>
-
-      <!-- Tabla resumen mensual compacta -->
-      <div class="card" style="padding:12px;margin-bottom:10px">
-        <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">📋 Resumen mensual</div>
-        <div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed" id="bi-tabla-resumen">
-            <colgroup>
-              <col style="width:55px">
-              <col style="width:13%">
-              <col style="width:13%">
-              <col style="width:13%">
-              <col style="width:10%">
-              <col style="width:9%">
-              <col style="width:13%">
-              <col style="width:11%">
-            </colgroup>
-            <thead><tr style="background:rgba(15,23,42,.6)">
-              <th style="padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Mes</th>
-              <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);color:var(--text-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Ventas</th>
-              <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);color:var(--text-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Compras</th>
-              <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);color:var(--text-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Margen $</th>
-              <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);color:var(--text-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Margen %</th>
-              <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);color:var(--text-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Tickets</th>
-              <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);color:var(--text-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Ticket prom.</th>
-              <th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);color:var(--text-3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">vs anterior</th>
+      <section class="bi-card bi-summary-card">
+        <div class="bi-card-head"><div><h3>Resumen mensual</h3><p>Comparativo financiero y operativo mes a mes.</p></div></div>
+        <div class="table-shell">
+          <table class="tbl bi-summary-table" id="bi-tabla-resumen">
+            <thead><tr>
+              <th>Mes</th><th class="num">Ventas</th><th class="num">Compras</th><th class="num">Margen $</th>
+              <th class="num">Margen %</th><th class="num">Tickets</th><th class="num">Ticket prom.</th><th class="num">vs anterior</th>
             </tr></thead>
             <tbody id="bi-tabla-body"></tbody>
             <tfoot id="bi-tabla-foot"></tfoot>
           </table>
         </div>
-      </div>
+      </section>
     </div>
     <!-- /sec-bi -->
 
@@ -2030,34 +1992,46 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
         <h2 class="module-title">Clientes</h2>
         <p class="module-subtitle">Gestión de clientes, datos fiscales y cuentas por cobrar.</p>
       </header>
-      <div style="display:flex;gap:8px;margin-bottom:14px">
-        <button class="nav-tab on" id="clt-lista" onclick="clientesTab('lista')" style="border-radius:var(--radius-sm)">👤 Clientes</button>
-        <button class="nav-tab" id="clt-creditos" onclick="clientesTab('creditos')" style="border-radius:var(--radius-sm)">💳 Créditos</button>
+
+      <div class="module-segments client-segments">
+        <button class="nav-tab on" id="clt-lista" onclick="clientesTab('lista')">Clientes</button>
+        <button class="nav-tab" id="clt-creditos" onclick="clientesTab('creditos')">Créditos</button>
       </div>
+
       <div id="cl-lista">
+        <div id="clientes-kpis" class="control-kpi-grid client-kpis"></div>
         <div class="panel">
-          <div class="module-toolbar module-toolbar-plain" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-            <div class="ptitle" style="margin:0">Gestión de clientes</div>
-            <button class="btn btnp" onclick="abrirEditarCliente(null)">+ Nuevo cliente</button>
+          <div class="module-toolbar module-toolbar-plain catalog-toolbar">
+            <div>
+              <div class="ptitle" style="margin:0">Directorio de clientes</div>
+              <div class="toolbar-help">Consulta datos clave, saldo pendiente y actividad reciente.</div>
+            </div>
+            <button class="btn btnp" onclick="abrirEditarCliente(null)">Nuevo cliente</button>
           </div>
-          <div class="fr" style="margin-bottom:14px">
+          <div class="catalog-searchbar">
             <input type="text" id="bq-cli" placeholder="Buscar por nombre, teléfono o RFC..." oninput="filtrarClientesAdmin()"/>
           </div>
           <div id="lista-cli-admin" class="es">Cargando clientes...</div>
         </div>
       </div>
+
       <div id="cl-creditos" style="display:none">
+        <div id="creditos-kpis" class="control-kpi-grid credit-kpis"></div>
         <div class="panel">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-            <div class="ptitle" style="margin:0">Cuentas por cobrar</div>
-            <button class="btn" style="font-size:12px" onclick="nuevoClienteCredito()">+ Nuevo cliente con saldo inicial</button>
+          <div class="module-toolbar module-toolbar-plain credit-toolbar-head">
+            <div>
+              <div class="ptitle" style="margin:0">Cuentas por cobrar</div>
+              <div class="toolbar-help">Consulta saldos y registra abonos sobre los cargos más antiguos.</div>
+            </div>
+            <button class="btn" onclick="nuevoClienteCredito()">Nuevo saldo inicial</button>
           </div>
-          <div class="fr" style="margin-bottom:14px">
-            <select id="credito-cliente-sel" onchange="renderCreditoCliente()" style="width:100%">
-              <option value="">-- Selecciona un cliente --</option>
+          <div class="toolbar-field credit-client-selector">
+            <label for="credito-cliente-sel">Cliente</label>
+            <select id="credito-cliente-sel" onchange="renderCreditoCliente()">
+              <option value="">Selecciona un cliente</option>
             </select>
           </div>
-          <div id="credito-detalle"><div class="es">Selecciona un cliente para ver su cuenta</div></div>
+          <div id="credito-detalle"><div class="empty-state">Selecciona un cliente para ver su cuenta.</div></div>
         </div>
       </div>
     </div>
@@ -2670,96 +2644,81 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
         <h2 class="module-title">Contraseñas</h2>
         <p class="module-subtitle">Administración de credenciales de acceso para los perfiles del sistema.</p>
       </header>
-      <div class="panel">
-        <div class="ptitle">Gestión de contraseñas</div>
-        <p style="font-size:13px;color:var(--text-2);margin-bottom:1.5rem;line-height:1.6">
-          Solo el Administrador puede cambiar las contraseñas del sistema. Cada perfil tiene contraseña
-          independiente para Sistema de Ventas y Admin.
-        </p>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px">
-          <div class="pwd-col-header pwd-col-ventas">🛒 Sistema de Ventas</div>
-          <div class="pwd-col-header pwd-col-admin">⚙️ Admin</div>
-        </div>
-
-        <!-- Administrador -->
-        <div style="margin-bottom:18px">
-          <div class="pwd-section-title">Administrador</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div class="panel" style="border:1px solid rgba(59,130,246,.2);margin:0;padding:14px">
-              <div class="fr"><label>Nueva contraseña Ventas</label>
-                <div style="position:relative">
-                  <input type="password" id="new-pwd-admin-ventas" placeholder="Nueva contraseña" style="padding-right:36px"/>
-                  <button type="button" onclick="toggleOjo('new-pwd-admin-ventas',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px;color:var(--text-2);padding:2px">👁</button>
-                </div>
-              </div>
-              <button class="btn btnp btns" onclick="cambiarPwd('admin_ventas')">Guardar</button>
-            </div>
-            <div class="panel" style="border:1px solid rgba(249,115,22,.2);margin:0;padding:14px">
-              <div class="fr"><label>Nueva contraseña Admin</label>
-                <div style="position:relative">
-                  <input type="password" id="new-pwd-admin" placeholder="Nueva contraseña" style="padding-right:36px"/>
-                  <button type="button" onclick="toggleOjo('new-pwd-admin',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px;color:var(--text-2);padding:2px">👁</button>
-                </div>
-              </div>
-              <button class="btn btnp btns" onclick="cambiarPwd('admin')">Guardar</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Monterrey -->
-        <div style="margin-bottom:18px">
-          <div class="pwd-section-title">Monterrey</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div class="panel" style="border:1px solid rgba(59,130,246,.2);margin:0;padding:14px">
-              <div class="fr"><label>Nueva contraseña Ventas</label>
-                <div style="position:relative">
-                  <input type="password" id="new-pwd-mty-ventas" placeholder="Nueva contraseña" style="padding-right:36px"/>
-                  <button type="button" onclick="toggleOjo('new-pwd-mty-ventas',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px;color:var(--text-2);padding:2px">👁</button>
-                </div>
-              </div>
-              <button class="btn btnp btns" onclick="cambiarPwd('mty_ventas')">Guardar</button>
-            </div>
-            <div class="panel" style="border:1px solid rgba(249,115,22,.2);margin:0;padding:14px">
-              <div class="fr"><label>Nueva contraseña Admin</label>
-                <div style="position:relative">
-                  <input type="password" id="new-pwd-mty" placeholder="Nueva contraseña" style="padding-right:36px"/>
-                  <button type="button" onclick="toggleOjo('new-pwd-mty',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px;color:var(--text-2);padding:2px">👁</button>
-                </div>
-              </div>
-              <button class="btn btnp btns" onclick="cambiarPwd('mty')">Guardar</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- San Luis Potosí -->
-        <div>
-          <div class="pwd-section-title">San Luis Potosí</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div class="panel" style="border:1px solid rgba(59,130,246,.2);margin:0;padding:14px">
-              <div class="fr"><label>Nueva contraseña Ventas</label>
-                <div style="position:relative">
-                  <input type="password" id="new-pwd-slp-ventas" placeholder="Nueva contraseña" style="padding-right:36px"/>
-                  <button type="button" onclick="toggleOjo('new-pwd-slp-ventas',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px;color:var(--text-2);padding:2px">👁</button>
-                </div>
-              </div>
-              <button class="btn btnp btns" onclick="cambiarPwd('slp_ventas')">Guardar</button>
-            </div>
-            <div class="panel" style="border:1px solid rgba(249,115,22,.2);margin:0;padding:14px">
-              <div class="fr"><label>Nueva contraseña Admin</label>
-                <div style="position:relative">
-                  <input type="password" id="new-pwd-slp" placeholder="Nueva contraseña" style="padding-right:36px"/>
-                  <button type="button" onclick="toggleOjo('new-pwd-slp',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px;color:var(--text-2);padding:2px">👁</button>
-                </div>
-              </div>
-              <button class="btn btnp btns" onclick="cambiarPwd('slp')">Guardar</button>
-            </div>
-          </div>
-        </div>
-
-        <div id="pwd-alrt" style="display:none;margin-top:14px"></div>
+      <div class="security-note">
+        <div class="security-note-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+        <div><strong>Acceso exclusivo del Administrador</strong><span>Cada perfil mantiene credenciales independientes para Sistema de Ventas y Administración.</span></div>
       </div>
+
+      <div class="security-profile-grid">
+        <section class="security-profile-card">
+          <div class="security-profile-head"><div><h3>Administrador</h3><p>Credenciales generales del sistema.</p></div><span class="neutral-tag">Perfil</span></div>
+          <div class="credential-grid">
+            <div class="credential-card">
+              <div class="credential-type">Sistema de Ventas</div>
+              <div class="password-input-wrap">
+                <input type="password" id="new-pwd-admin-ventas" placeholder="Nueva contraseña"/>
+                <button type="button" class="icon-btn password-toggle" aria-label="Mostrar contraseña" onclick="toggleOjo('new-pwd-admin-ventas',this)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></button>
+              </div>
+              <button class="btn btnp btns" onclick="cambiarPwd('admin_ventas')">Guardar contraseña</button>
+            </div>
+            <div class="credential-card">
+              <div class="credential-type">Administración</div>
+              <div class="password-input-wrap">
+                <input type="password" id="new-pwd-admin" placeholder="Nueva contraseña"/>
+                <button type="button" class="icon-btn password-toggle" aria-label="Mostrar contraseña" onclick="toggleOjo('new-pwd-admin',this)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></button>
+              </div>
+              <button class="btn btnp btns" onclick="cambiarPwd('admin')">Guardar contraseña</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="security-profile-card">
+          <div class="security-profile-head"><div><h3>Monterrey</h3><p>Credenciales asignadas a la sucursal MTY.</p></div><span class="neutral-tag">Sucursal</span></div>
+          <div class="credential-grid">
+            <div class="credential-card">
+              <div class="credential-type">Sistema de Ventas</div>
+              <div class="password-input-wrap">
+                <input type="password" id="new-pwd-mty-ventas" placeholder="Nueva contraseña"/>
+                <button type="button" class="icon-btn password-toggle" aria-label="Mostrar contraseña" onclick="toggleOjo('new-pwd-mty-ventas',this)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></button>
+              </div>
+              <button class="btn btnp btns" onclick="cambiarPwd('mty_ventas')">Guardar contraseña</button>
+            </div>
+            <div class="credential-card">
+              <div class="credential-type">Administración</div>
+              <div class="password-input-wrap">
+                <input type="password" id="new-pwd-mty" placeholder="Nueva contraseña"/>
+                <button type="button" class="icon-btn password-toggle" aria-label="Mostrar contraseña" onclick="toggleOjo('new-pwd-mty',this)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></button>
+              </div>
+              <button class="btn btnp btns" onclick="cambiarPwd('mty')">Guardar contraseña</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="security-profile-card">
+          <div class="security-profile-head"><div><h3>San Luis Potosí</h3><p>Credenciales asignadas a la sucursal SLP.</p></div><span class="neutral-tag">Sucursal</span></div>
+          <div class="credential-grid">
+            <div class="credential-card">
+              <div class="credential-type">Sistema de Ventas</div>
+              <div class="password-input-wrap">
+                <input type="password" id="new-pwd-slp-ventas" placeholder="Nueva contraseña"/>
+                <button type="button" class="icon-btn password-toggle" aria-label="Mostrar contraseña" onclick="toggleOjo('new-pwd-slp-ventas',this)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></button>
+              </div>
+              <button class="btn btnp btns" onclick="cambiarPwd('slp_ventas')">Guardar contraseña</button>
+            </div>
+            <div class="credential-card">
+              <div class="credential-type">Administración</div>
+              <div class="password-input-wrap">
+                <input type="password" id="new-pwd-slp" placeholder="Nueva contraseña"/>
+                <button type="button" class="icon-btn password-toggle" aria-label="Mostrar contraseña" onclick="toggleOjo('new-pwd-slp',this)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></button>
+              </div>
+              <button class="btn btnp btns" onclick="cambiarPwd('slp')">Guardar contraseña</button>
+            </div>
+          </div>
+        </section>
       </div>
+      <div id="pwd-alrt" style="display:none;margin-top:14px"></div>
+    </div>
     <!-- GASTOS -->
     <div id="sec-gastos" style="display:none">
       <header class="module-header">
@@ -2919,24 +2878,19 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
       <header class="module-header">
         <div class="module-eyebrow">Finanzas</div>
         <h2 class="module-title">Utilidad operativa</h2>
-        <p class="module-subtitle">Cálculo del desempeño operativo y desglose de resultados por periodo.</p>
+        <p class="module-subtitle">Estado de resultados operativo y flujo posterior al servicio de deuda.</p>
       </header>
 
-      <!-- ── TABLERO DE DEUDAS ── -->
-      <div class="panel" style="margin-bottom:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-          <div class="ptitle" style="margin:0">💳 Deuda por acreedor</div>
-          <button class="btn btns btno" onclick="cargarDeudas()">Actualizar</button>
+      <div class="panel utility-main-panel">
+        <div class="module-toolbar module-toolbar-plain utility-titlebar">
+          <div>
+            <div class="ptitle" style="margin:0">Estado de resultados</div>
+            <div class="toolbar-help">Ventas, costos, gastos y resultado final del periodo seleccionado.</div>
+          </div>
+          <button class="btn btns" onclick="exportarUtilidadPDF()">Exportar PDF</button>
         </div>
-        <div id="deudas-box"><div style="color:var(--text-3);font-size:13px">Cargando…</div></div>
-      </div>
 
-      <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <div class="ptitle" style="margin:0">Utilidad operativa</div>
-          <button class="btn btns btno" onclick="exportarUtilidadPDF()">Exportar PDF</button>
-        </div>
-        <div class="module-toolbar module-toolbar-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:flex-end;margin-bottom:18px">
+        <div class="module-toolbar module-toolbar-grid utility-filters">
           <div><label>Fecha inicio</label><input type="date" id="ut-desde"/></div>
           <div><label>Fecha fin</label><input type="date" id="ut-hasta"/></div>
           <div id="ut-suc-div"><label>Sucursal</label>
@@ -2946,30 +2900,38 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
         </div>
 
         <div id="ut-result" style="display:none">
-          <!-- Tarjetas principales -->
-          <div class="reporte-header" id="ut-cards" style="margin-bottom:20px"></div>
+          <div id="ut-cards" class="utility-kpi-grid"></div>
 
-          <!-- Desglose waterfall -->
-          <div style="background:rgba(38,51,72,.6);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:16px">
-            <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">Desglose del cálculo</div>
-            <div id="ut-waterfall"></div>
-          </div>
+          <section class="financial-statement-card">
+            <div class="section-head">
+              <div><h3>Estado de resultados</h3><p>Secuencia financiera del periodo, desde ventas hasta resultado final.</p></div>
+            </div>
+            <div id="ut-waterfall" class="financial-statement"></div>
+          </section>
 
-          <!-- Tablas de detalle -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-            <div class="panel" style="margin:0">
-              <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">Top 5 gastos fiscales</div>
-              <table class="tbl"><thead><tr><th>Proveedor</th><th style="text-align:right">Total</th></tr></thead>
-              <tbody id="ut-top-gf"></tbody></table>
-            </div>
-            <div class="panel" style="margin:0">
-              <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">Top 5 gastos no fiscales</div>
-              <table class="tbl"><thead><tr><th>Concepto</th><th style="text-align:right">Monto</th></tr></thead>
-              <tbody id="ut-top-gnf"></tbody></table>
-            </div>
+          <div class="utility-detail-grid">
+            <section class="detail-card">
+              <div class="section-head compact"><div><h3>Top gastos fiscales</h3><p>Principales proveedores por importe.</p></div></div>
+              <div class="table-shell"><table class="tbl"><thead><tr><th>Proveedor</th><th class="num">Total</th></tr></thead><tbody id="ut-top-gf"></tbody></table></div>
+            </section>
+            <section class="detail-card">
+              <div class="section-head compact"><div><h3>Top gastos no fiscales</h3><p>Principales conceptos por monto.</p></div></div>
+              <div class="table-shell"><table class="tbl"><thead><tr><th>Concepto</th><th class="num">Monto</th></tr></thead><tbody id="ut-top-gnf"></tbody></table></div>
+            </section>
           </div>
         </div>
-        <div id="ut-empty" class="es" style="display:none">Selecciona un rango de fechas y presiona Calcular</div>
+        <div id="ut-empty" class="empty-state" style="display:none">Selecciona un rango de fechas y presiona Calcular.</div>
+      </div>
+
+      <div class="panel debt-panel">
+        <div class="module-toolbar module-toolbar-plain utility-titlebar">
+          <div>
+            <div class="ptitle" style="margin:0">Deuda por acreedor</div>
+            <div class="toolbar-help">Saldo vigente y compromiso mensual de los pasivos registrados.</div>
+          </div>
+          <button class="btn btns" onclick="cargarDeudas()">Actualizar</button>
+        </div>
+        <div id="deudas-box"><div class="es">Cargando…</div></div>
       </div>
     </div>
 
@@ -5559,7 +5521,18 @@ function exportarReporteFacturas() {
 }
 
 
-function toggleOjo(inputId,btn){var inp=document.getElementById(inputId);if(inp.type==="password"){inp.type="text";btn.textContent="🙈";}else{inp.type="password";btn.textContent="👁";}}
+function _iconOjo(abierto){
+  return abierto
+    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 6.2A10.7 10.7 0 0 1 12 6c6 0 9.5 6 9.5 6a16 16 0 0 1-2.2 2.9M6.3 6.3C3.8 8.1 2.5 12 2.5 12s3.5 6 9.5 6a9.8 9.8 0 0 0 3.1-.5"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>'
+    : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>';
+}
+function toggleOjo(inputId,btn){
+  var inp=document.getElementById(inputId); if(!inp) return;
+  var mostrar=inp.type==='password';
+  inp.type=mostrar?'text':'password';
+  btn.innerHTML=_iconOjo(mostrar);
+  btn.setAttribute('aria-label',mostrar?'Ocultar contraseña':'Mostrar contraseña');
+}
 
 function cambiarPwd(perfil) {
   if(perfilActual!=='admin'){alert('Solo el administrador puede cambiar contrasenas');return;}
@@ -5790,10 +5763,26 @@ function clientesTab(t){
 function renderCreditosTab(){
   var sel = document.getElementById('credito-cliente-sel');
   var nombresUnicos = {};
-  creditos.forEach(function(c){ nombresUnicos[c.cliente]=1; });
+  creditos.forEach(function(c){ if(c.cliente) nombresUnicos[c.cliente]=1; });
   var actual = sel.value;
-  sel.innerHTML = '<option value="">-- Selecciona un cliente --</option>' +
-    Object.keys(nombresUnicos).sort().map(function(n){ return '<option'+(n===actual?' selected':'')+'>'+n+'</option>'; }).join('');
+  var nombres = Object.keys(nombresUnicos).sort(function(a,b){ return a.localeCompare(b,'es'); });
+  sel.innerHTML = '<option value="">Selecciona un cliente</option>' +
+    nombres.map(function(n){ return '<option'+(n===actual?' selected':'')+'>'+n+'</option>'; }).join('');
+
+  var saldoTotal=0, clientesSaldo=0, cargosPendientes=0;
+  nombres.forEach(function(n){
+    var r=calcularCreditoCliente(n);
+    saldoTotal+=r.saldoTotal;
+    if(r.saldoTotal>0.01) clientesSaldo++;
+    cargosPendientes+=r.pendientes.length;
+  });
+  var kpis=document.getElementById('creditos-kpis');
+  if(kpis){
+    kpis.innerHTML =
+      '<div class="control-kpi"><div class="control-kpi-label">Saldo pendiente</div><div class="control-kpi-value money">$'+saldoTotal.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div><div class="control-kpi-sub">Total por cobrar</div></div>'+ 
+      '<div class="control-kpi"><div class="control-kpi-label">Clientes con saldo</div><div class="control-kpi-value">'+clientesSaldo+'</div><div class="control-kpi-sub">Cuentas activas</div></div>'+ 
+      '<div class="control-kpi"><div class="control-kpi-label">Cargos pendientes</div><div class="control-kpi-value">'+cargosPendientes+'</div><div class="control-kpi-sub">Aplicación FIFO</div></div>';
+  }
   if(actual && nombresUnicos[actual]) renderCreditoCliente();
 }
 
@@ -5820,31 +5809,33 @@ function calcularCreditoCliente(nombre){
 function renderCreditoCliente(){
   var nombre = document.getElementById('credito-cliente-sel').value;
   var cont = document.getElementById('credito-detalle');
-  if(!nombre){ cont.innerHTML='<div class="es">Selecciona un cliente para ver su cuenta</div>'; return; }
+  if(!nombre){ cont.innerHTML='<div class="empty-state">Selecciona un cliente para ver su cuenta.</div>'; return; }
   var r = calcularCreditoCliente(nombre);
-  var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'+
-    '<div><div style="font-size:13px;color:var(--text-3)">Saldo actual</div>'+
-    '<div style="font-size:28px;font-weight:700;color:'+(r.saldoTotal>0?'#e5484d':'#30a46c')+'">$'+r.saldoTotal.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div></div>'+
-    '<button class="btn btnp" onclick="copiarEstadoCuenta(\''+nombre.replace(/'/g,"\\'")+'\')">📋 Copiar estado de cuenta</button>'+
+  var estado = r.saldoTotal>0.01 ? 'Saldo pendiente' : 'Cuenta al corriente';
+  var nombreJS = nombre.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  var html = '<div class="credit-account-head">'+
+    '<div><div class="credit-account-label">Saldo actual</div><div class="credit-account-value">$'+r.saldoTotal.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>'+ 
+    '<div class="credit-account-meta">'+nombre+' · '+estado+'</div></div>'+ 
+    '<button class="btn" onclick="copiarEstadoCuenta(\''+nombreJS+'\')">Copiar estado de cuenta</button>'+ 
     '</div>';
-  html += '<div style="display:flex;gap:8px;margin-bottom:16px">'+
-    '<input type="number" id="abono-monto" placeholder="Monto del abono" style="flex:1" min="0" step="0.01"/>'+
-    '<input type="text" id="abono-notas" placeholder="Nota (opcional)" style="flex:1"/>'+
-    '<button class="btn btnp" onclick="registrarAbono(\''+nombre.replace(/'/g,"\\'")+'\')">+ Registrar abono</button>'+
+  html += '<div class="module-toolbar credit-payment-bar">'+
+    '<input type="number" id="abono-monto" placeholder="Monto del abono" min="0" step="0.01"/>'+ 
+    '<input type="text" id="abono-notas" placeholder="Nota opcional"/>'+ 
+    '<button class="btn btnp" onclick="registrarAbono(\''+nombreJS+'\')">Registrar abono</button>'+ 
     '</div>';
-  html += '<div style="font-size:13px;color:var(--text-3);margin-bottom:8px">Cargos pendientes (más antiguo primero)</div>';
+  html += '<div class="section-head compact"><div><h3>Cargos pendientes</h3><p>Se muestran del más antiguo al más reciente.</p></div></div>';
   if(!r.pendientes.length){
-    html += '<div class="es">Sin cargos pendientes 🎉</div>';
+    html += '<div class="empty-state">Sin cargos pendientes. La cuenta está al corriente.</div>';
   } else {
+    html += '<div class="table-shell"><table class="tbl credit-table"><thead><tr><th>Origen</th><th>Fecha</th><th class="num">Importe original</th><th class="num">Pendiente</th></tr></thead><tbody>';
     r.pendientes.forEach(function(c){
       var fechaFmt = new Date(c.fecha).toLocaleDateString('es-MX');
-      html += '<div class="sc" style="cursor:default">'+
-        '<div><div style="font-weight:600">'+(c.folio?'Folio #'+c.folio:c.notas||'Saldo inicial')+'</div>'+
-        '<div class="sm">'+fechaFmt+(c.restante<c.monto?' — abonado parcial':'')+'</div></div>'+
-        '<div style="text-align:right"><div style="font-weight:700">$'+c.restante.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>'+
-        (c.restante<c.monto?'<div class="sm" style="text-decoration:line-through;color:var(--text-3)">$'+c.monto.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>':'')+
-        '</div></div>';
+      var origen = c.folio ? 'Folio #'+c.folio : (c.notas||'Saldo inicial');
+      html += '<tr><td><div class="cell-primary">'+origen+'</div>'+(c.restante<c.monto?'<div class="cell-meta">Abono parcial aplicado</div>':'')+'</td>'+ 
+        '<td>'+fechaFmt+'</td><td class="num mono">$'+Number(c.monto||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>'+ 
+        '<td class="num mono"><strong>$'+c.restante.toLocaleString('es-MX',{minimumFractionDigits:2})+'</strong></td></tr>';
     });
+    html += '</tbody></table></div>';
   }
   cont.innerHTML = html;
 }
@@ -5858,7 +5849,7 @@ function registrarAbono(nombre){
     creditos.push({id:res.id, fecha:new Date().toISOString(), cliente:nombre, tipo:'abono', monto:monto, folio_venta:'', notas:notas});
     document.getElementById('abono-monto').value='';
     document.getElementById('abono-notas').value='';
-    renderCreditoCliente();
+    renderCreditosTab();
   });
 }
 
@@ -5881,7 +5872,7 @@ function copiarEstadoCuenta(nombre){
   var hoy = new Date().toLocaleDateString('es-MX');
   var txt = '*Estado de cuenta — Solmedix*\n'+nombre+'\nFecha: '+hoy+'\n\n';
   if(!r.pendientes.length){
-    txt += 'Sin cargos pendientes. ¡Cuenta al corriente! 🎉';
+    txt += 'Sin cargos pendientes. Cuenta al corriente.';
   } else {
     r.pendientes.forEach(function(c){
       var fechaFmt = new Date(c.fecha).toLocaleDateString('es-MX');
@@ -5894,18 +5885,50 @@ function copiarEstadoCuenta(nombre){
 
 function renderClientesAdmin(lista){
   var src=(lista||clientes).slice().sort(function(a,b){return a.nombre.localeCompare(b.nombre,'es');});
-  // Filtrar por sucursal según perfil
   if(!lista) {
     if(perfilActual==='mty') src=src.filter(function(c){ return c.sucursal==='MTY'||!c.sucursal; });
     if(perfilActual==='slp') src=src.filter(function(c){ return c.sucursal==='SLP'; });
   }
+
+  var saldoPorNombre={};
+  var nombresCredito={};
+  creditos.forEach(function(c){ if(c.cliente) nombresCredito[c.cliente]=1; });
+  Object.keys(nombresCredito).forEach(function(n){ saldoPorNombre[n.toLowerCase()]=calcularCreditoCliente(n).saldoTotal; });
+
+  var ultimaCompra={};
+  ventas.forEach(function(v){
+    if(v.estado==='cancelada' || !v.cliente) return;
+    var k=String(v.cliente).trim().toLowerCase();
+    var f=String(v.fecha||'');
+    if(!ultimaCompra[k] || f>ultimaCompra[k]) ultimaCompra[k]=f;
+  });
+
+  var totalSaldo=0, conRFC=0;
+  src.forEach(function(c){
+    if(c.rfc) conRFC++;
+    totalSaldo += Number(saldoPorNombre[String(c.nombre||'').trim().toLowerCase()]||0);
+  });
+  var kpis=document.getElementById('clientes-kpis');
+  if(kpis){
+    kpis.innerHTML =
+      '<div class="control-kpi"><div class="control-kpi-label">Clientes visibles</div><div class="control-kpi-value">'+src.length+'</div><div class="control-kpi-sub">Según filtros y perfil</div></div>'+ 
+      '<div class="control-kpi"><div class="control-kpi-label">Con RFC registrado</div><div class="control-kpi-value">'+conRFC+'</div><div class="control-kpi-sub">Datos fiscales disponibles</div></div>'+ 
+      '<div class="control-kpi"><div class="control-kpi-label">Saldo pendiente</div><div class="control-kpi-value money">$'+totalSaldo.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div><div class="control-kpi-sub">De los clientes visibles</div></div>';
+  }
+
   var cont=document.getElementById('lista-cli-admin');
-  if(!src.length){cont.innerHTML='<div class="es">No hay clientes</div>';return;}
-  var html='<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Nombre</th><th>Teléfono</th><th>RFC</th><th>Correo</th><th>Régimen</th><th>Uso CFDI</th><th>Dirección</th><th>CP</th><th></th></tr></thead><tbody>';
+  if(!src.length){cont.innerHTML='<div class="empty-state">No hay clientes para mostrar.</div>';return;}
+  function fechaCorta(raw){ if(!raw) return '—'; var d=new Date(raw); return isNaN(d.getTime())?String(raw).slice(0,10):d.toLocaleDateString('es-MX'); }
+  var html='<div class="table-shell"><table class="tbl client-admin-table"><thead><tr><th>Cliente</th><th>Teléfono</th><th>RFC</th><th class="num">Saldo</th><th>Última compra</th><th class="actions-col"></th></tr></thead><tbody>';
   for(var i=0;i<src.length;i++){
     var c=src[i];
-    html+='<tr><td><strong>'+c.nombre+'</strong></td><td>'+(c.telefono||'—')+'</td><td style="font-family:monospace">'+(c.rfc||'—')+'</td><td>'+(c.correo||'—')+'</td><td>'+(c.regimen||'—')+'</td><td>'+(c.uso_cfdi||'—')+'</td><td>'+(c.direccion||'—')+'</td><td>'+(c.cp||'—')+'</td>';
-    html+='<td><button class="btn btns btno" onclick="abrirEditarCliente(\''+String(c.id)+'\')" >Editar</button></td></tr>';
+    var key=String(c.nombre||'').trim().toLowerCase();
+    var saldo=Number(saldoPorNombre[key]||0);
+    html+='<tr><td><div class="cell-primary">'+c.nombre+'</div><div class="cell-meta">'+(c.correo||c.sucursal||'Sin correo registrado')+'</div></td>'+ 
+      '<td>'+(c.telefono||'—')+'</td><td class="mono">'+(c.rfc||'—')+'</td>'+ 
+      '<td class="num mono">'+(saldo>0?'$'+saldo.toLocaleString('es-MX',{minimumFractionDigits:2}):'—')+'</td>'+ 
+      '<td>'+fechaCorta(ultimaCompra[key])+'</td>'+ 
+      '<td class="actions-col"><button class="btn btns" onclick="abrirEditarCliente(\''+String(c.id)+'\')">Editar</button></td></tr>';
   }
   html+='</tbody></table></div>';
   cont.innerHTML=html;
@@ -7025,11 +7048,11 @@ function cargarDeudas() {
   var wrapDeudas = box.closest('.panel');
   if (perfilActual === 'slp') { if (wrapDeudas) wrapDeudas.style.display = 'none'; return; }
   if (wrapDeudas) wrapDeudas.style.display = '';
-  box.innerHTML = '<div style="color:var(--text-3);font-size:13px">Cargando…</div>';
+  box.innerHTML = '<div class="es"><span class="spinner"></span>Cargando…</div>';
 
   apiGet('deudas', function(err, d) {
     if (err || !d || !d.deudas) {
-      box.innerHTML = '<div style="color:var(--rojo,#f87171);font-size:13px">No se pudo cargar la información de deudas.</div>';
+      box.innerHTML = '<div class="alrt ale">No se pudo cargar la información de deudas.</div>';
       return;
     }
     var activas = d.deudas.filter(function(x){ return Number(x.saldo_actual) > 0; });
@@ -7037,42 +7060,24 @@ function cargarDeudas() {
     var total = activas.reduce(function(s,x){ return s + Number(x.saldo_actual||0); }, 0);
     var mensual = activas.reduce(function(s,x){ return s + Number(x.abono_mensual||0); }, 0);
 
-    var h = '';
-    h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px">';
-    h += '<div style="background:rgba(38,51,72,.6);border:1px solid var(--border);border-radius:10px;padding:14px">'
-       + '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">Deuda total</div>'
-       + '<div style="font-size:24px;font-weight:800;color:#fbbf24;margin-top:4px">$' + total.toLocaleString('es-MX') + '</div></div>';
-    h += '<div style="background:rgba(38,51,72,.6);border:1px solid var(--border);border-radius:10px;padding:14px">'
-       + '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">Compromiso mensual</div>'
-       + '<div style="font-size:24px;font-weight:800;margin-top:4px">$' + mensual.toLocaleString('es-MX') + '</div></div>';
-    h += '<div style="background:rgba(38,51,72,.6);border:1px solid var(--border);border-radius:10px;padding:14px">'
-       + '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">Acreedores activos</div>'
-       + '<div style="font-size:24px;font-weight:800;margin-top:4px">' + activas.length
-       + '<span style="font-size:13px;font-weight:400;color:var(--text-3)"> / ' + d.deudas.length + '</span></div></div>';
-    h += '</div>';
+    var h = '<div class="debt-kpi-grid">';
+    h += '<div class="control-kpi"><div class="control-kpi-label">Deuda total</div><div class="control-kpi-value money">$'+total.toLocaleString('es-MX')+'</div><div class="control-kpi-sub">Saldo actual</div></div>';
+    h += '<div class="control-kpi"><div class="control-kpi-label">Compromiso mensual</div><div class="control-kpi-value money">$'+mensual.toLocaleString('es-MX')+'</div><div class="control-kpi-sub">Abonos previstos</div></div>';
+    h += '<div class="control-kpi"><div class="control-kpi-label">Acreedores activos</div><div class="control-kpi-value">'+activas.length+'</div><div class="control-kpi-sub">De '+d.deudas.length+' registrados</div></div></div>';
 
+    if(!activas.length) h += '<div class="empty-state">No hay saldos de deuda activos.</div>';
+    else h += '<div class="debt-list">';
     activas.sort(function(a,b){ return b.saldo_actual - a.saldo_actual; }).forEach(function(x){
       var ini = Number(x.saldo_inicial) || 0;
       var act = Number(x.saldo_actual) || 0;
       var pct = ini > 0 ? Math.round((1 - act/ini) * 100) : 0;
       var meses = x.meses_restantes;
-      h += '<div style="margin-bottom:14px">';
-      h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">'
-         + '<span style="font-weight:600">' + x.acreedor + '</span>'
-         + '<span style="font-family:var(--mono);font-weight:700">$' + act.toLocaleString('es-MX') + '</span></div>';
-      h += '<div style="height:8px;background:rgba(148,163,184,.15);border-radius:99px;overflow:hidden">'
-         + '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,#4062AC,#38bdf8);border-radius:99px"></div></div>';
-      h += '<div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--text-3)">'
-         + '<span>' + pct + '% pagado · abonado $' + Number(x.abonado||0).toLocaleString('es-MX') + '</span>'
-         + '<span>' + (meses ? meses + ' meses restantes' : '') + '</span></div>';
-      h += '</div>';
+      h += '<div class="debt-row"><div class="debt-row-head"><div><strong>'+x.acreedor+'</strong><span>'+pct+'% pagado'+(meses?' · '+meses+' meses restantes':'')+'</span></div><div class="debt-amount">$'+act.toLocaleString('es-MX')+'</div></div>'+ 
+        '<div class="debt-track"><span style="width:'+Math.max(0,Math.min(100,pct))+'%"></span></div>'+ 
+        '<div class="debt-row-foot"><span>Abonado $'+Number(x.abonado||0).toLocaleString('es-MX')+'</span><span>Inicial $'+ini.toLocaleString('es-MX')+'</span></div></div>';
     });
-
-    if (liquidadas.length) {
-      h += '<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--text-3)">'
-         + '✅ Liquidadas: ' + liquidadas.map(function(x){ return x.acreedor; }).join(' · ') + '</div>';
-    }
-
+    if(activas.length) h += '</div>';
+    if (liquidadas.length) h += '<div class="debt-settled">Liquidadas: '+liquidadas.map(function(x){ return x.acreedor; }).join(' · ')+'</div>';
     box.innerHTML = h;
   });
 }
@@ -7192,41 +7197,29 @@ function calcularUtilidad() {
   var color = function(n){ return n>=0?'#6ee7b7':'#fca5a5'; };
   var sign  = function(n){ return n>=0?'+':'-'; };
 
-  // Cards
+  // Resumen ejecutivo
   document.getElementById('ut-cards').innerHTML =
-    '<div class="stat-card"><div class="stat-label">Ventas brutas</div><div class="stat-value" style="color:#93c5fd">'+fmt(totalVentas)+'</div><div class="stat-sub">'+ventasFiltradas.length+' ventas</div></div>'+
-    '<div class="stat-card"><div class="stat-label">Costo de ventas</div><div class="stat-value" style="color:#fca5a5">'+fmt(costoVentas)+'</div></div>'+
-    '<div class="stat-card"><div class="stat-label">Utilidad bruta</div><div class="stat-value" style="color:'+color(utilBruta)+'">'+sign(utilBruta)+fmt(utilBruta)+'</div></div>'+
-    '<div class="stat-card"><div class="stat-label">Gastos fiscales</div><div class="stat-value" style="color:#fca5a5">'+fmt(totalGFneto)+'</div><div class="stat-sub">IVA: '+fmt(totalIVA)+'</div></div>'+
-    '<div class="stat-card"><div class="stat-label">Gastos no fiscales</div><div class="stat-value" style="color:#fca5a5">'+fmt(totalGNF)+'</div></div>'+
-    '<div class="stat-card" style="border-color:'+color(utilNeta)+';box-shadow:0 0 0 1px '+color(utilNeta)+';"><div class="stat-label">UTILIDAD OPERATIVA</div><div class="stat-value" style="color:'+color(utilNeta)+'">'+sign(utilNeta)+fmt(utilNeta)+'</div><div class="stat-sub">Margen: '+margen.toFixed(1)+'%</div></div>'+
-    '<div class="stat-card"><div class="stat-label">Servicio de deuda</div><div class="stat-value" style="color:#fbbf24">'+fmt(totalDeuda)+'</div><div class="stat-sub">'+gnfDeuda.length+' abonos</div></div>'+
-    '<div class="stat-card" style="border-color:'+color(flujoTrasDeuda)+'"><div class="stat-label">FLUJO TRAS DEUDA</div><div class="stat-value" style="color:'+color(flujoTrasDeuda)+'">'+sign(flujoTrasDeuda)+fmt(flujoTrasDeuda)+'</div></div>';
+    '<div class="utility-kpi"><div class="utility-kpi-label">Ventas brutas</div><div class="utility-kpi-value">'+fmt(totalVentas)+'</div><div class="utility-kpi-sub">'+ventasFiltradas.length+' ventas</div></div>'+ 
+    '<div class="utility-kpi"><div class="utility-kpi-label">Utilidad operativa</div><div class="utility-kpi-value '+(utilNeta<0?'negative':'')+'">'+sign(utilNeta)+fmt(utilNeta)+'</div><div class="utility-kpi-sub">Margen '+margen.toFixed(1)+'%</div></div>'+ 
+    '<div class="utility-kpi utility-kpi-final"><div class="utility-kpi-label">Resultado final</div><div class="utility-kpi-value '+(flujoTrasDeuda<0?'negative':'')+'">'+sign(flujoTrasDeuda)+fmt(flujoTrasDeuda)+'</div><div class="utility-kpi-sub">Después del servicio de deuda</div></div>';
 
-  // Waterfall
-  function wfRow(label, monto, tipo, acum) {
-    var isTotal = tipo==='total';
-    var isPos   = monto>=0;
-    var barColor = isTotal?(isPos?'rgba(16,185,129,.7)':'rgba(239,68,68,.7)'):(tipo==='ingreso'?'rgba(59,130,246,.6)':'rgba(239,68,68,.4)');
+  function wfRow(label, monto, tipo) {
+    var clase = 'financial-row '+tipo+(monto<0?' negative':'');
     var pct = totalVentas>0 ? Math.min(100,Math.abs(monto)/totalVentas*100) : 0;
-    return '<div style="display:grid;grid-template-columns:200px 1fr 130px;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border-soft)">' +
-      '<div style="font-size:13px;'+(isTotal?'font-weight:700':'')+'color:'+(isTotal?color(monto):'var(--text-2)')+'">'+label+'</div>' +
-      '<div style="background:rgba(148,163,184,.08);border-radius:4px;overflow:hidden;height:18px">' +
-        '<div style="height:100%;width:'+pct+'%;background:'+barColor+';border-radius:4px;transition:width .4s"></div>' +
-      '</div>' +
-      '<div style="text-align:right;font-size:13px;font-weight:600;font-family:var(--mono);color:'+(isTotal?color(monto):'var(--text)')+'">'+
-        (isTotal?sign(monto):tipo==='ingreso'?'':'-')+fmt(monto)+'</div>' +
-    '</div>';
+    var prefijo = tipo==='income' ? '' : (tipo==='subtotal'||tipo==='final' ? sign(monto) : '-');
+    return '<div class="'+clase+'"><div class="financial-label">'+label+'</div>'+ 
+      '<div class="financial-bar"><span style="width:'+pct+'%"></span></div>'+ 
+      '<div class="financial-value">'+prefijo+fmt(monto)+'</div></div>';
   }
   document.getElementById('ut-waterfall').innerHTML =
-    wfRow('(+) Ventas brutas',        totalVentas,  'ingreso') +
-    wfRow('(-) Costo de ventas',      costoVentas,  'egreso') +
-    wfRow('= Utilidad bruta',         utilBruta,    'total') +
-    wfRow('(-) Gastos fiscales neto', totalGFneto,  'egreso') +
-    wfRow('(-) Gastos no fiscales',   totalGNF,     'egreso') +
-    wfRow('= UTILIDAD OPERATIVA',     utilNeta,     'total') +
-    wfRow('(-) Servicio de deuda',    totalDeuda,   'egreso') +
-    wfRow('= FLUJO TRAS DEUDA',       flujoTrasDeuda,'total');
+    wfRow('Ventas brutas',          totalVentas,      'income') +
+    wfRow('Costo de ventas',        costoVentas,      'expense') +
+    wfRow('Utilidad bruta',         utilBruta,        'subtotal') +
+    wfRow('Gastos fiscales netos',  totalGFneto,      'expense') +
+    wfRow('Gastos no fiscales',     totalGNF,         'expense') +
+    wfRow('Utilidad operativa',     utilNeta,         'subtotal') +
+    wfRow('Servicio de deuda',      totalDeuda,       'expense') +
+    wfRow('Resultado final',        flujoTrasDeuda,   'final');
 
   // Top 5 GF
   var provGF={};
@@ -7267,7 +7260,7 @@ function exportarUtilidadPDF(){
   w.document.write('<div class="row"><span>(-) Gastos no fiscales</span><span>-'+fmt(d.totalGNF)+'</span></div>');
   w.document.write('<div class="row total"><span>= UTILIDAD OPERATIVA</span><span>'+sign(d.utilNeta)+fmt(d.utilNeta)+' ('+d.margen.toFixed(1)+'%)</span></div>');
   w.document.write('<div class="row"><span>(-) Servicio de deuda</span><span>-'+fmt(d.totalDeuda||0)+'</span></div>');
-  w.document.write('<div class="row final"><span>= FLUJO TRAS DEUDA</span><span>'+sign(d.flujoTrasDeuda||0)+fmt(d.flujoTrasDeuda||0)+'</span></div>');
+  w.document.write('<div class="row final"><span>= RESULTADO FINAL</span><span>'+sign(d.flujoTrasDeuda||0)+fmt(d.flujoTrasDeuda||0)+'</span></div>');
   w.document.write('</body></html>'); w.document.close(); setTimeout(function(){w.print();},600);
 }
 
@@ -10879,8 +10872,8 @@ var FIS = FiscalModule;
 <script>
 /* ── PALETA ────────────────────────────────────────────────── */
 var BI_COLORS = {
-  ventas:   '#6366f1', compras: '#f97316', margen: '#10b981',
-  ticket:   '#f59e0b', tendencia:'rgba(255,255,255,0.5)', grid:'rgba(255,255,255,0.06)', text:'rgba(255,255,255,0.65)'
+  ventas:'#2b7fd4', compras:'#64748b', margen:'#2b7fd4',
+  ticket:'#60a5fa', tendencia:'rgba(148,163,184,.65)', grid:'rgba(148,163,184,.08)', text:'rgba(226,232,240,.72)'
 };
 var _biCharts = {};
 var MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -10893,7 +10886,7 @@ function initBI() {
     var kpis = document.getElementById('bi-kpis');
     if (kpis && !kpis.dataset.loading) {
       kpis.dataset.loading = '1';
-      kpis.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-3);font-size:13px">⏳ Cargando datos del servidor...</div>';
+      kpis.innerHTML = '<div class="bi-loading"><span class="spinner"></span>Cargando datos del servidor...</div>';
     }
     setTimeout(initBI, 400);
     return;
@@ -11074,7 +11067,7 @@ function _biTopUds(vAnio) {
     data: {
       labels: labels,
       datasets: [{ label: 'Unidades', data: lista.map(function(m){return m.uds;}),
-        backgroundColor: 'rgba(16,185,129,.7)', borderRadius: 3 }]
+        backgroundColor: 'rgba(43,127,212,.72)', borderRadius: 3 }]
     },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
@@ -11127,7 +11120,7 @@ function _biTopFreq(vAnio) {
     data: {
       labels: labels,
       datasets: [{ label: 'Tickets', data: lista.map(function(m){return m.tickets;}),
-        backgroundColor: 'rgba(99,102,241,.7)', borderRadius: 3 }]
+        backgroundColor: 'rgba(96,165,250,.68)', borderRadius: 3 }]
     },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
@@ -11170,15 +11163,9 @@ function _biChartFranja(vAnio) {
   var ctx = document.getElementById('bi-chart-franja');
   if (!ctx) return;
   if (ctx._chartInst) ctx._chartInst.destroy();
-  // Color gradiente por volumen
+  // Intensidad de una sola serie azul según volumen
   var max = Math.max.apply(null, counts) || 1;
-  var bgColors = counts.map(function(c) {
-    var t = c / max;
-    var r = Math.round(59 + (99-59)*t);
-    var g = Math.round(130 + (102-130)*t);
-    var b = Math.round(246 + (241-246)*t);
-    return 'rgba('+r+','+g+','+b+',0.75)';
-  });
+  var bgColors = counts.map(function(c) { return 'rgba(43,127,212,' + (0.30 + 0.50*(c/max)).toFixed(2) + ')'; });
 
   ctx._chartInst = new Chart(ctx, {
     type: 'bar',
@@ -11241,14 +11228,9 @@ function _biChartEstacional() {
   if (!ctx) return;
   if (ctx._chartInst) ctx._chartInst.destroy();
 
-  // Color: más cálido en meses de mayor volumen
+  // Una sola serie azul; la intensidad representa el volumen
   var maxT = Math.max.apply(null, promTickets) || 1;
-  var bgColors = promTickets.map(function(t) {
-    var pct = t / maxT;
-    if (pct > 0.8) return 'rgba(234,179,8,.8)';       // dorado — alto
-    if (pct > 0.5) return 'rgba(59,130,246,.75)';     // azul — medio
-    return 'rgba(100,116,139,.6)';                     // gris — bajo
-  });
+  var bgColors = promTickets.map(function(t) { return 'rgba(43,127,212,' + (0.28 + 0.52*(t/maxT)).toFixed(2) + ')'; });
 
   ctx._chartInst = new Chart(ctx, {
     type: 'bar',
@@ -11298,22 +11280,20 @@ function _renderBIKpis(ventasMes, comprasMes, margenMes, cuentaMes) {
   var margenPct    = totalVentas > 0 ? (totalMargen/totalVentas*100) : 0;
   var totalTickets = cuentaMes.reduce(function(s,v){return s+v;},0);
   var mejorMes     = ventasMes.indexOf(Math.max.apply(null, ventasMes));
+  var mejorTexto   = mejorMes>=0 && ventasMes[mejorMes]>0 ? MESES[mejorMes] : '—';
 
   var kpis = [
-    { label:'Ventas', val:'$'+_biMxn(totalVentas), color:'#6366f1', icon:'💰' },
-    { label:'Compras', val:'$'+_biMxn(totalCompras), color:'#f97316', icon:'🛒' },
-    { label:'Margen', val:'$'+_biMxn(totalMargen), color:'#10b981', icon:'📈' },
-    { label:'Margen %', val:margenPct.toFixed(1)+'%', color:margenPct>15?'#10b981':margenPct>5?'#f59e0b':'#ef4444', icon:'📊' },
-    { label:'Tickets', val:totalTickets.toLocaleString('es-MX'), color:'#f59e0b', icon:'🎫' },
-    { label:'Mejor mes', val:mejorMes>=0&&ventasMes[mejorMes]>0?MESES[mejorMes]:'—', color:'#8b5cf6', icon:'🏆' },
+    { label:'Ventas', val:'$'+_biMxn(totalVentas), sub:'Mejor mes: '+mejorTexto },
+    { label:'Compras', val:'$'+_biMxn(totalCompras), sub:'Acumulado del año' },
+    { label:'Margen bruto', val:'$'+_biMxn(totalMargen), sub:'Ventas menos compras' },
+    { label:'Margen', val:margenPct.toFixed(1)+'%', sub:'Sobre ventas' },
+    { label:'Tickets', val:totalTickets.toLocaleString('es-MX'), sub:'Operaciones registradas' }
   ];
   var cont = document.getElementById('bi-kpis');
   if (!cont) return;
   cont.innerHTML = kpis.map(function(k){
-    return '<div class="card" style="padding:10px;text-align:center">'+
-      '<div style="font-size:18px">'+k.icon+'</div>'+
-      '<div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;margin:2px 0">'+k.label+'</div>'+
-      '<div style="font-size:15px;font-weight:700;color:'+k.color+'">'+k.val+'</div></div>';
+    return '<div class="bi-kpi"><div class="bi-kpi-label">'+k.label+'</div>'+ 
+      '<div class="bi-kpi-value">'+k.val+'</div><div class="bi-kpi-sub">'+k.sub+'</div></div>';
   }).join('');
 }
 
@@ -11376,7 +11356,7 @@ function _biTopMeds(vAnio) {
     data: {
       labels: top.map(function(t){ return t.nombre.substring(0,22); }),
       datasets: [{ label:'Ventas $', data:top.map(function(t){return t.total;}),
-        backgroundColor: top.map(function(_,i){ return 'hsl('+(200+i*18)+',70%,55%)'; }),
+        backgroundColor: 'rgba(43,127,212,.72)',
         borderRadius:4 }]
     },
     options: {
@@ -11414,8 +11394,8 @@ function _biDiaSemana(vAnio) {
     data: {
       labels:dias,
       datasets:[
-        { label:'Venta total $', data:totDia, backgroundColor:'#6366f199', borderColor:'#6366f1', borderWidth:1.5, borderRadius:4, yAxisID:'y' },
-        { type:'line', label:'Promedio por día $', data:promDia, borderColor:'#f59e0b',
+        { label:'Venta total $', data:totDia, backgroundColor:'rgba(43,127,212,.62)', borderColor:'#2b7fd4', borderWidth:1.5, borderRadius:4, yAxisID:'y' },
+        { type:'line', label:'Promedio por día $', data:promDia, borderColor:'#94a3b8',
           borderWidth:2, pointRadius:4, tension:0.3, fill:false, yAxisID:'y2' }
       ]
     },
@@ -11426,7 +11406,7 @@ function _biDiaSemana(vAnio) {
         x:{grid:{color:BI_COLORS.grid}, ticks:{color:BI_COLORS.text}},
         y:{position:'left', grid:{color:BI_COLORS.grid}, ticks:{color:BI_COLORS.text, font:{size:10},
            callback:function(v){return '$'+_biMxn(v);}}},
-        y2:{position:'right', grid:{display:false}, ticks:{color:'#f59e0b', font:{size:10},
+        y2:{position:'right', grid:{display:false}, ticks:{color:'#94a3b8', font:{size:10},
            callback:function(v){return '$'+_biMxn(v);}}}
       }
     }
@@ -11485,8 +11465,8 @@ function _biChartSemanaMes(vAnio) {
         {
           label: 'Promedio ventas $ / mes',
           data: promF,
-          backgroundColor: '#6366f199',
-          borderColor: '#6366f1',
+          backgroundColor: 'rgba(43,127,212,.62)',
+          borderColor: '#2b7fd4',
           borderWidth: 1.5,
           borderRadius: 4,
           yAxisID: 'y'
@@ -11495,7 +11475,7 @@ function _biChartSemanaMes(vAnio) {
           type: 'line',
           label: 'Ticket promedio $',
           data: ticksF,
-          borderColor: '#10b981',
+          borderColor: '#94a3b8',
           borderWidth: 2,
           pointRadius: 4,
           tension: 0.3,
@@ -11530,7 +11510,7 @@ function _biChartSemanaMes(vAnio) {
         y2: {
           position: 'right',
           grid: { display: false },
-          ticks: { color: '#10b981', font: { size: 10 },
+          ticks: { color: '#94a3b8', font: { size: 10 },
             callback: function(v) { return '$' + _biMxn(v); }
           }
         }
@@ -11560,10 +11540,10 @@ function _biTablaResumen(ventasMes, comprasMes, margenMes, cuentaMes, ticketsMes
     tvTot+=v; tcTot+=m; tmTot+=mg; tkTot+=cuentaMes[i];
     html += '<tr>'+
       '<td style="'+P+SL+'">'+MESES[i]+'</td>'+
-      '<td style="'+P+S+';color:#6366f1">$'+_biMxn(v)+'</td>'+
-      '<td style="'+P+S+';color:#f97316">$'+_biMxn(m)+'</td>'+
-      '<td style="'+P+S+';color:'+(mg>=0?'#10b981':'#ef4444')+'">$'+_biMxn(mg)+'</td>'+
-      '<td style="'+P+S+';color:'+(mp>=15?'#10b981':mp>=5?'#f59e0b':'#ef4444')+'">'+mp.toFixed(1)+'%</td>'+
+      '<td style="'+P+S+'">$'+_biMxn(v)+'</td>'+
+      '<td style="'+P+S+'">$'+_biMxn(m)+'</td>'+
+      '<td style="'+P+S+'">$'+_biMxn(mg)+'</td>'+
+      '<td style="'+P+S+'">'+mp.toFixed(1)+'%</td>'+
       '<td style="'+P+S+'">'+cuentaMes[i]+'</td>'+
       '<td style="'+P+S+'">$'+_biMxn(ticketsMes[i])+'</td>'+
       '<td style="'+P+S+'">'+cambioHtml+'</td>'+
@@ -11575,10 +11555,10 @@ function _biTablaResumen(ventasMes, comprasMes, margenMes, cuentaMes, ticketsMes
   var PF = 'padding:8px 10px;background:rgba(38,51,72,.8)';
   if (tfoot) tfoot.innerHTML = '<tr>'+
     '<td style="'+PF+';font-weight:700;font-size:12px">TOTAL</td>'+
-    '<td style="'+PF+SF+';color:#6366f1">$'+_biMxn(tvTot)+'</td>'+
-    '<td style="'+PF+SF+';color:#f97316">$'+_biMxn(tcTot)+'</td>'+
-    '<td style="'+PF+SF+';color:'+(mgTot>=0?'#10b981':'#ef4444')+'">$'+_biMxn(mgTot)+'</td>'+
-    '<td style="'+PF+SF+';color:'+(mpTot>=15?'#10b981':mpTot>=5?'#f59e0b':'#ef4444')+'">'+mpTot.toFixed(1)+'%</td>'+
+    '<td style="'+PF+SF+'">$'+_biMxn(tvTot)+'</td>'+
+    '<td style="'+PF+SF+'">$'+_biMxn(tcTot)+'</td>'+
+    '<td style="'+PF+SF+'">$'+_biMxn(mgTot)+'</td>'+
+    '<td style="'+PF+SF+'">'+mpTot.toFixed(1)+'%</td>'+
     '<td style="'+PF+SF+'">'+tkTot+'</td>'+
     '<td style="'+PF+SF+'">$'+_biMxn(tkTot>0?tvTot/tkTot:0)+'</td>'+
     '<td style="'+PF+'"></td></tr>';
@@ -11653,5 +11633,31 @@ function _biMxn(v) {
 #sec-fiscal .fl-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:10px;background:var(--surface-2);border:1px solid var(--line)}#sec-fiscal .fl-icon svg{width:22px;height:22px;fill:none;stroke:var(--text-2);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 @media(max-width:1180px){.venc-kpis{grid-template-columns:repeat(3,1fr)}.catalog-searchbar{align-items:stretch;flex-direction:column}.catalog-searchbar .toolbar-help{white-space:normal}.control-kpi-grid,#recompra-resumen{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:680px){.control-kpi-grid,.venc-kpis,#recompra-resumen{grid-template-columns:1fr}.catalog-toolbar{align-items:flex-start;flex-direction:column}.module-segments{width:100%}.module-segments .nav-tab{flex:1}.med-admin-table{min-width:760px}}
+</style>
+
+
+<style id="solmedix-phase4">
+/* ════════════════════════════════════════════════════
+   REDISEÑO ADMIN — fase 4
+   Inteligencia, Utilidad, Clientes/Créditos y Seguridad
+════════════════════════════════════════════════════ */
+.toolbar-field{display:flex;flex-direction:column;gap:5px;min-width:130px}.toolbar-field label{margin:0!important;font-size:11px!important}.toolbar-field select{width:100%;min-width:130px}.toolbar-spacer{flex:1}
+
+/* BI */
+.bi-toolbar{display:flex;align-items:flex-end;gap:12px;margin-bottom:16px;flex-wrap:wrap}.bi-kpi-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:14px}.bi-kpi{min-height:92px;padding:15px 16px;background:var(--surface-1);border:1px solid var(--line);border-radius:12px;position:relative;overflow:hidden}.bi-kpi::before{content:'';position:absolute;left:0;right:0;top:0;height:2px;background:rgba(43,127,212,.55)}.bi-kpi-label{font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px}.bi-kpi-value{font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:-.025em;color:var(--text);font-variant-numeric:tabular-nums}.bi-kpi-sub{font-size:10.5px;color:var(--text-3);margin-top:5px}.bi-loading{grid-column:1/-1;display:flex;align-items:center;justify-content:center;min-height:92px;color:var(--text-3);font-size:12px}
+.bi-grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:12px}.bi-card{background:var(--surface-1);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}.bi-card-wide,.bi-summary-card{margin-bottom:12px}.bi-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}.bi-card-head h3,.section-head h3{font-size:13.5px;font-weight:650;color:var(--text);letter-spacing:-.015em;margin:0 0 3px}.bi-card-head p,.section-head p{font-size:10.75px;color:var(--text-3);line-height:1.5;margin:0}.bi-chart{height:230px;position:relative}.bi-chart-tall{height:260px}.bi-chart-wide{height:250px}.bi-summary-card{padding:16px}.bi-summary-table{min-width:820px}.bi-summary-table th{text-transform:none!important;letter-spacing:.02em!important}.bi-summary-table td,.bi-summary-table th{padding:11px 12px!important}.bi-summary-table td[style]{font-size:12px!important;border-bottom:1px solid var(--line)!important}.bi-summary-table tfoot td{background:var(--surface-2)!important;color:var(--text)!important}
+
+/* Clientes / Créditos */
+.client-segments{margin-bottom:16px}.client-kpis,.credit-kpis{grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:16px}.client-admin-table{min-width:820px}.client-admin-table .actions-col{width:90px;text-align:right}.credit-toolbar-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px!important}.credit-client-selector{max-width:440px;margin-bottom:16px}.credit-account-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;margin-bottom:12px}.credit-account-label{font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:4px}.credit-account-value{font-size:27px;line-height:1.1;font-family:var(--mono);font-weight:700;letter-spacing:-.03em;color:var(--text)}.credit-account-meta{font-size:10.75px;color:var(--text-3);margin-top:5px}.credit-payment-bar{display:grid!important;grid-template-columns:minmax(150px,.7fr) minmax(220px,1fr) auto;gap:10px!important;align-items:center;margin-bottom:18px!important}.credit-payment-bar input{min-width:0!important}.section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:13px}.section-head.compact{margin:14px 0 10px}.credit-table{min-width:650px}
+
+/* Utilidad */
+.utility-main-panel{padding:18px}.utility-titlebar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px!important}.utility-filters{display:grid!important;grid-template-columns:1fr 1fr 1fr auto;gap:10px!important;align-items:end;margin-bottom:18px!important}.utility-kpi-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}.utility-kpi{min-height:105px;padding:16px;background:var(--surface-1);border:1px solid var(--line);border-radius:12px;position:relative}.utility-kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:rgba(43,127,212,.55)}.utility-kpi-final{background:var(--surface-2)}.utility-kpi-label{font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:10px}.utility-kpi-value{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--text);letter-spacing:-.03em}.utility-kpi-value.negative{color:#fca5a5}.utility-kpi-sub{font-size:10.75px;color:var(--text-3);margin-top:6px}.financial-statement-card,.detail-card{background:var(--surface-1);border:1px solid var(--line);border-radius:12px;padding:16px}.financial-statement-card{margin-bottom:14px}.financial-statement{border-top:1px solid var(--line)}.financial-row{display:grid;grid-template-columns:minmax(180px,1.1fr) minmax(160px,2fr) 150px;align-items:center;gap:16px;min-height:48px;border-bottom:1px solid var(--line);padding:8px 4px}.financial-label{font-size:12.25px;color:var(--text-2)}.financial-bar{height:7px;border-radius:99px;background:var(--surface-2);overflow:hidden}.financial-bar span{display:block;height:100%;border-radius:99px;background:rgba(43,127,212,.55)}.financial-row.expense .financial-bar span{background:rgba(148,163,184,.42)}.financial-row.subtotal .financial-bar span,.financial-row.final .financial-bar span{background:rgba(43,127,212,.78)}.financial-row.subtotal .financial-label,.financial-row.final .financial-label{font-weight:700;color:var(--text)}.financial-row.final{margin-top:5px;background:var(--surface-2);border-radius:9px;border-bottom:none;padding:10px 12px}.financial-value{text-align:right;font-family:var(--mono);font-size:12.5px;font-weight:650;color:var(--text);font-variant-numeric:tabular-nums}.financial-row.final .financial-value{font-size:15px}.financial-row.negative .financial-value{color:#fca5a5}.utility-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.detail-card{padding:14px}.debt-panel{margin-top:16px}.debt-kpi-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px}.debt-list{border:1px solid var(--line);border-radius:12px;overflow:hidden}.debt-row{padding:13px 14px;border-bottom:1px solid var(--line);background:var(--surface-1)}.debt-row:last-child{border-bottom:none}.debt-row-head,.debt-row-foot{display:flex;justify-content:space-between;align-items:center;gap:12px}.debt-row-head strong{display:block;font-size:12.5px}.debt-row-head span,.debt-row-foot{font-size:10.5px;color:var(--text-3)}.debt-amount{font-family:var(--mono);font-weight:700;font-size:13px;color:var(--text)}.debt-track{height:6px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin:9px 0 6px}.debt-track span{display:block;height:100%;border-radius:99px;background:rgba(43,127,212,.72)}.debt-settled{font-size:10.75px;color:var(--text-3);margin-top:12px;padding-top:11px;border-top:1px solid var(--line)}
+
+/* Seguridad */
+.security-note{display:flex;gap:12px;align-items:flex-start;padding:14px 15px;background:var(--surface-1);border:1px solid var(--line);border-radius:12px;margin-bottom:14px}.security-note-icon{width:36px;height:36px;flex:0 0 36px;display:grid;place-items:center;border-radius:9px;background:var(--surface-2);border:1px solid var(--line)}.security-note-icon svg,.icon-btn svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.security-note-icon svg{width:18px;height:18px;color:var(--text-2)}.security-note strong{display:block;font-size:12.5px;color:var(--text);margin:1px 0 3px}.security-note span{display:block;font-size:11px;line-height:1.5;color:var(--text-3)}.security-profile-grid{display:grid;grid-template-columns:1fr;gap:12px}.security-profile-card{background:var(--surface-1);border:1px solid var(--line);border-radius:12px;padding:16px}.security-profile-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-bottom:13px;margin-bottom:13px;border-bottom:1px solid var(--line)}.security-profile-head h3{font-size:14px;font-weight:650;color:var(--text);margin:0 0 3px}.security-profile-head p{font-size:10.75px;color:var(--text-3);margin:0}.credential-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.credential-card{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:13px}.credential-type{font-size:11.5px;font-weight:600;color:var(--text-2);margin-bottom:8px}.password-input-wrap{position:relative;margin-bottom:9px}.password-input-wrap input{padding-right:42px}.icon-btn{appearance:none;border:0;background:transparent;color:var(--text-2);cursor:pointer;display:grid;place-items:center}.password-toggle{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:7px}.password-toggle:hover{background:rgba(148,163,184,.08);color:var(--text)}.password-toggle svg{width:17px;height:17px}.login-eye{right:7px!important;top:50%!important}.login-card .password-toggle{position:absolute}
+
+@media(max-width:1180px){.bi-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.utility-kpi-grid,.client-kpis,.credit-kpis,.debt-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){.bi-grid-2{grid-template-columns:1fr}.credential-grid,.utility-detail-grid{grid-template-columns:1fr}.utility-filters{grid-template-columns:1fr 1fr!important}.credit-payment-bar{grid-template-columns:1fr!important}.financial-row{grid-template-columns:1fr 120px}.financial-bar{display:none}.security-profile-head{align-items:center}}
+@media(max-width:680px){.bi-kpi-grid,.utility-kpi-grid,.client-kpis,.credit-kpis,.debt-kpi-grid{grid-template-columns:1fr}.utility-filters{grid-template-columns:1fr!important}.bi-toolbar{align-items:stretch}.bi-toolbar .toolbar-field{flex:1}.bi-toolbar .toolbar-spacer{display:none}.credit-account-head,.utility-titlebar,.credit-toolbar-head{align-items:flex-start;flex-direction:column}.financial-row{grid-template-columns:1fr auto;gap:10px}.financial-value{font-size:12px}.credential-card .btn{width:100%}}
 </style>
 
