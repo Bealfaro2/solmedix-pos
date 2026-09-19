@@ -354,7 +354,7 @@ select option { background:var(--bg-2); color:var(--text); }
 .fb-ok     { background:rgba(16,185,129,.15); color:#6ee7b7; border:1px solid rgba(16,185,129,.3); }
 .fb-err    { background:rgba(239,68,68,.15);  color:#fca5a5; border:1px solid rgba(239,68,68,.3);  }
 .fb-info   { background:rgba(43,127,212,.15); color:#93c5fd; border:1px solid rgba(43,127,212,.3); }
-.fb-purple { background:rgba(167,139,250,.15);color:#c4b5fd; border:1px solid rgba(167,139,250,.3); }
+.fb-purple { background:rgba(43,127,212,.12);color:#93c5fd; border:1px solid rgba(43,127,212,.28); }
 .fis-btn { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:var(--radius-sm); font-family:var(--font); font-size:12px; cursor:pointer; border:1px solid var(--border); background:var(--bg-3); color:var(--text); transition:all .12s; }
 .fis-btn:hover { background:rgba(148,163,184,.1); color:#fff; }
 .fis-btn.fb-primary { background:var(--blue); border-color:var(--blue); color:#fff; }
@@ -1114,7 +1114,7 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
       <!-- Bloque acceso denegado -->
       <div id="fis-locked-view" style="display:none">
         <div class="fis-locked">
-          <div class="fl-icon">🔒</div>
+          <div class="fl-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6.5" y="10" width="11" height="9" rx="2"/><path d="M9 10V7.5a3 3 0 0 1 6 0V10"/></svg></div>
           <h3>Acceso restringido</h3>
           <p>El módulo fiscal solo está disponible para el perfil Administrador.</p>
         </div>
@@ -1136,21 +1136,21 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
         </div>
 
         <!-- Sub-navegación -->
-        <div class="fiscal-subnav">
-          <button class="fis-nav-btn active" onclick="FIS.showSub('resumen',this)">📊 Resumen</button>
-          <button class="fis-nav-btn" onclick="FIS.showSub('ingresos',this)">📥 Ingresos CFDI</button>
-          <button class="fis-nav-btn" onclick="FIS.showSub('egresos',this)">📤 Egresos / Gastos</button>
+        <div class="fiscal-subnav module-segments fiscal-segments">
+          <button class="fis-nav-btn active" onclick="FIS.showSub('resumen',this)">Resumen</button>
+          <button class="fis-nav-btn" onclick="FIS.showSub('ingresos',this)">Ingresos CFDI</button>
+          <button class="fis-nav-btn" onclick="FIS.showSub('egresos',this)">Egresos / Gastos</button>
           <button class="fis-nav-btn" onclick="FIS.showSub('ppd',this)">
-            ⏳ PPD Pendientes
+            PPD pendientes
             <span class="fis-nav-badge fis-nb-warn" id="fis-badge-ppd">—</span>
           </button>
           <button class="fis-nav-btn" onclick="FIS.showSub('deducciones',this)">
-            🔍 Deducciones
+            Deducciones
             <span class="fis-nav-badge fis-nb-err" id="fis-badge-ded">—</span>
           </button>
-          <button class="fis-nav-btn" onclick="FIS.showSub('diot',this)">📋 DIOT</button>
-          <button class="fis-nav-btn" onclick="FIS.showSub('reporte',this)">📄 Reporte Contador</button>
-          <button class="fis-nav-btn" onclick="FIS.showSub('banco',this)">🏦 Banco Albo</button>
+          <button class="fis-nav-btn" onclick="FIS.showSub('diot',this)">DIOT</button>
+          <button class="fis-nav-btn" onclick="FIS.showSub('reporte',this)">Reporte contador</button>
+          <button class="fis-nav-btn" onclick="FIS.showSub('banco',this)">Banco Albo</button>
         </div>
 
         <!-- ── GUÍA DE CIERRE MENSUAL ── -->
@@ -2007,14 +2007,18 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
         <p class="module-subtitle">Administración del catálogo, precios base y datos comerciales.</p>
       </header>
       <div class="panel">
-        <div class="module-toolbar module-toolbar-plain" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-          <div class="ptitle" style="margin:0">Catálogo de medicamentos</div>
-          <button class="btn btng btns" onclick="abrirModalMed(null)">+ Nuevo medicamento</button>
+        <div class="module-toolbar module-toolbar-plain catalog-toolbar">
+          <div>
+            <div class="ptitle" style="margin:0">Catálogo de medicamentos</div>
+            <div class="toolbar-help">Consulta costos, precios y existencias desde una sola vista.</div>
+          </div>
+          <button class="btn btnp btns" onclick="abrirModalMed(null)">Nuevo medicamento</button>
         </div>
-        <div class="fr" style="margin-bottom:14px">
-          <input type="text" id="bq-med" placeholder="Buscar medicamento..." oninput="filtrarMeds()"/>
+        <div class="module-toolbar catalog-searchbar">
+          <input type="text" id="bq-med" placeholder="Buscar por medicamento o categoría..." oninput="filtrarMeds()"/>
+          <div class="toolbar-help" id="med-table-hint">Los importes se muestran según el perfil activo.</div>
         </div>
-        <div class="med-grid" id="med-grid"><div class="es">Cargando...</div></div>
+        <div class="med-table-host" id="med-grid"><div class="es">Cargando...</div></div>
       </div>
     </div>
 
@@ -2067,11 +2071,12 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
         <p class="module-subtitle">Existencias por lote, reportes y carga de inventario.</p>
       </header>
 
-      <div style="display:flex;gap:4px;margin-bottom:18px">
-        <button class="nav-tab on" id="it-lotes"   onclick="inventarioTab('lotes')"   style="border-radius:var(--radius-sm)">📦 Inventario por lote</button>
-        <button class="nav-tab"    id="it-reporte" onclick="inventarioTab('reporte')" style="border-radius:var(--radius-sm)">📈 Reporte de inventario</button>
-        <button class="nav-tab"    id="it-carga"   onclick="inventarioTab('carga')"   style="border-radius:var(--radius-sm)">📥 Carga Excel</button>
+      <div class="module-segments inventory-segments">
+        <button class="nav-tab on" id="it-lotes" onclick="inventarioTab('lotes')">Por lote</button>
+        <button class="nav-tab" id="it-reporte" onclick="inventarioTab('reporte')">Reporte</button>
+        <button class="nav-tab" id="it-carga" onclick="inventarioTab('carga')">Carga Excel</button>
       </div>
+      <div id="inv-control-stats" class="control-kpi-grid" style="margin-bottom:18px"></div>
 
       <div id="si-lotes">
         <div class="panel">
@@ -2085,9 +2090,9 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
             <input type="checkbox" id="chk-mostrar-agotados" onchange="filtrarLotes()"/> Mostrar lotes agotados (0 pzas)
           </label>
           <select id="lote-filtro-suc" onchange="filtrarLotes()" style="padding:8px 12px;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px">
-            <option value="TODAS">🏪 Todas las sucursales</option>
-            <option value="MTY">📍 Monterrey</option>
-            <option value="SLP">📍 San Luis Potosí</option>
+            <option value="TODAS">Todas las sucursales</option>
+            <option value="MTY">Monterrey</option>
+            <option value="SLP">San Luis Potosí</option>
           </select>
         </div>
         <div style="overflow-x:auto">
@@ -2156,11 +2161,11 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
           <!-- Botón descargar plantilla -->
           <div style="background:rgba(24,95,165,.1);border:1px solid rgba(24,95,165,.25);border-radius:var(--radius);padding:14px 16px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center">
             <div>
-              <div style="font-weight:600;font-size:13px;color:var(--text-1);margin-bottom:3px">📥 Plantilla Excel</div>
+              <div style="font-weight:600;font-size:13px;color:var(--text-1);margin-bottom:3px">Plantilla Excel</div>
               <div style="font-size:12px;color:var(--text-2)">Descarga la plantilla con las columnas correctas y llénala con tu inventario.</div>
             </div>
             <button class="btn btnp" onclick="descargarPlantillaExcel()" style="white-space:nowrap;flex-shrink:0">
-              ⬇ Descargar plantilla
+              Descargar plantilla
             </button>
           </div>
 
@@ -2171,7 +2176,7 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
             ondragover="event.preventDefault();this.style.borderColor='var(--blue-bright)';this.style.background='rgba(24,95,165,.08)'"
             ondragleave="this.style.borderColor='';this.style.background=''"
             ondrop="onXlsxDrop(event)">
-            <div style="font-size:36px;margin-bottom:10px">📊</div>
+            <div class="upload-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3.75h10v16.5H7z"/><path d="M9.5 9.5h5M9.5 13h5M9.5 16.5h3"/></svg></div>
             <div style="font-size:14px;font-weight:600;color:var(--text-2)">Arrastra el Excel aquí o haz clic para seleccionar</div>
             <div style="font-size:12px;color:var(--text-3);margin-top:5px">Archivo .xlsx — hoja "lotes" con columnas: medicamento, lote, existencias, costo_unitario</div>
             <input type="file" id="xlsx-file-input" accept=".xlsx,.xls" style="display:none" onchange="onXlsxFile(event)"/>
@@ -2233,7 +2238,7 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
       <div class="ptitle" style="margin:0">⚠️ Control de Antimicrobianos</div>
       <div style="display:flex;gap:8px">
         <button class="btn" onclick="cargarRegistroAntimicrobianos()">↻ Actualizar</button>
-        <button class="btn btns btno" onclick="exportarAntimicrobianosCSV()">📥 Exportar CSV</button>
+        <button class="btn btns btno" onclick="exportarAntimicrobianosCSV()">Exportar CSV</button>
       </div>
     </div>
     <div style="font-size:12px;color:var(--text-3);margin-bottom:12px">
@@ -2273,7 +2278,7 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
       </header>
   <div class="panel">
     <div class="module-toolbar module-toolbar-plain" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <div class="ptitle" style="margin:0">⚠️ Alertas de Vencimiento</div>
+      <div><div class="ptitle" style="margin:0">Alertas de vencimiento</div><div class="toolbar-help">Prioriza lotes por fecha y valor comprometido.</div></div>
       <div style="display:flex;gap:8px;align-items:center">
         <label style="font-size:12px;color:var(--text-2)">Días de anticipación:</label>
         <select id="venc-dias" onchange="renderVencimientos()" style="width:120px">
@@ -2313,11 +2318,11 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
 
 
       <!-- Sub-tabs -->
-      <div style="display:flex;gap:4px;margin-bottom:18px">
-        <button class="nav-tab on" id="ct-entrada" onclick="comprasTab('entrada')" style="border-radius:var(--radius-sm)">📥 Entrada XML</button>
-        <button class="nav-tab" id="ct-credito" onclick="comprasTab('credito')" style="border-radius:var(--radius-sm)">💳 Pagos Crédito</button>
-        <button class="nav-tab" id="ct-reporte" onclick="comprasTab('reporte')" style="border-radius:var(--radius-sm)">🧾 Reporte de Compras</button>
-        <button class="nav-tab" id="ct-recompra" onclick="comprasTab('recompra')" style="border-radius:var(--radius-sm)">🔄 Reporte de Recompra</button>
+      <div class="module-segments compras-segments">
+        <button class="nav-tab on" id="ct-entrada" onclick="comprasTab('entrada')">Entrada</button>
+        <button class="nav-tab" id="ct-credito" onclick="comprasTab('credito')">Crédito</button>
+        <button class="nav-tab" id="ct-reporte" onclick="comprasTab('reporte')">Reportes</button>
+        <button class="nav-tab" id="ct-recompra" onclick="comprasTab('recompra')">Recompra</button>
       </div>
 
       <!-- SUB-SECCIÓN: Reporte de Recompra -->
@@ -2325,10 +2330,10 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
         <div class="panel">
           <div class="module-toolbar module-toolbar-plain" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
             <div>
-              <div style="font-weight:700;font-size:15px">🔄 Reporte de Recompra</div>
+              <div style="font-weight:700;font-size:15px">Reporte de recompra</div>
               <div style="font-size:12px;color:var(--text-3);margin-top:2px">Generado cada miércoles · Sucursal MTY · Basado en ventas de los últimos 7 días</div>
             </div>
-            <button class="btn btns btno" onclick="exportarRecompraCSV()">📥 Exportar CSV</button>
+            <button class="btn btns btno" onclick="exportarRecompraCSV()">Exportar CSV</button>
           </div>
           <div id="recompra-resumen" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
           <div style="overflow-x:auto">
@@ -2347,14 +2352,14 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
               <tbody id="recompra-body"></tbody>
             </table>
           </div>
-          <div id="recompra-empty" style="display:none;text-align:center;padding:40px;color:var(--text-3)">✅ No hay recompras necesarias esta semana</div>
+          <div id="recompra-empty" class="empty-state" style="display:none">No hay recompras necesarias esta semana</div>
         </div>
       </div>
 
       <!-- SUB-SECCIÓN: Entrada XML -->
       <div id="sc-entrada">
         <div class="panel">
-        <div class="ptitle">Entrada de inventario por XML (CFDI)</div>
+        <div class="ptitle">Importar CFDI / XML</div>
         <p style="font-size:13px;color:var(--text-2);margin-bottom:1.5rem;line-height:1.7">
           Sube el archivo XML de la factura de tu proveedor. El sistema leerá automáticamente
           el proveedor, medicamentos, cantidades y costos. Solo necesitas agregar el número de lote.
@@ -2365,9 +2370,10 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
           ondragover="event.preventDefault();this.style.borderColor='var(--blue-bright)';this.style.background='rgba(24,95,165,.1)'"
           ondragleave="this.style.borderColor='';this.style.background=''"
           ondrop="onXmlDrop(event)">
-          <div style="font-size:36px;margin-bottom:10px">📄</div>
-          <div style="font-size:14px;font-weight:600;color:var(--text-2)">Arrastra uno o varios XML aquí o haz clic para seleccionar</div>
-          <div style="font-size:12px;color:var(--text-3);margin-top:5px">Archivos .xml del SAT (CFDI 4.0) — puedes agregar más facturas en cualquier momento</div>
+          <div class="upload-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3.75h6.2L17.5 8v12.25H7z"/><path d="M13 3.75V8h4.5"/><path d="M9.5 13h5M9.5 16h5"/></svg></div>
+          <div class="upload-title">Selecciona o arrastra archivos XML</div>
+          <div class="upload-copy">CFDI 4.0 del SAT. Puedes agregar varias facturas y revisarlas antes de aplicar la entrada.</div>
+          <div class="upload-action">Seleccionar archivos</div>
           <input type="file" id="xml-file-input" accept=".xml" multiple style="display:none" onchange="onXmlFile(event)"/>
         </div>
 
@@ -2411,7 +2417,7 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
             </div>
             <div style="display:flex;gap:8px;justify-content:flex-end">
               <button class="btn" onclick="cancelarXmlActual()">Cancelar esta factura</button>
-              <button class="btn btnp" id="btn-confirmar-factura" onclick="confirmarFacturaActual()">✔ Confirmar lotes de esta factura</button>
+              <button class="btn btnp" id="btn-confirmar-factura" onclick="confirmarFacturaActual()">Confirmar lotes de esta factura</button>
             </div>
             <div id="confirmar-factura-alrt" style="display:none;margin-top:10px"></div>
           </div>
@@ -2544,9 +2550,9 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
           <div class="ptitle" style="margin:0">Reporte de compras</div>
           <div style="display:flex;gap:6px">
             <button class="btn btns btno" onclick="exportarComprasCSV()">Exportar CSV</button>
-            <button class="btn btns btno" onclick="exportarReporteFacturas()">📋 Por Factura</button>
+            <button class="btn btns btno" onclick="exportarReporteFacturas()">Por factura</button>
             <button class="btn btns btno" onclick="exportarComprasPDF()">Exportar PDF</button>
-            <button class="btn btns" style="background:rgba(245,158,11,.2);color:#fcd34d;border-color:rgba(245,158,11,.4)" onclick="exportarReportePagos()">💳 Reporte Pagos</button>
+            <button class="btn btns" style="background:rgba(245,158,11,.2);color:#fcd34d;border-color:rgba(245,158,11,.4)" onclick="exportarReportePagos()">Reporte pagos</button>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:flex-end;margin-bottom:14px">
@@ -4367,9 +4373,9 @@ function renderInventario(lista){
       if (fechaVenc) {
         var hoy = new Date();
         var diasRestantes = Math.floor((fechaVenc - hoy) / (1000*60*60*24));
-        if (diasRestantes < 0) { vencColor = '#7f1d1d'; vencIcon = ' ⚠️'; }
-        else if (diasRestantes <= 90) { vencColor = '#991b1b'; vencIcon = ' ⚠️'; }
-        else if (diasRestantes <= 180) { vencColor = '#f59e0b'; vencIcon = ' ⚠️'; }
+        if (diasRestantes < 0) { vencColor = '#7f1d1d'; vencIcon = ''; }
+        else if (diasRestantes <= 90) { vencColor = '#991b1b'; vencIcon = ''; }
+        else if (diasRestantes <= 180) { vencColor = '#f59e0b'; vencIcon = ''; }
         else { vencColor = '#10b981'; }
       }
     }
@@ -5214,84 +5220,69 @@ function entradaAlrt(msg, tipo) {
    ALERTAS DE VENCIMIENTO
 ═══════════════════════════════════════════════ */
 function renderVencimientos() {
-  var diasFiltro = parseInt(document.getElementById('venc-dias').value) || 90;
+  var diasFiltro = parseInt(document.getElementById('venc-dias').value);
+  if(isNaN(diasFiltro)) diasFiltro=90;
   var hoy = new Date();
-  var alertas = [];
+  var todos = [];
 
   lotes.forEach(function(l) {
     var venc = l.fecha_vencimiento || '';
     if (!venc) return;
     var partes = venc.split('/');
     var fechaVenc;
-    if (partes.length === 3) {
-      fechaVenc = new Date(partes[2], partes[1]-1, partes[0]);
-    } else if (partes.length === 2) {
-      fechaVenc = new Date(partes[1], partes[0]-1, 28);
-    }
-    if (!fechaVenc) return;
-
+    if (partes.length === 3) fechaVenc = new Date(partes[2], partes[1]-1, partes[0]);
+    else if (partes.length === 2) fechaVenc = new Date(partes[1], partes[0]-1, 28);
+    if (!fechaVenc || isNaN(fechaVenc.getTime())) return;
     var diasRestantes = Math.floor((fechaVenc - hoy) / (1000*60*60*24));
-
-    if (diasFiltro === 0) {
-      if (diasRestantes >= 0) return;
-    } else {
-      if (diasRestantes > diasFiltro) return;
-    }
-
     var costo = Number(l.costo) || 0;
     var stock = Number(l.existencias) || 0;
-    alertas.push({
-      medicamento: l.medicamento,
-      lote: l.lote,
-      sucursal: l.sucursal || 'MTY',
-      existencias: stock,
-      fecha_vencimiento: venc,
-      diasRestantes: diasRestantes,
-      valorRiesgo: stock * costo
+    todos.push({
+      medicamento:l.medicamento,lote:l.lote,sucursal:l.sucursal||'MTY',existencias:stock,
+      fecha_vencimiento:venc,diasRestantes:diasRestantes,valorRiesgo:stock*costo
     });
   });
 
-  alertas.sort(function(a,b){ return a.diasRestantes - b.diasRestantes; });
+  if (perfilActual === 'mty') todos = todos.filter(function(a){ return a.sucursal === 'MTY' || !a.sucursal; });
+  if (perfilActual === 'slp') todos = todos.filter(function(a){ return a.sucursal === 'SLP'; });
 
-  if (perfilActual === 'mty') alertas = alertas.filter(function(a){ return a.sucursal === 'MTY' || !a.sucursal; });
-  if (perfilActual === 'slp') alertas = alertas.filter(function(a){ return a.sucursal === 'SLP'; });
-
-  var totalValorRiesgo = alertas.reduce(function(s,a){ return s + a.valorRiesgo; }, 0);
-  var vencidos = alertas.filter(function(a){ return a.diasRestantes < 0; }).length;
-  var proximos = alertas.filter(function(a){ return a.diasRestantes >= 0; }).length;
-
+  var vencidos=todos.filter(function(a){return a.diasRestantes<0;});
+  var d30=todos.filter(function(a){return a.diasRestantes>=0&&a.diasRestantes<=30;});
+  var d60=todos.filter(function(a){return a.diasRestantes>=31&&a.diasRestantes<=60;});
+  var d90=todos.filter(function(a){return a.diasRestantes>=61&&a.diasRestantes<=90;});
+  var riesgo=todos.filter(function(a){return a.diasRestantes<=90;}).reduce(function(s,a){return s+a.valorRiesgo;},0);
   document.getElementById('venc-stats').innerHTML =
-    '<div class="reporte-header">' +
-    '<div class="stat-card"><div class="stat-label">Vencidos</div><div class="stat-value" style="color:#ef4444">'+vencidos+'</div></div>' +
-    '<div class="stat-card"><div class="stat-label">Por vencer</div><div class="stat-value" style="color:#f59e0b">'+proximos+'</div></div>' +
-    '<div class="stat-card"><div class="stat-label">Valor en riesgo</div><div class="stat-value">$'+totalValorRiesgo.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div></div>' +
+    '<div class="control-kpi-grid venc-kpis">'+
+      '<div class="control-kpi risk"><div class="control-kpi-label">Vencidos</div><div class="control-kpi-value">'+vencidos.length+'</div></div>'+
+      '<div class="control-kpi warn"><div class="control-kpi-label">≤ 30 días</div><div class="control-kpi-value">'+d30.length+'</div></div>'+
+      '<div class="control-kpi"><div class="control-kpi-label">31–60 días</div><div class="control-kpi-value">'+d60.length+'</div></div>'+
+      '<div class="control-kpi"><div class="control-kpi-label">61–90 días</div><div class="control-kpi-value">'+d90.length+'</div></div>'+
+      '<div class="control-kpi"><div class="control-kpi-label">Valor en riesgo</div><div class="control-kpi-value money">$'+riesgo.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div></div>'+
     '</div>';
 
+  var alertas=todos.filter(function(a){
+    return diasFiltro===0 ? a.diasRestantes<0 : a.diasRestantes<=diasFiltro;
+  }).sort(function(a,b){ return a.diasRestantes-b.diasRestantes; });
+
   if (!alertas.length) {
-    document.getElementById('venc-body').innerHTML =
-      '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">✅ Sin alertas de vencimiento para el período seleccionado</td></tr>';
+    document.getElementById('venc-body').innerHTML='<tr><td colspan="7" class="es">Sin alertas de vencimiento para el período seleccionado</td></tr>';
     return;
   }
 
-  var html = '';
-  alertas.forEach(function(a) {
-    var color = a.diasRestantes < 0 ? '#ef4444' : a.diasRestantes <= 30 ? '#f59e0b' : '#fcd34d';
-    var badge = a.diasRestantes < 0
-      ? '<span style="background:rgba(239,68,68,.2);color:#ef4444;padding:2px 8px;border-radius:99px;font-size:11px">VENCIDO</span>'
-      : '<span style="background:rgba(245,158,11,.2);color:#f59e0b;padding:2px 8px;border-radius:99px;font-size:11px">'+a.diasRestantes+' días</span>';
-    html += '<tr>';
-    html += '<td style="font-weight:500">'+a.medicamento+'</td>';
-    html += '<td style="font-family:monospace;font-size:11px">'+a.lote+'</td>';
-    html += '<td><span class="chip chip-'+(a.sucursal==='SLP'?'slp':'mty')+'">'+a.sucursal+'</span></td>';
-    html += '<td style="text-align:right;font-weight:700;color:'+(a.existencias>0?'#ef4444':'#aaa')+'">'+a.existencias+'</td>';
-    html += '<td style="text-align:center;color:'+color+'">'+a.fecha_vencimiento+'</td>';
-    html += '<td style="text-align:center">'+badge+'</td>';
-    html += '<td style="text-align:right;font-weight:600">$'+a.valorRiesgo.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
-    html += '</tr>';
+  var html='';
+  alertas.forEach(function(a){
+    var badgeClass=a.diasRestantes<0?'status-danger':a.diasRestantes<=30?'status-warn':'status-neutral';
+    var badgeText=a.diasRestantes<0?'Vencido':a.diasRestantes+' días';
+    html+='<tr>'+
+      '<td><div class="cell-primary">'+a.medicamento+'</div></td>'+
+      '<td class="mono">'+a.lote+'</td>'+
+      '<td><span class="neutral-tag">'+a.sucursal+'</span></td>'+
+      '<td class="num">'+a.existencias+'</td>'+
+      '<td style="text-align:center">'+a.fecha_vencimiento+'</td>'+
+      '<td style="text-align:center"><span class="status-pill '+badgeClass+'">'+badgeText+'</span></td>'+
+      '<td class="num mono">$'+a.valorRiesgo.toLocaleString('es-MX',{minimumFractionDigits:2})+'</td></tr>';
   });
-  document.getElementById('venc-body').innerHTML = html;
+  document.getElementById('venc-body').innerHTML=html;
 }
-
 /* ═══════════════════════════════════════════════
    REPORTE DE COMPRAS Y TRAZABILIDAD
 ═══════════════════════════════════════════════ */
@@ -5643,33 +5634,57 @@ function mostrarTabsSegunPerfil(){
 ═══════════════════════════════════════════ */
 function renderMeds(lista){
   var src=(lista||medicamentos).slice().sort(function(a,b){return a.nombre.localeCompare(b.nombre,'es');});
-  var grid=document.getElementById('med-grid');
-  if(!src.length){grid.innerHTML='<div class="es">No hay medicamentos</div>';return;}
-  var html='';
+  var host=document.getElementById('med-grid');
+  if(!src.length){host.innerHTML='<div class="es">No hay medicamentos</div>';return;}
+
+  function money(v){return '$'+Number(v||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  function stockSucursal(id,suc){
+    var total=0;
+    for(var j=0;j<lotes.length;j++){
+      if(String(lotes[j].med_id)===String(id) && (lotes[j].sucursal||'MTY').toUpperCase()===suc){
+        total+=Number(lotes[j].existencias)||0;
+      }
+    }
+    return total;
+  }
+
+  var admin=perfilActual==='admin';
+  var suc=perfilActual==='slp'?'SLP':'MTY';
+  var html='<div class="table-shell"><table class="tbl med-admin-table"><thead><tr>'+
+    '<th>Medicamento</th><th>Categoría</th>';
+  if(admin){
+    html+='<th class="num">Costo MTY</th><th class="num">Costo SLP</th><th class="num">Precio MTY</th><th class="num">Precio SLP</th><th class="num">Stock MTY</th><th class="num">Stock SLP</th>';
+  }else{
+    html+='<th class="num">Costo</th><th class="num">Precio</th><th class="num">Stock</th>';
+  }
+  html+='<th class="actions-col">Acciones</th></tr></thead><tbody>';
+
   for(var i=0;i<src.length;i++){
     var m=src[i];
-    html+='<div class="med-card"><div class="med-cat">'+(m.categoria||'Sin categoria')+'</div>';
-    html+='<div class="med-nombre">'+m.nombre+'</div>';
-    var precioMostrar = perfilActual==='mty' ? (m.precio_mty||m.precio) : perfilActual==='slp' ? (m.precio_slp||m.precio) : m.precio;
-    html+='<div class="med-precio">$'+Number(precioMostrar).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
-    if(perfilActual==='admin' && (m.precio_mty||m.precio_slp)){
-      html+='<div style="font-size:10px;color:#888;margin-top:2px">';
-      if(m.precio_mty) html+='MTY:$'+Number(m.precio_mty).toLocaleString('es-MX',{minimumFractionDigits:2})+' ';
-      if(m.precio_slp) html+='SLP:$'+Number(m.precio_slp).toLocaleString('es-MX',{minimumFractionDigits:2});
-      html+='</div>';
-    }
-    if(m.costo)html+='<div style="font-size:11px;color:#888;margin-top:2px">Costo: $'+Number(m.costo).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
-    if(m.notas)html+='<div style="font-size:11px;color:#888;margin-top:2px">'+m.notas+'</div>';
-    if(m.codigo_barras)html+='<div style="font-size:11px;color:#888;margin-top:2px;font-family:monospace">CB: '+m.codigo_barras+'</div>';
+    var costoMty=Number(m.costo_mty||m.costo||0);
+    var costoSlp=Number(m.costo_slp||m.costo||0);
+    var precioMty=Number(m.precio_mty||m.precio||0);
+    var precioSlp=Number(m.precio_slp||m.precio||0);
+    var stMty=stockSucursal(m.id,'MTY');
+    var stSlp=stockSucursal(m.id,'SLP');
     var satClave=m.clave_sat||m['Clave SAT']||'';
     var satUnidad=m.clave_unidad||m['Clave Unidad']||'';
-    var satTipo=m.tipo||m.Tipo||'';
-    if(satClave||satUnidad){html+='<div style="margin-top:6px;padding:5px 7px;background:rgba(24,95,165,.15);border-radius:6px;font-size:10px;color:#185FA5;font-family:monospace">🧾 '+(satClave?'SAT:'+satClave+' ':' ')+(satUnidad?'Unidad:'+satUnidad+' ':' ')+(satTipo?'Tipo:'+satTipo:'')+'</div>';}
-    html+='<div class="med-actions"><button class="btn btns btno" onclick="editarMed(\''+m.id+'\')" >Editar</button></div></div>';
+    html+='<tr>';
+    html+='<td><div class="cell-primary">'+m.nombre+'</div><div class="cell-meta">'+(m.codigo_barras?'<span class="mono">'+m.codigo_barras+'</span>':'')+(satClave?' · SAT '+satClave:'')+(satUnidad?' · '+satUnidad:'')+'</div></td>';
+    html+='<td><span class="neutral-tag">'+(m.categoria||'Sin categoría')+'</span></td>';
+    if(admin){
+      html+='<td class="num mono">'+money(costoMty)+'</td><td class="num mono">'+money(costoSlp)+'</td>';
+      html+='<td class="num mono price-cell">'+money(precioMty)+'</td><td class="num mono price-cell">'+money(precioSlp)+'</td>';
+      html+='<td class="num">'+stMty+'</td><td class="num">'+stSlp+'</td>';
+    }else{
+      var costo=suc==='SLP'?costoSlp:costoMty, precio=suc==='SLP'?precioSlp:precioMty, stock=suc==='SLP'?stSlp:stMty;
+      html+='<td class="num mono">'+money(costo)+'</td><td class="num mono price-cell">'+money(precio)+'</td><td class="num">'+stock+'</td>';
+    }
+    html+='<td class="actions-col"><button class="btn btns" onclick="editarMed(\''+m.id+'\')">Editar</button></td></tr>';
   }
-  grid.innerHTML=html;
+  html+='</tbody></table></div>';
+  host.innerHTML=html;
 }
-
 function filtrarMeds(){
   var q=document.getElementById('bq-med').value.trim().toLowerCase();
   renderMeds(q?medicamentos.filter(function(m){return m.nombre.toLowerCase().indexOf(q)>=0||(m.categoria||'').toLowerCase().indexOf(q)>=0;}):medicamentos);
@@ -6095,61 +6110,64 @@ function stockTotalMed(medId, sucursal) {
 function renderLotesAdmin(lista){
   _actualizarVisibilidadFiltroSuc();
   var src=(lista||lotes).slice();
-  // Filtrar por sucursal según perfil
   if(perfilActual==='mty') src=src.filter(function(l){ return l.sucursal==='MTY'||!l.sucursal; });
   else if(perfilActual==='slp') src=src.filter(function(l){ return l.sucursal==='SLP'; });
   else {
-    // Admin: aplicar selector de sucursal
-    var selSuc = document.getElementById('lote-filtro-suc');
-    var filtroSuc = selSuc ? selSuc.value : 'TODAS';
-    if(filtroSuc === 'MTY') src=src.filter(function(l){ return l.sucursal==='MTY'||!l.sucursal; });
-    else if(filtroSuc === 'SLP') src=src.filter(function(l){ return l.sucursal==='SLP'; });
+    var selSuc=document.getElementById('lote-filtro-suc');
+    var filtroSuc=selSuc?selSuc.value:'TODAS';
+    if(filtroSuc==='MTY') src=src.filter(function(l){return l.sucursal==='MTY'||!l.sucursal;});
+    else if(filtroSuc==='SLP') src=src.filter(function(l){return l.sucursal==='SLP';});
   }
-  var chkAgotados = document.getElementById('chk-mostrar-agotados');
-  if(!(chkAgotados && chkAgotados.checked)){
-    // Ocultos por default: siguen intactos en Sheets y en Trazabilidad por lote,
-    // solo no se dibujan aquí para no saturar la tabla con lotes ya vencidos/agotados.
-    src = src.filter(function(l){ return Number(l.existencias)>0; });
+
+  var baseSrc=src.slice();
+  var totalPiezas=baseSrc.reduce(function(s,l){return s+(Number(l.existencias)||0);},0);
+  var totalValor=baseSrc.reduce(function(s,l){return s+(Number(l.existencias)||0)*(Number(l.costo)||0);},0);
+  var agotados=baseSrc.filter(function(l){return Number(l.existencias)<=0;}).length;
+  var medStocks={};
+  baseSrc.forEach(function(l){
+    var id=String(l.med_id||l.medicamento);
+    if(!medStocks[id]) medStocks[id]={stock:0,med_id:l.med_id};
+    medStocks[id].stock+=Number(l.existencias)||0;
+  });
+  var bajo=0;
+  Object.keys(medStocks).forEach(function(k){
+    var r=medStocks[k],opt=calcularOptimo(r.med_id);
+    if(r.stock>0 && r.stock<opt) bajo++;
+  });
+  var stats=document.getElementById('inv-control-stats');
+  if(stats){
+    stats.innerHTML=''+
+      '<div class="control-kpi"><div class="control-kpi-label">Existencias totales</div><div class="control-kpi-value">'+totalPiezas.toLocaleString('es-MX')+'</div></div>'+
+      '<div class="control-kpi"><div class="control-kpi-label">Valor del inventario</div><div class="control-kpi-value money">$'+totalValor.toLocaleString('es-MX',{minimumFractionDigits:2})+'</div></div>'+
+      '<div class="control-kpi warn"><div class="control-kpi-label">Stock bajo</div><div class="control-kpi-value">'+bajo+'</div><div class="control-kpi-sub">medicamentos</div></div>'+
+      '<div class="control-kpi risk"><div class="control-kpi-label">Lotes agotados</div><div class="control-kpi-value">'+agotados+'</div></div>';
   }
-  src.sort(function(a,b){ return a.medicamento.localeCompare(b.medicamento,'es'); });
+
+  var chkAgotados=document.getElementById('chk-mostrar-agotados');
+  if(!(chkAgotados&&chkAgotados.checked)) src=src.filter(function(l){return Number(l.existencias)>0;});
+  src.sort(function(a,b){return a.medicamento.localeCompare(b.medicamento,'es');});
   var tbody=document.getElementById('lotes-body');
   if(!src.length){tbody.innerHTML='<tr><td colspan="6" class="es">Sin lotes</td></tr>';return;}
+
   var html='';
   for(var i=0;i<src.length;i++){
-    var l=src[i];
-    var stockLote  = Number(l.existencias);
-    var sucursal   = perfilActual === 'slp' ? 'SLP' : 'MTY';
-    var stockTotal = stockTotalMed(l.med_id, sucursal);
-    var optimo     = calcularOptimo(l.med_id);
-
-    // Color existencias del lote individual
-    var colorStock = stockLote > 0 ? 'var(--text-1)' : '#c00';
-
-    // Indicador óptimo basado en TOTAL del medicamento
-    var badge, tip;
-    if (stockTotal >= optimo) {
-      badge = '<span style="font-size:11px;background:rgba(16,185,129,.15);color:#6ee7b7;padding:2px 7px;border-radius:99px;font-weight:700">\u{1F7E2} '+optimo+'</span>';
-      tip   = 'Total: '+stockTotal+' pzas \u2014 bien surtido';
-    } else if (stockTotal > 0) {
-      badge = '<span style="font-size:11px;background:rgba(245,158,11,.15);color:#fcd34d;padding:2px 7px;border-radius:99px;font-weight:700">\u{1F7E1} '+optimo+'</span>';
-      tip   = 'Total: '+stockTotal+' pzas \u2014 pide '+(optimo-stockTotal)+' m\u00e1s';
-    } else {
-      badge = '<span style="font-size:11px;background:rgba(239,68,68,.15);color:#fca5a5;padding:2px 7px;border-radius:99px;font-weight:700">\u{1F534} '+optimo+'</span>';
-      tip   = 'Sin stock \u2014 pide '+optimo+' pza'+(optimo>1?'s':'');
-    }
-
-    html+='<tr>';
-    html+='<td>'+l.medicamento+'</td>';
-    html+='<td style="font-family:monospace">'+l.lote+'</td>';
-    html+='<td style="font-weight:700;color:'+colorStock+'">'+stockLote+' pzas</td>';
-    html+='<td title="'+tip+'" style="cursor:default">'+badge+'<div style="font-size:10px;color:var(--text-3);margin-top:2px">'+tip+'</div></td>';
-    html+='<td>$'+Number(l.costo).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>';
-    html+='<td style="display:flex;gap:6px"><button class="btn btns btno" onclick="abrirEditarLote(\''+l.id+'\')">Editar</button><button class="btn btns" style="background:rgba(24,95,165,.15);color:#60a5fa;border-color:rgba(24,95,165,.3)" onclick="abrirResurtir(\''+l.med_id+'\',\''+l.medicamento.replace(/'/g,'&#39;')+'\')">📦 Resurtir</button></td>';
-    html+='</tr>';
+    var l=src[i], stockLote=Number(l.existencias);
+    var sucursal=perfilActual==='slp'?'SLP':'MTY';
+    var stockTotal=stockTotalMed(l.med_id,sucursal), optimo=calcularOptimo(l.med_id);
+    var badge,tip;
+    if(stockTotal>=optimo){badge='<span class="status-pill status-ok">'+optimo+'</span>';tip='Total: '+stockTotal+' pzas — bien surtido';}
+    else if(stockTotal>0){badge='<span class="status-pill status-warn">'+optimo+'</span>';tip='Total: '+stockTotal+' pzas — pide '+(optimo-stockTotal)+' más';}
+    else{badge='<span class="status-pill status-danger">'+optimo+'</span>';tip='Sin stock — pide '+optimo+' pza'+(optimo>1?'s':'');}
+    html+='<tr>'+
+      '<td><div class="cell-primary">'+l.medicamento+'</div><div class="cell-meta">'+(l.sucursal||'MTY')+'</div></td>'+
+      '<td class="mono">'+l.lote+'</td>'+
+      '<td class="num">'+stockLote+' pzas</td>'+
+      '<td title="'+tip+'">'+badge+'<div class="cell-meta">'+tip+'</div></td>'+
+      '<td class="num mono">$'+Number(l.costo||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>'+
+      '<td class="actions-col"><button class="btn btns" onclick="abrirEditarLote(\''+l.id+'\')">Editar</button><button class="btn btns" onclick="abrirResurtir(\''+l.med_id+'\',\''+l.medicamento.replace(/'/g,'&#39;')+'\')">Resurtir</button></td></tr>';
   }
   tbody.innerHTML=html;
 }
-
 function filtrarLotes(){
   var q=document.getElementById('bq-lote').value.trim().toLowerCase();
   var base=q.length<2?lotes:lotes.filter(function(l){return l.medicamento.toLowerCase().indexOf(q)>=0||l.lote.toLowerCase().indexOf(q)>=0;});
@@ -7274,7 +7292,7 @@ function comprasTab(t) {
     var sid = k==='reporte' ? 'sc-reporte-compras' : 'sc-'+k;
     document.getElementById(sid).style.display = t===k?'block':'none';
     var btn = document.getElementById('ct-'+k);
-    if(btn){ btn.className='nav-tab'+(t===k?' on':''); btn.style.borderRadius='var(--radius-sm)'; }
+    if(btn){ btn.className='nav-tab'+(t===k?' on':''); }
   });
   if (t==='reporte')   { renderCompras(); inicializarFechasCompras(); }
   if (t==='credito')   { hldInicializar(); }
@@ -7392,7 +7410,7 @@ function renderRecompra() {
     var costoEst = prov.costo > 0 ? prov.costo * aPedir : 0;
 
     // Vencimiento próximo
-    var venceLabel = vencePorMed[nom] ? '⚠️ ' + vencePorMed[nom] + 'd' : '';
+    var venceLabel = vencePorMed[nom] ? vencePorMed[nom] + 'd' : '';
     var venceColor = vencePorMed[nom] && vencePorMed[nom] < 30 ? '#fca5a5' : '#fcd34d';
 
     totalPiezas += aPedir;
@@ -7426,15 +7444,12 @@ function renderRecompra() {
 
   // Resumen ejecutivo
   document.getElementById('recompra-resumen').innerHTML = [
-    ['🔢','Medicamentos a pedir', totalMeds],
-    ['📦','Total piezas', totalPiezas],
-    ['💰','Costo estimado', totalCosto > 0 ? '$'+totalCosto.toLocaleString('es-MX',{minimumFractionDigits:0}) : 'Por cotizar'],
-    ['📅','Próximo miércoles', (function(){ var d=new Date(); var diff=(3-d.getDay()+7)%7||7; d.setDate(d.getDate()+diff); return d.toLocaleDateString('es-MX',{day:'numeric',month:'short'}); })()]
+    ['Medicamentos a pedir', totalMeds],
+    ['Total piezas', totalPiezas],
+    ['Costo estimado', totalCosto > 0 ? '$'+totalCosto.toLocaleString('es-MX',{minimumFractionDigits:0}) : 'Por cotizar'],
+    ['Próximo miércoles', (function(){ var d=new Date(); var diff=(3-d.getDay()+7)%7||7; d.setDate(d.getDate()+diff); return d.toLocaleDateString('es-MX',{day:'numeric',month:'short'}); })()]
   ].map(function(r){
-    return '<div style="background:var(--surface-2);border-radius:8px;padding:10px 16px;min-width:140px">'
-      +'<div style="font-size:18px;margin-bottom:2px">'+r[0]+'</div>'
-      +'<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em">'+r[1]+'</div>'
-      +'<div style="font-size:16px;font-weight:700;color:var(--text-1)">'+r[2]+'</div></div>';
+    return '<div class="control-kpi"><div class="control-kpi-label">'+r[0]+'</div><div class="control-kpi-value">'+r[1]+'</div></div>';
   }).join('');
 
   tbody.innerHTML = filas.map(function(f) {
@@ -11593,3 +11608,50 @@ function _biMxn(v) {
   return (Math.round(Number(v)||0)).toLocaleString('es-MX');
 }
 </script>
+
+
+<style id="solmedix-phase3">
+/* ════════════════════════════════════════════════════
+   REDISEÑO ADMIN — fase 3
+   Módulos operativos: Medicamentos, Inventario,
+   Vencimientos, Compras y Fiscal
+════════════════════════════════════════════════════ */
+.toolbar-help{font-size:11.5px;color:var(--text-3);line-height:1.45;margin-top:3px}
+.catalog-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px!important;gap:16px}
+.catalog-searchbar{display:flex;align-items:center;gap:14px;margin-bottom:14px!important}
+.catalog-searchbar input{flex:1;min-width:240px}.catalog-searchbar .toolbar-help{margin:0;white-space:nowrap}
+.table-shell{overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface-1)}
+.table-shell .tbl th{position:sticky;top:0;z-index:2}.med-admin-table{min-width:980px}
+.med-admin-table td,.med-admin-table th{vertical-align:middle}.med-admin-table .actions-col{width:94px;text-align:right}
+.num{text-align:right!important}.mono{font-family:var(--mono)!important;font-variant-numeric:tabular-nums}.price-cell{font-weight:600;color:var(--text)}
+.cell-primary{font-size:12.75px;font-weight:600;color:var(--text);line-height:1.35}.cell-meta{font-size:10.5px;color:var(--text-3);margin-top:3px;line-height:1.35}
+.neutral-tag{display:inline-flex;align-items:center;min-height:22px;padding:2px 8px;border-radius:7px;border:1px solid var(--line);background:var(--surface-2);color:var(--text-2);font-size:10.5px;font-weight:600;white-space:nowrap}
+.status-pill{display:inline-flex;align-items:center;justify-content:center;min-height:23px;padding:2px 8px;border-radius:7px;font-size:10.5px;font-weight:700;white-space:nowrap;border:1px solid var(--line)}
+.status-ok{background:rgba(16,185,129,.10);border-color:rgba(16,185,129,.24);color:#6ee7b7}.status-warn{background:rgba(245,158,11,.10);border-color:rgba(245,158,11,.25);color:#fcd34d}.status-danger{background:rgba(239,68,68,.10);border-color:rgba(239,68,68,.25);color:#fca5a5}.status-neutral{background:var(--surface-2);color:var(--text-2)}
+.module-segments{display:inline-flex;gap:3px;padding:4px;background:var(--surface-1);border:1px solid var(--line);border-radius:11px;margin-bottom:18px;max-width:100%;overflow-x:auto}
+.module-segments .nav-tab,.fiscal-segments .fis-nav-btn{min-height:34px!important;padding:7px 12px!important;border:1px solid transparent!important;border-radius:8px!important;background:transparent!important;color:var(--text-2)!important;font-size:11.5px!important;font-weight:600!important;white-space:nowrap;box-shadow:none!important}
+.module-segments .nav-tab:hover,.fiscal-segments .fis-nav-btn:hover{background:var(--surface-2)!important;color:var(--text)!important}
+.module-segments .nav-tab.on,.fiscal-segments .fis-nav-btn.active{background:rgba(43,127,212,.14)!important;border-color:rgba(43,127,212,.28)!important;color:#fff!important}
+.control-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.control-kpi{min-height:88px;padding:14px 15px;background:var(--surface-1);border:1px solid var(--line);border-radius:12px;position:relative;overflow:hidden}.control-kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:rgba(43,127,212,.5)}.control-kpi.warn::before{background:rgba(245,158,11,.75)}.control-kpi.risk::before{background:rgba(239,68,68,.78)}
+.control-kpi-label{font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px}.control-kpi-value{font-size:22px;font-weight:700;letter-spacing:-.025em;color:var(--text);font-family:var(--mono);font-variant-numeric:tabular-nums}.control-kpi-value.money{font-size:18px}.control-kpi-sub{font-size:10.5px;color:var(--text-3);margin-top:4px}.venc-kpis{grid-template-columns:repeat(5,minmax(0,1fr))}
+#recompra-resumen{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px!important;flex-wrap:initial!important}
+#xml-upload-zone,#xlsx-upload-zone{background:var(--surface-1)!important;border:1.5px dashed var(--line-strong)!important;border-radius:12px!important;padding:28px 24px!important;transition:border-color .15s,background .15s!important}
+#xml-upload-zone:hover,#xlsx-upload-zone:hover{border-color:rgba(43,127,212,.55)!important;background:rgba(43,127,212,.035)!important}
+.upload-icon{width:44px;height:44px;margin:0 auto 12px;display:grid;place-items:center;border-radius:10px;background:var(--surface-2);border:1px solid var(--line)}.upload-icon svg{width:23px;height:23px;fill:none;stroke:var(--blue-bright);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}.upload-title{font-size:13.5px;font-weight:650;color:var(--text);margin-bottom:5px}.upload-copy{max-width:620px;margin:0 auto;color:var(--text-3);font-size:11.5px;line-height:1.55}.upload-action{display:inline-flex;margin-top:14px;min-height:34px;align-items:center;padding:7px 12px;border-radius:8px;background:var(--blue);color:#fff;font-size:11.5px;font-weight:650}.empty-state{text-align:center;padding:36px 20px;color:var(--text-3);font-size:12.5px;border:1px dashed var(--line);border-radius:12px;background:var(--surface-1)}
+/* Fiscal adopta las mismas superficies y densidad que el resto del Admin */
+#sec-fiscal{--fis-bg2:var(--surface-1);--fis-bg3:var(--surface-2);--fis-border:var(--line);--fis-border2:var(--line-strong);--fis-text:var(--text);--fis-text2:var(--text-2);--fis-text3:var(--text-3);--fis-accent:var(--blue-bright);--fis-purple:var(--blue-bright);--fis-pur-bg:rgba(43,127,212,.10)}
+#sec-fiscal .fiscal-header-bar{background:var(--surface-1)!important;border-color:var(--line)!important;border-radius:12px!important;padding:11px 12px!important;min-height:54px}
+#sec-fiscal .fiscal-subnav{padding:4px!important;margin:0 0 16px!important;display:flex!important;width:max-content;max-width:100%}
+#sec-fiscal .fis-nav-badge{border-radius:6px!important;font-size:9.5px!important;padding:1px 5px!important}
+#sec-fiscal .fis-kpi,#sec-fiscal .fis-report-card,#sec-fiscal .fis-tbl-wrap,#sec-fiscal .fis-upload{background:var(--surface-1)!important;border-color:var(--line)!important;border-radius:12px!important;box-shadow:none!important}
+#sec-fiscal .fis-kpi{min-height:90px!important;padding:14px 15px!important}.fis-kpi .fk-label{text-transform:none!important;letter-spacing:0!important;font-size:11px!important}.fis-kpi .fk-val{font-family:var(--mono);font-size:22px!important;color:var(--text)!important}.fis-kpi .fk-sub{font-size:10.5px!important}
+#sec-fiscal .fis-tbl-wrap thead th{background:var(--surface-2)!important;color:var(--text-2)!important;font-size:10.5px!important;text-transform:none!important;letter-spacing:.02em!important}.fis-tbl-wrap tbody td{font-size:12px!important}
+#sec-fiscal .fis-btn{background:var(--surface-2)!important;border-color:var(--line)!important;color:var(--text-2)!important}.fis-btn.fb-primary{background:var(--blue)!important;border-color:var(--blue)!important;color:#fff!important}
+#sec-fiscal .fis-form-row label{text-transform:none!important;letter-spacing:0!important;font-size:11.5px!important}.fis-form-row input,.fis-form-row select,.fis-form-row textarea{background:var(--surface-2)!important}
+#sec-fiscal .fb-purple{background:rgba(43,127,212,.10)!important;color:#93c5fd!important;border-color:rgba(43,127,212,.25)!important}
+#sec-fiscal .fisg-bar{background:var(--surface-1)!important;border-color:var(--line)!important;border-radius:12px!important;padding:10px 12px!important;margin:10px 0 16px!important}.fisg-title{color:var(--text-3)!important;font-size:10px!important}.fisg-paso{background:transparent!important;border-color:transparent!important;border-radius:8px!important;padding:6px 8px!important}.fisg-paso:hover{background:var(--surface-2)!important;border-color:var(--line)!important}.fisg-num{background:rgba(43,127,212,.16)!important;color:#93c5fd!important;width:20px!important;height:20px!important}.fisg-lbl{font-size:11px!important}.fisg-lbl small{font-size:9.5px!important;color:var(--text-3)!important}.fisg-sep{color:var(--text-3)!important}
+#sec-fiscal .fl-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:10px;background:var(--surface-2);border:1px solid var(--line)}#sec-fiscal .fl-icon svg{width:22px;height:22px;fill:none;stroke:var(--text-2);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+@media(max-width:1180px){.venc-kpis{grid-template-columns:repeat(3,1fr)}.catalog-searchbar{align-items:stretch;flex-direction:column}.catalog-searchbar .toolbar-help{white-space:normal}.control-kpi-grid,#recompra-resumen{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){.control-kpi-grid,.venc-kpis,#recompra-resumen{grid-template-columns:1fr}.catalog-toolbar{align-items:flex-start;flex-direction:column}.module-segments{width:100%}.module-segments .nav-tab{flex:1}.med-admin-table{min-width:760px}}
+</style>
+
