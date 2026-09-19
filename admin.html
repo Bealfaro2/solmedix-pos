@@ -481,6 +481,251 @@ select option { background:var(--bg-2); color:var(--text); }
 @keyframes shimmer { to { background-position: 200% center; } }
 #med-drop-float-list > div:hover { background: var(--surface-2, #252d3d) !important; }
 #med-drop-float-list > div { transition: background .1s; }
+
+/* ════════════════════════════════════════════════════
+   REDISEÑO ADMIN — navegación, superficies, KPIs y tablas
+   Mantiene intacta la lógica y los IDs del sistema
+════════════════════════════════════════════════════ */
+:root{
+  --surface-0:#0b1220;
+  --surface-1:#111c2d;
+  --surface-2:#172337;
+  --surface-3:#1d2b41;
+  --line:rgba(148,163,184,.13);
+  --line-strong:rgba(148,163,184,.22);
+}
+
+/* Superficies sólidas: menos vidrio, mejor lectura de información densa */
+body{background:var(--surface-0)}
+.topbar{
+  background:var(--surface-0);
+  backdrop-filter:none;
+  box-shadow:none;
+  border-bottom:1px solid var(--line);
+}
+.login-card{
+  background:var(--surface-1);
+  backdrop-filter:none;
+  border-color:var(--line);
+  box-shadow:0 18px 48px rgba(0,0,0,.30);
+}
+.panel,
+.card,
+.stat-card,
+.fis-kpi,
+.fis-report-card,
+.fis-tbl-wrap,
+.fiscal-header-bar,
+.fis-upload{
+  background:var(--surface-1);
+  backdrop-filter:none;
+  border-color:var(--line);
+  box-shadow:none;
+}
+.modal,.fis-modal{background:var(--surface-1);backdrop-filter:none}
+input,select,textarea,.fis-form-row input,.fis-form-row select,.fis-form-row textarea{background:var(--surface-2)}
+
+/* Shell administrativo con sidebar */
+.admin-shell{
+  display:grid;
+  grid-template-columns:236px minmax(0,1fr);
+  min-height:calc(100vh - 64px);
+}
+.nav-tabs{
+  position:sticky;
+  top:64px;
+  align-self:start;
+  height:calc(100vh - 64px);
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  padding:18px 12px;
+  background:var(--surface-1);
+  border-right:1px solid var(--line);
+  border-bottom:none;
+  backdrop-filter:none;
+}
+.nav-group{display:flex;flex-direction:column;gap:3px;margin-bottom:18px}
+.nav-group-system{margin-top:auto;margin-bottom:0;padding-top:14px;border-top:1px solid var(--line)}
+.nav-group-title{
+  padding:0 10px 7px;
+  font-size:10px;
+  line-height:1;
+  font-weight:700;
+  letter-spacing:.10em;
+  text-transform:uppercase;
+  color:var(--text-3);
+}
+.nav-tabs .nav-tab{
+  position:relative;
+  width:100%;
+  padding:10px 12px 10px 27px;
+  border:1px solid transparent;
+  border-radius:9px;
+  text-align:left;
+  color:var(--text-2);
+  background:transparent !important;
+  box-shadow:none !important;
+  font-size:12.5px;
+  font-weight:500;
+}
+.nav-tabs .nav-tab::before{
+  content:'';
+  position:absolute;
+  left:11px;
+  top:50%;
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--text-3);
+  transform:translateY(-50%);
+  transition:background .15s,box-shadow .15s;
+}
+.nav-tabs .nav-tab:hover{
+  color:var(--text);
+  background:var(--surface-2) !important;
+  border-color:var(--line);
+}
+.nav-tabs .nav-tab.on{
+  color:#fff !important;
+  background:rgba(43,127,212,.14) !important;
+  border-color:rgba(43,127,212,.28) !important;
+  font-weight:600;
+}
+.nav-tabs .nav-tab.on::before{
+  background:var(--blue-bright);
+  box-shadow:0 0 0 3px rgba(43,127,212,.12);
+}
+.page-content{
+  width:100%;
+  min-width:0;
+  max-width:1600px;
+  margin:0 auto;
+  padding:26px 28px 42px;
+}
+
+/* Encabezado del Dashboard */
+.module-eyebrow{font-size:10px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--blue-bright);margin-bottom:6px}
+.module-title{font-size:22px;font-weight:700;letter-spacing:-.025em;color:var(--text);margin-bottom:5px}
+.module-subtitle{font-size:12.5px;color:var(--text-2);line-height:1.5}
+
+/* KPIs más claros y ejecutivos */
+.reporte-header{gap:12px;margin-bottom:18px}
+.stat-card{
+  position:relative;
+  min-height:96px;
+  padding:16px 17px 15px;
+  border-radius:13px;
+  overflow:hidden;
+}
+.stat-card::before{
+  content:'';
+  position:absolute;
+  left:0;right:0;top:0;
+  height:2px;
+  background:rgba(43,127,212,.55);
+}
+.stat-label{
+  font-size:11px;
+  line-height:1.3;
+  color:var(--text-2);
+  margin-bottom:9px;
+  font-weight:600;
+  text-transform:none;
+  letter-spacing:.01em;
+}
+.stat-value,.stat-num{
+  font-size:26px !important;
+  line-height:1.1;
+  font-weight:700;
+  letter-spacing:-.025em;
+  color:var(--text) !important;
+  font-family:var(--mono);
+}
+.stat-sub{font-size:11px;color:var(--text-3);margin-top:6px;line-height:1.4}
+/* Neutraliza colores decorativos en KPIs; estados conservan color en badges/alertas. */
+.stat-card[style]{border-color:var(--line) !important;box-shadow:none !important}
+.stat-card .stat-value[style],.stat-card .stat-num[style]{color:var(--text) !important}
+
+/* Dashboard: las cajas secundarias comparten la misma superficie */
+#sec-dashboard > div > div[style*="background:var(--bg-2)"],
+#sec-dashboard div[style*="background:var(--bg-2)"]{
+  background:var(--surface-1) !important;
+  border-color:var(--line) !important;
+  box-shadow:none !important;
+}
+#dash-ventas-mes-suc1,#dash-ventas-mes-suc2{color:var(--text) !important;font-family:var(--mono);letter-spacing:-.025em}
+
+/* Tablas: más aire, mejor jerarquía y lectura */
+.tbl{
+  border-collapse:separate;
+  border-spacing:0;
+  font-size:12.5px;
+}
+.tbl th{
+  height:38px;
+  padding:9px 12px;
+  color:var(--text-2);
+  font-size:10.5px;
+  font-weight:600;
+  letter-spacing:.045em;
+  background:var(--surface-2);
+  border-bottom:1px solid var(--line-strong);
+}
+.tbl td{
+  min-height:44px;
+  padding:11px 12px;
+  border-bottom:1px solid var(--line);
+  line-height:1.35;
+}
+.tbl tbody tr:hover td{background:rgba(43,127,212,.045)}
+.tbl tbody tr:last-child td{border-bottom:none}
+.tbl th:first-child{border-top-left-radius:8px}
+.tbl th:last-child{border-top-right-radius:8px}
+
+/* Tablas del módulo fiscal siguen el mismo lenguaje */
+.fis-tbl-wrap thead th{
+  padding:10px 12px;
+  font-size:10.5px;
+  font-weight:600;
+  color:var(--text-2);
+  background:var(--surface-2);
+}
+.fis-tbl-wrap tbody td{padding:11px 12px;font-size:12.5px}
+.fis-tbl-wrap tbody tr:hover{background:rgba(43,127,212,.045)}
+.fis-kpi{min-height:96px;padding:16px;border-color:var(--line) !important}
+.fis-kpi .fk-label{font-size:11px;text-transform:none;letter-spacing:.01em;color:var(--text-2)}
+.fis-kpi .fk-val{font-size:25px;color:var(--text) !important}
+.fis-kpi.fk-accent,.fis-kpi.fk-ok,.fis-kpi.fk-warn,.fis-kpi.fk-red{border-color:var(--line) !important}
+.fis-kpi.fk-accent .fk-val,.fis-kpi.fk-ok .fk-val,.fis-kpi.fk-warn .fk-val,.fis-kpi.fk-red .fk-val{color:var(--text) !important}
+
+/* Los módulos ya no tienen colores de navegación propios */
+#nt-vencimientos,#nt-bi{color:var(--text-2) !important;border-color:transparent !important}
+#nt-vencimientos.on,#nt-bi.on{color:#fff !important;border-color:rgba(43,127,212,.28) !important}
+
+@media(max-width:980px){
+  .admin-shell{display:block}
+  .nav-tabs{
+    position:sticky;
+    top:64px;
+    z-index:150;
+    height:auto;
+    width:100%;
+    flex-direction:row;
+    overflow-x:auto;
+    overflow-y:hidden;
+    padding:8px 12px;
+    border-right:none;
+    border-bottom:1px solid var(--line);
+  }
+  .nav-group{display:flex;flex-direction:row;gap:4px;margin:0 12px 0 0;flex:0 0 auto}
+  .nav-group-system{margin:0;padding:0;border:0}
+  .nav-group-title{display:none}
+  .nav-tabs .nav-tab{width:auto;white-space:nowrap;padding:8px 11px 8px 24px}
+  .nav-tabs .nav-tab::before{left:9px}
+  .page-content{padding:20px 16px 34px}
+}
 </style>
 </head>
 <body>
@@ -534,26 +779,45 @@ select option { background:var(--bg-2); color:var(--text); }
     </div>
   </div>
 
-  <!-- NAV TABS -->
-  <div class="nav-tabs">
-    <button class="nav-tab" id="nt-dashboard" onclick="navTab('dashboard')" style="display:none">🏠 Dashboard</button>
-    <button class="nav-tab on"  id="nt-reporte"  onclick="navTab('reporte')">📊 Ventas</button>
-    <button class="nav-tab"     id="nt-meds"      onclick="navTab('meds')">💊 Medicamentos</button>
-    <button class="nav-tab"     id="nt-clientes"  onclick="navTab('clientes')">👤 Clientes</button>
-    <button class="nav-tab"     id="nt-lotes"     onclick="navTab('lotes')">📦 Inventario</button>
-    <button class="nav-tab"     id="nt-antimicrobianos" onclick="navTab('antimicrobianos')">⚠️ Antimicrobianos</button>
-    <button class="nav-tab" id="nt-vencimientos" onclick="navTab('vencimientos')" style="background:rgba(239,68,68,.15);color:#fca5a5;border-color:rgba(239,68,68,.3)">⚠️ Vencimientos</button>
-    <button class="nav-tab"     id="nt-compras"   onclick="navTab('compras')">🧾 Compras</button>
-    <button class="nav-tab"     id="nt-gastos"    onclick="navTab('gastos')">💸 Gastos</button>
-    <button class="nav-tab"     id="nt-utilidad"  onclick="navTab('utilidad')">📉 Utilidad</button>
-    <button class="nav-tab"     id="nt-precios"   onclick="navTab('precios')">💰 Precios</button>
-    <button class="nav-tab"     id="nt-bi"        onclick="navTab('bi')" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none">🧠 Inteligencia</button>
-    <button class="nav-tab"     id="nt-pwds"      onclick="navTab('pwds')" style="display:none">🔑 Contraseñas</button>
-    <button class="nav-tab"     id="nt-fiscal"    onclick="navTab('fiscal')" style="display:none">📊 Fiscal</button>
-    <button class="nav-tab"     id="nt-sofia"     onclick="navTab('sofia')" style="display:none">💬 Sofía</button>
-  </div>
+  <!-- NAVEGACIÓN LATERAL -->
+  <div class="admin-shell">
+    <aside class="nav-tabs" aria-label="Navegación administrativa">
+      <div class="nav-group">
+        <div class="nav-group-title">Inicio</div>
+        <button class="nav-tab on" id="nt-dashboard" onclick="navTab('dashboard')" style="display:none">Dashboard</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">Operación</div>
+        <button class="nav-tab" id="nt-reporte" onclick="navTab('reporte')">Ventas</button>
+        <button class="nav-tab" id="nt-meds" onclick="navTab('meds')">Medicamentos</button>
+        <button class="nav-tab" id="nt-clientes" onclick="navTab('clientes')">Clientes</button>
+        <button class="nav-tab" id="nt-lotes" onclick="navTab('lotes')">Inventario</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">Control</div>
+        <button class="nav-tab" id="nt-antimicrobianos" onclick="navTab('antimicrobianos')">Antimicrobianos</button>
+        <button class="nav-tab" id="nt-vencimientos" onclick="navTab('vencimientos')">Vencimientos</button>
+        <button class="nav-tab" id="nt-compras" onclick="navTab('compras')">Compras</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">Finanzas</div>
+        <button class="nav-tab" id="nt-gastos" onclick="navTab('gastos')">Gastos</button>
+        <button class="nav-tab" id="nt-utilidad" onclick="navTab('utilidad')">Utilidad</button>
+        <button class="nav-tab" id="nt-precios" onclick="navTab('precios')">Precios</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">Análisis</div>
+        <button class="nav-tab" id="nt-bi" onclick="navTab('bi')">Inteligencia</button>
+        <button class="nav-tab" id="nt-fiscal" onclick="navTab('fiscal')" style="display:none">Fiscal</button>
+      </div>
+      <div class="nav-group nav-group-system">
+        <div class="nav-group-title">Sistema</div>
+        <button class="nav-tab" id="nt-pwds" onclick="navTab('pwds')" style="display:none">Contraseñas</button>
+        <button class="nav-tab" id="nt-sofia" onclick="navTab('sofia')" style="display:none">Sofía</button>
+      </div>
+    </aside>
 
-  <div class="page-content">
+    <main class="page-content">
 
     <!-- ══════════════════════════════════════════════════
          PANEL FISCAL — Solo visible para Administrador
@@ -1520,8 +1784,9 @@ select option { background:var(--bg-2); color:var(--text); }
     <!-- DASHBOARD MAESTRO -->
     <div id="sec-dashboard" style="display:none">
       <div style="padding:0 0 20px">
-        <h3 style="font-family:var(--font);font-size:16px;color:var(--text);margin-bottom:4px">Dashboard General</h3>
-        <p style="font-size:12px;color:var(--text-3)">Vista consolidada de ambas sucursales</p>
+        <div class="module-eyebrow">Resumen ejecutivo</div>
+        <h3 class="module-title">Dashboard General</h3>
+        <p class="module-subtitle">Vista consolidada de ambas sucursales</p>
       </div>
       <div id="dash-metricas" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px">
         <div class="stat-card"><div class="stat-label">Ventas hoy — Total</div><div class="stat-num" id="dash-total-dia">$0</div></div>
@@ -1543,7 +1808,7 @@ select option { background:var(--bg-2); color:var(--text); }
       </div>
       <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:24px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div style="font-size:12px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em">⚠️ Inventario crítico (stock ≤ 5)</div>
+          <div style="font-size:12px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em">Inventario crítico (stock ≤ 5)</div>
           <div id="dash-critico-count" style="font-size:11px;color:var(--text-3)"></div>
         </div>
         <div id="dash-inventario-critico"><p style="font-size:13px;color:var(--text-3);text-align:center;padding:20px">Cargando...</p></div>
@@ -2477,7 +2742,8 @@ select option { background:var(--bg-2); color:var(--text); }
       </div>
     </div>
 
-  </div><!-- /page-content -->
+  </main><!-- /page-content -->
+  </div><!-- /admin-shell -->
 </div><!-- /sistema -->
 
 <!-- MODAL MEDICAMENTO -->
