@@ -3758,7 +3758,7 @@ function apiPostViaJSONP(data, callback, _intentoReintento) {
       console.warn('[apiPostViaJSONP] Timeout — reintentando UNA sola vez:', data.accion);
       apiPostViaJSONP(data, callback, true);
     }
-  }, 8000);
+  }, 20000);
   window[cbName] = function(res) {
     clearTimeout(timeout);
     delete window[cbName];

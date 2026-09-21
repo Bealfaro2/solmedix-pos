@@ -415,7 +415,7 @@ function jsonp(url, callback) {
   var cbName = 'cb_' + Math.random().toString(36).slice(2);
   var timeout = setTimeout(function() {
     if (window[cbName]) { delete window[cbName]; var sc=document.getElementById('sc_'+cbName); if(sc) sc.remove(); callback(new Error('Timeout')); }
-  }, 10000);
+  }, 20000);
   window[cbName] = function(res) {
     clearTimeout(timeout); delete window[cbName];
     var sc = document.getElementById('sc_'+cbName); if(sc) sc.remove();
