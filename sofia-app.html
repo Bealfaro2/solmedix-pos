@@ -290,6 +290,9 @@ body{background:var(--surface-0);padding:0;overflow:hidden}
         <option value="producto_listo">Producto listo para recoger</option>
       </select>
       <div class="campos on" id="campos-instruccion">
+        <div style="margin-bottom:4px">
+          <button type="button" onclick="cAplicarNegritas()" title="Negritas (se ve en negritas en WhatsApp)" style="font-weight:700;padding:4px 12px;font-size:13px;border-radius:6px;border:1px solid var(--line);background:var(--surface-2);cursor:pointer">B</button>
+        </div>
         <textarea id="c-mensaje" rows="3" placeholder="Escribe tu mensaje para el cliente..."></textarea>
       </div>
       <div class="campos" id="campos-pago">
@@ -656,6 +659,24 @@ function cambiarTipo() {
   document.getElementById('campos-disp').classList.toggle('on', tipo==='disponibilidad_confirmada');
   document.getElementById('campos-listo').classList.toggle('on', tipo==='producto_listo');
 }
+
+function cAplicarNegritas() {
+  var ta = document.getElementById('c-mensaje');
+  var inicio = ta.selectionStart;
+  var fin = ta.selectionEnd;
+  var texto = ta.value;
+  var seleccionado = texto.substring(inicio, fin);
+  if (seleccionado) {
+    ta.value = texto.substring(0, inicio) + '*' + seleccionado + '*' + texto.substring(fin);
+    ta.focus();
+    ta.setSelectionRange(inicio + 1, fin + 1);
+  } else {
+    ta.value = texto.substring(0, inicio) + '**' + texto.substring(fin);
+    ta.focus();
+    ta.setSelectionRange(inicio + 1, inicio + 1);
+  }
+}
+
 function enviarComando() {
   if (!clienteActual) return;
   var tipo = document.getElementById('tipo').value;
