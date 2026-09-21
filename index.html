@@ -2529,16 +2529,33 @@ function renderPedidosDomicilio(){
       '<div class="sm">'+p.medicamento+'</div>'+
       '<div class="sm" style="color:var(--text-3)">Dirección: '+(p.direccion||'Sin dirección')+'</div>'+
       (tieneAnticipo?'<div class="sm" style="color:#30a46c;font-weight:600">Anticipo: $'+Number(p.anticipo_monto).toLocaleString('es-MX',{minimumFractionDigits:2})+' ('+(p.anticipo_metodo||'')+')</div>':'')+
+      (p.numero_guia?'<div class="sm" style="color:#185FA5;font-weight:600">Guía: '+p.numero_guia+'</div>':'')+
       '</div>'+
       '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">'+
         (tieneAnticipo
           ? '<button class="btn" style="font-size:11px;padding:5px 8px" onclick="imprimirComprobante(\''+p.id+'\')">Comprobante</button>'
           : '<button class="btn" style="font-size:11px;padding:5px 8px" onclick="registrarAnticipoInline(\''+p.id+'\')">+ Anticipo</button>') +
+        '<button class="btn" style="font-size:11px;padding:5px 8px" onclick="registrarGuiaInline(\''+p.id+'\')">'+(p.numero_guia?'Editar guía':'+ Guía')+'</button>'+
         '<button class="btn" style="font-size:11px;padding:5px 8px" onclick="cancelarPedido(\''+p.id+'\')">Cancelar</button>'+
         '<button class="btn btnp" style="font-size:11px;padding:5px 8px" onclick="convertirPedido(\''+p.id+'\')">Convertir a venta</button>'+
       '</div></div>';
   });
   cont.innerHTML=html;
+}
+
+function registrarGuiaInline(id){
+  var p = pedidos.find(function(x){ return x.id===id; });
+  var actual = p && p.numero_guia ? p.numero_guia : '';
+  var guia = prompt('Número de guía de La Mensajería MX:', actual);
+  if(guia===null) return;
+  guia = guia.trim();
+  if(!guia){ pedomAlrt('El número de guía no puede quedar vacío.','e'); return; }
+  apiPostViaJSONP({accion:'actualizar_guia_pedido', id:id, numero_guia:guia}, function(err,res){
+    if(err || !res || !res.ok){ pedomAlrt('No se pudo guardar el número de guía.','e'); return; }
+    if(p){ p.numero_guia = guia; }
+    renderPedidosDomicilio();
+    pedomAlrt('Número de guía guardado.','s');
+  });
 }
 
 function guardarPedidoDomicilio(){
@@ -2603,6 +2620,9 @@ function imprimirDatosEnvio(pedido){
   var html =
     '<div class="tp">'+
     '<div class="tp-box tp-center" style="font-size:12pt;font-weight:bold;border:2px solid #000;padding:6px">ENVÍO A DOMICILIO</div>'+
+    (pedido.numero_guia
+      ? '<div class="tp-box tp-center" style="border:3px solid #000;padding:10px 4px"><div style="font-size:9pt">No. DE GUÍA</div><div style="font-size:42pt;font-weight:bold;line-height:1.1">'+pedido.numero_guia+'</div></div>'
+      : '<div class="tp-box tp-center" style="border:2px dashed #c00;padding:8px;color:#c00;font-weight:bold">⚠ SIN NÚMERO DE GUÍA REGISTRADO</div>')+
     '<div class="tp-box"><div style="font-size:13pt;font-weight:bold">'+pedido.nombre+'</div>'+
       (pedido.telefono?'<div style="font-size:12pt">Tel: '+pedido.telefono+'</div>':'')+
       '<div style="margin-top:6px;font-size:12pt;white-space:pre-wrap">'+(pedido.direccion||'SIN DIRECCIÓN — CONFIRMAR CON CLIENTE')+'</div></div>'+
