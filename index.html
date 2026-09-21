@@ -819,6 +819,7 @@ var NO_CERTIFICADO = '00001000000726614012';
 var CSD_CER = '';
 var CSD_KEY = '';
 var vActual=null, acIdx=-1;
+var ventaOperacionPendiente=null; // Fase B: se conserva hasta conocer el resultado definitivo del servidor
 var pendientes=0, cargados=0;
 
 document.getElementById('logo-inicio').src = LOGO;
@@ -1490,8 +1491,10 @@ function cambiarQty(i,val){
   renderItems();
 }
 
-/* GUARDAR VENTA */
+/* GUARDAR VENTA — Fase B transaccional */
 function genClave(fecha,cliente,folio) {
+  // Conservada para compatibilidad con otras zonas del POS. Las ventas nuevas
+  // reciben la clave oficial generada por el servidor junto con el folio real.
   var d=fecha.replace(/-/g,'').slice(2);
   var ini=cliente.trim().toUpperCase().replace(/\s+/g,'').slice(0,3);
   while(ini.length<3)ini+='X';
@@ -1499,164 +1502,206 @@ function genClave(fecha,cliente,folio) {
   return 'SMX-'+(sucursal||'XX')+'-'+d+'-'+ini+'-'+String(folio).padStart(4,'0')+'-'+rnd;
 }
 
+function crearOperationIdVenta(){
+  if(window.crypto && typeof window.crypto.randomUUID==='function') return window.crypto.randomUUID();
+  return 'venta-'+Date.now()+'-'+Math.random().toString(36).slice(2)+'-'+Math.random().toString(36).slice(2);
+}
+
+function consultarOperacionVenta(operationId, callback){
+  jsonp(API_URL+'?accion=consultar_operacion_venta&operation_id='+encodeURIComponent(operationId), callback);
+}
+
+function actualizarStockLocalDesdeRespuesta(stock){
+  (stock||[]).forEach(function(s){
+    for(var i=0;i<lotes.length;i++){
+      if(String(lotes[i].id)===String(s.lote_id)){
+        lotes[i].existencias=Number(s.nuevaExistencia);
+        break;
+      }
+    }
+  });
+}
+
+function finalizarVentaConfirmada(pendiente, resVenta){
+  if(!pendiente || pendiente.finalizada) return;
+  pendiente.finalizada=true;
+
+  var ctx=pendiente.ctx;
+  var folio=Number(resVenta.folio);
+  var clave=resVenta.clave||'';
+  actualizarStockLocalDesdeRespuesta(resVenta.stock||[]);
+
+  var v={id:folio,fecha:ctx.fecha,hora:ctx.hora,cliente:ctx.cliente,sucursal:ctx.sucursal,
+    items:ctx.itemsSnapshot.slice(),total:ctx.total,clave:clave,pagos:ctx.pagosSnapshot,
+    pagoDominante:ctx.formaPagoTxt,operationId:pendiente.operationId};
+
+  var found=false;
+  for(var c=0;c<clientes.length;c++){
+    if((clientes[c].nombre||clientes[c]).toLowerCase()===ctx.cliente.toLowerCase()){found=true;break;}
+  }
+  if(!found){ clientes.push({nombre:ctx.cliente}); renderListaClientes(); }
+  ventas.unshift(v);
+  renderHist();
+  limpiar();
+  mostrarClave(v);
+  alrt('Venta guardada. Ticket generado.','s');
+  setSyncStatus('ok','Guardado en Google Sheets');
+  bannerExito(folio, ctx.cliente, ctx.total);
+
+  var pedidoDomicilioParaEtiqueta=null;
+  if(ctx.pedidoSnapshot){
+    apiPostViaJSONP({accion:'marcar_pedido_convertido',id:ctx.pedidoSnapshot.id,folio:folio}, function(){});
+    if((ctx.pedidoSnapshot.tipo||'mostrador')==='domicilio') pedidoDomicilioParaEtiqueta=ctx.pedidoSnapshot;
+    pedidos=pedidos.filter(function(p){return p.id!==ctx.pedidoSnapshot.id;});
+    if(window._pedidoEnConversion && window._pedidoEnConversion.id===ctx.pedidoSnapshot.id) window._pedidoEnConversion=null;
+    renderPedidos(); renderPedidosDomicilio();
+  }
+
+  var btn=document.getElementById('btn-guardar');
+  btn.disabled=false; btn.textContent='Guardar y generar ticket';
+  ventaOperacionPendiente=null;
+
+  imprimir();
+  if(pedidoDomicilioParaEtiqueta){
+    setTimeout(function(){imprimirDatosEnvio(pedidoDomicilioParaEtiqueta);},1200);
+  }
+
+  // Comisión Mercado Pago: se registra solamente después de que el servidor
+  // confirmó la venta y usando el folio oficial.
+  var montoTarjetaMP=ctx.pagosSnapshot.filter(function(p){return p.metodo==='Tarjeta MP';})
+    .reduce(function(s,p){return s+p.monto;},0);
+  var comision=Math.round((montoTarjetaMP*0.0406)*100)/100;
+  if(comision>0){
+    apiPost({accion:'guardar_gasto_no_fiscal',fecha:ctx.fecha,
+      concepto:'Comisión MP folio #'+String(folio).padStart(4,'0'),monto:comision,
+      sucursal:ctx.sucursal,estado:'activa'},function(errGnf){
+        if(errGnf) console.warn('[MP] Error al registrar comisión:',errGnf);
+      });
+  }
+
+  setTimeout(function(){apiGet('lotes',function(e,d){if(!e&&d)lotes=d.lotes||[];});},1500);
+}
+
+function manejarFalloVenta(pendiente, res){
+  var btn=document.getElementById('btn-guardar');
+  btn.disabled=false; btn.textContent='Guardar y generar ticket';
+  if(res && res.error==='stock_insuficiente'){
+    alrt(res.mensaje||'Stock insuficiente en servidor.','e');
+    apiGet('lotes',function(e,d){if(!e&&d)lotes=d.lotes||[];});
+  }else{
+    alrt((res&&res.mensaje)||'La venta no pudo guardarse. Revisa los datos e intenta nuevamente.','e');
+  }
+  setSyncStatus('err','Venta no guardada');
+  // Fallo explícito del servidor: esta operación terminó y una corrección del
+  // carrito debe iniciar con un operation_id nuevo.
+  ventaOperacionPendiente=null;
+}
+
+function verificarVentaPendiente(pendiente, intento){
+  consultarOperacionVenta(pendiente.operationId,function(err,estado){
+    if(!ventaOperacionPendiente || ventaOperacionPendiente.operationId!==pendiente.operationId) return;
+    if(!err && estado && estado.encontrado && estado.estado==='COMPLETED' && estado.resultado){
+      finalizarVentaConfirmada(pendiente,estado.resultado); return;
+    }
+    if(!err && estado && estado.encontrado && estado.estado==='FAILED'){
+      manejarFalloVenta(pendiente,{error:'operacion_fallida_previa',mensaje:estado.error_detalle||'La operación falló en el servidor.'}); return;
+    }
+    if(intento<5){
+      setTimeout(function(){verificarVentaPendiente(pendiente,intento+1);},2000);
+      return;
+    }
+    var btn=document.getElementById('btn-guardar');
+    btn.disabled=false; btn.textContent='Reintentar guardado';
+    setSyncStatus('err','Estado de venta sin confirmar');
+    alrt('No pude confirmar todavía si la venta terminó. NO se creó un operation_id nuevo: pulsa “Reintentar guardado” para consultar/reintentar la MISMA operación sin duplicarla.','i');
+  });
+}
+
+function enviarVentaPendiente(pendiente){
+  var btn=document.getElementById('btn-guardar');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
+  setSyncStatus('load','Guardando venta...');
+  apiPostViaJSONP(pendiente.payload,function(err,resVenta){
+    if(!ventaOperacionPendiente || ventaOperacionPendiente.operationId!==pendiente.operationId) return;
+    if(!err && resVenta && resVenta.ok){
+      finalizarVentaConfirmada(pendiente,resVenta); return;
+    }
+    if(!err && resVenta && resVenta.ok===false){
+      manejarFalloVenta(pendiente,resVenta); return;
+    }
+    // Timeout/error de red: no asumimos éxito ni fracaso. Consultamos el journal
+    // del servidor usando exactamente el mismo operation_id.
+    setSyncStatus('load','Confirmando estado de la venta...');
+    verificarVentaPendiente(pendiente,0);
+  });
+}
+
 function guardar() {
+  // Si existe una venta cuyo resultado quedó incierto, cualquier nuevo clic
+  // reutiliza exactamente el mismo operation_id y payload.
+  if(ventaOperacionPendiente){
+    enviarVentaPendiente(ventaOperacionPendiente);
+    return;
+  }
+
   var fecha=document.getElementById('fec').value;
   var hora=document.getElementById('hor').value;
   var cliente=document.getElementById('cli').value.trim();
   if (!fecha||!cliente||!items.length){alrt('Completa fecha, cliente y al menos un medicamento','i');return;}
 
   for (var iam=0; iam<items.length; iam++) {
-    var itAM = items[iam];
-    var medAM = null;
-    for (var mai=0; mai<medicamentos.length; mai++) { if (medicamentos[mai].nombre===itAM.nombre) { medAM = medicamentos[mai]; break; } }
-    if (medAM && medAM.es_antimicrobiano && !itAM.antimicrobiano) {
-      alrt('Falta información obligatoria de "'+itAM.nombre+'" (antimicrobiano). Elimínalo del carrito y agrégalo de nuevo para completar sus datos.','e');
-      return;
+    var itAM=items[iam], medAM=null;
+    for(var mai=0;mai<medicamentos.length;mai++){if(medicamentos[mai].nombre===itAM.nombre){medAM=medicamentos[mai];break;}}
+    if(medAM&&medAM.es_antimicrobiano&&!itAM.antimicrobiano){
+      alrt('Falta información obligatoria de "'+itAM.nombre+'" (antimicrobiano). Elimínalo del carrito y agrégalo de nuevo para completar sus datos.','e');return;
     }
   }
 
-  var totalCheq = items.reduce(function(s,it){return s+it.total;},0);
-  var sumaPagos = pagosVenta.reduce(function(s,p){return s+(Number(p.monto)||0);},0);
-  if (Math.abs(sumaPagos-totalCheq)>0.01){ alrt('La suma de los pagos no coincide con el total de la venta.','e'); return; }
-  if (pagosVenta.some(function(p){return p.monto>0 && !p.metodo;})){ alrt('Selecciona el método para cada línea de pago.','e'); return; }
+  var totalCheq=items.reduce(function(s,it){return s+it.total;},0);
+  var sumaPagos=pagosVenta.reduce(function(s,p){return s+(Number(p.monto)||0);},0);
+  if(Math.abs(sumaPagos-totalCheq)>0.01){alrt('La suma de los pagos no coincide con el total de la venta.','e');return;}
+  if(pagosVenta.some(function(p){return p.monto>0&&!p.metodo;})){alrt('Selecciona el método para cada línea de pago.','e');return;}
 
-  // Validar stock
+  // Validación local de UX. La validación autoritativa se repite en Apps Script
+  // dentro del ScriptLock inmediatamente antes de escribir.
   var stockUsado={};
-  for(var si=0;si<items.length;si++){
-    if(items[si].loteId) stockUsado[items[si].loteId]=(stockUsado[items[si].loteId]||0)+items[si].qty;
-  }
+  for(var si=0;si<items.length;si++) if(items[si].loteId) stockUsado[items[si].loteId]=(stockUsado[items[si].loteId]||0)+items[si].qty;
   for(var loteKey in stockUsado){
     for(var sj=0;sj<lotes.length;sj++){
       if(String(lotes[sj].id)===String(loteKey)){
         var stockDisponible=Number(lotes[sj].existencias);
-        if(stockUsado[loteKey]>stockDisponible){
-          alrt('Stock insuficiente. Disponible: '+stockDisponible+' pzas','e');
-          return;
-        }
+        if(stockUsado[loteKey]>stockDisponible){alrt('Stock insuficiente. Disponible: '+stockDisponible+' pzas','e');return;}
         break;
       }
     }
   }
 
-  // Candado anti-duplicado: venta idéntica (cliente + total + día) ya registrada
-  var posibleDup = ventas.find(function(vv){
-    return vv.estado!=='cancelada' &&
-      String(vv.cliente||'').trim().toLowerCase()===cliente.toLowerCase() &&
-      Math.abs(Number(vv.total)-totalCheq)<0.01 &&
-      String(vv.fecha||'').slice(0,10)===fecha;
+  var posibleDup=ventas.find(function(vv){
+    return vv.estado!=='cancelada'&&String(vv.cliente||'').trim().toLowerCase()===cliente.toLowerCase()&&
+      Math.abs(Number(vv.total)-totalCheq)<0.01&&String(vv.fecha||'').slice(0,10)===fecha;
   });
-  if (posibleDup && !confirm('Ya existe una venta de $'+totalCheq.toLocaleString('es-MX',{minimumFractionDigits:2})+' para '+cliente+' registrada hoy (folio #'+String(posibleDup.id).padStart(4,'0')+').\n\n¿Es una venta DIFERENTE y quieres guardarla de todas formas?')) {
-    return;
-  }
+  if(posibleDup&&!confirm('Ya existe una venta de $'+totalCheq.toLocaleString('es-MX',{minimumFractionDigits:2})+' para '+cliente+' registrada hoy (folio #'+String(posibleDup.id).padStart(4,'0')+').\n\n¿Es una venta DIFERENTE y quieres guardarla de todas formas?')) return;
 
-  var btn=document.getElementById('btn-guardar');
-  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Guardando...';
+  var itemsSnapshot=JSON.parse(JSON.stringify(items));
+  var pagosSnapshot=pagosVenta.filter(function(p){return p.metodo&&p.monto>0;}).map(function(p){return {metodo:p.metodo,monto:Number(p.monto)};});
+  var pagoDominante=pagosSnapshot.slice().sort(function(a,b){return b.monto-a.monto;})[0];
+  var formaPagoTxt=pagoDominante?pagoDominante.metodo+(pagosSnapshot.length>1?' y otro':''):'';
+  var pagosResumen=pagosSnapshot.map(function(p){return p.metodo+':'+p.monto.toFixed(2);}).join('|');
+  var operationId=crearOperationIdVenta();
 
-  var folio=ventas.length+1;
-  var total=0; for(var k=0;k<items.length;k++) total+=items[k].total;
-  var pagosSnapshot = pagosVenta.filter(function(p){return p.metodo&&p.monto>0;}).map(function(p){return {metodo:p.metodo,monto:p.monto};});
-  var pagoDominante = pagosSnapshot.slice().sort(function(a,b){return b.monto-a.monto;})[0];
-  var formaPagoTxt = pagoDominante ? pagoDominante.metodo + (pagosSnapshot.length>1?' y otro':'') : '';
-  var pagosResumen = pagosSnapshot.map(function(p){return p.metodo+':'+p.monto.toFixed(2);}).join('|');
-  var v={id:folio,fecha:fecha,hora:hora,cliente:cliente,sucursal:sucursal,items:items.slice(),total:total,clave:genClave(fecha,cliente,folio),pagos:pagosSnapshot,pagoDominante:formaPagoTxt};
+  ventaOperacionPendiente={
+    operationId:operationId,
+    finalizada:false,
+    payload:{accion:'guardar_venta_transaccional',operation_id:operationId,fecha:fecha,hora:hora,
+      cliente:cliente,total:totalCheq,sucursal:sucursal,items:itemsSnapshot,forma_pago:pagosResumen},
+    ctx:{fecha:fecha,hora:hora,cliente:cliente,total:totalCheq,sucursal:sucursal,itemsSnapshot:itemsSnapshot,
+      pagosSnapshot:pagosSnapshot,formaPagoTxt:formaPagoTxt,
+      pedidoSnapshot:window._pedidoEnConversion?JSON.parse(JSON.stringify(window._pedidoEnConversion)):null}
+  };
 
-  // Snapshot de items ANTES de limpiar la UI
-  var itemsSnapshot = items.slice();
-
-  // Descontar inventario LOCAL de inmediato con el snapshot
-  for(var di=0;di<itemsSnapshot.length;di++){
-    if(itemsSnapshot[di].loteId){
-      for(var dj=0;dj<lotes.length;dj++){
-        if(String(lotes[dj].id)===String(itemsSnapshot[di].loteId)){
-          lotes[dj].existencias = Math.max(0, Number(lotes[dj].existencias) - itemsSnapshot[di].qty);
-          break;
-        }
-      }
-    }
-  }
-
-  // Actualizar UI inmediatamente
-  var found=false;
-  for(var c=0;c<clientes.length;c++){ if((clientes[c].nombre||clientes[c]).toLowerCase()===cliente.toLowerCase()){found=true;break;} }
-  if(!found){ clientes.push({nombre:cliente}); renderListaClientes(); }
-  ventas.unshift(v);
-  renderHist(); limpiar(); mostrarClave(v);
-  alrt('Venta guardada. Ticket generado.','s');
-  var pedidoDomicilioParaEtiqueta = null;
-  if(window._pedidoEnConversion){
-    var pedC = window._pedidoEnConversion;
-    apiPostViaJSONP({accion:'marcar_pedido_convertido',id:pedC.id,folio:folio}, function(){});
-    if((pedC.tipo||'mostrador')==='domicilio') pedidoDomicilioParaEtiqueta = pedC;
-    pedidos = pedidos.filter(function(p){ return p.id!==pedC.id; });
-    window._pedidoEnConversion = null;
-    renderPedidos();
-    renderPedidosDomicilio();
-  }
-  btn.disabled=false; btn.textContent='Guardar y generar ticket';
-  // Abrir popup de impresión automáticamente
-  imprimir();
-  if(pedidoDomicilioParaEtiqueta){
-    // Trabajo de impresión SEPARADO — la impresora con auto-corte activado
-    // corta entre el ticket y esta etiqueta automáticamente.
-    setTimeout(function(){ imprimirDatosEnvio(pedidoDomicilioParaEtiqueta); }, 1200);
-  }
-
-// Descontar inventario en SERVIDOR de inmediato via JSONP (confiable).
-  // Antes esto dependía del callback de guardar_venta (fetch), que falla
-  // por el redirect 302 de Apps Script aunque la venta SÍ se guarde,
-  // dejando ventas registradas sin descuento de stock.
-  for(var si2=0;si2<itemsSnapshot.length;si2++){
-    if(itemsSnapshot[si2].loteId){
-      (function(lid, qty){
-        jsonp(API_URL+'?accion=descontar_lote&lote_id='+lid+'&cantidad='+qty, function(err2, res){
-          if(!err2 && res && res.ok) console.log('Lote descontado:', lid, 'stock:', res.nuevaExistencia);
-          else console.error('[descontar_lote] Falló para lote', lid, err2||res);
-        });
-      })(itemsSnapshot[si2].loteId, itemsSnapshot[si2].qty);
-    }
-  }
-
-  // Guardar en Sheets (asíncrono con snapshot)
-    apiPostViaJSONP({accion:'guardar_venta',fecha:fecha,hora:hora,cliente:cliente,total:total,clave:v.clave,sucursal:sucursal,items:itemsSnapshot,forma_pago:pagosResumen}, function(err, resVenta) {
-    if (resVenta && resVenta.ok===false && resVenta.error==='duplicado') {
-      btn.disabled=false; btn.textContent='Guardar y generar ticket';
-      alert('VENTA NO GUARDADA — DUPLICADA\n\n'+resVenta.mensaje+'\n\nEsta venta ya existe en el sistema (probablemente registrada desde otra pestaña o dispositivo). No se generó ticket ni se descontó inventario.');
-      setSyncStatus('err','Venta duplicada — no guardada');
-      return;
-    }
-    if(!err){
-      setSyncStatus('ok','Guardado en Google Sheets');
-      bannerExito(folio, cliente, total);
-
-      // ── Comisión Mercado Pago → Gasto No Fiscal ──────────
-      // Ahora se calcula sobre el monto REAL pagado con Tarjeta MP a nivel
-      // de venta (pagosSnapshot), no por medicamento — más exacto en splits.
-      var montoTarjetaMP = pagosSnapshot.filter(function(p){return p.metodo==='Tarjeta MP';})
-        .reduce(function(s,p){return s+p.monto;},0);
-      var comisionMP = montoTarjetaMP * 0.0406;
-      var comision = Math.round(comisionMP * 100) / 100;
-      if (comision > 0) {
-        apiPost({
-          accion: 'guardar_gasto_no_fiscal',
-          fecha: fecha,
-          concepto: 'Comisión MP folio #' + String(folio).padStart(4,'0'),
-          monto: comision,
-          sucursal: sucursal,
-          estado: 'activa'
-        }, function(errGnf) {
-          if (!errGnf) console.log('[MP] Comisión registrada: $' + comision);
-          else console.warn('[MP] Error al registrar comisión:', errGnf);
-        });
-      }
-      // ─────────────────────────────────────────────────────
-      setTimeout(function(){
-        apiGet('lotes', function(e,d){ if(!e&&d){ lotes=d.lotes||[]; } });
-      }, 3000);
-    } else {
-      setSyncStatus('err','Error al sincronizar con servidor');
-    }
-  });
+  enviarVentaPendiente(ventaOperacionPendiente);
 }
+
 function toggleOjo(inputId, btn) {
   var inp = document.getElementById(inputId);
   if (inp.type==='password') { inp.type='text'; btn.innerHTML='<span class="eye-icon"><svg viewBox="0 0 24 24"><path d="m3 3 18 18"/><path d="M10.6 6.2A10.8 10.8 0 0 1 12 6c6 0 9.5 6 9.5 6a15.8 15.8 0 0 1-2.2 2.8M6.1 6.1C3.7 8 2.5 12 2.5 12s3.5 6 9.5 6c1.3 0 2.5-.3 3.6-.7"/></svg></span>'; }
@@ -2529,33 +2574,16 @@ function renderPedidosDomicilio(){
       '<div class="sm">'+p.medicamento+'</div>'+
       '<div class="sm" style="color:var(--text-3)">Dirección: '+(p.direccion||'Sin dirección')+'</div>'+
       (tieneAnticipo?'<div class="sm" style="color:#30a46c;font-weight:600">Anticipo: $'+Number(p.anticipo_monto).toLocaleString('es-MX',{minimumFractionDigits:2})+' ('+(p.anticipo_metodo||'')+')</div>':'')+
-      (p.numero_guia?'<div class="sm" style="color:#185FA5;font-weight:600">Guía: '+p.numero_guia+'</div>':'')+
       '</div>'+
       '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">'+
         (tieneAnticipo
           ? '<button class="btn" style="font-size:11px;padding:5px 8px" onclick="imprimirComprobante(\''+p.id+'\')">Comprobante</button>'
           : '<button class="btn" style="font-size:11px;padding:5px 8px" onclick="registrarAnticipoInline(\''+p.id+'\')">+ Anticipo</button>') +
-        '<button class="btn" style="font-size:11px;padding:5px 8px" onclick="registrarGuiaInline(\''+p.id+'\')">'+(p.numero_guia?'Editar guía':'+ Guía')+'</button>'+
         '<button class="btn" style="font-size:11px;padding:5px 8px" onclick="cancelarPedido(\''+p.id+'\')">Cancelar</button>'+
         '<button class="btn btnp" style="font-size:11px;padding:5px 8px" onclick="convertirPedido(\''+p.id+'\')">Convertir a venta</button>'+
       '</div></div>';
   });
   cont.innerHTML=html;
-}
-
-function registrarGuiaInline(id){
-  var p = pedidos.find(function(x){ return x.id===id; });
-  var actual = p && p.numero_guia ? p.numero_guia : '';
-  var guia = prompt('Número de guía de La Mensajería MX:', actual);
-  if(guia===null) return;
-  guia = guia.trim();
-  if(!guia){ pedomAlrt('El número de guía no puede quedar vacío.','e'); return; }
-  apiPostViaJSONP({accion:'actualizar_guia_pedido', id:id, numero_guia:guia}, function(err,res){
-    if(err || !res || !res.ok){ pedomAlrt('No se pudo guardar el número de guía.','e'); return; }
-    if(p){ p.numero_guia = guia; }
-    renderPedidosDomicilio();
-    pedomAlrt('Número de guía guardado.','s');
-  });
 }
 
 function guardarPedidoDomicilio(){
@@ -2620,9 +2648,6 @@ function imprimirDatosEnvio(pedido){
   var html =
     '<div class="tp">'+
     '<div class="tp-box tp-center" style="font-size:12pt;font-weight:bold;border:2px solid #000;padding:6px">ENVÍO A DOMICILIO</div>'+
-    (pedido.numero_guia
-      ? '<div class="tp-box tp-center" style="border:3px solid #000;padding:10px 4px"><div style="font-size:9pt">No. DE GUÍA</div><div style="font-size:42pt;font-weight:bold;line-height:1.1">'+pedido.numero_guia+'</div></div>'
-      : '<div class="tp-box tp-center" style="border:2px dashed #c00;padding:8px;color:#c00;font-weight:bold">⚠ SIN NÚMERO DE GUÍA REGISTRADO</div>')+
     '<div class="tp-box"><div style="font-size:13pt;font-weight:bold">'+pedido.nombre+'</div>'+
       (pedido.telefono?'<div style="font-size:12pt">Tel: '+pedido.telefono+'</div>':'')+
       '<div style="margin-top:6px;font-size:12pt;white-space:pre-wrap">'+(pedido.direccion||'SIN DIRECCIÓN — CONFIRMAR CON CLIENTE')+'</div></div>'+
