@@ -406,6 +406,30 @@ function adjuntarArchivo(input) {
   reader.readAsDataURL(file);
   input.value = '';
 }
+// ── Fase C: sesión de aplicación en modo sombra ───────────────
+var authToken = '';
+var authExpira = 0;
+function authGuardarSesion(res) {
+  authToken = (res && res.token) || '';
+  authExpira = Number((res && res.expira) || 0);
+  if (!authToken) console.warn('[AUTH SHADOW] El backend no devolvió token; la operación continúa porque aún no hay enforcement.');
+}
+function authLimpiarSesion() { authToken=''; authExpira=0; }
+function authData(data, cliente) {
+  var d = {};
+  Object.keys(data || {}).forEach(function(k){ d[k]=data[k]; });
+  if (authToken) d.auth_token = authToken;
+  d.auth_client = cliente;
+  return d;
+}
+function authUrl(url, cliente) {
+  if (!url || url.indexOf(API_URL) !== 0) return url;
+  var sep = url.indexOf('?') >= 0 ? '&' : '?';
+  if (authToken) { url += sep + 'auth_token=' + encodeURIComponent(authToken); sep='&'; }
+  url += sep + 'auth_client=' + encodeURIComponent(cliente);
+  return url;
+}
+
 var perfilActual = '';
 var clienteActual = null;
 var ultimaLista = [];
@@ -424,11 +448,13 @@ function jsonp(url, callback) {
   var script = document.createElement('script');
   script.id = 'sc_'+cbName;
   script.onerror = function(){ clearTimeout(timeout); delete window[cbName]; script.remove(); callback(new Error('Error de red')); };
+  url = authUrl(url, 'sofia_pwa');
   script.src = url + (url.indexOf('?')>-1?'&':'?') + 'callback=' + cbName + '&t=' + Date.now();
   document.head.appendChild(script);
 }
 function apiGet(accion, callback) { jsonp(API_URL+'?accion='+accion, function(err,res){ callback(err,res); }); }
 function apiPost(data, callback) {
+  data = authData(data, 'sofia_pwa');
   var encoded = encodeURIComponent(JSON.stringify(data));
   jsonp(API_URL+'?_data='+encoded, function(err,res){ callback(err,res); });
 }
@@ -451,6 +477,7 @@ function login() {
   apiPost({ accion:'verificar_acceso', perfil:perfil, password:pwd }, function(err, res) {
     if (err || !res || !res.ok) { mostrarErrLogin('Sin conexión. Verifica tu internet.'); return; }
     if (!res.valido) { mostrarErrLogin('Contraseña incorrecta'); document.getElementById('login-pwd').value=''; return; }
+    authGuardarSesion(res);
     perfilActual = perfil;
     document.getElementById('login').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
