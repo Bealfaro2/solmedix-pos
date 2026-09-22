@@ -3125,6 +3125,31 @@ function fechaLocal(dateObj) {
   return dateObj.toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' });
 }
 var API_URL = 'https://script.google.com/macros/s/AKfycbwIArZhtzInrluG0X6jsZiyz6CIWUBDKj2OhHYePY0rmSg0AJ6AmXuXW5WRcqf4kSeK/exec';
+
+
+// ── Fase C: sesión de aplicación en modo sombra ───────────────
+var authToken = '';
+var authExpira = 0;
+function authGuardarSesion(res) {
+  authToken = (res && res.token) || '';
+  authExpira = Number((res && res.expira) || 0);
+  if (!authToken) console.warn('[AUTH SHADOW] El backend no devolvió token; la operación continúa porque aún no hay enforcement.');
+}
+function authLimpiarSesion() { authToken=''; authExpira=0; }
+function authData(data, cliente) {
+  var d = {};
+  Object.keys(data || {}).forEach(function(k){ d[k]=data[k]; });
+  if (authToken) d.auth_token = authToken;
+  d.auth_client = cliente;
+  return d;
+}
+function authUrl(url, cliente) {
+  if (!url || url.indexOf(API_URL) !== 0) return url;
+  var sep = url.indexOf('?') >= 0 ? '&' : '?';
+  if (authToken) { url += sep + 'auth_token=' + encodeURIComponent(authToken); sep='&'; }
+  url += sep + 'auth_client=' + encodeURIComponent(cliente);
+  return url;
+}
 var APPS_SCRIPT_URL = API_URL; // alias para módulo fiscal — misma URL que API_URL (v40)
 var PWD_HASH = btoa('Suzuki18&');
 var ventas=[], clientes=[], medicamentos=[], lotes=[], compras=[], caja=[];
@@ -3150,6 +3175,7 @@ function login() {
       document.getElementById('pwd').value='';
       return;
     }
+    authGuardarSesion(res);
     loginExitoso(perfil);
   });
 }
@@ -3211,6 +3237,7 @@ function actualizarDatos() {
 
 function cerrarSesion() {
   perfilActual='';
+  authLimpiarSesion();
   if(typeof FiscalModule !== 'undefined') FiscalModule.onLogout();
   document.getElementById('sistema').style.display='none';
   document.getElementById('pantalla-login').style.display='flex';
@@ -3230,6 +3257,7 @@ function jsonp(url, callback) {
   var script = document.createElement('script');
   script.id = 'sc_'+cbName;
   script.onerror = function() { delete window[cbName]; script.remove(); callback(new Error('Error de red')); };
+  url = authUrl(url, 'admin');
   script.src = url + (url.indexOf('?')>=0?'&':'?') + 'callback='+cbName;
   document.head.appendChild(script);
 }
@@ -3244,7 +3272,7 @@ function apiPost(data, callback) {
     mode: 'cors',
     credentials: 'omit',
     headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(data)
+    body: JSON.stringify(authData(data, 'admin'))
   })
   .then(function(r) {
     if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -3743,6 +3771,7 @@ function sofEnviarComando() {
 }
 
 function apiPostViaJSONP(data, callback, _intentoReintento) {
+  data = authData(data, 'admin');
   var encoded = encodeURIComponent(JSON.stringify(data));
   var cbName = 'cb_' + Math.random().toString(36).slice(2);
   var timeout = setTimeout(function() {
@@ -8430,7 +8459,7 @@ function inicializarCajaAdmin() {
     delete window[cbName]; sc.remove();
     renderCajaAdmin();
   };
-  sc.src = API_URL + '?accion=caja&callback=' + cbName;
+  sc.src = authUrl(API_URL + '?accion=caja&callback=' + cbName, 'admin');
   document.head.appendChild(sc);
 }
 
@@ -10762,7 +10791,7 @@ console.log('PRIMER BUFFER:', JSON.stringify(buffer[0]));
     };
     var s = document.createElement('script');
     s.id = 'sc_' + cbName;
-    s.src = url + '&callback=' + cbName;
+    s.src = authUrl(url + '&callback=' + cbName, 'admin');
     s.onerror = function() {
       clearTimeout(timeout);
       delete window[cbName];
