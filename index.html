@@ -1579,8 +1579,8 @@ function finalizarVentaConfirmada(pendiente, resVenta){
   if(ctx.pedidoSnapshot){
     apiPostViaJSONP({accion:'marcar_pedido_convertido',id:ctx.pedidoSnapshot.id,folio:folio}, function(){});
     if((ctx.pedidoSnapshot.tipo||'mostrador')==='domicilio') pedidoDomicilioParaEtiqueta=ctx.pedidoSnapshot;
-    pedidos=pedidos.filter(function(p){return p.id!==ctx.pedidoSnapshot.id;});
-    if(window._pedidoEnConversion && window._pedidoEnConversion.id===ctx.pedidoSnapshot.id) window._pedidoEnConversion=null;
+    pedidos=pedidos.filter(function(p){return String(p.id)!==String(ctx.pedidoSnapshot.id);});
+    if(window._pedidoEnConversion && String(window._pedidoEnConversion.id)===String(ctx.pedidoSnapshot.id)) window._pedidoEnConversion=null;
     renderPedidos(); renderPedidosDomicilio();
   }
 
@@ -2433,7 +2433,7 @@ function registrarAnticipoInline(id){
   var metodo = prompt('Método de pago (Transferencia / Efectivo / Tarjeta):','Transferencia') || '';
   apiPostViaJSONP({accion:'actualizar_anticipo_pedido', id:id, anticipo_monto:m, anticipo_metodo:metodo}, function(err,res){
     if(err || !res || !res.ok){ pedAlrt('No se pudo registrar el anticipo.','e'); return; }
-    var p = pedidos.find(function(x){ return x.id===id; });
+    var p = pedidos.find(function(x){ return String(x.id)===String(id); });
     if(p){ p.anticipo_monto=m; p.anticipo_metodo=metodo; }
     renderPedidos();
     pedAlrt('Anticipo registrado.','s');
@@ -2470,7 +2470,7 @@ function guardarPedido(){
       if(err || !res || !res.ok){
         pedAlrt('Error al guardar el pedido. Intenta de nuevo.','e'); return;
       }
-      var nuevoPed = {id:res.id, nombre:nombre, telefono:tel, medicamento:med, cantidad:cant, sucursal:sucursal, estado:'pendiente', anticipo_monto:antMonto, anticipo_metodo:antMetodo, notas:notas};
+      var nuevoPed = {id:String(res.id), nombre:nombre, telefono:tel, medicamento:med, cantidad:cant, sucursal:sucursal, estado:'pendiente', anticipo_monto:antMonto, anticipo_metodo:antMetodo, notas:notas};
       pedidos.unshift(nuevoPed);
       document.getElementById('ped-nombre').value='';
       document.getElementById('ped-tel').value='';
@@ -2502,13 +2502,13 @@ function cancelarPedido(id){
   if(!confirm('¿Cancelar este pedido?')) return;
   apiPostViaJSONP({accion:'cancelar_pedido',id:id}, function(err,res){
     if(err || !res || !res.ok){ pedAlrt('No se pudo cancelar. Intenta de nuevo.','e'); return; }
-    pedidos = pedidos.filter(function(p){ return p.id!==id; });
+    pedidos = pedidos.filter(function(p){ return String(p.id)!==String(id); });
     renderPedidos();
   });
 }
 
 function convertirPedido(id){
-  var p = pedidos.find(function(x){ return x.id===id; });
+  var p = pedidos.find(function(x){ return String(x.id)===String(id); });
   if(!p) return;
   window._pedidoEnConversion = p;
   document.getElementById('cli').value = p.nombre;
@@ -2537,7 +2537,7 @@ function convertirPedido(id){
 }
 
 function imprimirComprobante(id, pedidoDirecto){
-  var p = pedidoDirecto || pedidos.find(function(x){ return x.id===id; });
+  var p = pedidoDirecto || pedidos.find(function(x){ return String(x.id)===String(id); });
   if(!p) return;
   var suc = SUCURSALES[p.sucursal||sucursal||'MTY'];
   var saldo = '';
@@ -2616,7 +2616,7 @@ function renderPedidosDomicilio(){
 }
 
 function registrarGuiaInline(id){
-  var p = pedidos.find(function(x){ return x.id===id; });
+  var p = pedidos.find(function(x){ return String(x.id)===String(id); });
   var actual = p && p.numero_guia ? p.numero_guia : '';
   var guia = prompt('Número de guía de La Mensajería MX:', actual);
   if(guia===null) return;
@@ -2658,7 +2658,7 @@ function guardarPedidoDomicilio(){
     apiPostViaJSONP({accion:'guardar_pedido',nombre:nombre,telefono:tel,medicamento:med,cantidad:cant,sucursal:sucursal,anticipo_monto:antMonto,anticipo_metodo:antMetodo,notas:notas,tipo:'domicilio',direccion:dir}, function(err,res){
       btn.disabled=false; btn.textContent='+ Registrar envío';
       if(err || !res || !res.ok){ pedomAlrt('Error al guardar el envío. Intenta de nuevo.','e'); return; }
-      var nuevoPed = {id:res.id, nombre:nombre, telefono:tel, medicamento:med, cantidad:cant, sucursal:sucursal, estado:'pendiente', anticipo_monto:antMonto, anticipo_metodo:antMetodo, notas:notas, tipo:'domicilio', direccion:dir};
+      var nuevoPed = {id:String(res.id), nombre:nombre, telefono:tel, medicamento:med, cantidad:cant, sucursal:sucursal, estado:'pendiente', anticipo_monto:antMonto, anticipo_metodo:antMetodo, notas:notas, tipo:'domicilio', direccion:dir};
       pedidos.unshift(nuevoPed);
       document.getElementById('pedom-nombre').value='';
       document.getElementById('pedom-tel').value='';
