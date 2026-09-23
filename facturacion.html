@@ -8,339 +8,53 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
   :root {
-    --blue:     #1A5FA8;
-    --blue-lt:  #2B7FD4;
-    --blue-dk:  #0E3F73;
-    --accent:   #E8A020;
-    --bg:       #F7F9FC;
-    --card:     #FFFFFF;
-    --border:   #DDE4EE;
-    --text:     #1A2332;
-    --text-2:   #4A5568;
-    --text-3:   #8A9BB0;
-    --red:      #D63031;
-    --green:    #00875A;
-    --mono:     'DM Mono', monospace;
+    --blue:#1A5FA8; --blue-lt:#2B7FD4; --blue-dk:#0E3F73; --navy:#082E55;
+    --accent:#E8A020; --bg:#F4F7FB; --card:#FFFFFF; --border:#DCE5EF;
+    --text:#172033; --text-2:#526174; --text-3:#8A9AAF; --red:#D63031;
+    --green:#00875A; --green-lt:#EAF8F2; --mono:'DM Mono',monospace;
+    --shadow:0 18px 55px rgba(12,48,84,.12); --radius:22px;
   }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'Outfit', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* ── HEADER ─────────────────────────────────────────────── */
-  header {
-    background: var(--blue-dk);
-    padding: 0 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 64px;
-    box-shadow: 0 2px 16px rgba(10,30,60,.18);
-  }
-  header img { height: 40px; }
-  header .tagline {
-    font-size: 12px;
-    color: rgba(255,255,255,.5);
-    letter-spacing: .08em;
-    text-transform: uppercase;
-  }
-
-  /* ── HERO ────────────────────────────────────────────────── */
-  .hero {
-    background: linear-gradient(135deg, var(--blue-dk) 0%, var(--blue) 60%, var(--blue-lt) 100%);
-    padding: 3.5rem 2rem 4.5rem;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-  }
-  .hero::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: radial-gradient(ellipse at 70% 50%, rgba(255,255,255,.06) 0%, transparent 70%);
-  }
-  .hero h1 {
-    font-size: clamp(1.6rem, 4vw, 2.4rem);
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: .5rem;
-    position: relative;
-  }
-  .hero p {
-    font-size: 1rem;
-    color: rgba(255,255,255,.7);
-    max-width: 520px;
-    margin: 0 auto;
-    line-height: 1.6;
-    position: relative;
-  }
-  .hero .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(255,255,255,.12);
-    border: 1px solid rgba(255,255,255,.2);
-    border-radius: 99px;
-    padding: 5px 14px;
-    font-size: 11px;
-    color: rgba(255,255,255,.85);
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    margin-bottom: 1.2rem;
-  }
-  .hero .badge span { color: var(--accent); }
-
-  /* ── MAIN CONTAINER ──────────────────────────────────────── */
-  main {
-    flex: 1;
-    max-width: 660px;
-    width: 100%;
-    margin: -2.5rem auto 3rem;
-    padding: 0 1rem;
-    position: relative;
-    z-index: 1;
-  }
-
-  /* ── CARD ────────────────────────────────────────────────── */
-  .card {
-    background: var(--card);
-    border-radius: 16px;
-    box-shadow: 0 4px 32px rgba(10,30,60,.10);
-    padding: 2.5rem;
-    border: 1px solid var(--border);
-  }
-
-  /* ── STEP INDICATOR ──────────────────────────────────────── */
-  .steps {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0;
-    margin-bottom: 2rem;
-  }
-  .step-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-  }
-  .step-circle {
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 600;
-    border: 2px solid var(--border);
-    color: var(--text-3);
-    background: var(--bg);
-    transition: all .3s;
-  }
-  .step-circle.active {
-    border-color: var(--blue-lt);
-    background: var(--blue-lt);
-    color: #fff;
-    box-shadow: 0 0 0 4px rgba(43,127,212,.15);
-  }
-  .step-circle.done {
-    border-color: var(--green);
-    background: var(--green);
-    color: #fff;
-  }
-  .step-label {
-    font-size: 10px;
-    color: var(--text-3);
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    white-space: nowrap;
-  }
-  .step-label.active { color: var(--blue-lt); font-weight: 600; }
-  .step-connector {
-    flex: 1;
-    height: 2px;
-    background: var(--border);
-    min-width: 40px;
-    margin-bottom: 22px;
-    transition: background .3s;
-  }
-  .step-connector.done { background: var(--green); }
-
-  /* ── FORM ELEMENTS ───────────────────────────────────────── */
-  .section-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: .3rem;
-  }
-  .section-sub {
-    font-size: .875rem;
-    color: var(--text-3);
-    margin-bottom: 1.5rem;
-    line-height: 1.5;
-  }
-
-  label {
-    display: block;
-    font-size: .8rem;
-    font-weight: 600;
-    color: var(--text-2);
-    margin-bottom: .35rem;
-    text-transform: uppercase;
-    letter-spacing: .05em;
-  }
-  input, select {
-    width: 100%;
-    padding: .7rem .95rem;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    font-family: 'Outfit', sans-serif;
-    font-size: .95rem;
-    color: var(--text);
-    background: var(--bg);
-    transition: border-color .2s, box-shadow .2s;
-    outline: none;
-  }
-  input:focus, select:focus {
-    border-color: var(--blue-lt);
-    box-shadow: 0 0 0 3px rgba(43,127,212,.12);
-    background: #fff;
-  }
-  input.error { border-color: var(--red); }
-
-  .field { margin-bottom: 1.1rem; }
-  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-
-  /* ── BUTTONS ─────────────────────────────────────────────── */
-  .btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    padding: .8rem 1.6rem;
-    border-radius: 8px;
-    font-family: 'Outfit', sans-serif;
-    font-size: .95rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    transition: all .2s;
-  }
-  .btn-primary {
-    background: var(--blue-lt);
-    color: #fff;
-    width: 100%;
-    padding: .9rem;
-    font-size: 1rem;
-    margin-top: .5rem;
-  }
-  .btn-primary:hover { background: var(--blue); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(43,127,212,.3); }
-  .btn-primary:disabled { background: var(--text-3); cursor: not-allowed; transform: none; box-shadow: none; }
-  .btn-secondary {
-    background: transparent;
-    color: var(--blue-lt);
-    border: 1.5px solid var(--blue-lt);
-  }
-  .btn-secondary:hover { background: rgba(43,127,212,.06); }
-
-  /* ── CLAVE INPUT ─────────────────────────────────────────── */
-  .clave-wrap {
-    display: flex; gap: .6rem;
-  }
-  .clave-wrap input {
-    font-family: var(--mono);
-    font-size: .95rem;
-    letter-spacing: .05em;
-    text-transform: uppercase;
-    flex: 1;
-  }
-  .clave-wrap .btn {
-    white-space: nowrap;
-    padding: .7rem 1.2rem;
-    background: var(--blue-lt);
-    color: #fff;
-    font-size: .9rem;
-  }
-  .clave-wrap .btn:hover { background: var(--blue); }
-
-  /* ── VENTA INFO CARD ─────────────────────────────────────── */
-  .venta-info {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1.2rem;
-    margin: 1.2rem 0;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: .8rem;
-  }
-  .vi-item label { margin-bottom: 2px; font-size: .7rem; }
-  .vi-item .vi-val {
-    font-size: .95rem;
-    font-weight: 600;
-    color: var(--text);
-  }
-  .vi-item .vi-val.money { color: var(--blue-lt); font-family: var(--mono); }
-  .vi-item .vi-val.clave-text { font-family: var(--mono); font-size: .75rem; color: var(--text-2); }
-  .vi-full { grid-column: 1 / -1; }
-
-  /* ── ALERT ───────────────────────────────────────────────── */
-  .alrt {
-    padding: .9rem 1rem;
-    border-radius: 8px;
-    font-size: .875rem;
-    margin: .8rem 0;
-    display: none;
-    line-height: 1.5;
-  }
-  .alrt.ale { background: #FEF2F2; border: 1px solid #FECACA; color: var(--red); }
-  .alrt.als { background: #F0FDF4; border: 1px solid #BBF7D0; color: var(--green); }
-  .alrt.ali { background: #EFF6FF; border: 1px solid #BFDBFE; color: var(--blue); }
-
-  /* ── SUCCESS SCREEN ──────────────────────────────────────── */
-  .success-screen {
-    text-align: center;
-    padding: 1rem 0;
-  }
-  .success-icon {
-    width: 72px; height: 72px;
-    background: var(--green);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    margin: 0 auto 1.2rem;
-    font-size: 32px;
-    box-shadow: 0 0 0 8px rgba(0,135,90,.12);
-  }
-  .success-screen h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: .5rem; }
-  .success-screen p { color: var(--text-2); font-size: .95rem; margin-bottom: 1.5rem; }
-
-  /* ── SPINNER ─────────────────────────────────────────────── */
-  .spinner {
-    width: 18px; height: 18px;
-    border: 2px solid rgba(255,255,255,.3);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin .7s linear infinite;
-    display: inline-block;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ── FOOTER ──────────────────────────────────────────────── */
-  footer {
-    background: var(--blue-dk);
-    text-align: center;
-    padding: 1.2rem;
-    font-size: .8rem;
-    color: rgba(255,255,255,.4);
-  }
-  footer span { color: rgba(255,255,255,.65); }
-
-  /* ── RESPONSIVE ──────────────────────────────────────────── */
-  @media (max-width: 500px) {
-    .card { padding: 1.5rem; }
-    .field-row { grid-template-columns: 1fr; }
-    .hero { padding: 2.5rem 1rem 3.5rem; }
-  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'Outfit',sans-serif;color:var(--text);min-height:100vh;display:flex;flex-direction:column;background:
+    radial-gradient(circle at 10% 8%,rgba(43,127,212,.10),transparent 32%),
+    radial-gradient(circle at 88% 18%,rgba(232,160,32,.08),transparent 28%),var(--bg)}
+  header{height:72px;padding:0 clamp(1rem,4vw,3rem);display:flex;align-items:center;justify-content:space-between;background:rgba(8,46,85,.96);backdrop-filter:blur(12px);box-shadow:0 3px 18px rgba(8,46,85,.18);position:relative;z-index:5}
+  header img{height:44px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+  header .tagline{font-size:11px;color:rgba(255,255,255,.64);letter-spacing:.09em;text-transform:uppercase;white-space:nowrap}
+  .hero{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--navy) 0%,var(--blue) 58%,#358BDC 100%);padding:3.6rem 1.25rem 5.6rem;text-align:center}
+  .hero:before,.hero:after{content:'';position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.10)}
+  .hero:before{width:360px;height:360px;right:-120px;top:-210px}.hero:after{width:250px;height:250px;left:-100px;bottom:-170px}
+  .hero .badge{position:relative;display:inline-flex;align-items:center;gap:7px;padding:6px 14px;border-radius:99px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);font-size:11px;color:#fff;letter-spacing:.055em;text-transform:uppercase;margin-bottom:1rem}
+  .hero .badge span{color:#FFD37C}.hero h1{position:relative;color:#fff;font-size:clamp(1.9rem,4vw,2.7rem);line-height:1.08;font-weight:700;letter-spacing:-.025em;margin-bottom:.7rem}
+  .hero p{position:relative;color:rgba(255,255,255,.75);font-size:1rem;line-height:1.6;max-width:590px;margin:0 auto}
+  main{flex:1;width:100%;max-width:780px;margin:-3.4rem auto 3.5rem;padding:0 1rem;position:relative;z-index:2}
+  .card{background:rgba(255,255,255,.98);border:1px solid rgba(220,229,239,.9);border-radius:var(--radius);box-shadow:var(--shadow);padding:clamp(1.4rem,4vw,2.7rem)}
+  .steps{display:flex;align-items:flex-start;justify-content:center;margin-bottom:2.35rem;padding:0 .35rem}
+  .step-item{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:82px}.step-circle{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;border:2px solid var(--border);color:var(--text-3);background:#F8FAFD;transition:.25s}
+  .step-circle.active{border-color:var(--blue-lt);background:var(--blue-lt);color:#fff;box-shadow:0 0 0 5px rgba(43,127,212,.12)}.step-circle.done{border-color:var(--green);background:var(--green);color:#fff}
+  .step-label{font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;font-weight:600}.step-label.active{color:var(--blue);font-weight:700}
+  .step-connector{flex:1;height:2px;background:var(--border);margin-top:18px;min-width:34px;transition:.25s}.step-connector.done{background:var(--green)}
+  .section-title{font-size:1.25rem;font-weight:700;letter-spacing:-.015em;color:var(--text);margin-bottom:.35rem}.section-sub{font-size:.9rem;color:var(--text-3);line-height:1.55;margin-bottom:1.55rem}
+  label{display:block;font-size:.72rem;font-weight:700;color:var(--text-2);margin-bottom:.42rem;text-transform:uppercase;letter-spacing:.055em}
+  input,select{width:100%;padding:.82rem .95rem;border:1.5px solid var(--border);border-radius:12px;font-family:'Outfit',sans-serif;font-size:.95rem;color:var(--text);background:#F9FBFD;transition:.2s;outline:none}
+  input:hover,select:hover{border-color:#C7D5E5}input:focus,select:focus{border-color:var(--blue-lt);box-shadow:0 0 0 4px rgba(43,127,212,.10);background:#fff}input.error{border-color:var(--red)}
+  .field{margin-bottom:1.05rem}.field-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:.82rem 1.25rem;border-radius:12px;font-family:'Outfit',sans-serif;font-size:.94rem;font-weight:700;cursor:pointer;border:none;transition:.2s;text-decoration:none}.btn:active{transform:translateY(1px)}
+  .btn-primary{background:linear-gradient(135deg,var(--blue-lt),var(--blue));color:#fff;width:100%;padding:.94rem;box-shadow:0 8px 18px rgba(43,127,212,.18)}.btn-primary:hover{box-shadow:0 11px 24px rgba(43,127,212,.26);transform:translateY(-1px)}.btn-primary:disabled{background:#9AA8B9;box-shadow:none;cursor:not-allowed;transform:none}
+  .btn-secondary{background:#fff;color:var(--blue);border:1.5px solid #BFD2E7}.btn-secondary:hover{background:#F1F7FD;border-color:var(--blue-lt)}
+  .btn-download{background:#fff;color:var(--navy);border:1.5px solid var(--border);min-height:52px}.btn-download:hover{border-color:var(--blue-lt);background:#F5FAFF;transform:translateY(-1px)}
+  .btn-verify{background:#F4F8FC;color:var(--blue);border:1px solid #D7E4F1;min-height:48px}
+  .clave-wrap{display:flex;gap:.65rem;padding:.42rem;background:#F4F8FC;border:1px solid var(--border);border-radius:15px}.clave-wrap input{border:0;background:transparent;box-shadow:none!important;font-family:var(--mono);font-size:.92rem;letter-spacing:.045em;text-transform:uppercase;min-width:0}.clave-wrap .btn{white-space:nowrap;background:var(--blue-lt);color:#fff;padding:.74rem 1.15rem;border-radius:10px}.clave-wrap .btn:hover{background:var(--blue)}
+  .venta-info{background:linear-gradient(180deg,#F9FBFD,#F5F8FC);border:1px solid var(--border);border-radius:16px;padding:1.15rem 1.25rem;margin:1.25rem 0;display:grid;grid-template-columns:1fr 1fr;gap:1rem}.vi-item{min-width:0}.vi-item label{margin-bottom:3px;font-size:.65rem}.vi-item .vi-val{font-size:.95rem;font-weight:650;color:var(--text);overflow-wrap:anywhere}.vi-item .vi-val.money{color:var(--blue);font-family:var(--mono);font-size:1.05rem}.vi-item .vi-val.clave-text{font-family:var(--mono);font-size:.72rem;color:var(--text-2)}.vi-full{grid-column:1/-1}
+  .alrt{padding:.9rem 1rem;border-radius:12px;font-size:.88rem;margin:.9rem 0;display:none;line-height:1.5}.alrt.ale{background:#FFF2F2;border:1px solid #F8CACA;color:#B92E2E}.alrt.als{background:#EFFAF5;border:1px solid #BFE9D5;color:#05754E}.alrt.ali{background:#EEF6FF;border:1px solid #C6DCF3;color:#155E9D}
+  .success-screen{text-align:center;padding:.35rem 0}.success-icon{width:78px;height:78px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;font-size:34px;color:#fff;background:linear-gradient(135deg,#00A06A,var(--green));box-shadow:0 0 0 9px rgba(0,135,90,.10),0 12px 28px rgba(0,135,90,.20)}.success-screen h2{font-size:1.65rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.5rem}.success-screen>p{color:var(--text-2);font-size:.95rem;line-height:1.55;margin:0 auto 1.35rem;max-width:560px}
+  .success-panel{background:#F7FAFD;border:1px solid var(--border);border-radius:16px;padding:1.05rem;margin:0 auto 1.15rem;text-align:left}.success-panel .eyebrow{font-size:.67rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}.uuid-value{font-family:var(--mono);font-size:.82rem;color:var(--navy);font-weight:600;word-break:break-all}
+  .download-wrap{margin:1.1rem 0 .9rem;padding:1.15rem;border-radius:17px;background:linear-gradient(180deg,#F9FCFF,#F3F8FD);border:1px solid #D8E6F3}.download-title{font-weight:700;font-size:.98rem;margin-bottom:.25rem}.download-sub{font-size:.8rem;color:var(--text-3);margin-bottom:.85rem}.download-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}.verify-row{margin-top:.75rem}.download-status{font-size:.75rem;color:var(--text-3);text-align:center;margin-top:.65rem}
+  .help-strip{margin-top:1.5rem;padding-top:1.15rem;border-top:1px solid var(--border);font-size:.8rem;color:var(--text-3);text-align:center;line-height:1.65}.help-strip strong{color:var(--text-2)}
+  .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}@keyframes spin{to{transform:rotate(360deg)}}
+  footer{margin-top:auto;background:var(--navy);text-align:center;padding:1.25rem;font-size:.78rem;color:rgba(255,255,255,.46)}footer span{color:rgba(255,255,255,.78)}
+  @media(max-width:600px){header{height:64px;padding:0 1rem}header img{height:38px}header .tagline{display:none}.hero{padding:2.7rem 1rem 5rem}.card{padding:1.35rem;border-radius:18px}.field-row,.download-grid{grid-template-columns:1fr}.steps{margin-bottom:1.8rem}.step-item{min-width:68px}.step-label{font-size:9px}.clave-wrap{flex-direction:column}.clave-wrap .btn{width:100%}.venta-info{grid-template-columns:1fr}.vi-full{grid-column:auto}.uuid-value{font-size:.72rem}}
 </style>
 </head>
 <body>
@@ -358,8 +72,8 @@
 <!-- HERO -->
 <div class="hero">
   <div class="badge">📄 <span>Factura electrónica</span> — CFDI 4.0</div>
-  <h1>Solicita tu factura en minutos</h1>
-  <p>Ingresa la clave de tu ticket de compra, llena tus datos fiscales y recibe tu CFDI directamente en tu correo.</p>
+  <h1>Tu factura, simple y segura</h1>
+  <p>Valida tu ticket, captura tus datos fiscales y recibe tu CFDI por correo. Al finalizar también podrás descargar PDF y XML.</p>
 </div>
 
 
@@ -407,7 +121,7 @@
         <button class="btn btn-primary" onclick="irPaso2()">Continuar con estos datos →</button>
       </div>
 
-      <div style="margin-top:1.5rem;padding-top:1.2rem;border-top:1px solid var(--border);font-size:.8rem;color:var(--text-3);text-align:center">
+      <div class="help-strip">
         ¿No encuentras tu clave o tienes dudas? Comunícate con nosotros:<br>
         <strong style="color:var(--text-2)">MTY:</strong> 55 1660 9658 &nbsp;|&nbsp;
         <strong style="color:var(--text-2)">SLP:</strong> 444 443 3070
@@ -512,14 +226,27 @@
       <div class="success-screen">
         <div class="success-icon">✓</div>
         <h2>¡Factura generada!</h2>
-        <p id="success-msg">Tu CFDI ha sido generado y enviado a tu correo electrónico. Revisa también tu carpeta de spam si no lo encuentras en los próximos minutos.</p>
-        <div id="uuid-box" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:1.5rem;text-align:left;display:none">
-          <div style="font-size:.7rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">UUID del CFDI</div>
-          <div id="uuid-text" style="font-family:var(--mono);font-size:.8rem;color:var(--text);word-break:break-all"></div>
+        <p id="success-msg">Tu CFDI fue timbrado correctamente. También enviamos los archivos a tu correo electrónico.</p>
+
+        <div id="uuid-box" class="success-panel" style="display:none">
+          <div class="eyebrow">UUID del CFDI · Folio Fiscal</div>
+          <div id="uuid-text" class="uuid-value"></div>
         </div>
-        <button class="btn btn-primary" onclick="reiniciar()" style="max-width:260px;margin:0 auto">
-          Generar otra factura
-        </button>
+
+        <div id="download-wrap" class="download-wrap" style="display:none">
+          <div class="download-title">Tus archivos están listos</div>
+          <div class="download-sub">Descárgalos ahora o consérvalos desde el correo que acabamos de enviarte.</div>
+          <div class="download-grid">
+            <button class="btn btn-download" id="btn-pdf" onclick="descargarFactura('pdf')">📄 Descargar PDF</button>
+            <button class="btn btn-download" id="btn-xml" onclick="descargarFactura('xml')">&lt;/&gt; Descargar XML</button>
+          </div>
+          <div class="verify-row">
+            <button class="btn btn-verify" id="btn-verificar-sat" onclick="verificarEnSAT()" style="width:100%;display:none">✓ Verificar CFDI en el SAT</button>
+          </div>
+          <div id="download-status" class="download-status"></div>
+        </div>
+
+        <button class="btn btn-primary" onclick="reiniciar()" style="max-width:280px;margin:0 auto">Generar otra factura</button>
       </div>
     </div>
 
@@ -543,6 +270,9 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbwIArZhtzInrluG0X6jsZiyz6
 
 // El navegador conserva sólo la venta mínima devuelta por el endpoint público limitado.
 var _ventaData = null;
+var _archivosFactura = null;
+var _correoFactura = '';
+var _verificacionSat = '';
 
 /* ═══════════════════════════════════════════════════════════
    STEPS UI
@@ -666,6 +396,7 @@ function generarFactura() {
   var cp        = document.getElementById('inp-cp').value.trim();
   var correo    = document.getElementById('inp-correo').value.trim();
   var formaPago = document.getElementById('inp-forma-pago').value || '01';
+  _correoFactura = correo;
 
   hideAlrt('alrt2');
   if(!_ventaData || !_ventaData.clave){ showAlrt('alrt2','Vuelve a validar tu ticket.','e'); return; }
@@ -729,6 +460,35 @@ function enviarAutofactura(datos, btn) {
       document.getElementById('uuid-text').textContent = res.uuid;
       document.getElementById('uuid-box').style.display = 'block';
     }
+
+    _archivosFactura = res.archivos || null;
+    _verificacionSat = (_archivosFactura && _archivosFactura.verificacion_url) || '';
+
+    var dw = document.getElementById('download-wrap');
+    var btnPdf = document.getElementById('btn-pdf');
+    var btnXml = document.getElementById('btn-xml');
+    var btnSat = document.getElementById('btn-verificar-sat');
+    var status = document.getElementById('download-status');
+
+    if (_archivosFactura) {
+      var hayPdf = !!_archivosFactura.pdf_b64;
+      var hayXml = !!_archivosFactura.xml_b64;
+      btnPdf.style.display = hayPdf ? 'inline-flex' : 'none';
+      btnXml.style.display = hayXml ? 'inline-flex' : 'none';
+      btnSat.style.display = _verificacionSat ? 'inline-flex' : 'none';
+      status.textContent = hayPdf && hayXml
+        ? 'PDF y XML disponibles para descarga inmediata.'
+        : hayXml
+          ? 'El XML está disponible. El PDF no pudo generarse automáticamente.'
+          : 'Los archivos fueron enviados por correo, pero no pudieron prepararse para descarga inmediata.';
+      dw.style.display = (hayPdf || hayXml || _verificacionSat) ? 'block' : 'none';
+    } else {
+      dw.style.display = 'none';
+    }
+
+    var msg = 'Tu CFDI fue timbrado correctamente.';
+    if (_correoFactura) msg += ' También enviamos el PDF y XML a ' + _correoFactura + '.';
+    document.getElementById('success-msg').textContent = msg;
     setStep(3);
   };
 
@@ -759,8 +519,42 @@ function enviarAutofactura(datos, btn) {
   document.head.appendChild(script);
 }
 
+function descargarFactura(tipo) {
+  if (!_archivosFactura) return;
+  var esPdf = tipo === 'pdf';
+  var b64 = esPdf ? _archivosFactura.pdf_b64 : _archivosFactura.xml_b64;
+  var nombre = esPdf ? (_archivosFactura.pdf_nombre || 'factura.pdf') : (_archivosFactura.xml_nombre || 'factura.xml');
+  var mime = esPdf ? 'application/pdf' : 'application/xml';
+  if (!b64) return;
+
+  try {
+    var bin = atob(b64);
+    var len = bin.length;
+    var bytes = new Uint8Array(len);
+    for (var i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+    var blob = new Blob([bytes], { type:mime });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = nombre;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+  } catch(e) {
+    document.getElementById('download-status').textContent = 'No fue posible iniciar la descarga. Revisa el correo enviado o intenta nuevamente.';
+  }
+}
+
+function verificarEnSAT() {
+  if (_verificacionSat) window.open(_verificacionSat, '_blank', 'noopener,noreferrer');
+}
+
 function reiniciar(){
   _ventaData = null;
+  _archivosFactura = null;
+  _correoFactura = '';
+  _verificacionSat = '';
   document.getElementById('inp-clave').value = '';
   document.getElementById('inp-rfc').value = '';
   document.getElementById('inp-nombre').value = '';
@@ -771,6 +565,8 @@ function reiniciar(){
   document.getElementById('inp-forma-pago').value = '01';
   document.getElementById('venta-preview').style.display = 'none';
   document.getElementById('uuid-box').style.display = 'none';
+  document.getElementById('download-wrap').style.display = 'none';
+  document.getElementById('download-status').textContent = '';
   hideAlrt('alrt1'); hideAlrt('alrt2');
   setStep(1);
 }
