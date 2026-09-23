@@ -847,8 +847,7 @@ var ventaOperacionPendiente=null; // Fase B: se conserva hasta conocer el result
 var pendientes=0, cargados=0;
 
 document.getElementById('logo-inicio').src = LOGO;
-// Preload config
-apiGet('config', function(e,d){ if(!e&&d) configSistema=d.config||{}; });
+// Fase C: config se carga únicamente después de autenticar la sesión.
 document.getElementById('logo-panel').src = LOGO;
 
 /* JSONP — resuelve CORS con Apps Script */
