@@ -2268,9 +2268,35 @@ function cancelarFacturaDesdeHistorial(id) {
     return;
   }
 
+  var motivosCancelacion = {
+    '02':'02 - Comprobante emitido con errores sin relación',
+    '03':'03 - No se llevó a cabo la operación',
+    '04':'04 - Operación nominativa relacionada en una factura global'
+  };
+
+  var motivoCancelacion = window.prompt(
+    'Selecciona el motivo SAT de cancelación:\n\n'+
+    '02 - Comprobante emitido con errores sin relación\n'+
+    '03 - No se llevó a cabo la operación\n'+
+    '04 - Operación nominativa relacionada en una factura global\n\n'+
+    'El motivo 01 no está habilitado todavía porque requiere CFDI sustituto.\n\n'+
+    'Escribe 02, 03 o 04:',
+    ''
+  );
+
+  if (motivoCancelacion === null) return;
+
+  motivoCancelacion = String(motivoCancelacion || '').trim();
+
+  if (!motivosCancelacion[motivoCancelacion]) {
+    alrt('Motivo SAT inválido. Usa 02, 03 o 04.','e');
+    return;
+  }
+
   if (!confirm(
     '¿Solicitar la cancelación de la factura de '+venta.cliente+
     ' (UUID: '+venta.uuid+')?\n\n'+
+    'Motivo SAT: '+motivosCancelacion[motivoCancelacion]+'\n\n'+
     'La solicitud se enviará al SAT. Que la solicitud sea recibida NO significa que el CFDI ya esté cancelado.\n\n'+
     'No podrás refacturar esta venta hasta que la cancelación quede confirmada definitivamente.'
   )) return;
@@ -2328,15 +2354,20 @@ function cancelarFacturaDesdeHistorial(id) {
       return;
     }
 
-    // Este camino se reserva para una confirmación definitiva futura.
+    // Fail-closed: una respuesta positiva no habilita refacturación por sí sola.
+    // La confirmación definitiva se toma del SAT mediante la reconciliación.
     if (res && res.ok) {
-      venta.uuid = '';
-      venta.cancelacion_pendiente = false;
-      venta.estado_cancelacion = 'CANCELADO';
+      venta.cancelacion_pendiente = true;
+      venta.estado_cancelacion = 'PENDIENTE';
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Pendiente SAT';
+      }
 
       alrt(
-        '✓ Cancelación confirmada. La venta ya puede volver a facturarse.',
-        's'
+        'El servidor respondió positivamente, pero el CFDI seguirá bloqueado hasta confirmar su estado directamente con el SAT.',
+        'i'
       );
 
       renderHist();
@@ -2380,6 +2411,8 @@ function cancelarFacturaDesdeHistorial(id) {
     API_URL +
     '?accion=cancelar_cfdi&uuid=' +
     encodeURIComponent(venta.uuid) +
+    '&motivo_cancelacion=' +
+    encodeURIComponent(motivoCancelacion) +
     '&callback=' +
     cbName,
     'pos'
