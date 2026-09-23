@@ -874,6 +874,131 @@ function apiGet(accion, callback) {
   jsonp(API_URL + '?accion=' + accion, callback);
 }
 
+// ── CFDI: descarga autenticada desde archivo privado ────────────
+function descargarArchivoCFDI(ventaId, tipo, btn) {
+  tipo = String(tipo || '').toLowerCase();
+
+  if (tipo !== 'pdf' && tipo !== 'xml') {
+    alrt('Tipo de archivo CFDI inválido.','e');
+    return;
+  }
+
+  if (!authToken) {
+    alrt('Tu sesión no está autenticada. Vuelve a iniciar sesión.','e');
+    return;
+  }
+
+  var textoOriginal = btn ? btn.innerHTML : '';
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = tipo.toUpperCase() + '…';
+  }
+
+  var url = API_URL +
+    '?accion=obtener_archivo_cfdi' +
+    '&venta_id=' + encodeURIComponent(String(ventaId || '')) +
+    '&tipo=' + encodeURIComponent(tipo);
+
+  jsonp(url, function(err, res) {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = textoOriginal;
+    }
+
+    if (err) {
+      alrt(
+        'No fue posible recuperar el archivo CFDI. Revisa la conexión e intenta nuevamente.',
+        'e'
+      );
+      return;
+    }
+
+    if (!res || res.ok !== true || !res.contenido_b64) {
+      var codigo = String((res && res.codigo) || '');
+
+      var mensaje = String(
+        (res && (res.error || res.mensaje)) ||
+        'Archivo CFDI no disponible.'
+      );
+
+      if (codigo === 'CFDI_ARCHIVO_NO_REGISTRADO') {
+        mensaje =
+          'Este CFDI no tiene archivo histórico guardado en el nuevo repositorio.';
+
+      } else if (codigo === 'AUTH_REQUIRED') {
+        mensaje =
+          'La sesión expiró o no es válida. Vuelve a iniciar sesión.';
+      }
+
+      alrt(mensaje,'e');
+      return;
+    }
+
+    try {
+      var binario = atob(res.contenido_b64);
+      var bytes = new Uint8Array(binario.length);
+
+      for (var i = 0; i < binario.length; i++) {
+        bytes[i] = binario.charCodeAt(i);
+      }
+
+      var mime =
+        res.mime_type ||
+        (
+          tipo === 'pdf'
+            ? 'application/pdf'
+            : 'application/xml'
+        );
+
+      var blob =
+        new Blob(
+          [bytes],
+          { type:mime }
+        );
+
+      var objectUrl =
+        URL.createObjectURL(blob);
+
+      var enlace =
+        document.createElement('a');
+
+      enlace.href = objectUrl;
+
+      enlace.download =
+        res.nombre ||
+        (
+          'CFDI_' +
+          ventaId +
+          '.' +
+          tipo
+        );
+
+      enlace.style.display = 'none';
+
+      document.body.appendChild(enlace);
+
+      enlace.click();
+
+      setTimeout(function() {
+        URL.revokeObjectURL(objectUrl);
+        enlace.remove();
+      }, 1500);
+
+    } catch (e) {
+      console.error(
+        '[CFDI descarga]',
+        e
+      );
+
+      alrt(
+        'El archivo se recuperó, pero el navegador no pudo prepararlo para descarga.',
+        'e'
+      );
+    }
+  });
+}
+
 function apiPost(data, callback) {
   fetch(API_URL, {
     method: 'POST',
@@ -2006,6 +2131,17 @@ function renderHist(){
     rows+='<div style="font-weight:600;font-size:13px;color:'+tc+'">$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
     if(!cancelada){
       rows+='<button class="btn btnw" style="display:block;margin-bottom:3px;width:100%" onclick="event.stopPropagation();ver('+vid+');imprimir()">Reimprimir</button>';
+
+      if(v.uuid){
+        rows+='<div style="display:flex;gap:3px;margin-bottom:3px">';
+
+        rows+='<button class="btn btns" style="font-size:10px;padding:2px 6px;flex:1" title="Descargar representación PDF del CFDI" onclick="event.stopPropagation();descargarArchivoCFDI(\''+vid+'\',\'pdf\',this)">PDF</button>';
+
+        rows+='<button class="btn btns" style="font-size:10px;padding:2px 6px;flex:1" title="Descargar XML timbrado del CFDI" onclick="event.stopPropagation();descargarArchivoCFDI(\''+vid+'\',\'xml\',this)">XML</button>';
+
+        rows+='</div>';
+      }
+
       var estadoCancelacion = String(v.estado_cancelacion || '').toUpperCase();
       var cancelacionConfirmada = estadoCancelacion === 'CANCELADO';
       var cancelacionPendiente = !cancelacionConfirmada && (
@@ -2067,6 +2203,17 @@ function buscar(){
       html+='<span class="ck">'+v.clave+'</span></div>';
             html+='<div style="text-align:right;min-width:100px"><div style="font-weight:600;color:#185FA5">$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
       html+='<button class="btn btnw" style="display:block;margin-bottom:3px;width:100%" onclick="event.stopPropagation();ver(\''+v.id+'\');imprimir()">Reimprimir</button>';
+
+      if(v.uuid){
+        html+='<div style="display:flex;gap:3px;margin-bottom:3px">';
+
+        html+='<button class="btn btns" style="font-size:10px;padding:2px 6px;flex:1" title="Descargar representación PDF del CFDI" onclick="event.stopPropagation();descargarArchivoCFDI(\''+v.id+'\',\'pdf\',this)">PDF</button>';
+
+        html+='<button class="btn btns" style="font-size:10px;padding:2px 6px;flex:1" title="Descargar XML timbrado del CFDI" onclick="event.stopPropagation();descargarArchivoCFDI(\''+v.id+'\',\'xml\',this)">XML</button>';
+
+        html+='</div>';
+      }
+
       var estadoCancelacion = String(v.estado_cancelacion || '').toUpperCase();
       var cancelacionConfirmada = estadoCancelacion === 'CANCELADO';
       var cancelacionPendiente = !cancelacionConfirmada && (
