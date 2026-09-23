@@ -2006,13 +2006,24 @@ function renderHist(){
     rows+='<div style="font-weight:600;font-size:13px;color:'+tc+'">$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
     if(!cancelada){
       rows+='<button class="btn btnw" style="display:block;margin-bottom:3px;width:100%" onclick="event.stopPropagation();ver('+vid+');imprimir()">Reimprimir</button>';
+      var cancelacionPendiente = !!v.cancelacion_pendiente ||
+        String(v.estado_cancelacion || '').toUpperCase() === 'PENDIENTE';
+
       if(!v.uuid){
         rows+='<button class="btn btng" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px" id="bfac_'+vid+'" onclick="event.stopPropagation();facturarDesdeHistorial(\''+vid+'\')">Facturar</button>';
-            } else {
+      } else if(cancelacionPendiente) {
+        rows+='<div style="font-size:9px;color:#fcd34d;margin-bottom:3px;font-weight:700">⏳ Cancelación pendiente</div>';
+        rows+='<button class="btn btnw" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px" disabled>⏳ Pendiente SAT</button>';
+      } else {
         rows+='<div style="font-size:9px;color:#6ee7b7;margin-bottom:3px">✓ Facturado</div>';
         rows+='<button class="btn btnw" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px;color:#c00;border-color:#fecaca" id="bcanf_'+vid+'" onclick="event.stopPropagation();cancelarFacturaDesdeHistorial(\''+vid+'\')">✕ Cancelar factura</button>';
       }
-      rows+='<button class="btn btnd" style="font-size:10px;padding:2px 6px;width:100%" onclick="event.stopPropagation();pedirCancelar('+vid+')">Cancelar venta</button>';
+
+      if(cancelacionPendiente) {
+        rows+='<button class="btn btnd" style="font-size:10px;padding:2px 6px;width:100%" disabled title="Espera la confirmación de cancelación del CFDI">Cancelar venta bloqueada</button>';
+      } else {
+        rows+='<button class="btn btnd" style="font-size:10px;padding:2px 6px;width:100%" onclick="event.stopPropagation();pedirCancelar('+vid+')">Cancelar venta</button>';
+      }
     }
     rows+='</div></div>';
   }
@@ -2050,8 +2061,14 @@ function buscar(){
       html+='<span class="ck">'+v.clave+'</span></div>';
             html+='<div style="text-align:right;min-width:100px"><div style="font-weight:600;color:#185FA5">$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
       html+='<button class="btn btnw" style="display:block;margin-bottom:3px;width:100%" onclick="event.stopPropagation();ver(\''+v.id+'\');imprimir()">Reimprimir</button>';
+      var cancelacionPendiente = !!v.cancelacion_pendiente ||
+        String(v.estado_cancelacion || '').toUpperCase() === 'PENDIENTE';
+
       if(!v.uuid){
         html+='<button class="btn btng" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px" id="bfac_'+v.id+'" onclick="event.stopPropagation();facturarDesdeHistorial(\''+v.id+'\')">Facturar</button>';
+      } else if(cancelacionPendiente) {
+        html+='<div style="font-size:9px;color:#fcd34d;margin-bottom:3px;font-weight:700">⏳ Cancelación pendiente</div>';
+        html+='<button class="btn btnw" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px" disabled>⏳ Pendiente SAT</button>';
       } else {
         html+='<div style="font-size:9px;color:#6ee7b7;margin-bottom:3px">✓ Facturado</div>';
         html+='<button class="btn btnw" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px;color:#c00;border-color:#fecaca" id="bcanf_'+v.id+'" onclick="event.stopPropagation();cancelarFacturaDesdeHistorial(\''+v.id+'\')">✕ Cancelar factura</button>';
@@ -2240,6 +2257,17 @@ function cancelarFacturaDesdeHistorial(id) {
     return;
   }
 
+  var cancelacionPendiente = !!venta.cancelacion_pendiente ||
+    String(venta.estado_cancelacion || '').toUpperCase() === 'PENDIENTE';
+
+  if (cancelacionPendiente) {
+    alrt(
+      'La cancelación de este CFDI ya está pendiente de confirmación. No se enviará otra solicitud a PAX.',
+      'i'
+    );
+    return;
+  }
+
   if (!confirm(
     '¿Solicitar la cancelación de la factura de '+venta.cliente+
     ' (UUID: '+venta.uuid+')?\n\n'+
@@ -2284,6 +2312,7 @@ function cancelarFacturaDesdeHistorial(id) {
     // PAX 201: solicitud recibida, NO cancelación confirmada.
     if (res && res.pendiente) {
       venta.cancelacion_pendiente = true;
+      venta.estado_cancelacion = 'PENDIENTE';
 
       if (btn) {
         btn.disabled = true;
@@ -2295,6 +2324,7 @@ function cancelarFacturaDesdeHistorial(id) {
         'i'
       );
 
+      renderHist();
       return;
     }
 
@@ -2302,6 +2332,7 @@ function cancelarFacturaDesdeHistorial(id) {
     if (res && res.ok) {
       venta.uuid = '';
       venta.cancelacion_pendiente = false;
+      venta.estado_cancelacion = 'CANCELADO';
 
       alrt(
         '✓ Cancelación confirmada. La venta ya puede volver a facturarse.',
