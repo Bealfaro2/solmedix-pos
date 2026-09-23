@@ -2006,14 +2006,20 @@ function renderHist(){
     rows+='<div style="font-weight:600;font-size:13px;color:'+tc+'">$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
     if(!cancelada){
       rows+='<button class="btn btnw" style="display:block;margin-bottom:3px;width:100%" onclick="event.stopPropagation();ver('+vid+');imprimir()">Reimprimir</button>';
-      var cancelacionPendiente = !!v.cancelacion_pendiente ||
-        String(v.estado_cancelacion || '').toUpperCase() === 'PENDIENTE';
+      var estadoCancelacion = String(v.estado_cancelacion || '').toUpperCase();
+      var cancelacionConfirmada = estadoCancelacion === 'CANCELADO';
+      var cancelacionPendiente = !cancelacionConfirmada && (
+        !!v.cancelacion_pendiente || estadoCancelacion === 'PENDIENTE'
+      );
 
-      if(!v.uuid){
-        rows+='<button class="btn btng" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px" id="bfac_'+vid+'" onclick="event.stopPropagation();facturarDesdeHistorial(\''+vid+'\')">Facturar</button>';
+      if(cancelacionConfirmada) {
+        rows+='<div style="font-size:10px;color:#6ee7b7;margin:4px 0 3px;font-weight:700">✓ CFDI cancelado</div>';
+        rows+='<div style="font-size:9px;color:#94a3b8;margin-bottom:4px">Confirmado por SAT</div>';
       } else if(cancelacionPendiente) {
-        rows+='<div style="font-size:9px;color:#fcd34d;margin-bottom:3px;font-weight:700">⏳ Cancelación pendiente</div>';
-        rows+='<button class="btn btnw" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px" disabled>⏳ Pendiente SAT</button>';
+        rows+='<div style="font-size:10px;color:#fcd34d;margin:4px 0 3px;font-weight:700">⏳ Cancelación pendiente SAT</div>';
+        rows+='<button class="btn btnw" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px;color:#fcd34d;border-color:rgba(245,158,11,.55);background:rgba(245,158,11,.12);opacity:1" disabled>⏳ Pendiente SAT</button>';
+      } else if(!v.uuid){
+        rows+='<button class="btn btng" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px" id="bfac_'+vid+'" onclick="event.stopPropagation();facturarDesdeHistorial(\''+vid+'\')">Facturar</button>';
       } else {
         rows+='<div style="font-size:9px;color:#6ee7b7;margin-bottom:3px">✓ Facturado</div>';
         rows+='<button class="btn btnw" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px;color:#c00;border-color:#fecaca" id="bcanf_'+vid+'" onclick="event.stopPropagation();cancelarFacturaDesdeHistorial(\''+vid+'\')">✕ Cancelar factura</button>';
@@ -2061,14 +2067,20 @@ function buscar(){
       html+='<span class="ck">'+v.clave+'</span></div>';
             html+='<div style="text-align:right;min-width:100px"><div style="font-weight:600;color:#185FA5">$'+Number(v.total).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>';
       html+='<button class="btn btnw" style="display:block;margin-bottom:3px;width:100%" onclick="event.stopPropagation();ver(\''+v.id+'\');imprimir()">Reimprimir</button>';
-      var cancelacionPendiente = !!v.cancelacion_pendiente ||
-        String(v.estado_cancelacion || '').toUpperCase() === 'PENDIENTE';
+      var estadoCancelacion = String(v.estado_cancelacion || '').toUpperCase();
+      var cancelacionConfirmada = estadoCancelacion === 'CANCELADO';
+      var cancelacionPendiente = !cancelacionConfirmada && (
+        !!v.cancelacion_pendiente || estadoCancelacion === 'PENDIENTE'
+      );
 
-      if(!v.uuid){
-        html+='<button class="btn btng" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px" id="bfac_'+v.id+'" onclick="event.stopPropagation();facturarDesdeHistorial(\''+v.id+'\')">Facturar</button>';
+      if(cancelacionConfirmada) {
+        html+='<div style="font-size:10px;color:#6ee7b7;margin:4px 0 3px;font-weight:700">✓ CFDI cancelado</div>';
+        html+='<div style="font-size:9px;color:#94a3b8;margin-bottom:4px">Confirmado por SAT</div>';
       } else if(cancelacionPendiente) {
-        html+='<div style="font-size:9px;color:#fcd34d;margin-bottom:3px;font-weight:700">⏳ Cancelación pendiente</div>';
-        html+='<button class="btn btnw" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px" disabled>⏳ Pendiente SAT</button>';
+        html+='<div style="font-size:10px;color:#fcd34d;margin:4px 0 3px;font-weight:700">⏳ Cancelación pendiente SAT</div>';
+        html+='<button class="btn btnw" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px;color:#fcd34d;border-color:rgba(245,158,11,.55);background:rgba(245,158,11,.12);opacity:1" disabled>⏳ Pendiente SAT</button>';
+      } else if(!v.uuid){
+        html+='<button class="btn btng" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px" id="bfac_'+v.id+'" onclick="event.stopPropagation();facturarDesdeHistorial(\''+v.id+'\')">Facturar</button>';
       } else {
         html+='<div style="font-size:9px;color:#6ee7b7;margin-bottom:3px">✓ Facturado</div>';
         html+='<button class="btn btnw" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px;color:#c00;border-color:#fecaca" id="bcanf_'+v.id+'" onclick="event.stopPropagation();cancelarFacturaDesdeHistorial(\''+v.id+'\')">✕ Cancelar factura</button>';
@@ -2420,6 +2432,11 @@ function enviarCancelacionFacturaDesdeHistorial_(
       btn.disabled = true;
       btn.innerHTML =
         '⏳ Estado por confirmar';
+      btn.style.color = '#fcd34d';
+      btn.style.borderColor = 'rgba(245,158,11,.65)';
+      btn.style.background = 'rgba(245,158,11,.14)';
+      btn.style.opacity = '1';
+      btn.style.fontWeight = '700';
     }
 
     alrt(
