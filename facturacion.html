@@ -539,23 +539,10 @@
    CONFIGURACIÓN
 ═══════════════════════════════════════════════════════════ */
 
-// CSD Solmedix
-var CSD_CER = '';
-var CSD_KEY = '';
-var NO_CERTIFICADO = '00001000000726614012';
 var API_URL = 'https://script.google.com/macros/s/AKfycbwIArZhtzInrluG0X6jsZiyz6CIWUBDKj2OhHYePY0rmSg0AJ6AmXuXW5WRcqf4kSeK/exec';
 
-// RFC y datos emisor Solmedix
-var EMISOR = {
-  rfc:         'SSM180928AQ7',
-  nombre:      'SOLMEDIX SOLUCIONES MEDICAS',
-  regimen:     '601',
-  cp_emisor:   '64610'
-};
-
-var _ventaData   = null;
-var _swToken     = null;
-var _swTokenExp  = 0;
+// El navegador conserva sólo la venta mínima devuelta por el endpoint público limitado.
+var _ventaData = null;
 
 /* ═══════════════════════════════════════════════════════════
    STEPS UI
@@ -611,51 +598,48 @@ function buscarTicket() {
   hideAlrt('alrt1');
   document.getElementById('venta-preview').style.display = 'none';
 
-  // Buscar en Google Sheets via JSONP
-  var cbName = 'cb_' + Date.now();
+  var cbName = 'afbuscar_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+  var script = document.createElement('script');
+
+  function terminarBusqueda() {
+    btn.textContent = 'Buscar';
+    btn.disabled = false;
+    if (script.parentNode) script.remove();
+  }
+
   window[cbName] = function(data) {
     delete window[cbName];
-    btn.textContent = 'Buscar'; btn.disabled = false;
+    terminarBusqueda();
 
-    var ventas = data.ventas || [];
-    var venta = null;
-    for(var i=0;i<ventas.length;i++){
-      if(ventas[i].clave === clave && ventas[i].estado !== 'cancelada'){
-        venta = ventas[i]; break;
+    if (!data || !data.ok || !data.venta) {
+      var codigo = data && data.codigo;
+      var msg = (data && data.error) || 'No encontramos una venta con esa clave. Verifica que la hayas ingresado correctamente.';
+      if (codigo === 'YA_FACTURADA') {
+        msg = 'Este ticket ya fue facturado anteriormente. Si no recibiste tu factura, escríbenos al <strong>55 1660-9658</strong> y con gusto te la reenviamos.';
+      } else if (codigo === 'FUERA_PERIODO') {
+        msg = 'Solo puedes facturar ventas del mes en curso.';
       }
-    }
-
-    if (!venta) {
-      showAlrt('alrt1','No encontramos una venta con esa clave. Verifica que la hayas ingresado correctamente.','e');
+      showAlrt('alrt1', msg, 'e');
       return;
     }
 
-    // Validar que no haya sido facturado antes
-    if (venta.uuid) {
-      showAlrt('alrt1','Este ticket ya fue facturado anteriormente. Si no recibiste tu factura, escríbenos al <strong>55 1660-9658</strong> y con gusto te la reenviamos.','e');
-      return;
-    }
-
-    // Validar que sea del mes actual
-    var fechaVenta = String(venta.fecha).split('T')[0];
-    var hoy = new Date().toISOString().split('T')[0];
-    if(fechaVenta.slice(0,7) !== hoy.slice(0,7)){
-      showAlrt('alrt1','Solo puedes facturar ventas del mes en curso. Esta venta es del <strong>'+fechaVenta+'</strong> y ya no es facturable.','e');
-      return;
-    }
-
-    _ventaData = venta;
-    renderVentaInfo(venta);
+    _ventaData = data.venta;
+    renderVentaInfo(_ventaData);
     document.getElementById('venta-preview').style.display = 'block';
   };
 
-  var s = document.createElement('script');
-  s.onerror = function(){
-    btn.textContent='Buscar'; btn.disabled=false;
+  script.onerror = function() {
+    delete window[cbName];
+    terminarBusqueda();
     showAlrt('alrt1','Error de conexión. Intenta de nuevo.','e');
   };
-  s.src = API_URL + '?accion=ventas&callback=' + cbName;
-  document.head.appendChild(s);
+
+  script.src = API_URL +
+    '?accion=autofactura_buscar' +
+    '&clave=' + encodeURIComponent(clave) +
+    '&auth_client=autofactura' +
+    '&callback=' + encodeURIComponent(cbName);
+  document.head.appendChild(script);
 }
 
 function renderVentaInfo(v) {
@@ -675,14 +659,16 @@ function renderVentaInfo(v) {
    PASO 2 — GENERAR FACTURA
 ═══════════════════════════════════════════════════════════ */
 function generarFactura() {
-  var rfc     = document.getElementById('inp-rfc').value.trim().toUpperCase();
-  var nombre  = document.getElementById('inp-nombre').value.trim().toUpperCase();
-  var regimen = document.getElementById('inp-regimen').value;
-  var uso     = document.getElementById('inp-uso').value;
-  var cp      = document.getElementById('inp-cp').value.trim();
-  var correo  = document.getElementById('inp-correo').value.trim();
+  var rfc       = document.getElementById('inp-rfc').value.trim().toUpperCase();
+  var nombre    = document.getElementById('inp-nombre').value.trim().toUpperCase();
+  var regimen   = document.getElementById('inp-regimen').value;
+  var uso       = document.getElementById('inp-uso').value;
+  var cp        = document.getElementById('inp-cp').value.trim();
+  var correo    = document.getElementById('inp-correo').value.trim();
   var formaPago = document.getElementById('inp-forma-pago').value || '01';
+
   hideAlrt('alrt2');
+  if(!_ventaData || !_ventaData.clave){ showAlrt('alrt2','Vuelve a validar tu ticket.','e'); return; }
   if(!rfc)               { showAlrt('alrt2','Ingresa tu RFC.','e'); return; }
   if(rfc.length < 12)    { showAlrt('alrt2','El RFC debe tener al menos 12 caracteres.','e'); return; }
   if(!nombre)            { showAlrt('alrt2','Ingresa tu nombre o razón social.','e'); return; }
@@ -695,123 +681,83 @@ function generarFactura() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Generando factura...';
 
-  var venta  = _ventaData;
-  var fecha  = new Date().toLocaleString('sv-SE',{timeZone:'America/Monterrey'}).replace(' ','T');
-  var total  = Number(venta.total||0).toFixed(2);
-  var folio  = String(venta.id||'1').padStart(4,'0');
-
-  var items = venta.items || [];
-  if (!items.length) {
-    items = [{ nombre:'Medicamento de especialidad', precio: Number(venta.total), qty:1, clave_sat:'51201500' }];
-  }
-  var conceptos = items.map(function(it){
-    return {
-      nombre:    it.nombre || 'Medicamento',
-      precio:    Number(it.precio||it.precio_unit||0),
-      qty:       Number(it.qty||it.cantidad||1),
-      clave_sat: it.clave_sat||'51201500'
-    };
-  });
-
-  // Construir XML sin sellar y enviarlo a PAX (sella y timbra)
-  try {
-    var xmlSinSellar = construirXML(rfc, nombre, regimen, uso, cp, correo, folio, fecha, total, conceptos, formaPago);
-    enviarAPax(xmlSinSellar, correo, nombre, btn);
-  } catch (err) {
-    btn.disabled = false;
-    btn.textContent = 'Generar y enviar factura';
-    showAlrt('alrt2','Error al construir XML: ' + err.message,'e');
-  }
+  enviarAutofactura({
+    clave: _ventaData.clave,
+    rfc: rfc,
+    nombre: nombre,
+    regimen: regimen,
+    uso: uso,
+    cp: cp,
+    correo: correo,
+    forma_pago: formaPago
+  }, btn);
 }
 
-// ── Construir XML SIN sellar (PAX se encarga del sellado) ─────
-function construirXML(rfc, nombre, regimen, uso, cp, correo, folio, fecha, total, conceptos, formaPago) {
-  formaPago = String(formaPago || '01').padStart(2, '0');
-  var subtotal = conceptos.reduce(function(s,c){ return s + c.precio * c.qty; }, 0).toFixed(2);
+// El servidor vuelve a localizar la venta por clave y construye el CFDI.
+// El navegador ya no envía XML, total, conceptos ni folio como autoridad.
+function enviarAutofactura(datos, btn) {
+  var cbName = 'aftimbrar_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+  var script = document.createElement('script');
+  var terminado = false;
 
-  var esc = function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
-
-  var conceptosXML = conceptos.map(function(c){
-    var imp = (c.precio * c.qty).toFixed(2);
-    return '<cfdi:Concepto ClaveProdServ="'+(c.clave_sat||'51201500')+'" '+
-      'Cantidad="'+c.qty+'" ClaveUnidad="H87" '+
-      'Descripcion="'+esc(c.nombre)+'" '+
-      'ValorUnitario="'+c.precio.toFixed(2)+'" '+
-      'Importe="'+imp+'" ObjetoImp="01"/>';
-  }).join('');
-
-  var xml =
-    '<?xml version="1.0" encoding="UTF-8"?>'+
-    '<cfdi:Comprobante '+
-      'xmlns:cfdi="http://www.sat.gob.mx/cfd/4" '+
-      'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '+
-      'xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd" '+
-      'Version="4.0" Serie="F" Folio="'+folio+'" Fecha="'+fecha+'" '+
-      'Sello="" NoCertificado="'+NO_CERTIFICADO+'" Certificado="" '+
-      'FormaPago="'+formaPago+'" '+
-      'SubTotal="'+subtotal+'" Moneda="MXN" Total="'+subtotal+'" '+
-      'TipoDeComprobante="I" Exportacion="01" MetodoPago="PUE" '+
-      'LugarExpedicion="64610">'+
-    (rfc === 'XAXX010101000' ? '<cfdi:InformacionGlobal Periodicidad="04" Meses="' + (new Date().getMonth()+1).toString().padStart(2,'0') + '" Año="' + new Date().getFullYear() + '"/>' : '') +
-    '<cfdi:Emisor Rfc="SSM180928AQ7" Nombre="SOLMEDIX SOLUCIONES MEDICAS" RegimenFiscal="601"/>'+
-    '<cfdi:Receptor '+
-      'Rfc="'+rfc+'" '+
-      'Nombre="'+esc(nombre)+'" '+
-      'DomicilioFiscalReceptor="'+cp+'" '+
-      'RegimenFiscalReceptor="'+regimen+'" '+
-      'UsoCFDI="'+uso+'"/>'+
-    '<cfdi:Conceptos>'+conceptosXML+'</cfdi:Conceptos>'+
-    '</cfdi:Comprobante>';
-
-  return xml;
-}
-
-
-// ── Enviar XML sin sellar a PAX vía Apps Script ───────────────
-function enviarAPax(xml, correo, nombre, btn) {
-  var cbName = 'paxcb_' + Math.random().toString(36).slice(2);
-  var timeout = setTimeout(function(){
+  var timeout = setTimeout(function() {
+    if (terminado) return;
+    terminado = true;
     delete window[cbName];
-    var sc = document.getElementById('sc_'+cbName);
-    if (sc) sc.remove();
+    if (script.parentNode) script.remove();
     btn.disabled = false;
     btn.textContent = 'Generar y enviar factura';
-    showAlrt('alrt2','Tiempo de espera agotado. Intenta de nuevo.','e');
+    showAlrt('alrt2','Tiempo de espera agotado. Verifica si recibiste tu factura antes de reintentar.','e');
   }, 60000);
 
   window[cbName] = function(res) {
+    if (terminado) return;
+    terminado = true;
     clearTimeout(timeout);
     delete window[cbName];
-    var sc = document.getElementById('sc_'+cbName);
-    if (sc) sc.remove();
+    if (script.parentNode) script.remove();
     btn.disabled = false;
     btn.textContent = 'Generar y enviar factura';
 
     if (!res || !res.ok) {
-      showAlrt('alrt2','Error al timbrar: ' + ((res && res.error) || 'desconocido'), 'e');
-      console.error('PAX error:', res);
+      var msg = (res && res.error) || 'No fue posible generar la factura.';
+      showAlrt('alrt2', msg, 'e');
       return;
     }
-    console.log('PAX respuesta:', res.respuesta);
-    showAlrt('alrt2','¡Factura timbrada correctamente!','s');
+
+    if (res.uuid) {
+      document.getElementById('uuid-text').textContent = res.uuid;
+      document.getElementById('uuid-box').style.display = 'block';
+    }
     setStep(3);
   };
 
-  var script = document.createElement('script');
-  script.id = 'sc_' + cbName;
-  script.onerror = function(){
+  script.onerror = function() {
+    if (terminado) return;
+    terminado = true;
     clearTimeout(timeout);
     delete window[cbName];
-    script.remove();
+    if (script.parentNode) script.remove();
     btn.disabled = false;
     btn.textContent = 'Generar y enviar factura';
     showAlrt('alrt2','Error de conexión. Verifica tu internet.','e');
   };
-  script.src = API_URL + '?accion=sellar_timbrar&xml=' + encodeURIComponent(xml) + '&correo=' + encodeURIComponent(correo || '') + '&venta_id=' + encodeURIComponent((_ventaData && _ventaData.id) || '') + '&callback=' + cbName;
+
+  script.src = API_URL +
+    '?accion=autofactura_timbrar' +
+    '&clave=' + encodeURIComponent(datos.clave) +
+    '&rfc=' + encodeURIComponent(datos.rfc) +
+    '&nombre=' + encodeURIComponent(datos.nombre) +
+    '&regimen=' + encodeURIComponent(datos.regimen) +
+    '&uso=' + encodeURIComponent(datos.uso) +
+    '&cp=' + encodeURIComponent(datos.cp) +
+    '&correo=' + encodeURIComponent(datos.correo) +
+    '&forma_pago=' + encodeURIComponent(datos.forma_pago) +
+    '&auth_client=autofactura' +
+    '&callback=' + encodeURIComponent(cbName);
+
   document.head.appendChild(script);
 }
-
-// ── Enviar XML sellado al Apps Script ─────────────────────────
 
 function reiniciar(){
   _ventaData = null;
