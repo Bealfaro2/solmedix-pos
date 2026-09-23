@@ -2235,45 +2235,125 @@ function facturarDesdeHistorial(id) {
 
 function cancelarFacturaDesdeHistorial(id) {
   var venta = ventas.find(function(v){ return String(v.id)===String(id); });
-  if (!venta || !venta.uuid) { alrt('Esta venta no tiene factura para cancelar.','e'); return; }
+  if (!venta || !venta.uuid) {
+    alrt('Esta venta no tiene factura para cancelar.','e');
+    return;
+  }
 
-  if (!confirm('¿Cancelar la factura de '+venta.cliente+' (UUID: '+venta.uuid+')?\n\nEsta acción es ante el SAT y no se puede deshacer fácilmente. Después de cancelar, podrás volver a facturar esta venta si es necesario.')) return;
+  if (!confirm(
+    '¿Solicitar la cancelación de la factura de '+venta.cliente+
+    ' (UUID: '+venta.uuid+')?\n\n'+
+    'La solicitud se enviará al SAT. Que la solicitud sea recibida NO significa que el CFDI ya esté cancelado.\n\n'+
+    'No podrás refacturar esta venta hasta que la cancelación quede confirmada definitivamente.'
+  )) return;
 
   var btn = document.getElementById('bcanf_'+id);
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Cancelando...'; }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Enviando solicitud...';
+  }
 
   var cbName = 'cancelcb_' + Math.random().toString(36).slice(2);
+
   var timeout = setTimeout(function(){
     delete window[cbName];
-    var sc = document.getElementById('sc_'+cbName); if (sc) sc.remove();
-    if (btn) { btn.disabled = false; btn.innerHTML = '✕ Cancelar factura'; }
-    alrt('Tiempo de espera agotado al cancelar.','e');
+
+    var sc = document.getElementById('sc_'+cbName);
+    if (sc) sc.remove();
+
+    // Estado incierto: NO reactivar el botón para evitar un segundo envío.
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Estado por confirmar';
+    }
+
+    alrt(
+      'No se recibió respuesta a tiempo. No repitas la cancelación: la solicitud podría seguir procesándose. Actualiza los datos antes de intentar cualquier acción.',
+      'i'
+    );
   }, 30000);
 
   window[cbName] = function(res) {
     clearTimeout(timeout);
     delete window[cbName];
-    var sc = document.getElementById('sc_'+cbName); if (sc) sc.remove();
+
+    var sc = document.getElementById('sc_'+cbName);
+    if (sc) sc.remove();
+
+    // PAX 201: solicitud recibida, NO cancelación confirmada.
+    if (res && res.pendiente) {
+      venta.cancelacion_pendiente = true;
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Cancelación pendiente';
+      }
+
+      alrt(
+        'Solicitud de cancelación recibida. El CFDI permanece vigente mientras el SAT procesa la solicitud. No se puede refacturar todavía.',
+        'i'
+      );
+
+      return;
+    }
+
+    // Este camino se reserva para una confirmación definitiva futura.
     if (res && res.ok) {
       venta.uuid = '';
-      alrt('✓ Factura cancelada correctamente.','s');
+      venta.cancelacion_pendiente = false;
+
+      alrt(
+        '✓ Cancelación confirmada. La venta ya puede volver a facturarse.',
+        's'
+      );
+
       renderHist();
-    } else {
-      if (btn) { btn.disabled = false; btn.innerHTML = '✕ Cancelar factura'; }
-      alrt('Error al cancelar: '+((res && res.error) || 'desconocido'),'e');
+      return;
     }
+
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '✕ Cancelar factura';
+    }
+
+    alrt(
+      'No fue posible confirmar la cancelación: '+
+      ((res && res.error) || 'respuesta desconocida'),
+      'e'
+    );
   };
 
   var script = document.createElement('script');
   script.id = 'sc_'+cbName;
+
   script.onerror = function(){
     clearTimeout(timeout);
     delete window[cbName];
     script.remove();
-    if (btn) { btn.disabled = false; btn.innerHTML = '✕ Cancelar factura'; }
-    alrt('Error de conexión al cancelar.','e');
+
+    // Tampoco reactivamos aquí: no sabemos si el servidor alcanzó a
+    // enviar la solicitud a PAX antes del error de red.
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Estado por confirmar';
+    }
+
+    alrt(
+      'Hubo un problema de conexión. No repitas la cancelación: primero actualiza los datos para evitar enviar dos solicitudes al SAT.',
+      'i'
+    );
   };
-  script.src = authUrl(API_URL + '?accion=cancelar_cfdi&uuid=' + encodeURIComponent(venta.uuid) + '&callback=' + cbName, 'pos');
+
+  script.src = authUrl(
+    API_URL +
+    '?accion=cancelar_cfdi&uuid=' +
+    encodeURIComponent(venta.uuid) +
+    '&callback=' +
+    cbName,
+    'pos'
+  );
+
   document.head.appendChild(script);
 }
 
