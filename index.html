@@ -2250,15 +2250,114 @@ function facturarDesdeHistorial(id) {
 } // cierra facturarDesdeHistorial
 
 
+function abrirSelectorMotivoCancelacionSAT_(onSeleccionar) {
+  var anterior = document.getElementById('overlay-motivo-cancelacion');
+  if (anterior) anterior.remove();
+
+  var motivosCancelacion = {
+    '02':'02 - Comprobante emitido con errores sin relación',
+    '03':'03 - No se llevó a cabo la operación',
+    '04':'04 - Operación nominativa relacionada en una factura global'
+  };
+
+  var overlay = document.createElement('div');
+  overlay.id = 'overlay-motivo-cancelacion';
+  overlay.className = 'overlay show';
+  overlay.style.zIndex = '10000';
+
+  overlay.innerHTML =
+    '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="titulo-motivo-cancelacion" onclick="event.stopPropagation()">' +
+      '<h2 id="titulo-motivo-cancelacion">Motivo de cancelación SAT</h2>' +
+
+      '<div style="font-size:12px;color:var(--text-2);line-height:1.55;margin-bottom:14px">' +
+        'Selecciona el motivo que realmente corresponde a esta cancelación.' +
+      '</div>' +
+
+      '<div class="fr">' +
+        '<label for="motivo-cancelacion-sat">Motivo</label>' +
+
+        '<select id="motivo-cancelacion-sat">' +
+          '<option value="">— Selecciona un motivo —</option>' +
+          '<option value="02">02 — Comprobante emitido con errores sin relación</option>' +
+          '<option value="03">03 — No se llevó a cabo la operación</option>' +
+          '<option value="04">04 — Operación nominativa relacionada en una factura global</option>' +
+        '</select>' +
+      '</div>' +
+
+      '<div style="font-size:11px;color:#fcd34d;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.18);border-radius:8px;padding:9px 10px;line-height:1.45">' +
+        'El motivo 01 no está habilitado todavía porque requiere un CFDI sustituto relacionado correctamente.' +
+      '</div>' +
+
+      '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">' +
+        '<button type="button" class="btn" id="btn-volver-motivo-cancelacion">Volver</button>' +
+        '<button type="button" class="btn btnp" id="btn-continuar-motivo-cancelacion" disabled>Continuar</button>' +
+      '</div>' +
+    '</div>';
+
+  document.body.appendChild(overlay);
+
+  var select =
+    document.getElementById('motivo-cancelacion-sat');
+
+  var btnVolver =
+    document.getElementById('btn-volver-motivo-cancelacion');
+
+  var btnContinuar =
+    document.getElementById('btn-continuar-motivo-cancelacion');
+
+  btnVolver.onclick = function(){
+    overlay.remove();
+  };
+
+  select.onchange = function(){
+    btnContinuar.disabled =
+      !motivosCancelacion[select.value];
+  };
+
+  btnContinuar.onclick = function(){
+    var motivo =
+      String(select.value || '').trim();
+
+    var descripcion =
+      motivosCancelacion[motivo];
+
+    if (!descripcion) {
+      alrt('Selecciona un motivo SAT válido.','e');
+      return;
+    }
+
+    overlay.remove();
+
+    onSeleccionar(
+      motivo,
+      descripcion
+    );
+  };
+
+  setTimeout(function(){
+    select.focus();
+  }, 0);
+}
+
+
 function cancelarFacturaDesdeHistorial(id) {
-  var venta = ventas.find(function(v){ return String(v.id)===String(id); });
+  var venta = ventas.find(function(v){
+    return String(v.id)===String(id);
+  });
+
   if (!venta || !venta.uuid) {
-    alrt('Esta venta no tiene factura para cancelar.','e');
+    alrt(
+      'Esta venta no tiene factura para cancelar.',
+      'e'
+    );
     return;
   }
 
-  var cancelacionPendiente = !!venta.cancelacion_pendiente ||
-    String(venta.estado_cancelacion || '').toUpperCase() === 'PENDIENTE';
+  var cancelacionPendiente =
+    !!venta.cancelacion_pendiente ||
+    String(
+      venta.estado_cancelacion || ''
+    ).toUpperCase() === 'PENDIENTE';
 
   if (cancelacionPendiente) {
     alrt(
@@ -2268,58 +2367,59 @@ function cancelarFacturaDesdeHistorial(id) {
     return;
   }
 
-  var motivosCancelacion = {
-    '02':'02 - Comprobante emitido con errores sin relación',
-    '03':'03 - No se llevó a cabo la operación',
-    '04':'04 - Operación nominativa relacionada en una factura global'
-  };
+  abrirSelectorMotivoCancelacionSAT_(
+    function(motivoCancelacion, descripcionMotivo){
 
-  var motivoCancelacion = window.prompt(
-    'Selecciona el motivo SAT de cancelación:\n\n'+
-    '02 - Comprobante emitido con errores sin relación\n'+
-    '03 - No se llevó a cabo la operación\n'+
-    '04 - Operación nominativa relacionada en una factura global\n\n'+
-    'El motivo 01 no está habilitado todavía porque requiere CFDI sustituto.\n\n'+
-    'Escribe 02, 03 o 04:',
-    ''
+      if (!confirm(
+        '¿Solicitar la cancelación de la factura de '+
+        venta.cliente+
+        ' (UUID: '+venta.uuid+')?\n\n'+
+        'Motivo SAT: '+descripcionMotivo+'\n\n'+
+        'La solicitud se enviará al SAT. Que la solicitud sea recibida NO significa que el CFDI ya esté cancelado.\n\n'+
+        'No podrás refacturar esta venta hasta que la cancelación quede confirmada definitivamente.'
+      )) return;
+
+      enviarCancelacionFacturaDesdeHistorial_(
+        id,
+        venta,
+        motivoCancelacion
+      );
+    }
   );
+}
 
-  if (motivoCancelacion === null) return;
 
-  motivoCancelacion = String(motivoCancelacion || '').trim();
-
-  if (!motivosCancelacion[motivoCancelacion]) {
-    alrt('Motivo SAT inválido. Usa 02, 03 o 04.','e');
-    return;
-  }
-
-  if (!confirm(
-    '¿Solicitar la cancelación de la factura de '+venta.cliente+
-    ' (UUID: '+venta.uuid+')?\n\n'+
-    'Motivo SAT: '+motivosCancelacion[motivoCancelacion]+'\n\n'+
-    'La solicitud se enviará al SAT. Que la solicitud sea recibida NO significa que el CFDI ya esté cancelado.\n\n'+
-    'No podrás refacturar esta venta hasta que la cancelación quede confirmada definitivamente.'
-  )) return;
-
-  var btn = document.getElementById('bcanf_'+id);
+function enviarCancelacionFacturaDesdeHistorial_(
+  id,
+  venta,
+  motivoCancelacion
+) {
+  var btn =
+    document.getElementById('bcanf_'+id);
 
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span>Enviando solicitud...';
+    btn.innerHTML =
+      '<span class="spinner"></span>Enviando solicitud...';
   }
 
-  var cbName = 'cancelcb_' + Math.random().toString(36).slice(2);
+  var cbName =
+    'cancelcb_' +
+    Math.random().toString(36).slice(2);
 
   var timeout = setTimeout(function(){
     delete window[cbName];
 
-    var sc = document.getElementById('sc_'+cbName);
+    var sc =
+      document.getElementById('sc_'+cbName);
+
     if (sc) sc.remove();
 
-    // Estado incierto: NO reactivar el botón para evitar un segundo envío.
+    // Estado incierto: NO reactivar el botón.
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '⏳ Estado por confirmar';
+      btn.innerHTML =
+        '⏳ Estado por confirmar';
     }
 
     alrt(
@@ -2328,21 +2428,26 @@ function cancelarFacturaDesdeHistorial(id) {
     );
   }, 30000);
 
+
   window[cbName] = function(res) {
     clearTimeout(timeout);
     delete window[cbName];
 
-    var sc = document.getElementById('sc_'+cbName);
+    var sc =
+      document.getElementById('sc_'+cbName);
+
     if (sc) sc.remove();
 
-    // PAX 201: solicitud recibida, NO cancelación confirmada.
+    // PAX 201 = solicitud recibida.
+    // NO significa cancelación confirmada.
     if (res && res.pendiente) {
       venta.cancelacion_pendiente = true;
       venta.estado_cancelacion = 'PENDIENTE';
 
       if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '⏳ Cancelación pendiente';
+        btn.innerHTML =
+          '⏳ Cancelación pendiente';
       }
 
       alrt(
@@ -2354,15 +2459,17 @@ function cancelarFacturaDesdeHistorial(id) {
       return;
     }
 
-    // Fail-closed: una respuesta positiva no habilita refacturación por sí sola.
-    // La confirmación definitiva se toma del SAT mediante la reconciliación.
+    // Fail-closed.
+    // Una respuesta positiva tampoco habilita
+    // refacturación hasta consultar directamente SAT.
     if (res && res.ok) {
       venta.cancelacion_pendiente = true;
       venta.estado_cancelacion = 'PENDIENTE';
 
       if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '⏳ Pendiente SAT';
+        btn.innerHTML =
+          '⏳ Pendiente SAT';
       }
 
       alrt(
@@ -2376,29 +2483,37 @@ function cancelarFacturaDesdeHistorial(id) {
 
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = '✕ Cancelar factura';
+      btn.innerHTML =
+        '✕ Cancelar factura';
     }
 
     alrt(
       'No fue posible confirmar la cancelación: '+
-      ((res && res.error) || 'respuesta desconocida'),
+      ((res && res.error) ||
+        'respuesta desconocida'),
       'e'
     );
   };
 
-  var script = document.createElement('script');
-  script.id = 'sc_'+cbName;
+
+  var script =
+    document.createElement('script');
+
+  script.id =
+    'sc_'+cbName;
 
   script.onerror = function(){
     clearTimeout(timeout);
     delete window[cbName];
     script.remove();
 
-    // Tampoco reactivamos aquí: no sabemos si el servidor alcanzó a
-    // enviar la solicitud a PAX antes del error de red.
+    // Tampoco reactivar:
+    // no sabemos si el servidor alcanzó a
+    // enviar la solicitud a PAX.
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '⏳ Estado por confirmar';
+      btn.innerHTML =
+        '⏳ Estado por confirmar';
     }
 
     alrt(
@@ -2406,6 +2521,7 @@ function cancelarFacturaDesdeHistorial(id) {
       'i'
     );
   };
+
 
   script.src = authUrl(
     API_URL +
