@@ -455,6 +455,12 @@ table.it{font-size:12px;margin-top:6px}
 .modal-title-row{display:flex;align-items:center;gap:8px}
 .modal-title-icon{display:inline-flex;width:19px;height:19px;color:#8eb5da}
 
+
+/* Cancelacion fiscal: contraste y jerarquia en Historial y Busqueda. */
+.btn.btn-cancelar-factura{display:block;width:100%;min-height:36px;margin-bottom:6px;padding:6px 8px;font-size:11px;font-weight:600;line-height:1.35;color:#fecaca;background:#45232e;border-color:#b85c70}
+.btn.btn-cancelar-factura:hover:not(:disabled){color:#fff1f2;background:#5b2b39;border-color:#fb7185}
+.btn.btn-cancelar-factura:focus-visible{outline:2px solid #fda4af;outline-offset:2px}
+.btn.btn-cancelar-factura:disabled{opacity:.45;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -2837,7 +2843,7 @@ function renderHist(){
         rows+='<button class="btn btng" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px" id="bfac_'+vid+'" onclick="event.stopPropagation();facturarDesdeHistorial(\''+vid+'\')">Facturar</button>';
       } else {
         rows+='<div style="font-size:9px;color:#6ee7b7;margin-bottom:3px">✓ Facturado</div>';
-        rows+='<button class="btn btnw" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px;color:#c00;border-color:#fecaca" id="bcanf_'+vid+'" onclick="event.stopPropagation();cancelarFacturaDesdeHistorial(\''+vid+'\')">✕ Cancelar factura</button>';
+        rows+='<button class="btn btn-cancelar-factura" id="bcanf_'+vid+'" onclick="event.stopPropagation();cancelarFacturaDesdeHistorial(\''+vid+'\')">✕ Cancelar factura</button>';
       }
 
       if(cancelacionPendiente) {
@@ -2914,7 +2920,7 @@ function buscar(){
         html+='<button class="btn btng" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px" id="bfac_'+v.id+'" onclick="event.stopPropagation();facturarDesdeHistorial(\''+v.id+'\')">Facturar</button>';
       } else {
         html+='<div style="font-size:9px;color:#6ee7b7;margin-bottom:3px">✓ Facturado</div>';
-        html+='<button class="btn btnw" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px;color:#c00;border-color:#fecaca" id="bcanf_'+v.id+'" onclick="event.stopPropagation();cancelarFacturaDesdeHistorial(\''+v.id+'\')">✕ Cancelar factura</button>';
+        html+='<button class="btn btn-cancelar-factura" id="bcanf_'+v.id+'" onclick="event.stopPropagation();cancelarFacturaDesdeHistorial(\''+v.id+'\')">✕ Cancelar factura</button>';
       }
 
       if(v.uuid){
