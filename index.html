@@ -179,6 +179,43 @@ table.it{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
 .modal{background:var(--bg-2);border:1px solid rgba(148,163,184,.18);border-radius:var(--radius-lg);padding:1.75rem;width:90%;max-width:430px;box-shadow:var(--shadow-lg);animation:slideUp .25s cubic-bezier(.22,.68,0,1.2) both}
 .modal h2{font-size:17px;font-weight:700;margin-bottom:1.1rem;color:var(--text)}
 
+/* HISTORIAL FISCAL */
+.modal-fiscal{max-width:720px;max-height:86vh;overflow:hidden;padding:0}
+.fiscal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 20px 15px;border-bottom:1px solid var(--border)}
+.fiscal-head h2{margin:0 0 3px}
+.fiscal-subtitle{font:500 10px var(--mono);color:var(--text-3)}
+.fiscal-close{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-2);font-size:20px;line-height:1;cursor:pointer}
+.fiscal-close:hover{background:rgba(148,163,184,.08);color:var(--text)}
+.fiscal-body{padding:16px 20px 20px;overflow-y:auto;max-height:calc(86vh - 68px)}
+.fiscal-note{font-size:10.5px;line-height:1.55;color:var(--text-3);background:#0f1929;border:1px solid var(--border-soft);border-radius:9px;padding:9px 10px;margin-bottom:12px}
+.fiscal-chain{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px;margin-bottom:12px;border:1px solid rgba(43,127,212,.15);background:rgba(43,127,212,.055);border-radius:10px}
+.fiscal-chain-label{font-size:10px;color:#8ca2bb;margin-right:3px}
+.fiscal-chain-node{font:600 10px var(--mono);color:#a9cff2;background:rgba(43,127,212,.10);border:1px solid rgba(43,127,212,.16);padding:4px 7px;border-radius:7px}
+.fiscal-chain-arrow{font-size:12px;color:#667b93}
+.fiscal-card{border:1px solid var(--border);background:#0f1929;border-radius:11px;padding:12px;margin-bottom:9px}
+.fiscal-card-current{border-color:rgba(43,127,212,.35);box-shadow:inset 3px 0 0 rgba(43,127,212,.65)}
+.fiscal-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.fiscal-card-title{font-size:12px;font-weight:700;color:var(--text)}
+.fiscal-uuid{font:500 10px var(--mono);color:#8fa2b9;word-break:break-all;margin-top:3px}
+.fiscal-badge{display:inline-flex;align-items:center;padding:3px 7px;border-radius:99px;font-size:9.5px;font-weight:700;border:1px solid var(--border);color:#9fb0c4;background:rgba(148,163,184,.06);white-space:nowrap}
+.fiscal-badge.current{color:#9bc9f0;border-color:rgba(43,127,212,.24);background:rgba(43,127,212,.09)}
+.fiscal-badge.ok{color:#73d4b1;border-color:rgba(16,185,129,.22);background:rgba(16,185,129,.08)}
+.fiscal-badge.warn{color:#f1c76f;border-color:rgba(245,158,11,.24);background:rgba(245,158,11,.08)}
+.fiscal-badge.bad{color:#efa3a3;border-color:rgba(239,68,68,.23);background:rgba(239,68,68,.08)}
+.fiscal-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px;margin-top:8px}
+.fiscal-meta>div{min-width:0}
+.fiscal-meta span{display:block;font-size:9px;color:var(--text-3);margin-bottom:2px}
+.fiscal-meta strong{display:block;font-size:10.5px;font-weight:550;color:#c4cfdd;overflow-wrap:anywhere}
+.fiscal-files{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.fiscal-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-soft)}
+.fiscal-actions .btn{min-height:32px;font-size:10.5px;padding:5px 10px}
+@media(max-width:560px){
+  .modal-fiscal{width:94%;max-height:90vh}
+  .fiscal-body{padding:13px;max-height:calc(90vh - 66px)}
+  .fiscal-head{padding:15px 14px 12px}
+  .fiscal-meta{grid-template-columns:1fr}
+}
+
 .spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(148,163,184,.2);border-top-color:var(--blue-bright);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
@@ -744,6 +781,36 @@ table.it{font-size:12px;margin-top:6px}
   </div>
 </div>
 
+<!-- MODAL HISTORIAL FISCAL -->
+<div class="overlay" id="overlay-historial-fiscal"
+     onclick="if(event.target===this)cerrarHistorialFiscal()">
+  <div class="modal modal-fiscal"
+       role="dialog"
+       aria-modal="true"
+       aria-labelledby="hf-title">
+
+    <div class="fiscal-head">
+      <div>
+        <h2 id="hf-title">Historial fiscal</h2>
+        <div class="fiscal-subtitle" id="hf-subtitle"></div>
+      </div>
+
+      <button type="button"
+              class="fiscal-close"
+              onclick="cerrarHistorialFiscal()"
+              aria-label="Cerrar">×</button>
+    </div>
+
+    <div class="fiscal-body" id="hf-body">
+      <div class="es">
+        <span class="spinner"></span>
+        Cargando historial fiscal...
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- MODAL NUEVO CLIENTE -->
 <div class="overlay" id="overlay" onclick="cerrarModal(event)">
   <div class="modal">
@@ -998,6 +1065,618 @@ function descargarArchivoCFDI(ventaId, tipo, btn) {
     }
   });
 }
+
+// ── CFDI: historial fiscal visual, sólo lectura ───────────────
+function escFiscal_(v) {
+  return String(
+    v === undefined || v === null
+      ? ''
+      : v
+  )
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+
+function uuidFiscalCorto_(uuid) {
+  uuid = String(uuid || '');
+
+  return uuid.length > 16
+    ? uuid.slice(0,8) + '…' + uuid.slice(-4)
+    : uuid;
+}
+
+
+function fechaFiscalVisual_(v) {
+  var s =
+    String(v || '').trim();
+
+  if (!s) return '—';
+
+  return s
+    .replace('T',' ')
+    .slice(0,16);
+}
+
+
+function etiquetaEstadoFiscal_(estado) {
+  estado =
+    String(estado || '')
+      .toUpperCase();
+
+  var mapa = {
+    ACTUAL:'CFDI actual',
+    CANCELACION_PENDIENTE:'Cancelación pendiente',
+    CANCELADO:'Cancelado',
+    HISTORICO:'CFDI histórico',
+    SUSTITUTO:'CFDI sustituto',
+    REGISTRADO:'Registrado'
+  };
+
+  return (
+    mapa[estado] ||
+    estado ||
+    'Registrado'
+  );
+}
+
+
+function claseEstadoFiscal_(estado) {
+  estado =
+    String(estado || '')
+      .toUpperCase();
+
+  if (estado === 'CANCELADO') {
+    return 'bad';
+  }
+
+  if (
+    estado ===
+    'CANCELACION_PENDIENTE'
+  ) {
+    return 'warn';
+  }
+
+  if (estado === 'ACTUAL') {
+    return 'current';
+  }
+
+  return '';
+}
+
+
+function cerrarHistorialFiscal() {
+  var overlay =
+    document.getElementById(
+      'overlay-historial-fiscal'
+    );
+
+  if (overlay) {
+    overlay.classList.remove(
+      'show'
+    );
+  }
+}
+
+
+function renderHistorialFiscalModal_(res) {
+  var body =
+    document.getElementById(
+      'hf-body'
+    );
+
+  var subtitle =
+    document.getElementById(
+      'hf-subtitle'
+    );
+
+  if (!body || !subtitle) {
+    return;
+  }
+
+  subtitle.textContent =
+    'Venta #' +
+    String(
+      res.venta_id || ''
+    ).padStart(4,'0') +
+    (
+      res.sucursal
+        ? ' · ' + res.sucursal
+        : ''
+    );
+
+  var cfdis =
+    Array.isArray(res.cfdis)
+      ? res.cfdis
+      : [];
+
+  var cadena =
+    Array.isArray(res.cadena_uuid)
+      ? res.cadena_uuid
+      : [];
+
+  var resumen =
+    res.resumen || {};
+
+  var html = '';
+
+  html +=
+    '<div class="fiscal-note">' +
+      'Vista histórica de los registros fiscales guardados por Solmedix. ' +
+      'Abrir este panel no consulta SAT en tiempo real ni modifica la venta.' +
+    '</div>';
+
+  if (cadena.length > 1) {
+    html +=
+      '<div class="fiscal-chain">';
+
+    html +=
+      '<span class="fiscal-chain-label">' +
+        'Cadena de sustitución' +
+      '</span>';
+
+    for (
+      var ci = 0;
+      ci < cadena.length;
+      ci++
+    ) {
+      var cu =
+        String(
+          cadena[ci] || ''
+        );
+
+      if (ci > 0) {
+        html +=
+          '<span class="fiscal-chain-arrow">→</span>';
+      }
+
+      html +=
+        '<span class="fiscal-chain-node" title="' +
+          escFiscal_(cu) +
+        '">' +
+          escFiscal_(
+            uuidFiscalCorto_(cu)
+          ) +
+        '</span>';
+    }
+
+    html += '</div>';
+  }
+
+  if (!cfdis.length) {
+    body.innerHTML =
+      '<div class="es">' +
+        'No hay CFDI registrados para esta venta.' +
+      '</div>';
+
+    return;
+  }
+
+  for (
+    var i = 0;
+    i < cfdis.length;
+    i++
+  ) {
+    var c =
+      cfdis[i] || {};
+
+    var uuid =
+      String(
+        c.uuid || ''
+      );
+
+    var estado =
+      String(
+        c.estado_visual || ''
+      ).toUpperCase();
+
+    var cancelacion =
+      c.cancelacion || null;
+
+    var esActual =
+      c.es_actual === true;
+
+    html +=
+      '<div class="fiscal-card' +
+        (
+          esActual
+            ? ' fiscal-card-current'
+            : ''
+        ) +
+      '">';
+
+    html +=
+      '<div class="fiscal-card-head">';
+
+    html +=
+      '<div style="min-width:0">';
+
+    html +=
+      '<div class="fiscal-card-title">' +
+        (
+          esActual
+            ? 'CFDI actual'
+            : 'CFDI registrado'
+        ) +
+      '</div>';
+
+    html +=
+      '<div class="fiscal-uuid">' +
+        escFiscal_(uuid) +
+      '</div>';
+
+    html += '</div>';
+
+    html +=
+      '<span class="fiscal-badge ' +
+        claseEstadoFiscal_(estado) +
+      '">' +
+        escFiscal_(
+          etiquetaEstadoFiscal_(
+            estado
+          )
+        ) +
+      '</span>';
+
+    html += '</div>';
+
+    html +=
+      '<div class="fiscal-meta">';
+
+    html +=
+      '<div>' +
+        '<span>Fecha CFDI</span>' +
+        '<strong>' +
+          escFiscal_(
+            fechaFiscalVisual_(
+              c.fecha_cfdi
+            )
+          ) +
+        '</strong>' +
+      '</div>';
+
+    html +=
+      '<div>' +
+        '<span>Estado del archivo</span>' +
+        '<strong>' +
+          escFiscal_(
+            c.archivo_estado || '—'
+          ) +
+        '</strong>' +
+      '</div>';
+
+    if (c.sustituye_a) {
+      html +=
+        '<div>' +
+          '<span>Sustituye a</span>' +
+          '<strong title="' +
+            escFiscal_(
+              c.sustituye_a
+            ) +
+          '">' +
+            escFiscal_(
+              uuidFiscalCorto_(
+                c.sustituye_a
+              )
+            ) +
+          '</strong>' +
+        '</div>';
+    }
+
+    if (c.sustituido_por) {
+      html +=
+        '<div>' +
+          '<span>Sustituido por</span>' +
+          '<strong title="' +
+            escFiscal_(
+              c.sustituido_por
+            ) +
+          '">' +
+            escFiscal_(
+              uuidFiscalCorto_(
+                c.sustituido_por
+              )
+            ) +
+          '</strong>' +
+        '</div>';
+    }
+
+    if (cancelacion) {
+      html +=
+        '<div>' +
+          '<span>Cancelación local</span>' +
+          '<strong>' +
+            escFiscal_(
+              cancelacion.estado_local ||
+              '—'
+            ) +
+          '</strong>' +
+        '</div>';
+
+      if (
+        cancelacion
+          .sat_estado_registrado
+      ) {
+        html +=
+          '<div>' +
+            '<span>Último estado SAT registrado</span>' +
+            '<strong>' +
+              escFiscal_(
+                cancelacion
+                  .sat_estado_registrado
+              ) +
+            '</strong>' +
+          '</div>';
+      }
+
+      if (
+        cancelacion
+          .fecha_confirmacion
+      ) {
+        html +=
+          '<div>' +
+            '<span>Confirmación</span>' +
+            '<strong>' +
+              escFiscal_(
+                fechaFiscalVisual_(
+                  cancelacion
+                    .fecha_confirmacion
+                )
+              ) +
+            '</strong>' +
+          '</div>';
+      }
+    }
+
+    html += '</div>';
+
+    html +=
+      '<div class="fiscal-files">';
+
+    html +=
+      '<span class="fiscal-badge ' +
+        (
+          c.pdf_archivado
+            ? 'ok'
+            : 'warn'
+        ) +
+      '">' +
+        (
+          c.pdf_archivado
+            ? 'PDF archivado'
+            : 'PDF no archivado'
+        ) +
+      '</span>';
+
+    html +=
+      '<span class="fiscal-badge ' +
+        (
+          c.xml_archivado
+            ? 'ok'
+            : 'warn'
+        ) +
+      '">' +
+        (
+          c.xml_archivado
+            ? 'XML archivado'
+            : 'XML no archivado'
+        ) +
+      '</span>';
+
+    html += '</div>';
+
+    // La ruta 2C4 actualmente descarga de forma segura
+    // el UUID vigente de la venta.
+    // Por eso sólo habilitamos descarga sobre el CFDI actual.
+    if (
+      esActual &&
+      (
+        c.pdf_archivado ||
+        c.xml_archivado
+      )
+    ) {
+      html +=
+        '<div class="fiscal-actions">';
+
+      if (c.pdf_archivado) {
+        html +=
+          '<button class="btn btns" ' +
+          'onclick="descargarArchivoCFDI(\'' +
+            escFiscal_(res.venta_id) +
+          '\',\'pdf\',this)">' +
+            'Descargar PDF' +
+          '</button>';
+      }
+
+      if (c.xml_archivado) {
+        html +=
+          '<button class="btn btns" ' +
+          'onclick="descargarArchivoCFDI(\'' +
+            escFiscal_(res.venta_id) +
+          '\',\'xml\',this)">' +
+            'Descargar XML' +
+          '</button>';
+      }
+
+      html += '</div>';
+    }
+
+    html += '</div>';
+  }
+
+  html +=
+    '<div class="fiscal-note" ' +
+    'style="margin-top:12px;margin-bottom:0">' +
+      'CFDI registrados: ' +
+      Number(
+        resumen.total_cfdi ||
+        cfdis.length
+      ) +
+      ' · Sustituciones registradas: ' +
+      Number(
+        resumen.total_sustituciones ||
+        0
+      ) +
+    '</div>';
+
+  body.innerHTML = html;
+}
+
+
+function abrirHistorialFiscal(
+  ventaId,
+  btn
+) {
+  if (!authToken) {
+    alrt(
+      'Tu sesión no está autenticada. Vuelve a iniciar sesión.',
+      'e'
+    );
+
+    return;
+  }
+
+  var overlay =
+    document.getElementById(
+      'overlay-historial-fiscal'
+    );
+
+  var body =
+    document.getElementById(
+      'hf-body'
+    );
+
+  var subtitle =
+    document.getElementById(
+      'hf-subtitle'
+    );
+
+  if (
+    !overlay ||
+    !body ||
+    !subtitle
+  ) {
+    alrt(
+      'No fue posible abrir el historial fiscal.',
+      'e'
+    );
+
+    return;
+  }
+
+  var original =
+    btn
+      ? btn.innerHTML
+      : '';
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML =
+      'Cargando…';
+  }
+
+  subtitle.textContent =
+    'Venta #' +
+    String(
+      ventaId || ''
+    ).padStart(4,'0');
+
+  body.innerHTML =
+    '<div class="es">' +
+      '<span class="spinner"></span>' +
+      'Cargando historial fiscal...' +
+    '</div>';
+
+  overlay.classList.add(
+    'show'
+  );
+
+  var url =
+    API_URL +
+    '?accion=obtener_historial_fiscal_cfdi' +
+    '&venta_id=' +
+    encodeURIComponent(
+      String(
+        ventaId || ''
+      )
+    );
+
+  jsonp(
+    url,
+    function(err, res) {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML =
+          original;
+      }
+
+      if (err) {
+        body.innerHTML =
+          '<div class="alrt ale">' +
+            'No fue posible consultar el historial fiscal. ' +
+            'Revisa la conexión e intenta nuevamente.' +
+          '</div>';
+
+        return;
+      }
+
+      if (
+        !res ||
+        res.ok !== true
+      ) {
+        var codigo =
+          String(
+            (res && res.codigo) ||
+            ''
+          );
+
+        var mensaje =
+          String(
+            (
+              res &&
+              (
+                res.error ||
+                res.mensaje
+              )
+            ) ||
+            'Historial fiscal no disponible.'
+          );
+
+        if (
+          codigo ===
+          'AUTH_REQUIRED'
+        ) {
+          mensaje =
+            'La sesión expiró o no es válida. Vuelve a iniciar sesión.';
+        }
+
+        body.innerHTML =
+          '<div class="alrt ale">' +
+            escFiscal_(mensaje) +
+          '</div>';
+
+        return;
+      }
+
+      renderHistorialFiscalModal_(
+        res
+      );
+    }
+  );
+}
+
+
+document.addEventListener(
+  'keydown',
+  function(e) {
+    if (e.key === 'Escape') {
+      cerrarHistorialFiscal();
+    }
+  }
+);
 
 function apiPost(data, callback) {
   fetch(API_URL, {
@@ -2167,6 +2846,11 @@ function renderHist(){
         rows+='<button class="btn btnd" style="font-size:10px;padding:2px 6px;width:100%" onclick="event.stopPropagation();pedirCancelar('+vid+')">Cancelar venta</button>';
       }
     }
+
+    if(v.uuid){
+      rows+='<button class="btn btns" style="font-size:10px;padding:3px 6px;width:100%;margin-top:3px;border-color:rgba(43,127,212,.35);color:#93c5fd;background:rgba(43,127,212,.08)" onclick="event.stopPropagation();abrirHistorialFiscal(\''+vid+'\',this)">Historial fiscal</button>';
+    }
+
     rows+='</div></div>';
   }
   cont.innerHTML=rows;
@@ -2232,6 +2916,11 @@ function buscar(){
         html+='<div style="font-size:9px;color:#6ee7b7;margin-bottom:3px">✓ Facturado</div>';
         html+='<button class="btn btnw" style="font-size:10px;padding:2px 6px;width:100%;margin-bottom:3px;color:#c00;border-color:#fecaca" id="bcanf_'+v.id+'" onclick="event.stopPropagation();cancelarFacturaDesdeHistorial(\''+v.id+'\')">✕ Cancelar factura</button>';
       }
+
+      if(v.uuid){
+        html+='<button class="btn btns" style="font-size:10px;padding:3px 6px;width:100%;margin-top:3px;border-color:rgba(43,127,212,.35);color:#93c5fd;background:rgba(43,127,212,.08)" onclick="event.stopPropagation();abrirHistorialFiscal(\''+v.id+'\',this)">Historial fiscal</button>';
+      }
+
       html+='</div></div>';
     }
   }
