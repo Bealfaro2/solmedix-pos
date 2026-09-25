@@ -1757,7 +1757,21 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
         <div class="fr"><label>Estado *</label><input type="text" id="sof-guia-estado" placeholder="Ciudad de Mexico"/></div>
         <div class="fr"><label>Municipio *</label><input type="text" id="sof-guia-municipio" placeholder="Cuauhtemoc"/></div>
         <div class="fr"><label>Colonia *</label><input type="text" id="sof-guia-colonia" placeholder="Juarez"/></div>
-        <div class="sof-hint">Se genera con Estafeta (la más rápida) o DHL como respaldo. Puede tardar unos segundos en confirmar el número de rastreo.</div>
+
+<div class="fr">
+  <label>Entre Calles</label>
+  <input
+    type="text"
+    id="sof-guia-entre-calles"
+    placeholder="Ej: Entre Av. Paseo de los Leones y Alejandro de Rodas"
+  />
+</div>
+
+<div class="sof-hint">
+  Las entre calles se enviarán a Skydropx como referencia del domicilio.
+  Se genera con Estafeta (la más rápida) o DHL como respaldo.
+  Puede tardar unos segundos en confirmar el número de rastreo.
+</div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
           <button class="btn" onclick="sofCerrarModalGuia()">Cancelar</button>
           <button class="btn btnp" id="sof-btn-guia-enviar" onclick="sofEnviarGuia()">Generar</button>
@@ -3371,7 +3385,8 @@ function sofAbrirModalGuia() {
   document.getElementById('sof-guia-estado').value = est ? est.estado : '';
   document.getElementById('sof-guia-municipio').value = est ? est.municipio : '';
   document.getElementById('sof-guia-colonia').value = est ? est.colonia : '';
-  document.getElementById('sof-guia-alrt').style.display = 'none';
+document.getElementById('sof-guia-entre-calles').value = '';
+document.getElementById('sof-guia-alrt').style.display = 'none';
   document.getElementById('modal-sof-guia-overlay').classList.add('show');
 }
 
@@ -3387,7 +3402,8 @@ function sofEnviarGuia() {
   var estado = document.getElementById('sof-guia-estado').value.trim();
   var municipio = document.getElementById('sof-guia-municipio').value.trim();
   var colonia = document.getElementById('sof-guia-colonia').value.trim();
-  var alrt = document.getElementById('sof-guia-alrt');
+var entreCalles = document.getElementById('sof-guia-entre-calles').value.trim();
+var alrt = document.getElementById('sof-guia-alrt');
 
   if (!medicamento || !calle || !cp || !estado || !municipio || !colonia) {
     alrt.style.display = 'block'; alrt.style.color = '#fca5a5';
@@ -3404,7 +3420,13 @@ function sofEnviarGuia() {
     accion: 'enviar_comando_sofia',
     tipo: 'generar_guia',
     cliente: sofClienteActual.numero,
-    medicamento: medicamento, calle: calle, cp: cp, estado: estado, municipio: municipio, colonia: colonia
+    medicamento: medicamento,
+calle: calle,
+cp: cp,
+estado: estado,
+municipio: municipio,
+colonia: colonia,
+entre_calles: entreCalles
   }, function(err, res) {
     btn.disabled = false;
     if (err || !res || !res.ok) {
