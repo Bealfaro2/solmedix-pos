@@ -7668,38 +7668,72 @@ function hldRegistrarPago() {
     return { uuid:chk.dataset.uuid, saldo:saldo, montoPago:montoPago };
   });
 
-  var idx=0;
-  function siguiente() {
-    if (idx>=tareas.length) {
-      // Guardar comprobante Albo ligado
-      tareas.forEach(function(t){
-        apiPost({ accion:'guardar_comprobante_albo', uuid_factura:t.uuid, folio_factura:'',
-          proveedor:'', monto_pagado:t.montoPago, fecha_pago:_hldDatoPago.fecha,
-          concepto:'Pago crédito '+_hldDatoPago.concepto, clave_rastreo:_hldDatoPago.claveRastreo,
-          beneficiario:_hldDatoPago.beneficiario }, function(){});
-      });
-      // Refrescar pagosCompras para actualizar estados en pantalla
-      apiGet('get_all', function(e,d){
-        if (!e && d) {
-          pagosCompras = (d.pagos_compras)||[];
-          compras      = (d.compras)||[];
-        }
-        btn.disabled=false; btn.textContent='Registrar pago y conciliar';
-        hldAlrt('Pago registrado y conciliado con '+tareas.length+' factura(s).','s');
-        setTimeout(function(){ 
-   apiGet('get_all', function(e,d){ 
-    if(!e&&d) pagosCompras=(d.pagos_compras)||[];
-    hldLimpiar(); 
-    hldInicializar(); 
-  }); 
-}, 2500);
-      });
-      return;
-    }
-    var t=tareas[idx++];
-    apiPostViaJSONP({ accion:'registrar_pago_compra', uuid_factura:t.uuid, monto_pago:t.montoPago,
-      fecha_pago:_hldDatoPago.fecha, clave_rastreo:_hldDatoPago.claveRastreo }, function(err,res){ siguiente(); });
+  // Perfil MTY/SLP: se manda su sucursal. Admin: el servidor la deduce de la factura y, si es ambigua, se pregunta aquí.
+  var sucursalPerfil = perfilActual === 'slp' ? 'SLP' : (perfilActual === 'mty' ? 'MTY' : '');
+  var registradas = [], yaRegistradas = [], fallos = [];
+  var idx = 0;
+
+  function datosFactura(uuid) {
+    var f = (_hldFacturasDisp || []).filter(function(x){ return (x.uuid || x.folio) === uuid; })[0];
+    return f || { folio: uuid, proveedor: '' };
   }
+
+  // UNA sola llamada por factura (antes eran dos y cada pago quedaba duplicado en comprobantes_albo).
+  function enviar(t, sucursal, cb) {
+    var f = datosFactura(t.uuid);
+    var datos = { accion:'registrar_pago_compra', uuid_factura:t.uuid, folio_factura:f.folio||'', proveedor:f.proveedor||'',
+      monto_pago:t.montoPago, fecha_pago:_hldDatoPago.fecha, clave_rastreo:_hldDatoPago.claveRastreo,
+      concepto:'Pago crédito '+_hldDatoPago.concepto, beneficiario:_hldDatoPago.beneficiario };
+    if (sucursal) datos.sucursal = sucursal;
+    apiPostViaJSONP(datos, cb);
+  }
+
+  function siguiente() {
+    if (idx>=tareas.length) { terminar(); return; }
+    var t = tareas[idx++];
+    var f = datosFactura(t.uuid);
+    function resultado(err, res, yaPregunto) {
+      if (err || !res) { fallos.push({ folio:f.folio, motivo:(err && err.message) || 'el servidor no respondió' }); return siguiente(); }
+      if (res.ok) { registradas.push(f.folio); return siguiente(); }
+      if (res.duplicado) { yaRegistradas.push(f.folio); return siguiente(); }
+      if (res.error === 'sucursal_no_determinada' && !yaPregunto) {
+        var resp = prompt('La factura '+f.folio+' ('+(f.proveedor||'')+') aparece en más de una sucursal.\n¿A qué sucursal aplica este pago? Escribe MTY o SLP (Cancelar = no registrar este pago).');
+        var s = String(resp||'').trim().toUpperCase();
+        if (s === 'MTY' || s === 'SLP') { return enviar(t, s, function(e2, r2){ resultado(e2, r2, true); }); }
+        fallos.push({ folio:f.folio, motivo:'no se eligió una sucursal' });
+        return siguiente();
+      }
+      fallos.push({ folio:f.folio, motivo:res.mensaje || res.error || res.msg || 'el servidor rechazó el pago' });
+      siguiente();
+    }
+    enviar(t, sucursalPerfil, function(err, res){ resultado(err, res, false); });
+  }
+
+  function terminar() {
+    var n = tareas.length, okTotal = registradas.length + yaRegistradas.length;
+    var resumen = fallos.length
+      ? 'Se registró el pago de '+okTotal+' de '+n+' factura(s). NO se registró: '+fallos.map(function(x){ return x.folio+' ('+x.motivo+')'; }).join('; ')+'.'
+      : (registradas.length
+          ? 'Pago registrado y conciliado con '+registradas.length+' factura(s).'
+            + (yaRegistradas.length ? ' ('+yaRegistradas.length+' ya estaba(n) registrada(s) con la misma clave de rastreo.)' : '')
+          : 'Este pago ya estaba registrado para '+yaRegistradas.length+' factura(s) (misma clave de rastreo). No se duplicó.');
+    var tipo = fallos.length ? 'e' : 's';
+    // Refrescar pagosCompras para actualizar estados en pantalla
+    apiGet('get_all', function(e,d){
+      if (!e && d) { pagosCompras = (d.pagos_compras)||[]; compras = (d.compras)||[]; }
+      btn.disabled=false; btn.textContent='Registrar pago y conciliar';
+      hldAlrt(resumen, tipo);
+      setTimeout(function(){
+        apiGet('get_all', function(e2,d2){
+          if (!e2 && d2) pagosCompras = (d2.pagos_compras)||[];
+          if (!fallos.length) hldLimpiar();   // con fallos se conserva el comprobante para reintentar tras corregir el dato
+          hldInicializar();
+          hldAlrt(resumen, tipo);              // hldLimpiar oculta el aviso; se vuelve a mostrar
+        });
+      }, 2500);
+    });
+  }
+
   siguiente();
 }
 
