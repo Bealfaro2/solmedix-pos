@@ -1624,6 +1624,10 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
       .sof-bub-cli{align-self:flex-start;background:var(--bg-3);color:var(--text)}
       .sof-bub-sof{align-self:flex-end;background:var(--blue);color:#fff}
       .sof-bub-hora{font-size:9px;color:var(--text-3);margin-top:3px}
+      .sof-bub-sof{cursor:default}
+      .sof-bub-falla{display:inline-block;margin-top:5px;padding:2px 8px;border-radius:8px;background:#dc2626;color:#fff;font-size:10px;font-weight:600;line-height:1.4}
+      .sof-tip{position:fixed;z-index:99999;display:none;max-width:300px;padding:9px 11px;border-radius:9px;background:#0f172a;color:#f1f5f9;font-size:12px;line-height:1.55;box-shadow:0 8px 28px rgba(0,0,0,.4);pointer-events:none}
+      .sof-tip .t-leido{color:#7dd3fc}.sof-tip .t-mal{color:#fca5a5}.sof-tip .t-gris{color:#94a3b8;font-size:11px}
       .sof-compose{border-top:1px solid var(--border);padding:12px;background:var(--bg-2)}
       .sof-compose select,.sof-compose input,.sof-compose textarea{margin-bottom:8px}
       .sof-campos{display:none}
@@ -3567,6 +3571,10 @@ function sofConectarSSE() {
       sofActualizarPresencia(datos.numero, datos.viendo);
       return;
     }
+    if (datos.tipo === 'estatus') {   // WhatsApp avisó que un mensaje se envió, entregó, leyó o falló
+      if (sofClienteActual && datos.numero && sofNum10(datos.numero) === sofNum10(sofClienteActual.numero)) sofProgramarRecargaEstatus();
+      return;
+    }
     var numero = datos.numero || '';
     if (sofClienteActual && (!numero || numero === sofClienteActual.numero)) {
       sofAbrirHilo(sofClienteActual.numero, sofClienteActual.nombre);
@@ -3640,6 +3648,167 @@ function sofFechaEtiqueta(fechaStr) {
 var sofHiloLength = 0;
 var sofUltimaFecha = null;
 
+/* ── SOF-ESTATUS-INICIO · Hover de entrega: enviado / entregado / leído / no entregado ── */
+var sofHiloDatos = [];          // filas del hilo abierto (para emparejar cada mensaje con sus eventos de entrega)
+var sofEstatusEventos = [];     // eventos de entrega del chat abierto, tal como los entrega Railway
+var sofEstatusMapa = {};        // índice del hilo → eventos de ese mensaje
+var sofEstatusNumero = '';
+var sofEstatusTimer = null;
+
+// ── Funciones del admin: se prueban aquí con datos reales y luego se pegan tal cual en admin.html ──
+function sofParseTs(fecha, hora) {
+  var f = String(fecha || '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  var h = String(hora || '').replace(/[\u00a0\u202f]/g, ' ').trim().toLowerCase().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([ap])\.?\s*m\.?$/);
+  if (!f || !h) return null;
+  var hh = (+h[1]) % 12 + (h[4] === 'p' ? 12 : 0);
+  return Date.UTC(+f[3], +f[2] - 1, +f[1], hh, +h[2], +(h[3] || 0)) + 6 * 3600000;   // Monterrey = UTC−6, sin horario de verano
+}
+// Empareja cada mensaje enviado (fila del hilo con respuesta) con los eventos de entrega de Gupshup.
+// La hoja de conversaciones no guarda el id del mensaje, así que se usa el tiempo: los eventos de un mensaje llegan unos 3 s
+// DESPUÉS de que se registró la fila y todos comparten el mismo id. Si Sofía manda dos mensajes seguidos (el cliente escribió dos
+// veces), un emparejamiento «el más cercano» los confunde; por eso se hace un emparejamiento global EN ORDEN (los mensajes y sus ids
+// salen en la misma secuencia) que maximiza los mensajes emparejados y minimiza la espera total. Devuelve { índiceDelHilo: eventos }.
+function sofEmparejarEstatus(hilo, eventos) {
+  var M = [];
+  (hilo || []).forEach(function (m, i) { var ts = sofParseTs(m.fecha, m.hora); if (m.respuesta_sofia && ts !== null) M.push({ i: i, ts: ts }); });
+  M.sort(function (a, b) { return a.ts - b.ts || a.i - b.i; });
+  var porId = {};
+  (eventos || []).forEach(function (e) { if (e.id) (porId[e.id] = porId[e.id] || []).push(e); });
+  var G = Object.keys(porId).map(function (id) {
+    return { id: id, primero: Math.min.apply(null, porId[id].map(function (e) { return e.ts; })), eventos: porId[id] };
+  }).sort(function (a, b) { return a.primero - b.primero; });
+  var out = {};
+  if (!M.length || !G.length) return out;
+  var desde = M[0].ts - 3000;                               // solo los ids que podrían ser de estos mensajes
+  G = G.filter(function (g) { return g.primero >= desde; });
+  var n = M.length, m = G.length;
+  var R = 1000, TOL = 3000, VENTANA = 180000, ESPERA_TIPICA = 3000;
+  function costo(i, j) {                                    // null = no puede ser: el evento no llega antes del mensaje (3 s de tolerancia) ni más de 3 min después
+    var d = G[j].primero - M[i].ts; if (d < -TOL || d > VENTANA) return null; return Math.abs(d - ESPERA_TIPICA) / 1000;
+  }
+  var dp = [], pasos = [];
+  for (var a = 0; a <= n; a++) { dp.push(new Array(m + 1).fill(0)); pasos.push(new Array(m + 1).fill(0)); }
+  for (var i = 1; i <= n; i++) {
+    for (var j = 1; j <= m; j++) {
+      var mejor = dp[i - 1][j], paso = 1;                    // 1 = el mensaje no tiene id
+      if (dp[i][j - 1] > mejor) { mejor = dp[i][j - 1]; paso = 2; }   // 2 = el id no es de un mensaje
+      var c = costo(i - 1, j - 1);
+      if (c !== null && dp[i - 1][j - 1] + R - c > mejor) { mejor = dp[i - 1][j - 1] + R - c; paso = 3; }   // 3 = se emparejan
+      dp[i][j] = mejor; pasos[i][j] = paso;
+    }
+  }
+  var x = n, y = m;
+  while (x > 0 && y > 0) {
+    var p = pasos[x][y];
+    if (p === 3) { out[M[x - 1].i] = G[y - 1].eventos; x--; y--; } else if (p === 1) x--; else y--;
+  }
+  return out;
+}
+
+function sofNum10(n) { return String(n || '').replace(/\D/g, '').slice(-10); }
+
+function sofCargarEstatus(numero) {
+  if (!numero) return;
+  fetch(RAILWAY_URL + '/panel/estatus?numero=' + encodeURIComponent(numero), { headers: { 'x-panel-secret': PANEL_SECRET } })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (res) {
+      if (!res || !res.ok) return;
+      if (!sofClienteActual || sofNum10(sofClienteActual.numero) !== sofNum10(numero)) return;   // el usuario ya abrió otro chat
+      sofEstatusEventos = res.eventos || [];
+      sofEstatusNumero = numero;
+      sofRecalcularEstatus();
+    })
+    .catch(function () {});
+}
+
+function sofProgramarRecargaEstatus() {   // un mensaje genera 2-3 avisos seguidos: se espera un momento y se consulta una sola vez
+  clearTimeout(sofEstatusTimer);
+  sofEstatusTimer = setTimeout(function () { if (sofClienteActual) sofCargarEstatus(sofClienteActual.numero); }, 1200);
+}
+
+function sofResumenEstatus(evs) {         // hora más temprana de cada estado (la primera vez que ocurrió) y causa de la falla
+  var r = { enviado: 0, entregado: 0, leido: 0, falla: '' };
+  (evs || []).forEach(function (e) {
+    if (e.estatus === 'sent' && (!r.enviado || e.ts < r.enviado)) r.enviado = e.ts;
+    else if (e.estatus === 'delivered' && (!r.entregado || e.ts < r.entregado)) r.entregado = e.ts;
+    else if (e.estatus === 'read' && (!r.leido || e.ts < r.leido)) r.leido = e.ts;
+    else if (e.estatus === 'failed' && !r.falla) r.falla = e.detalle || 'failed';
+  });
+  return r;
+}
+
+function sofFallo(evs) { var r = sofResumenEstatus(evs); return !!r.falla && !r.entregado && !r.leido; }   // si llegó a entregarse, la falla no cuenta
+
+function sofRecalcularEstatus() {
+  sofEstatusMapa = sofEmparejarEstatus(sofHiloDatos, sofEstatusEventos);
+  sofPintarFallidos();
+  if (window.sofTipRefrescar) window.sofTipRefrescar();
+}
+
+function sofPintarFallidos() {            // los mensajes que NUNCA llegaron se marcan a la vista, sin pasar el mouse
+  var burbujas = document.querySelectorAll('#sof-chat-body .sof-bub-sof[data-sofi]');
+  for (var i = 0; i < burbujas.length; i++) {
+    var b = burbujas[i], evs = sofEstatusMapa[+b.getAttribute('data-sofi')];
+    var falla = !!evs && sofFallo(evs), marca = b.querySelector('.sof-bub-falla');
+    if (falla && !marca) b.insertAdjacentHTML('beforeend', '<div class="sof-bub-falla">✗ No entregado · pasa el mouse para ver el motivo</div>');
+    else if (!falla && marca) marca.parentNode.removeChild(marca);
+  }
+}
+
+function sofCausaFalla(d) {
+  d = String(d || '');
+  if (/470|re-engagement|24 hours/i.test(d)) return 'Pasaron más de 24 h desde el último mensaje del cliente. Fuera de esa ventana WhatsApp solo deja enviar plantillas aprobadas. (código 470)';
+  if (/131049/.test(d)) return 'WhatsApp no entregó este mensaje de plantilla para cuidar la calidad del número. (código 131049)';
+  if (/131026/.test(d)) return 'El número no puede recibir el mensaje: puede que no tenga WhatsApp o no haya aceptado sus condiciones. (código 131026)';
+  if (/132018/.test(d)) return 'La plantilla se rechazó por un texto con saltos de línea o espacios no permitidos. (código 132018)';
+  return d.replace(/^code:\s*/i, 'Código ').slice(0, 140) || 'WhatsApp no entregó el mensaje.';
+}
+
+function sofFmtHora(ts) {
+  var o = { timeZone: 'America/Monterrey' }, d = new Date(ts);
+  var hora = d.toLocaleTimeString('es-MX', { timeZone: o.timeZone, hour: 'numeric', minute: '2-digit', hour12: true });
+  var mismoDia = d.toLocaleDateString('es-MX', o) === new Date().toLocaleDateString('es-MX', o);
+  return (mismoDia ? '' : d.toLocaleDateString('es-MX', { timeZone: o.timeZone, day: '2-digit', month: '2-digit' }) + ' ') + hora;
+}
+
+function sofTextoEstatus(idx) {
+  if (!sofClienteActual || sofEstatusNumero !== sofClienteActual.numero) return '<span class="t-gris">Consultando el estado…</span>';
+  var evs = sofEstatusMapa[idx];
+  if (!evs || !evs.length) {
+    var tsMsg = sofParseTs((sofHiloDatos[idx] || {}).fecha, (sofHiloDatos[idx] || {}).hora);
+    var viejo = tsMsg !== null && (Date.now() - tsMsg) > 20 * 86400000;
+    return '<b>Sin información de entrega</b><br><span class="t-gris">' + (viejo ? 'El mensaje tiene más de 20 días: ya no se conservan sus estados.' : 'WhatsApp no avisó nada de este mensaje.') + '</span>';
+  }
+  var r = sofResumenEstatus(evs);
+  if (r.leido) return '<span class="t-leido"><b>✓✓ Leído por el cliente</b></span> · ' + sofFmtHora(r.leido) + '<br><span class="t-gris">Entregado: ' + sofFmtHora(r.entregado || r.leido) + '<br>Enviado: ' + sofFmtHora(r.enviado || r.entregado || r.leido) + '</span>';
+  if (r.entregado) return '<b>✓✓ Entregado</b> · ' + sofFmtHora(r.entregado) + '<br><span class="t-gris">Enviado: ' + sofFmtHora(r.enviado || r.entregado) + '<br>Sin lectura confirmada: el cliente aún no lo abre, o tiene desactivados los acuses de lectura.</span>';
+  if (r.falla) return '<span class="t-mal"><b>✗ No se pudo entregar</b></span><br><span class="t-gris">' + sofEsc(sofCausaFalla(r.falla)) + '</span>';
+  return '<b>✓ Enviado</b> · ' + sofFmtHora(r.enviado) + '<br><span class="t-gris">Aún sin entregar: el cliente puede estar sin conexión.</span>';
+}
+
+(function sofIniciarTooltipEstatus() {     // un solo tooltip para todo el chat (delegación de eventos)
+  var tip = null, actual = null;
+  function asegurar() { if (!tip) { tip = document.createElement('div'); tip.className = 'sof-tip'; tip.id = 'sof-tip'; document.body.appendChild(tip); } return tip; }
+  function colocar(e) {
+    var t = asegurar(), x = e.clientX + 14, y = e.clientY + 16, w = t.offsetWidth, h = t.offsetHeight;
+    if (x + w > window.innerWidth - 8) x = e.clientX - w - 14;
+    if (y + h > window.innerHeight - 8) y = e.clientY - h - 16;
+    t.style.left = Math.max(8, x) + 'px'; t.style.top = Math.max(8, y) + 'px';
+  }
+  function burbuja(el) { return el && el.closest ? el.closest('.sof-bub-sof[data-sofi]') : null; }
+  document.addEventListener('mouseover', function (e) {
+    var b = burbuja(e.target); if (!b) return;
+    actual = b; var t = asegurar(); t.innerHTML = sofTextoEstatus(+b.getAttribute('data-sofi')); t.style.display = 'block'; colocar(e);
+  });
+  document.addEventListener('mousemove', function (e) { if (actual) colocar(e); });
+  document.addEventListener('mouseout', function (e) {
+    if (!actual) return; var b = burbuja(e.target);
+    if (b === actual && !(e.relatedTarget && actual.contains(e.relatedTarget))) { actual = null; if (tip) tip.style.display = 'none'; }
+  });
+  window.sofTipRefrescar = function () { if (actual && tip && tip.style.display === 'block') tip.innerHTML = sofTextoEstatus(+actual.getAttribute('data-sofi')); };
+})();
+/* ── SOF-ESTATUS-FIN ── */
+
 function sofAbrirHilo(numero, nombre) {
   var esRefrescoMismoChat = sofClienteActual && sofClienteActual.numero === numero;
   var entradaDireccion = sofUltimaLista.filter(function(c){ return c.numero === numero; })[0];
@@ -3670,19 +3839,21 @@ function sofAbrirHilo(numero, nombre) {
       if (!esRefrescoMismoChat) body.innerHTML = '<div class="es">Error al cargar el hilo</div>';
       return;
     }
-    if (esRefrescoMismoChat && res.hilo.length <= sofHiloLength) return;
+    if (esRefrescoMismoChat && res.hilo.length <= sofHiloLength) { sofCargarEstatus(numero); return; }   // sin mensajes nuevos: solo se actualizan los estados
 
     var cercaDelFinal = body.scrollHeight - body.scrollTop - body.clientHeight < 120;
     var mensajesAPintar = esRefrescoMismoChat ? res.hilo.slice(sofHiloLength) : res.hilo;
 
-    var htmlNuevo = mensajesAPintar.map(function(m){
+    var baseIdx = esRefrescoMismoChat ? sofHiloLength : 0;
+    var htmlNuevo = mensajesAPintar.map(function(m, j){
+      var idxHilo = baseIdx + j;
       var bloques = '';
       if (m.fecha !== sofUltimaFecha) {
         sofUltimaFecha = m.fecha;
         bloques += '<div style="text-align:center;margin:10px 0"><span style="background:var(--bg-3);color:var(--text-3);font-size:11px;padding:3px 12px;border-radius:10px">'+sofFechaEtiqueta(m.fecha)+'</span></div>';
       }
       if (m.mensaje_cliente) bloques += '<div class="sof-bub sof-bub-cli">'+sofEsc(m.mensaje_cliente)+'<div class="sof-bub-hora">'+m.hora+'</div></div>';
-      if (m.respuesta_sofia) bloques += '<div class="sof-bub sof-bub-sof">'+sofEsc(m.respuesta_sofia)+'<div class="sof-bub-hora">'+m.hora+'</div></div>';
+      if (m.respuesta_sofia) bloques += '<div class="sof-bub sof-bub-sof" data-sofi="'+idxHilo+'">'+sofEsc(m.respuesta_sofia)+'<div class="sof-bub-hora">'+m.hora+'</div></div>';
       return bloques;
     }).join('');
 
@@ -3692,6 +3863,8 @@ function sofAbrirHilo(numero, nombre) {
       body.innerHTML = htmlNuevo;
     }
     sofHiloLength = res.hilo.length;
+    sofHiloDatos = res.hilo;
+    sofCargarEstatus(numero);
 
     if (!esRefrescoMismoChat || cercaDelFinal) {
       body.scrollTop = body.scrollHeight;
