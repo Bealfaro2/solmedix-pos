@@ -1681,6 +1681,7 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
                   <option value="pago_confirmado">Pago confirmado</option>
                   <option value="disponibilidad_confirmada">Disponibilidad confirmada</option>
                   <option value="producto_listo">Producto listo para recoger</option>
+                  <option value="aviso_llegada">📦 Avisar llegada (plantilla · sirve aunque pasen 24 h)</option>
                   <option value="nota_para_sofia">📝 Nota para Sofía (el cliente NO la ve)</option>
                 </select>
               </div>
@@ -1696,6 +1697,10 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
               </div>
               <div class="sof-campos" id="sof-campos-disp">
                 <input type="text" id="sof-detalle-disp" placeholder="Detalle (opcional, ej: 2 piezas, entrega en 2 días)"/>
+              </div>
+              <div class="sof-campos" id="sof-campos-llegada">
+                <input type="text" id="sof-medicamento-llegada" placeholder="Medicamento que llegó (ej: Dexmitron 50 mg c/50 tabletas)"/>
+                <div style="font-size:12px;opacity:.75;margin-top:4px">Se envía una plantilla aprobada por Meta: le llega al cliente aunque lleve más de 24 h sin escribir. Dice: «ya nos llegó [medicamento], el medicamento que nos pediste que te avisáramos».</div>
               </div>
               <div class="sof-campos" id="sof-campos-listo">
                 <input type="text" id="sof-detalle-listo" placeholder="Detalle (opcional, ej: Trae el resto: $850)"/>
@@ -3890,6 +3895,7 @@ function sofCambiarTipo() {
   document.getElementById('sof-campos-pago').classList.toggle('on', tipo==='pago_confirmado');
   document.getElementById('sof-campos-disp').classList.toggle('on', tipo==='disponibilidad_confirmada');
   document.getElementById('sof-campos-listo').classList.toggle('on', tipo==='producto_listo');
+  document.getElementById('sof-campos-llegada').classList.toggle('on', tipo==='aviso_llegada');
 }
 
 var RAILWAY_URL = 'https://solmedix-sofia-agent-production.up.railway.app';
@@ -3954,6 +3960,7 @@ function sofAplicarNegritas() {
 function sofEnviarComando() {
   if (!sofClienteActual) { alert('Selecciona primero una conversación'); return; }
   var tipo = document.getElementById('sof-tipo').value;
+  if (tipo === 'aviso_llegada') { sofEnviarAvisoLlegada(); return; }
   var payload = { accion:'enviar_comando_sofia', tipo: tipo, cliente: sofClienteActual.numero };
   var esNota = (tipo === 'nota_para_sofia');
   if (esNota) {                                    // el Apps Script no conoce este tipo: viaja como instrucción con prefijo y Railway la guarda sin enviarla
@@ -3980,6 +3987,35 @@ function sofEnviarComando() {
     document.getElementById('sof-entrega').value = '';
     setTimeout(function(){ sofAbrirHilo(sofClienteActual.numero, sofClienteActual.nombre); status.textContent=''; }, 1200);
   });
+}
+
+// Aviso de llegada con plantilla: va directo a Railway (sin Apps Script, sin reintentos automáticos)
+var sofEnviandoLlegada = false;
+function sofEnviarAvisoLlegada() {
+  if (sofEnviandoLlegada) return;
+  var medicamento = document.getElementById('sof-medicamento-llegada').value.trim();
+  if (!medicamento) { alert('Escribe qué medicamento llegó'); return; }
+  if (!confirm('Se le enviará a ' + (sofClienteActual.nombre || sofClienteActual.numero) + ' el aviso de que ya llegó:\n\n' + medicamento + '\n\n¿Enviar?')) return;
+  var status = document.getElementById('sof-status');
+  status.textContent = 'Enviando aviso...';
+  sofEnviandoLlegada = true;
+  fetch(RAILWAY_URL + '/panel/aviso-llegada', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-panel-secret': PANEL_SECRET },
+    body: JSON.stringify({ numero: sofClienteActual.numero, nombre: sofClienteActual.nombre || '', medicamento: medicamento })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(res){
+    sofEnviandoLlegada = false;
+    if (res && res.ok) {
+      status.textContent = 'Aviso enviado';
+      document.getElementById('sof-medicamento-llegada').value = '';
+      setTimeout(function(){ sofAbrirHilo(sofClienteActual.numero, sofClienteActual.nombre); status.textContent=''; }, 1200);
+    } else {
+      status.textContent = ((res && (res.error || res.resultado)) || 'Error desconocido');
+    }
+  })
+  .catch(function(){ sofEnviandoLlegada = false; status.textContent = 'Error de conexión: revisa en el chat si el aviso salió antes de reintentar'; });
 }
 
 // Acciones que mandan mensajes a clientes: NUNCA se reintentan solas (el reintento a los 20 s duplicaba el mensaje aunque el primero ya hubiera salido)
@@ -8876,6 +8912,7 @@ function exportarCajaAdminPDF() {
 var CLAVES_SAT = [
   { clave:'51101500', desc:'Antibióticos' },
   { clave:'51101900', desc:'Medicamentos contra la malaria' },
+  { clave:'51102300', desc:'Antivirales' },
   { clave:'51111500', desc:'Agentes Alquilante' },
   { clave:'51111600', desc:'Antimetabólicos' },
   { clave:'51111700', desc:'Antibióticos antineoplásicos' },
