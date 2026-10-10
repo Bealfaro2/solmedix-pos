@@ -1779,9 +1779,19 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{
   />
 </div>
 
+<div class="fr">
+  <label>Paquete (cm y kg)</label>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+    <div><input type="number" inputmode="decimal" min="1" max="150" step="0.1" id="sof-guia-largo" placeholder="Largo"/><div style="font-size:11px;opacity:.7;margin-top:2px">Largo cm</div></div>
+    <div><input type="number" inputmode="decimal" min="1" max="150" step="0.1" id="sof-guia-ancho" placeholder="Ancho"/><div style="font-size:11px;opacity:.7;margin-top:2px">Ancho cm</div></div>
+    <div><input type="number" inputmode="decimal" min="1" max="150" step="0.1" id="sof-guia-alto" placeholder="Alto"/><div style="font-size:11px;opacity:.7;margin-top:2px">Alto cm</div></div>
+    <div><input type="number" inputmode="decimal" min="0.1" max="70" step="0.1" id="sof-guia-peso" placeholder="Peso"/><div style="font-size:11px;opacity:.7;margin-top:2px">Peso kg</div></div>
+  </div>
+</div>
+
 <div class="sof-hint">
   Las entre calles se enviarán a Skydropx como referencia del domicilio.
-  Se genera con Estafeta (la más rápida) o DHL como respaldo.
+  Se genera con Estafeta (la más rápida) o DHL como respaldo. Las medidas y el peso cambian el precio de la guía.
   Puede tardar unos segundos en confirmar el número de rastreo.
 </div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
@@ -3388,6 +3398,9 @@ function sofAbrirModalNuevo() {
   document.getElementById('modal-sof-nuevo-overlay').classList.add('show');
 }
 
+// Paquete estándar (el mismo que usa el servidor si no se manda nada): largo 25 × ancho 20 × alto 15 cm, 1 kg
+var SOF_PAQUETE_ESTANDAR = { largo: 25, ancho: 20, alto: 15, peso: 1 };
+
 function sofAbrirModalGuia() {
   if (!sofClienteActual) return;
   var est = sofClienteActual.direccionEstructurada;
@@ -3399,6 +3412,10 @@ function sofAbrirModalGuia() {
   document.getElementById('sof-guia-colonia').value = est ? est.colonia : '';
 document.getElementById('sof-guia-entre-calles').value = '';
 document.getElementById('sof-guia-alrt').style.display = 'none';
+document.getElementById('sof-guia-largo').value = SOF_PAQUETE_ESTANDAR.largo;
+document.getElementById('sof-guia-ancho').value = SOF_PAQUETE_ESTANDAR.ancho;
+document.getElementById('sof-guia-alto').value = SOF_PAQUETE_ESTANDAR.alto;
+document.getElementById('sof-guia-peso').value = SOF_PAQUETE_ESTANDAR.peso;
   document.getElementById('modal-sof-guia-overlay').classList.add('show');
 }
 
@@ -3423,6 +3440,20 @@ var alrt = document.getElementById('sof-guia-alrt');
     return;
   }
 
+  // Paquete: los cuatro datos son números positivos dentro de rangos razonables (evita un 250 en vez de 25)
+  var medidas = {};
+  var reglas = [['largo','Largo',1,150],['ancho','Ancho',1,150],['alto','Alto',1,150],['peso','Peso',0.1,70]];
+  for (var i = 0; i < reglas.length; i++) {
+    var crudo = document.getElementById('sof-guia-' + reglas[i][0]).value.trim().replace(',', '.');
+    var num = Number(crudo);
+    if (crudo === '' || !isFinite(num) || num < reglas[i][2] || num > reglas[i][3]) {
+      alrt.style.display = 'block'; alrt.style.color = '#fca5a5';
+      alrt.textContent = reglas[i][1] + ' debe ser un número entre ' + reglas[i][2] + ' y ' + reglas[i][3] + (reglas[i][0] === 'peso' ? ' kg.' : ' cm.');
+      return;
+    }
+    medidas[reglas[i][0]] = num;
+  }
+
   var btn = document.getElementById('sof-btn-guia-enviar');
   btn.disabled = true;
   alrt.style.display = 'block'; alrt.style.color = 'var(--text-3)';
@@ -3438,7 +3469,11 @@ cp: cp,
 estado: estado,
 municipio: municipio,
 colonia: colonia,
-entre_calles: entreCalles
+entre_calles: entreCalles,
+largo: medidas.largo,
+ancho: medidas.ancho,
+alto: medidas.alto,
+peso: medidas.peso
   }, function(err, res) {
     btn.disabled = false;
     if (err || !res || !res.ok) {
