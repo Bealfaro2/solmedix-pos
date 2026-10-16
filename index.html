@@ -2546,12 +2546,31 @@ function toggleOjo(inputId, btn) {
 
 function limpiar(){items=[];pagosVenta=[{metodo:'',monto:0}];renderItems();document.getElementById('cli').value='';document.getElementById('barcode').value='';document.getElementById('msel-input').value='';document.getElementById('msel').value='';document.getElementById('msel-list').style.display='none';document.getElementById('lote-row').style.display='none';document.getElementById('crow').style.display='none';document.getElementById('pre').value='';}
 
+function receptorDeVenta_(v){
+  var nom = String((v && v.cliente) || '').trim().toLowerCase();
+  if(!nom) return null;
+  for(var i=0;i<clientes.length;i++){
+    if(String(clientes[i].nombre||'').trim().toLowerCase()===nom) return clientes[i];
+  }
+  return null;
+}
+function receptorCompleto_(c){ return !!(c && c.rfc && c.regimen && c.uso_cfdi && c.cp); }
+function ventaFacturable_(v){
+  if(!v) return false;
+  if(v.uuid) return false;
+  if(String(v.estado||'').toLowerCase()==='cancelada') return false;
+  if(v.cancelacion_pendiente || String(v.estado_cancelacion||'')) return false;
+  return true;
+}
 function mostrarClave(v) {
   vActual = v;
   document.getElementById('infoc').style.display = 'block';
   document.getElementById('ctxt').textContent = v.clave;
   var btnFac = document.getElementById('bfac');
-  if(clienteActual && clienteActual.rfc && clienteActual.regimen && clienteActual.uso_cfdi){
+  btnFac.disabled = false;
+  btnFac.innerHTML = 'Facturar';
+  // El receptor sale de la VENTA (su cliente), nunca del cliente que esté seleccionado en pantalla.
+  if(ventaFacturable_(v) && receptorCompleto_(receptorDeVenta_(v))){
     btnFac.style.display = 'inline-flex';
   } else {
     btnFac.style.display = 'none';
@@ -2636,6 +2655,10 @@ function construirXMLPOS(cliente, items, total, folio, pagos) {
   var esc = function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
 
   var subtotal = items.reduce(function(s,it){ return s + it.precio * it.qty; }, 0).toFixed(2);
+  if(!items.length) throw new Error('La venta no tiene productos.');
+  if(Math.abs(Number(subtotal) - Number(total)) > 0.01){
+    throw new Error('El total de los productos ($'+subtotal+') no coincide con el total de la venta ($'+Number(total).toFixed(2)+'). No se factura hasta revisarlo.');
+  }
 
   var conceptosXML = items.map(function(it){
     var imp = (it.precio * it.qty).toFixed(2);
@@ -2654,10 +2677,12 @@ function construirXMLPOS(cliente, items, total, folio, pagos) {
       'xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd" '+
       'Version="4.0" Serie="F" Folio="'+folio+'" Fecha="'+fecha+'" '+
       'Sello="" NoCertificado="'+NO_CERTIFICADO+'" Certificado="" '+
-            'FormaPago="'+(function(){
+      'FormaPago="'+(function(){
         var MAPA_FORMA_PAGO = { 'Efectivo':'01', 'Transferencia':'03', 'Tarjeta MP':'04' };
         var dominante = (pagos && pagos.length) ? pagos.slice().sort(function(a,b){return b.monto-a.monto;})[0] : null;
-        return (dominante && MAPA_FORMA_PAGO[dominante.metodo]) || '99';
+        var fp = dominante && MAPA_FORMA_PAGO[dominante.metodo];
+        if(!fp) throw new Error('La forma de pago "'+((dominante&&dominante.metodo)||'sin dato')+'" no se puede facturar como pago de contado (PUE). Revisa esta venta con tu contador.');
+        return fp;
       })()+'" '+
       'SubTotal="'+subtotal+'" Moneda="MXN" Total="'+subtotal+'" '+
       'TipoDeComprobante="I" Exportacion="01" MetodoPago="PUE" '+
@@ -2757,17 +2782,18 @@ function enviarAPaxPOS(xml, cliente, ventaId, btnFac, onExito) {
 
 function iniciarFacturacion(){
   if(!vActual){alrt('No hay venta activa','e');return;}
-  console.log('clienteActual:', JSON.stringify(clienteActual));
-  if(!clienteActual||!clienteActual.rfc){alrt('El cliente no tiene RFC registrado','e');return;}
-  if(!clienteActual.regimen){alrt('El cliente no tiene régimen fiscal registrado','e');return;}
-  if(!clienteActual.uso_cfdi){alrt('El cliente no tiene uso de CFDI registrado','e');return;}
-  if(!clienteActual.cp){alrt('El cliente no tiene código postal registrado','e');return;}
+  if(!ventaFacturable_(vActual)){alrt('Esta venta ya tiene factura, está cancelada o tiene una cancelación en proceso. No se puede facturar de nuevo.','e');return;}
+  var receptor = receptorDeVenta_(vActual);
+  if(!receptor||!receptor.rfc){alrt('El cliente de esta venta no tiene RFC registrado','e');return;}
+  if(!receptor.regimen){alrt('El cliente no tiene régimen fiscal registrado','e');return;}
+  if(!receptor.uso_cfdi){alrt('El cliente no tiene uso de CFDI registrado','e');return;}
+  if(!receptor.cp){alrt('El cliente no tiene código postal registrado','e');return;}
 
-  var msg = '¿Facturar a '+clienteActual.nombre+'?\n'+
-    'RFC: '+clienteActual.rfc+'\n'+
-    'Régimen: '+clienteActual.regimen+'\n'+
-    'Uso CFDI: '+clienteActual.uso_cfdi+'\n'+
-    'Total: $'+vActual.total.toLocaleString('es-MX',{minimumFractionDigits:2});
+  var msg = '¿Facturar la venta #'+String(vActual.id).padStart(4,'0')+' a '+receptor.nombre+'?\n'+
+    'RFC: '+receptor.rfc+'\n'+
+    'Régimen: '+receptor.regimen+'\n'+
+    'Uso CFDI: '+receptor.uso_cfdi+'\n'+
+    'Total: $'+Number(vActual.total).toLocaleString('es-MX',{minimumFractionDigits:2});
 
   if(!confirm(msg)) return;
 
@@ -2777,8 +2803,8 @@ function iniciarFacturacion(){
 
   try {
     btnFac.innerHTML = '<span class="spinner"></span>Timbrando...';
-        var xmlPOS = construirXMLPOS(clienteActual, vActual.items, vActual.total, vActual.id, vActual.pagos);
-    enviarAPaxPOS(xmlPOS, clienteActual, vActual.id, btnFac, function(uuid){
+        var xmlPOS = construirXMLPOS(receptor, vActual.items, vActual.total, vActual.id, vActual.pagos);
+    enviarAPaxPOS(xmlPOS, receptor, vActual.id, btnFac, function(uuid){
       vActual.uuid = uuid;
       btnFac.style.display = 'none';
       renderHist();
@@ -3023,6 +3049,7 @@ function facturarDesdeHistorial(id) {
   }
   if(!venta){ alrt('Venta no encontrada','e'); return; }
   if(venta.uuid){ alrt('Esta venta ya fue facturada. UUID: '+venta.uuid,'i'); return; }
+  if(!ventaFacturable_(venta)){ alrt('Esta venta está cancelada o tiene una cancelación en proceso; no se puede facturar.','e'); return; }
 
   // Buscar cliente en el array de clientes cargados
   var clienteHist = null;
@@ -3439,7 +3466,7 @@ function renderInfoFiscal(){
   var el=document.getElementById('info-fiscal');
   if(!el)return;
   if(!clienteActual||!clienteActual.rfc){
-    el.innerHTML='<span style="color:var(--warn)">⚠ Sin RFC — se facturará como venta pública (XAXX010101000)</span>';
+    el.innerHTML='<span style="color:var(--warn)">⚠ Sin RFC registrado — no se puede facturar a este cliente desde el POS</span>';
   } else {
     el.innerHTML='<span style="color:var(--ok)">✓ RFC: '+clienteActual.rfc+' | '+( clienteActual.regimen||'Sin régimen')+' | '+(clienteActual.uso_cfdi||'Sin uso CFDI')+'</span>';
   }
